@@ -40,12 +40,16 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Base\FileNameHandling.cs" />
+    <Compile Include="Base\Hash.cs" />
+    <Compile Include="Base\SlnFile.cs" />
     <Compile Include="Base\TextFile.cs" />
+    <Compile Include="Generators\SlnGenerator.cs" />
     <Compile Include="Generators\VcxprojGenerator.cs" />
     <Compile Include="Base\XmlFile.cs" />
     <Compile Include="Make\Make.cs" />
     <Compile Include="Make\Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Schema\Common.cs" />
     <Compile Include="Schema\Cpp.cs" />
     <Compile Include="Templates\Resource.cs" />
   </ItemGroup>
