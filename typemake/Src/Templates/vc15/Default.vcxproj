@@ -33,7 +33,7 @@
     <CharacterSet>Unicode</CharacterSet>
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)$(PlatformTarget)_$(Configuration)\</OutDir>
-    <IntDir>$(PlatformTarget)_$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir>$(SolutionDir)$(PlatformTarget)_$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
@@ -41,9 +41,8 @@
     <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
-    <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)$(PlatformTarget)_$(Configuration)\</OutDir>
-    <IntDir>$(PlatformTarget)_$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir>$(SolutionDir)$(PlatformTarget)_$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
@@ -52,7 +51,7 @@
     <CharacterSet>Unicode</CharacterSet>
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)$(PlatformTarget)_$(Configuration)\</OutDir>
-    <IntDir>$(PlatformTarget)_$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir>$(SolutionDir)$(PlatformTarget)_$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
@@ -60,9 +59,8 @@
     <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
-    <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)$(PlatformTarget)_$(Configuration)\</OutDir>
-    <IntDir>$(PlatformTarget)_$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir>$(SolutionDir)$(PlatformTarget)_$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">

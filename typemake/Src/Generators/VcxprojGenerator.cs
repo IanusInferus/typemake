@@ -9,13 +9,6 @@ using System.Xml.Linq;
 
 namespace TypeMake.Cpp
 {
-    public class ProjectReference
-    {
-        public String FilePath;
-        public String Id;
-        public String Name;
-    }
-
     public class VcxprojGenerator
     {
         private Project Project;

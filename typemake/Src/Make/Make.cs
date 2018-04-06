@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using TypeMake.Cpp;
@@ -39,25 +38,29 @@ namespace TypeMake
 
         public void Execute()
         {
+            var Projects = new List<ProjectReference>();
             foreach (var ModulePath in Directory.EnumerateDirectories(Path.Combine(SourceDirectory, "modules"), "*", SearchOption.TopDirectoryOnly))
             {
                 var ModuleName = Path.GetFileName(ModulePath);
-                GenerateModuleProject(ModuleName, ModulePath);
+                Projects.Add(GenerateModuleProject(ModuleName, ModulePath));
                 foreach (var TestFile in GetFilesInDirectory(Path.Combine(ModulePath, "test")))
                 {
                     if (TestFile.Type != FileType.CppSource) { continue; }
                     var TestName = ModuleName + "_" + Path.GetFileNameWithoutExtension(Regex.Replace(FileNameHandling.GetRelativePath(TestFile.Path, ModulePath), @"[\\/]", "_"));
-                    GenerateTestProject(ModuleName, ModulePath, TestName, TestFile);
+                    Projects.Add(GenerateTestProject(ModuleName, ModulePath, TestName, TestFile));
                 }
             }
             foreach (var SamplePath in Directory.EnumerateDirectories(Path.Combine(SourceDirectory, "samples"), "*", SearchOption.TopDirectoryOnly))
             {
                 var SampleName = Path.GetFileName(SamplePath);
-                GenerateSampleProject(SampleName, SamplePath);
+                Projects.Add(GenerateSampleProject(SampleName, SamplePath));
             }
+            var SlnTemplateText = Resource.GetResourceText(@"Templates\vc15\Default.sln");
+            var g = new SlnGenerator(SolutionName, GetIdForProject(SolutionName + ".solution"), Projects, BuildDirectory, SlnTemplateText);
+            g.Generate(EnableRebuild);
         }
 
-        private void GenerateModuleProject(String ModuleName, String ModulePath)
+        private ProjectReference GenerateModuleProject(String ModuleName, String ModulePath)
         {
             var InlcudeDirectories = new List<String> { };
             var SourceDirectories = new List<String> { Path.Combine(ModulePath, "include"), Path.Combine(ModulePath, "src") };
@@ -82,9 +85,10 @@ namespace TypeMake
                 {
                     ProjectReferences.Add(new ProjectReference
                     {
-                        FilePath = Path.Combine(BuildDirectory, Path.Combine("projects", ReferenceModule + ".vcxproj")),
                         Id = GetIdForProject(ReferenceModule),
-                        Name = ReferenceModule
+                        Name = ReferenceModule,
+                        VirtualDir = "modules/" + ReferenceModule,
+                        FilePath = Path.Combine(BuildDirectory, Path.Combine("projects", ReferenceModule + ".vcxproj"))
                     });
                 }
             }
@@ -126,13 +130,24 @@ namespace TypeMake
                 var VcxprojFilterTemplateText = Resource.GetResourceText(@"Templates\vc15\Default.vcxproj.filters");
                 var g = new VcxprojGenerator(p, GetIdForProject(ModuleName), ProjectReferences, ModulePath, Path.Combine(BuildDirectory, "projects"), VcxprojTemplateText, VcxprojFilterTemplateText);
                 g.Generate(EnableRebuild);
+                return new ProjectReference
+                {
+                    Id = GetIdForProject(ModuleName),
+                    Name = ModuleName,
+                    VirtualDir = "modules/" + ModuleName,
+                    FilePath = Path.Combine(BuildDirectory, Path.Combine("projects", ModuleName + ".vcxproj"))
+                };
+            }
+            else
+            {
+                throw new NotSupportedException();
             }
         }
-        private void GenerateTestProject(String ModuleName, String ModulePath, String TestName, Cpp.File TestFile)
+        private ProjectReference GenerateTestProject(String ModuleName, String ModulePath, String TestName, Cpp.File TestFile)
         {
             var InlcudeDirectories = new List<String> { };
             var SourceDirectories = new List<String> { Path.Combine(ModulePath, "include"), Path.Combine(ModulePath, "src") };
-            var LibDirectories = new List<String> { Path.Combine(BuildDirectory, @"projects\$(PlatformTarget)_$(Configuration)") };
+            var LibDirectories = new List<String> { Path.Combine(BuildDirectory, @"$(PlatformTarget)_$(Configuration)") };
             var Libs = GetAllLibs(ModuleName, true);
             var Files = new List<Cpp.File> { TestFile };
             var ProjectReferences = new List<ProjectReference> { };
@@ -153,9 +168,10 @@ namespace TypeMake
                 {
                     ProjectReferences.Add(new ProjectReference
                     {
-                        FilePath = Path.Combine(BuildDirectory, Path.Combine("projects", ReferenceModule + ".vcxproj")),
                         Id = GetIdForProject(ReferenceModule),
-                        Name = ReferenceModule
+                        Name = ReferenceModule,
+                        VirtualDir = "modules/" + ReferenceModule,
+                        FilePath = Path.Combine(BuildDirectory, Path.Combine("projects", ReferenceModule + ".vcxproj"))
                     });
                 }
             }
@@ -163,9 +179,10 @@ namespace TypeMake
             {
                 ProjectReferences.Add(new ProjectReference
                 {
-                    FilePath = Path.Combine(BuildDirectory, Path.Combine("projects", ModuleName + ".vcxproj")),
                     Id = GetIdForProject(ModuleName),
-                    Name = ModuleName
+                    Name = ModuleName,
+                    VirtualDir = "modules/" + ModuleName,
+                    FilePath = Path.Combine(BuildDirectory, Path.Combine("projects", ModuleName + ".vcxproj"))
                 });
             }
 
@@ -206,13 +223,24 @@ namespace TypeMake
                 var VcxprojFilterTemplateText = Resource.GetResourceText(@"Templates\vc15\Default.vcxproj.filters");
                 var g = new VcxprojGenerator(p, GetIdForProject(TestName), ProjectReferences, Path.GetDirectoryName(TestFile.Path), Path.Combine(BuildDirectory, "projects"), VcxprojTemplateText, VcxprojFilterTemplateText);
                 g.Generate(EnableRebuild);
+                return new ProjectReference
+                {
+                    Id = GetIdForProject(TestName),
+                    Name = TestName,
+                    VirtualDir = "modules/" + ModuleName,
+                    FilePath = Path.Combine(BuildDirectory, Path.Combine("projects", TestName + ".vcxproj"))
+                };
+            }
+            else
+            {
+                throw new NotSupportedException();
             }
         }
-        private void GenerateSampleProject(String SampleName, String SamplePath)
+        private ProjectReference GenerateSampleProject(String SampleName, String SamplePath)
         {
             var InlcudeDirectories = new List<String> { SamplePath };
             var SourceDirectories = new List<String> { SamplePath };
-            var LibDirectories = new List<String> { Path.Combine(BuildDirectory, @"projects\$(PlatformTarget)_$(Configuration)") };
+            var LibDirectories = new List<String> { Path.Combine(BuildDirectory, @"$(PlatformTarget)_$(Configuration)") };
             var Libs = GetAllLibs(SampleName, false);
             var Files = SourceDirectories.SelectMany(d => GetFilesInDirectory(d)).ToList();
             var ProjectReferences = new List<ProjectReference> { };
@@ -226,9 +254,10 @@ namespace TypeMake
                     {
                         ProjectReferences.Add(new ProjectReference
                         {
-                            FilePath = Path.Combine(BuildDirectory, Path.Combine("projects", ReferenceModule + ".vcxproj")),
                             Id = GetIdForProject(ReferenceModule),
-                            Name = ReferenceModule
+                            Name = ReferenceModule,
+                            VirtualDir = "modules/" + ReferenceModule,
+                            FilePath = Path.Combine(BuildDirectory, Path.Combine("projects", ReferenceModule + ".vcxproj"))
                         });
                     }
                 }
@@ -271,6 +300,17 @@ namespace TypeMake
                 var VcxprojFilterTemplateText = Resource.GetResourceText(@"Templates\vc15\Default.vcxproj.filters");
                 var g = new VcxprojGenerator(p, GetIdForProject(SampleName), ProjectReferences, SamplePath, Path.Combine(BuildDirectory, "projects"), VcxprojTemplateText, VcxprojFilterTemplateText);
                 g.Generate(EnableRebuild);
+                return new ProjectReference
+                {
+                    Id = GetIdForProject(SampleName),
+                    Name = SampleName,
+                    VirtualDir = "samples",
+                    FilePath = Path.Combine(BuildDirectory, Path.Combine("projects", SampleName + ".vcxproj"))
+                };
+            }
+            else
+            {
+                throw new NotSupportedException();
             }
         }
 
@@ -327,13 +367,13 @@ namespace TypeMake
             }
             if (Toolchain == ToolchainType.Windows_VisualC)
             {
-                var g = Guid.ParseExact(GetHashForPath(ProjectName, 32), "N").ToString().ToUpper();
+                var g = Guid.ParseExact(Hash.GetHashForPath(ProjectName, 32), "N").ToString().ToUpper();
                 ProjectIds.Add(ProjectName, g);
                 return g;
             }
             else if (Toolchain == ToolchainType.Mac_XCode_clang)
             {
-                var g = GetHashForPath(ProjectName, 24);
+                var g = Hash.GetHashForPath(ProjectName, 24);
                 ProjectIds.Add(ProjectName, g);
                 return g;
             }
@@ -341,16 +381,6 @@ namespace TypeMake
             {
                 throw new NotSupportedException();
             }
-        }
-        private static String GetHashForPath(String Path, int Length)
-        {
-            var Bytes = Encoding.UTF8.GetBytes(Path);
-            Byte[] Hash;
-            using (var sha256 = new SHA256Managed())
-            {
-                Hash = sha256.ComputeHash(Bytes);
-            }
-            return String.Join("", Hash.Select(b => b.ToString("X2"))).Substring(0, Length);
         }
         private List<String> GetAllModuleDependencies(String ModuleName, bool ContainSelf)
         {
