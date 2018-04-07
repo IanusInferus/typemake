@@ -39,10 +39,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Base\Configuration.cs" />
     <Compile Include="Base\FileNameHandling.cs" />
     <Compile Include="Base\Hash.cs" />
+    <Compile Include="Base\PlistFile.cs" />
     <Compile Include="Base\SlnFile.cs" />
     <Compile Include="Base\TextFile.cs" />
+    <Compile Include="Generators\PbxprojGenerator.cs" />
+    <Compile Include="Generators\PbxprojSolutionGenerator.cs" />
     <Compile Include="Generators\SlnGenerator.cs" />
     <Compile Include="Generators\VcxprojGenerator.cs" />
     <Compile Include="Base\XmlFile.cs" />
@@ -60,6 +64,10 @@
   <ItemGroup>
     <EmbeddedResource Include="Templates\vc15\Default.vcxproj" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <None Include="Templates\xcode9\Default.xcodeproj\ConvertToXml.sh" />
+    <EmbeddedResource Include="Templates\xcode9\Default.xcodeproj\project.pbxproj" />
+    <None Include="Templates\xcode9\Dummy.m" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

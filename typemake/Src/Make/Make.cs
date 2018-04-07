@@ -17,6 +17,7 @@ namespace TypeMake
             {
                 { "math", new List<String> { "core" } },
                 { "hello", new List<String> { "core", "math" } },
+                { "hello.ios", new List<String> { "core", "math" } },
             };
 
         private ToolchainType Toolchain;
@@ -25,6 +26,7 @@ namespace TypeMake
         private String BuildDirectory;
         private bool EnableRebuild;
 
+        private OperatingSystemType BuildingOperatingSystem;
         private Dictionary<String, String> ProjectIds = new Dictionary<String, String>();
 
         public Make(ToolchainType Toolchain, OperatingSystemType TargetOperationSystem, String SourceDirectory, String BuildDirectory, bool EnableRebuild)
@@ -34,6 +36,7 @@ namespace TypeMake
             this.SourceDirectory = SourceDirectory;
             this.BuildDirectory = BuildDirectory;
             this.EnableRebuild = EnableRebuild;
+            this.BuildingOperatingSystem = OperatingSystemType.Windows;
         }
 
         public void Execute()
@@ -43,21 +46,49 @@ namespace TypeMake
             {
                 var ModuleName = Path.GetFileName(ModulePath);
                 Projects.Add(GenerateModuleProject(ModuleName, ModulePath));
-                foreach (var TestFile in GetFilesInDirectory(Path.Combine(ModulePath, "test")))
+                if (!((TargetOperationSystem == OperatingSystemType.Android) || (TargetOperationSystem == OperatingSystemType.iOS)))
                 {
-                    if (TestFile.Type != FileType.CppSource) { continue; }
-                    var TestName = ModuleName + "_" + Path.GetFileNameWithoutExtension(Regex.Replace(FileNameHandling.GetRelativePath(TestFile.Path, ModulePath), @"[\\/]", "_"));
-                    Projects.Add(GenerateTestProject(ModuleName, ModulePath, TestName, TestFile));
+                    foreach (var TestFile in GetFilesInDirectory(Path.Combine(ModulePath, "test")))
+                    {
+                        if (TestFile.Type != FileType.CppSource) { continue; }
+                        var TestName = ModuleName + "_" + Path.GetFileNameWithoutExtension(Regex.Replace(FileNameHandling.GetRelativePath(TestFile.Path, ModulePath), @"[\\/]", "_"));
+                        Projects.Add(GenerateTestProject(ModuleName, ModulePath, TestName, TestFile));
+                    }
                 }
             }
             foreach (var SamplePath in Directory.EnumerateDirectories(Path.Combine(SourceDirectory, "samples"), "*", SearchOption.TopDirectoryOnly))
             {
                 var SampleName = Path.GetFileName(SamplePath);
-                Projects.Add(GenerateSampleProject(SampleName, SamplePath));
+                var Extension = Path.GetExtension(SampleName).TrimStart('.');
+                if (Extension.Equals("android", StringComparison.OrdinalIgnoreCase) && (TargetOperationSystem == OperatingSystemType.Android))
+                {
+
+                }
+                else if (Extension.Equals("ios", StringComparison.OrdinalIgnoreCase) && (TargetOperationSystem == OperatingSystemType.iOS))
+                {
+                    Projects.Add(GenerateSampleProject(SampleName, SamplePath));
+                }
+                else if (!((TargetOperationSystem == OperatingSystemType.Android) || (TargetOperationSystem == OperatingSystemType.iOS)))
+                {
+                    Projects.Add(GenerateSampleProject(SampleName, SamplePath));
+                }
             }
-            var SlnTemplateText = Resource.GetResourceText(@"Templates\vc15\Default.sln");
-            var g = new SlnGenerator(SolutionName, GetIdForProject(SolutionName + ".solution"), Projects, BuildDirectory, SlnTemplateText);
-            g.Generate(EnableRebuild);
+            if (Toolchain == ToolchainType.Windows_VisualC)
+            {
+                var SlnTemplateText = Resource.GetResourceText(@"Templates\vc15\Default.sln");
+                var g = new SlnGenerator(SolutionName, GetIdForProject(SolutionName + ".solution"), Projects, BuildDirectory, SlnTemplateText);
+                g.Generate(EnableRebuild);
+            }
+            else if (Toolchain == ToolchainType.Mac_XCode)
+            {
+                var PbxprojTemplateText = Resource.GetResourceText(@"Templates\xcode9\Default.xcodeproj\project.pbxproj");
+                var g = new PbxprojSolutionGenerator(SolutionName, Projects, BuildDirectory, PbxprojTemplateText);
+                g.Generate(EnableRebuild);
+            }
+            else
+            {
+                throw new NotSupportedException();
+            }
         }
 
         private ProjectReference GenerateModuleProject(String ModuleName, String ModulePath)
@@ -91,6 +122,16 @@ namespace TypeMake
                         FilePath = Path.Combine(BuildDirectory, Path.Combine("projects", ReferenceModule + ".vcxproj"))
                     });
                 }
+                else if (Toolchain == ToolchainType.Mac_XCode)
+                {
+                    ProjectReferences.Add(new ProjectReference
+                    {
+                        Id = GetIdForProject(ReferenceModule),
+                        Name = ReferenceModule,
+                        VirtualDir = "modules/" + ReferenceModule,
+                        FilePath = Path.Combine(BuildDirectory, Path.Combine("projects", ReferenceModule + ".xcodeproj"))
+                    });
+                }
             }
 
             var p = new Project
@@ -120,7 +161,7 @@ namespace TypeMake
                     new Configuration
                     {
                          ConfigurationType = ConfigurationType.Debug,
-                         Defines = ParseDefines("_DEBUG")
+                         Defines = ParseDefines("_DEBUG;DEBUG=1")
                     }
                 }
             };
@@ -128,7 +169,7 @@ namespace TypeMake
             {
                 var VcxprojTemplateText = Resource.GetResourceText(@"Templates\vc15\Default.vcxproj");
                 var VcxprojFilterTemplateText = Resource.GetResourceText(@"Templates\vc15\Default.vcxproj.filters");
-                var g = new VcxprojGenerator(p, GetIdForProject(ModuleName), ProjectReferences, ModulePath, Path.Combine(BuildDirectory, "projects"), VcxprojTemplateText, VcxprojFilterTemplateText);
+                var g = new VcxprojGenerator(p, GetIdForProject(ModuleName), ProjectReferences, ModulePath, Path.Combine(BuildDirectory, "projects"), VcxprojTemplateText, VcxprojFilterTemplateText, BuildingOperatingSystem, TargetOperationSystem);
                 g.Generate(EnableRebuild);
                 return new ProjectReference
                 {
@@ -137,6 +178,20 @@ namespace TypeMake
                     VirtualDir = "modules/" + ModuleName,
                     FilePath = Path.Combine(BuildDirectory, Path.Combine("projects", ModuleName + ".vcxproj"))
                 };
+            }
+            else if (Toolchain == ToolchainType.Mac_XCode)
+            {
+                var PbxprojTemplateText = Resource.GetResourceText(@"Templates\xcode9\Default.xcodeproj\project.pbxproj");
+                var g = new PbxprojGenerator(p, ProjectReferences, ModulePath, Path.Combine(BuildDirectory, "projects"), PbxprojTemplateText, BuildingOperatingSystem, TargetOperationSystem);
+                g.Generate(EnableRebuild);
+                return new ProjectReference
+                {
+                    Id = GetIdForProject(ModuleName),
+                    Name = ModuleName,
+                    VirtualDir = "modules/" + ModuleName,
+                    FilePath = Path.Combine(BuildDirectory, Path.Combine("projects", ModuleName + ".xcodeproj"))
+                };
+                throw new NotSupportedException();
             }
             else
             {
@@ -174,6 +229,16 @@ namespace TypeMake
                         FilePath = Path.Combine(BuildDirectory, Path.Combine("projects", ReferenceModule + ".vcxproj"))
                     });
                 }
+                else if (Toolchain == ToolchainType.Mac_XCode)
+                {
+                    ProjectReferences.Add(new ProjectReference
+                    {
+                        Id = GetIdForProject(ReferenceModule),
+                        Name = ReferenceModule,
+                        VirtualDir = "modules/" + ReferenceModule,
+                        FilePath = Path.Combine(BuildDirectory, Path.Combine("projects", ReferenceModule + ".xcodeproj"))
+                    });
+                }
             }
             if (Toolchain == ToolchainType.Windows_VisualC)
             {
@@ -183,6 +248,16 @@ namespace TypeMake
                     Name = ModuleName,
                     VirtualDir = "modules/" + ModuleName,
                     FilePath = Path.Combine(BuildDirectory, Path.Combine("projects", ModuleName + ".vcxproj"))
+                });
+            }
+            else if (Toolchain == ToolchainType.Mac_XCode)
+            {
+                ProjectReferences.Add(new ProjectReference
+                {
+                    Id = GetIdForProject(ModuleName),
+                    Name = ModuleName,
+                    VirtualDir = "modules/" + ModuleName,
+                    FilePath = Path.Combine(BuildDirectory, Path.Combine("projects", ModuleName + ".xcodeproj"))
                 });
             }
 
@@ -213,7 +288,7 @@ namespace TypeMake
                     new Configuration
                     {
                          ConfigurationType = ConfigurationType.Debug,
-                         Defines = ParseDefines("_DEBUG")
+                         Defines = ParseDefines("_DEBUG;DEBUG=1")
                     }
                 }
             };
@@ -221,7 +296,7 @@ namespace TypeMake
             {
                 var VcxprojTemplateText = Resource.GetResourceText(@"Templates\vc15\Default.vcxproj");
                 var VcxprojFilterTemplateText = Resource.GetResourceText(@"Templates\vc15\Default.vcxproj.filters");
-                var g = new VcxprojGenerator(p, GetIdForProject(TestName), ProjectReferences, Path.GetDirectoryName(TestFile.Path), Path.Combine(BuildDirectory, "projects"), VcxprojTemplateText, VcxprojFilterTemplateText);
+                var g = new VcxprojGenerator(p, GetIdForProject(TestName), ProjectReferences, Path.GetDirectoryName(TestFile.Path), Path.Combine(BuildDirectory, "projects"), VcxprojTemplateText, VcxprojFilterTemplateText, BuildingOperatingSystem, TargetOperationSystem);
                 g.Generate(EnableRebuild);
                 return new ProjectReference
                 {
@@ -229,6 +304,19 @@ namespace TypeMake
                     Name = TestName,
                     VirtualDir = "modules/" + ModuleName,
                     FilePath = Path.Combine(BuildDirectory, Path.Combine("projects", TestName + ".vcxproj"))
+                };
+            }
+            else if (Toolchain == ToolchainType.Mac_XCode)
+            {
+                var PbxprojTemplateText = Resource.GetResourceText(@"Templates\xcode9\Default.xcodeproj\project.pbxproj");
+                var g = new PbxprojGenerator(p, ProjectReferences, Path.GetDirectoryName(TestFile.Path), Path.Combine(BuildDirectory, "projects"), PbxprojTemplateText, BuildingOperatingSystem, TargetOperationSystem);
+                g.Generate(EnableRebuild);
+                return new ProjectReference
+                {
+                    Id = GetIdForProject(TestName),
+                    Name = TestName,
+                    VirtualDir = "modules/" + ModuleName,
+                    FilePath = Path.Combine(BuildDirectory, Path.Combine("projects", TestName + ".xcodeproj"))
                 };
             }
             else
@@ -258,6 +346,16 @@ namespace TypeMake
                             Name = ReferenceModule,
                             VirtualDir = "modules/" + ReferenceModule,
                             FilePath = Path.Combine(BuildDirectory, Path.Combine("projects", ReferenceModule + ".vcxproj"))
+                        });
+                    }
+                    else if (Toolchain == ToolchainType.Mac_XCode)
+                    {
+                        ProjectReferences.Add(new ProjectReference
+                        {
+                            Id = GetIdForProject(ReferenceModule),
+                            Name = ReferenceModule,
+                            VirtualDir = "modules/" + ReferenceModule,
+                            FilePath = Path.Combine(BuildDirectory, Path.Combine("projects", ReferenceModule + ".xcodeproj"))
                         });
                     }
                 }
@@ -290,7 +388,12 @@ namespace TypeMake
                     new Configuration
                     {
                          ConfigurationType = ConfigurationType.Debug,
-                         Defines = ParseDefines("_DEBUG")
+                         Defines = ParseDefines("_DEBUG;DEBUG=1")
+                    },
+                    new Configuration
+                    {
+                        TargetOperatingSystem = OperatingSystemType.iOS,
+                        BundleIdentifier = SolutionName + "." + SampleName
                     }
                 }
             };
@@ -298,7 +401,7 @@ namespace TypeMake
             {
                 var VcxprojTemplateText = Resource.GetResourceText(@"Templates\vc15\Default.vcxproj");
                 var VcxprojFilterTemplateText = Resource.GetResourceText(@"Templates\vc15\Default.vcxproj.filters");
-                var g = new VcxprojGenerator(p, GetIdForProject(SampleName), ProjectReferences, SamplePath, Path.Combine(BuildDirectory, "projects"), VcxprojTemplateText, VcxprojFilterTemplateText);
+                var g = new VcxprojGenerator(p, GetIdForProject(SampleName), ProjectReferences, SamplePath, Path.Combine(BuildDirectory, "projects"), VcxprojTemplateText, VcxprojFilterTemplateText, BuildingOperatingSystem, TargetOperationSystem);
                 g.Generate(EnableRebuild);
                 return new ProjectReference
                 {
@@ -307,6 +410,20 @@ namespace TypeMake
                     VirtualDir = "samples",
                     FilePath = Path.Combine(BuildDirectory, Path.Combine("projects", SampleName + ".vcxproj"))
                 };
+            }
+            else if (Toolchain == ToolchainType.Mac_XCode)
+            {
+                var PbxprojTemplateText = Resource.GetResourceText(@"Templates\xcode9\Default.xcodeproj\project.pbxproj");
+                var g = new PbxprojGenerator(p, ProjectReferences, SamplePath, Path.Combine(BuildDirectory, "projects"), PbxprojTemplateText, BuildingOperatingSystem, TargetOperationSystem);
+                g.Generate(EnableRebuild);
+                return new ProjectReference
+                {
+                    Id = GetIdForProject(SampleName),
+                    Name = SampleName,
+                    VirtualDir = "samples",
+                    FilePath = Path.Combine(BuildDirectory, Path.Combine("projects", SampleName + ".xcodeproj"))
+                };
+                throw new NotSupportedException();
             }
             else
             {
@@ -371,7 +488,7 @@ namespace TypeMake
                 ProjectIds.Add(ProjectName, g);
                 return g;
             }
-            else if (Toolchain == ToolchainType.Mac_XCode_clang)
+            else if (Toolchain == ToolchainType.Mac_XCode)
             {
                 var g = Hash.GetHashForPath(ProjectName, 24);
                 ProjectIds.Add(ProjectName, g);
@@ -413,6 +530,10 @@ namespace TypeMake
             if (Toolchain == ToolchainType.Windows_VisualC)
             {
                 return l.Select(m => m + ".lib").ToList();
+            }
+            else if (Toolchain == ToolchainType.Mac_XCode)
+            {
+                return l.Select(m => "lib" + m + ".a").ToList();
             }
             else
             {

@@ -45,6 +45,32 @@ namespace TypeMake
                         return 0;
                     }
                 }
+                else if (Target == "mac")
+                {
+                    if (argv.Length == 3)
+                    {
+                        var SourceDirectory = argv[1];
+                        var BuildDirectory = argv[2];
+                        var EnableRebuild = options.ContainsKey("rebuild");
+
+                        var m = new Make(Cpp.ToolchainType.Mac_XCode, Cpp.OperatingSystemType.Mac, SourceDirectory, BuildDirectory, EnableRebuild);
+                        m.Execute();
+                        return 0;
+                    }
+                }
+                else if (Target == "ios")
+                {
+                    if (argv.Length == 3)
+                    {
+                        var SourceDirectory = argv[1];
+                        var BuildDirectory = argv[2];
+                        var EnableRebuild = options.ContainsKey("rebuild");
+
+                        var m = new Make(Cpp.ToolchainType.Mac_XCode, Cpp.OperatingSystemType.iOS, SourceDirectory, BuildDirectory, EnableRebuild);
+                        m.Execute();
+                        return 0;
+                    }
+                }
             }
             else
             {

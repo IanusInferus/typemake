@@ -12,10 +12,10 @@ namespace TypeMake.Cpp
     public enum ToolchainType
     {
         Windows_VisualC,
-        Windows_NDK_clang,
+        Windows_NDK,
         Linux_gcc,
         Linux_clang,
-        Mac_XCode_clang
+        Mac_XCode
     }
     public enum CompilerType
     {
@@ -81,6 +81,8 @@ namespace TypeMake.Cpp
         public List<String> LinkerFlags = new List<String> { };
 
         public List<File> Files = new List<File> { };
+
+        public String BundleIdentifier = null;
     }
     public class Project
     {
