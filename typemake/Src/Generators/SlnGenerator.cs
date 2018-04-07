@@ -101,6 +101,11 @@ namespace TypeMake
                 });
             }
 
+            foreach (var Section in s.Sections.Where(Section => Section.Id == "ExtensibilityGlobals"))
+            {
+                Section.Properties.SetValue("SolutionGuid", "{" + SolutionId.ToUpper() + "}");
+            }
+
             String Text;
             using (var sw = new StringWriter())
             {
