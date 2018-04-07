@@ -18,7 +18,10 @@ namespace TypeMake.Cpp
         private String OutputDirectory;
         private String VcxprojTemplateText;
         private String VcxprojFilterTemplateText;
-        public VcxprojGenerator(Project Project, String ProjectId, List<ProjectReference> ProjectReferences, String InputDirectory, String OutputDirectory, String VcxprojTemplateText, String VcxprojFilterTemplateText)
+        private OperatingSystemType BuildingOperatingSystem;
+        private OperatingSystemType TargetOperatingSystem;
+
+        public VcxprojGenerator(Project Project, String ProjectId, List<ProjectReference> ProjectReferences, String InputDirectory, String OutputDirectory, String VcxprojTemplateText, String VcxprojFilterTemplateText, OperatingSystemType BuildingOperatingSystem, OperatingSystemType TargetOperatingSystem)
         {
             this.Project = Project;
             this.ProjectId = ProjectId;
@@ -27,6 +30,8 @@ namespace TypeMake.Cpp
             this.OutputDirectory = OutputDirectory;
             this.VcxprojTemplateText = VcxprojTemplateText;
             this.VcxprojFilterTemplateText = VcxprojFilterTemplateText;
+            this.BuildingOperatingSystem = BuildingOperatingSystem;
+            this.TargetOperatingSystem = TargetOperatingSystem;
         }
 
         public void Generate(bool EnableRebuild)
@@ -105,7 +110,7 @@ namespace TypeMake.Cpp
                 var Architecture = Pair.Key.Value;
                 var Name = Pair.Value;
 
-                var conf = GetMergedConfiguration(null, CompilerType.VisualC, null, null, ConfigurationType, Architecture, Project.Configurations);
+                var conf = ConfigurationUtils.GetMergedConfiguration(ToolchainType.Windows_VisualC, CompilerType.VisualC, BuildingOperatingSystem, TargetOperatingSystem, ConfigurationType, Architecture, Project.Configurations);
 
                 var PropertyGroup = xVcxproj.Elements(xn + "PropertyGroup").Where(e => (e.Attribute("Condition") != null) && (e.Attribute("Condition").Value == "'$(Configuration)|$(Platform)'=='" + Name + "'")).LastOrDefault();
                 if (PropertyGroup == null)
@@ -420,37 +425,6 @@ namespace TypeMake.Cpp
             {
                 throw new NotSupportedException("NotSupportedArchitecture: " + Architecture.ToString());
             }
-        }
-
-        private static Configuration GetMergedConfiguration(ToolchainType? Toolchain, CompilerType? Compiler, OperatingSystemType? BuildingOperatingSystem, OperatingSystemType? TargetOperationSystem, ConfigurationType? ConfigurationType, ArchitectureType? Architecture, List<Configuration> Configurations)
-        {
-            Func<Configuration, bool> Filter = (Configuration c) =>
-                ((c.Toolchain == null) || (c.Toolchain == Toolchain))
-                && ((c.Compiler == null) || (c.Compiler == Compiler))
-                && ((c.BuildingOperatingSystem == null) || (c.BuildingOperatingSystem == BuildingOperatingSystem))
-                && ((c.TargetOperatingSystem == null) || (c.TargetOperatingSystem == TargetOperationSystem))
-                && ((c.ConfigurationType == null) || (c.ConfigurationType == ConfigurationType))
-                && ((c.Architecture == null) || (c.Architecture == Architecture));
-            var conf = new Configuration
-            {
-                Toolchain = Toolchain,
-                Compiler = Compiler,
-                TargetOperatingSystem = TargetOperationSystem,
-                ConfigurationType = ConfigurationType,
-                Architecture = Architecture,
-                TargetType = Configurations.Where(Filter).Select(c => c.TargetType).Where(t => t != null).LastOrDefault(),
-                IncludeDirectories = Configurations.Where(Filter).SelectMany(c => c.IncludeDirectories).ToList(),
-                LibDirectories = Configurations.Where(Filter).SelectMany(c => c.LibDirectories).ToList(),
-                Libs = Configurations.Where(Filter).SelectMany(c => c.Libs).ToList(),
-                Defines = Configurations.Where(Filter).SelectMany(c => c.Defines).ToList(),
-                CFlags = Configurations.Where(Filter).SelectMany(c => c.CFlags).ToList(),
-                CppFlags = Configurations.Where(Filter).SelectMany(c => c.CppFlags).ToList(),
-                ObjectiveCFlags = Configurations.Where(Filter).SelectMany(c => c.ObjectiveCFlags).ToList(),
-                ObjectiveCppFlags = Configurations.Where(Filter).SelectMany(c => c.ObjectiveCppFlags).ToList(),
-                LinkerFlags = Configurations.Where(Filter).SelectMany(c => c.LinkerFlags).ToList(),
-                Files = Configurations.Where(Filter).SelectMany(c => c.Files).ToList()
-            };
-            return conf;
         }
     }
 }
