@@ -191,7 +191,7 @@ namespace TypeMake.Cpp
 
                 var conf = ConfigurationUtils.GetMergedConfiguration(ToolchainType.Mac_XCode, CompilerType.clang, BuildingOperatingSystem, TargetOperatingSystem, ConfigurationType, null, Project.Configurations);
 
-                var IncludeDirectories = conf.IncludeDirectories.Select(d => FileNameHandling.GetRelativePath(d, BaseDirPath).Replace("\\", "/")).ToList();
+                var IncludeDirectories = conf.IncludeDirectories.Select(d => FileNameHandling.GetRelativePath(d, BaseDirPath).Replace('\\', '/')).ToList();
                 if (IncludeDirectories.Count != 0)
                 {
                     BuildSettings.SetItem("HEADER_SEARCH_PATHS", Value.CreateArray(IncludeDirectories.Concat(new List<String> { "$(inherited)" }).Select(d => Value.CreateString(d)).ToList()));
@@ -201,7 +201,7 @@ namespace TypeMake.Cpp
                 {
                     BuildSettings.SetItem("GCC_PREPROCESSOR_DEFINITIONS", Value.CreateArray(Defines.Select(d => d.Key + (d.Value == null ? "" : "=" + d.Value)).Concat(new List<String> { "$(inherited)" }).Select(d => Value.CreateString(d)).ToList()));
                 }
-                var CFlags = conf.CFlags.ToList();
+                var CFlags = conf.CFlags;
                 if (CFlags.Count != 0)
                 {
                     BuildSettings.SetItem("OTHER_CFLAGS", Value.CreateArray(CFlags.Concat(new List<String> { "$(inherited)" }).Select(d => Value.CreateString(d)).ToList()));
@@ -214,7 +214,7 @@ namespace TypeMake.Cpp
 
                 if ((conf.TargetType == TargetType.Executable) || (conf.TargetType == TargetType.DynamicLibrary))
                 {
-                    var LibDirectories = conf.LibDirectories.Select(d => FileNameHandling.GetRelativePath(d, BaseDirPath).Replace("\\", "/")).ToList();
+                    var LibDirectories = conf.LibDirectories.Select(d => FileNameHandling.GetRelativePath(d, BaseDirPath).Replace('\\', '/')).ToList();
                     if (LibDirectories.Count != 0)
                     {
                         BuildSettings.SetItem("LIBRARY_SEARCH_PATHS", Value.CreateArray(LibDirectories.Concat(new List<String> { "$(inherited)" }).Select(d => Value.CreateString(d)).ToList()));
@@ -235,7 +235,7 @@ namespace TypeMake.Cpp
                     BuildSettings.SetItem("SDKROOT", Value.CreateString("iphoneos"));
                     if (conf.TargetType == TargetType.Executable)
                     {
-                        BuildSettings.SetItem("INFOPLIST_FILE", Value.CreateString(FileNameHandling.GetRelativePath(Path.Combine(InputDirectory, "Info.plist"), BaseDirPath).Replace("\\", "/")));
+                        BuildSettings.SetItem("INFOPLIST_FILE", Value.CreateString(FileNameHandling.GetRelativePath(Path.Combine(InputDirectory, "Info.plist"), BaseDirPath).Replace('\\', '/')));
                         BuildSettings.SetItem("PRODUCT_BUNDLE_IDENTIFIER", Value.CreateString(conf.BundleIdentifier));
                     }
                 }
