@@ -12,10 +12,9 @@ namespace TypeMake.Cpp
     public enum ToolchainType
     {
         Windows_VisualC,
-        Windows_NDK,
-        Linux_gcc,
-        Linux_clang,
-        Mac_XCode
+        Mac_XCode,
+        CMake,
+        NDK
     }
     public enum CompilerType
     {

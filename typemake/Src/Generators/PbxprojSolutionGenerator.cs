@@ -148,7 +148,7 @@ namespace TypeMake
                 FileObject.Add("isa", Value.CreateString("PBXFileReference"));
                 FileObject.Add("lastKnownFileType", Value.CreateString("wrapper.pb-project"));
                 FileObject.Add("name", Value.CreateString(FileName));
-                FileObject.Add("path", Value.CreateString(FileNameHandling.GetRelativePath(Project.FilePath, BaseDirPath).Replace("\\", "/")));
+                FileObject.Add("path", Value.CreateString(FileNameHandling.GetRelativePath(Project.FilePath, BaseDirPath).Replace('\\', '/')));
                 FileObject.Add("sourceTree", Value.CreateString("<group>"));
                 Objects.Add(Hash, Value.CreateDict(FileObject));
                 RelativePathToFileObjectKey.Add(RelativePath, Hash);

@@ -176,7 +176,7 @@ namespace TypeMake.Cpp
                     {
                         Link.SetElementValue(xn + "AdditionalLibraryDirectories", String.Join(";", LibDirectories) + ";%(AdditionalLibraryDirectories)");
                     }
-                    var Libs = conf.Libs;
+                    var Libs = conf.Libs.Concat(ProjectReferences.Select(p => p.Name + ".lib")).ToList();
                     if (Libs.Count != 0)
                     {
                         Link.SetElementValue(xn + "AdditionalDependencies", String.Join(";", Libs) + ";%(AdditionalDependencies)");

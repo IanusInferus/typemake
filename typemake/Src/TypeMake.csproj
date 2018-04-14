@@ -45,6 +45,8 @@
     <Compile Include="Base\PlistFile.cs" />
     <Compile Include="Base\SlnFile.cs" />
     <Compile Include="Base\TextFile.cs" />
+    <Compile Include="Generators\CMakeProjectGenerator.cs" />
+    <Compile Include="Generators\CMakeSolutionGenerator.cs" />
     <Compile Include="Generators\PbxprojGenerator.cs" />
     <Compile Include="Generators\PbxprojSolutionGenerator.cs" />
     <Compile Include="Generators\SlnGenerator.cs" />
