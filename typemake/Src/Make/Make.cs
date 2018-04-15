@@ -43,7 +43,7 @@ namespace TypeMake
 
         public void Execute()
         {
-            var Projects = new List<ProjectReference>();
+            var Projects = new List<KeyValuePair<ProjectReference, List<ProjectReference>>>();
             foreach (var ModulePath in Directory.EnumerateDirectories(Path.Combine(SourceDirectory, "modules"), "*", SearchOption.TopDirectoryOnly))
             {
                 var ModuleName = Path.GetFileName(ModulePath);
@@ -84,18 +84,21 @@ namespace TypeMake
             if (Toolchain == ToolchainType.Windows_VisualC)
             {
                 var SlnTemplateText = Resource.GetResourceText(@"Templates\vc15\Default.sln");
-                var g = new SlnGenerator(SolutionName, GetIdForProject(SolutionName + ".solution"), Projects, BuildDirectory, SlnTemplateText);
+                var g = new SlnGenerator(SolutionName, GetIdForProject(SolutionName + ".solution"), Projects.Select(p => p.Key).ToList(), BuildDirectory, SlnTemplateText);
                 g.Generate(EnableRebuild);
             }
             else if (Toolchain == ToolchainType.Mac_XCode)
             {
                 var PbxprojTemplateText = Resource.GetResourceText(@"Templates\xcode9\Default.xcodeproj\project.pbxproj");
-                var g = new PbxprojSolutionGenerator(SolutionName, Projects, BuildDirectory, PbxprojTemplateText);
+                var g = new PbxprojSolutionGenerator(SolutionName, Projects.Select(p => p.Key).ToList(), BuildDirectory, PbxprojTemplateText);
                 g.Generate(EnableRebuild);
             }
             else if (Toolchain == ToolchainType.CMake)
             {
-                var g = new CMakeSolutionGenerator(SolutionName, Projects, BuildDirectory);
+                var ProjectDict = Projects.ToDictionary(p => p.Key.Name, p => p.Key);
+                var ProjectDependencies = Projects.ToDictionary(p => ProjectDict[p.Key.Name], p => p.Value.Select(n => ProjectDict[n.Name]).ToList());
+                var SortedProjects = Projects.Select(p => p.Key).PartialOrderBy(p => ProjectDependencies.ContainsKey(p) ? ProjectDependencies[p] : null).ToList();
+                var g = new CMakeSolutionGenerator(SolutionName, SortedProjects, BuildDirectory);
                 g.Generate(EnableRebuild);
             }
             else
@@ -104,7 +107,7 @@ namespace TypeMake
             }
         }
 
-        private ProjectReference GenerateModuleProject(String ModuleName, String ModulePath)
+        private KeyValuePair<ProjectReference, List<ProjectReference>> GenerateModuleProject(String ModuleName, String ModulePath)
         {
             var InlcudeDirectories = new List<String> { };
             var SourceDirectories = new List<String> { Path.Combine(ModulePath, "include"), Path.Combine(ModulePath, "src") };
@@ -169,15 +172,15 @@ namespace TypeMake
             {
                 throw new NotSupportedException();
             }
-            return new ProjectReference
+            return new KeyValuePair<ProjectReference, List<ProjectReference>>(new ProjectReference
             {
                 Id = GetIdForProject(ModuleName),
                 Name = ModuleName,
                 VirtualDir = "modules/" + ModuleName,
                 FilePath = Path.Combine(BuildDirectory, Path.Combine("projects", GetProjectFileName(ModuleName)))
-            };
+            }, ProjectReferences);
         }
-        private ProjectReference GenerateTestProject(String ModuleName, String ModulePath, String TestName, Cpp.File TestFile)
+        private KeyValuePair<ProjectReference, List<ProjectReference>> GenerateTestProject(String ModuleName, String ModulePath, String TestName, Cpp.File TestFile)
         {
             var InlcudeDirectories = new List<String> { };
             var SourceDirectories = new List<String> { Path.Combine(ModulePath, "include"), Path.Combine(ModulePath, "src") };
@@ -242,15 +245,15 @@ namespace TypeMake
             {
                 throw new NotSupportedException();
             }
-            return new ProjectReference
+            return new KeyValuePair<ProjectReference, List<ProjectReference>>(new ProjectReference
             {
                 Id = GetIdForProject(TestName),
                 Name = TestName,
                 VirtualDir = "modules/" + ModuleName,
                 FilePath = Path.Combine(BuildDirectory, Path.Combine("projects", GetProjectFileName(TestName)))
-            };
+            }, ProjectReferences);
         }
-        private ProjectReference GenerateSampleProject(String SampleName, String SamplePath)
+        private KeyValuePair<ProjectReference, List<ProjectReference>> GenerateSampleProject(String SampleName, String SamplePath)
         {
             var InlcudeDirectories = new List<String> { SamplePath };
             var SourceDirectories = new List<String> { SamplePath };
@@ -314,13 +317,13 @@ namespace TypeMake
             {
                 throw new NotSupportedException();
             }
-            return new ProjectReference
+            return new KeyValuePair<ProjectReference, List<ProjectReference>>(new ProjectReference
             {
                 Id = GetIdForProject(SampleName),
                 Name = SampleName,
                 VirtualDir = "samples",
                 FilePath = Path.Combine(BuildDirectory, Path.Combine("projects", GetProjectFileName(SampleName)))
-            };
+            }, ProjectReferences);
         }
 
         private List<Configuration> GetCommonConfigurations()
