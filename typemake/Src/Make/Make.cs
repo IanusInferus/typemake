@@ -260,6 +260,7 @@ namespace TypeMake
         private KeyValuePair<ProjectReference, List<ProjectReference>> GenerateProductProject(String ProductName, String ProductPath, TargetType ProductTargetType)
         {
             var InlcudeDirectories = new List<String> { ProductPath };
+            var Defines = new List<KeyValuePair<String, String>> { };
             var SourceDirectories = new List<String> { ProductPath };
             var Libs = new List<String> { };
             var Files = SourceDirectories.SelectMany(d => GetFilesInDirectory(d, TargetOperationSystem)).ToList();
@@ -274,21 +275,35 @@ namespace TypeMake
             {
                 InlcudeDirectories.Add(Path.GetFullPath(Path.Combine(ProductPath, RelativeIncludeDirectory)));
             }
-            if (ModuleDependencies.ContainsKey(ProductName))
+            foreach (var ReferenceModule in GetAllModuleDependencies(ProductName, false))
             {
-                foreach (var ReferenceModule in GetAllModuleDependencies(ProductName, false))
+                InlcudeDirectories.Add(Path.GetFullPath(Path.Combine(ProductPath, Path.Combine("..", Path.Combine("..", Path.Combine("modules", Path.Combine(ReferenceModule, "include")))))));
+                ProjectReferences.Add(new ProjectReference
                 {
-                    InlcudeDirectories.Add(Path.GetFullPath(Path.Combine(ProductPath, Path.Combine("..", Path.Combine("..", Path.Combine("modules", Path.Combine(ReferenceModule, "include")))))));
-                    ProjectReferences.Add(new ProjectReference
-                    {
-                        Id = GetIdForProject(ReferenceModule),
-                        Name = ReferenceModule,
-                        VirtualDir = "modules/" + ReferenceModule,
-                        FilePath = Path.Combine(BuildDirectory, Path.Combine("projects", GetProjectFileName(ReferenceModule)))
-                    });
-                }
+                    Id = GetIdForProject(ReferenceModule),
+                    Name = ReferenceModule,
+                    VirtualDir = "modules/" + ReferenceModule,
+                    FilePath = Path.Combine(BuildDirectory, Path.Combine("projects", GetProjectFileName(ReferenceModule)))
+                });
             }
 
+            if (ProductTargetType == TargetType.Executable)
+            {
+            }
+            else if (ProductTargetType == TargetType.StaticLibrary)
+            {
+                Defines.Add(new KeyValuePair<String, String>(SolutionName.ToUpperInvariant() + "_BUILD", null));
+                Defines.Add(new KeyValuePair<String, String>(SolutionName.ToUpperInvariant() + "_STATIC", null));
+            }
+            else if (ProductTargetType == TargetType.DynamicLibrary)
+            {
+                Defines.Add(new KeyValuePair<String, String>(SolutionName.ToUpperInvariant() + "_BUILD", null));
+                Defines.Add(new KeyValuePair<String, String>(SolutionName.ToUpperInvariant() + "_DYNAMIC", null));
+            }
+            else
+            {
+                throw new InvalidOperationException();
+            }
             var p = new Project
             {
                 Name = ProductName,
@@ -299,6 +314,7 @@ namespace TypeMake
                     {
                         TargetType = ProductTargetType,
                         IncludeDirectories = InlcudeDirectories,
+                        Defines = Defines,
                         Libs = Libs,
                         Files = Files
                     },
