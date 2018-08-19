@@ -18,14 +18,14 @@ namespace TypeMake
         {
             this.SolutionName = SolutionName;
             this.ProjectReferences = ProjectReferences;
-            this.OutputDirectory = OutputDirectory;
+            this.OutputDirectory = Path.GetFullPath(OutputDirectory);
             this.PbxprojTemplateText = PbxprojTemplateText;
         }
 
         public void Generate(bool EnableRebuild)
         {
             var PbxprojPath = Path.Combine(OutputDirectory, Path.Combine(SolutionName + ".xcodeproj", "project.pbxproj"));
-            var BaseDirPath = Path.GetDirectoryName(Path.GetDirectoryName(Path.GetFullPath(PbxprojPath)));
+            var BaseDirPath = Path.GetDirectoryName(Path.GetDirectoryName(PbxprojPath));
 
             var p = Plist.FromString(PbxprojTemplateText);
 
@@ -103,8 +103,8 @@ namespace TypeMake
             var GroupOrFile = Objects[GroupOrFileKey].Dict;
             var Type = GroupOrFile["isa"].String;
             if (Type != "PBXGroup") { return false; }
-            var Path = GroupOrFile.ContainsKey("path") ? GroupOrFile["path"].String : GroupOrFile.ContainsKey("name") ? GroupOrFile["name"].String : "";
-            var Parts = GetPathParts(Path).Where(p => p != "").ToArray();
+            var PathOrName = GroupOrFile.ContainsKey("path") ? GroupOrFile["path"].String : GroupOrFile.ContainsKey("name") ? GroupOrFile["name"].String : "";
+            var Parts = GetPathParts(PathOrName).Where(p => p != "").ToArray();
             if (Parts.Length > RelativePathStack.Count) { return false; }
             if (!Parts.SequenceEqual(RelativePathStack.Take(Parts.Length))) { return false; }
             foreach (var Part in Parts)
@@ -148,7 +148,7 @@ namespace TypeMake
                 FileObject.Add("isa", Value.CreateString("PBXFileReference"));
                 FileObject.Add("lastKnownFileType", Value.CreateString("wrapper.pb-project"));
                 FileObject.Add("name", Value.CreateString(FileName));
-                FileObject.Add("path", Value.CreateString(FileNameHandling.GetRelativePath(Project.FilePath, BaseDirPath).Replace('\\', '/')));
+                FileObject.Add("path", Value.CreateString(FileNameHandling.GetRelativePath(Path.GetFullPath(Project.FilePath), BaseDirPath).Replace('\\', '/')));
                 FileObject.Add("sourceTree", Value.CreateString("<group>"));
                 Objects.Add(Hash, Value.CreateDict(FileObject));
                 RelativePathToFileObjectKey.Add(RelativePath, Hash);

@@ -22,8 +22,8 @@ namespace TypeMake.Cpp
         {
             this.Project = Project;
             this.ProjectReferences = ProjectReferences;
-            this.InputDirectory = InputDirectory;
-            this.OutputDirectory = OutputDirectory;
+            this.InputDirectory = Path.GetFullPath(InputDirectory);
+            this.OutputDirectory = Path.GetFullPath(OutputDirectory);
             this.Toolchain = Toolchain;
             this.Compiler = Compiler;
             this.BuildingOperatingSystem = BuildingOperatingSystem;
@@ -33,7 +33,7 @@ namespace TypeMake.Cpp
         public void Generate(bool EnableRebuild)
         {
             var CMakeListsPath = Path.Combine(OutputDirectory, Path.Combine(Project.Name, "CMakeLists.txt"));
-            var BaseDirPath = Path.GetDirectoryName(Path.GetFullPath(CMakeListsPath));
+            var BaseDirPath = Path.GetDirectoryName(CMakeListsPath);
 
             var Lines = GenerateLines(CMakeListsPath, BaseDirPath).ToList();
             TextFile.WriteToFile(CMakeListsPath, String.Join("\n", Lines), new UTF8Encoding(false), !EnableRebuild);
@@ -48,7 +48,7 @@ namespace TypeMake.Cpp
 
             if ((conf.TargetType == TargetType.Executable) || (conf.TargetType == TargetType.DynamicLibrary))
             {
-                var LibDirectories = conf.LibDirectories.Select(d => FileNameHandling.GetRelativePath(d, BaseDirPath).Replace('\\', '/')).ToList();
+                var LibDirectories = conf.LibDirectories.Select(d => FileNameHandling.GetRelativePath(Path.GetFullPath(d), BaseDirPath).Replace('\\', '/')).ToList();
                 if (LibDirectories.Count != 0)
                 {
                     yield return @"link_directories(";
@@ -82,23 +82,23 @@ namespace TypeMake.Cpp
             {
                 if ((f.Type == FileType.CSource) || (f.Type == FileType.CppSource) || (f.Type == FileType.ObjectiveCSource) || (f.Type == FileType.ObjectiveCppSource))
                 {
-                    yield return "  " + FileNameHandling.GetRelativePath(f.Path, BaseDirPath).Replace('\\', '/');
+                    yield return "  " + FileNameHandling.GetRelativePath(Path.GetFullPath(f.Path), BaseDirPath).Replace('\\', '/');
                 }
             }
             yield return @")";
 
-            foreach (var g in conf.Files.GroupBy(f => Path.GetDirectoryName(f.Path)))
+            foreach (var g in conf.Files.GroupBy(f => Path.GetDirectoryName(Path.GetFullPath(f.Path))))
             {
                 var Name = FileNameHandling.GetRelativePath(g.Key, InputDirectory);
                 yield return $@"source_group({Name.Replace('\\', '/').Replace("/", @"\\")} FILES";
                 foreach (var f in g)
                 {
-                    yield return "  " + FileNameHandling.GetRelativePath(f.Path, BaseDirPath).Replace('\\', '/');
+                    yield return "  " + FileNameHandling.GetRelativePath(Path.GetFullPath(f.Path), BaseDirPath).Replace('\\', '/');
                 }
                 yield return @")";
             }
 
-            var IncludeDirectories = conf.IncludeDirectories.Select(d => FileNameHandling.GetRelativePath(d, BaseDirPath).Replace('\\', '/')).ToList();
+            var IncludeDirectories = conf.IncludeDirectories.Select(d => FileNameHandling.GetRelativePath(Path.GetFullPath(d), BaseDirPath).Replace('\\', '/')).ToList();
             if (IncludeDirectories.Count != 0)
             {
                 yield return @"target_include_directories(${PROJECT_NAME} PRIVATE";
