@@ -76,6 +76,10 @@ namespace TypeMake.Cpp
             {
                 throw new NotSupportedException("NotSupportedTargetType: " + conf.TargetType.ToString());
             }
+            if (!String.IsNullOrEmpty(Project.TargetName) && (Project.TargetName != Project.Name))
+            {
+                yield return $@"set_property(TARGET ${{PROJECT_NAME}} PROPERTY OUTPUT_NAME {Project.TargetName})";
+            }
 
             yield return @"target_sources(${PROJECT_NAME} PRIVATE";
             foreach (var f in conf.Files)

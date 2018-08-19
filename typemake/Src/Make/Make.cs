@@ -15,9 +15,14 @@ namespace TypeMake
         private Dictionary<String, List<String>> ModuleDependencies =
             new Dictionary<String, List<String>>
             {
+                //Modules
                 { "math", new List<String> { "core" } },
-                { "hello", new List<String> { "core", "math" } },
-                { "hello.ios", new List<String> { "core", "math" } },
+
+                //products
+                { "basic.static", new List<String> { "math" } },
+                { "standard.dynamic", new List<String> { "math" } },
+                { "hello.executable", new List<String> { "math" } },
+                { "hello.executable.ios", new List<String> { "math" } },
             };
 
         private ToolchainType Toolchain;
@@ -47,38 +52,37 @@ namespace TypeMake
             foreach (var ModulePath in Directory.EnumerateDirectories(Path.Combine(SourceDirectory, "modules"), "*", SearchOption.TopDirectoryOnly))
             {
                 var ModuleName = Path.GetFileName(ModulePath);
-                Projects.Add(GenerateModuleProject(ModuleName, ModulePath));
-                if (!((TargetOperationSystem == OperatingSystemType.Android) || (TargetOperationSystem == OperatingSystemType.iOS)))
+                var Extensions = ModuleName.Split('.').Skip(1).ToArray();
+                if (IsOperationSystemMatchExtensions(Extensions, TargetOperationSystem))
                 {
-                    foreach (var TestFile in GetFilesInDirectory(Path.Combine(ModulePath, "test")))
+                    Projects.Add(GenerateModuleProject(ModuleName, ModulePath));
+                    if (!((TargetOperationSystem == OperatingSystemType.Android) || (TargetOperationSystem == OperatingSystemType.iOS)))
                     {
-                        if (TestFile.Type != FileType.CppSource) { continue; }
-                        var TestName = ModuleName + "_" + Path.GetFileNameWithoutExtension(Regex.Replace(FileNameHandling.GetRelativePath(Path.GetFullPath(TestFile.Path), ModulePath), @"[\\/]", "_"));
-                        Projects.Add(GenerateTestProject(ModuleName, ModulePath, TestName, TestFile));
+                        foreach (var TestFile in GetFilesInDirectory(Path.Combine(ModulePath, "test"), TargetOperationSystem))
+                        {
+                            if (TestFile.Type != FileType.CppSource) { continue; }
+                            var TestName = ModuleName + "_" + Path.GetFileNameWithoutExtension(Regex.Replace(FileNameHandling.GetRelativePath(Path.GetFullPath(TestFile.Path), ModulePath), @"[\\/]", "_"));
+                            Projects.Add(GenerateTestProject(ModuleName, ModulePath, TestName, TestFile));
+                        }
                     }
                 }
             }
-            foreach (var SamplePath in Directory.EnumerateDirectories(Path.Combine(SourceDirectory, "samples"), "*", SearchOption.TopDirectoryOnly))
+            foreach (var ProductPath in Directory.EnumerateDirectories(Path.Combine(SourceDirectory, "products"), "*", SearchOption.TopDirectoryOnly))
             {
-                var SampleName = Path.GetFileName(SamplePath);
-                var Extension = Path.GetExtension(SampleName).TrimStart('.');
-                if (Extension.Equals("android", StringComparison.OrdinalIgnoreCase))
+                var ProductName = Path.GetFileName(ProductPath);
+                var Extensions = ProductName.Split('.').Skip(1).ToArray();
+                var ProductTargetType = TargetType.Executable;
+                if (Extensions.Contains("dynamic", StringComparer.OrdinalIgnoreCase))
                 {
-                    if (TargetOperationSystem == OperatingSystemType.Android)
-                    {
-                        //TODO
-                    }
+                    ProductTargetType = TargetType.DynamicLibrary;
                 }
-                else if (Extension.Equals("ios", StringComparison.OrdinalIgnoreCase))
+                else if (Extensions.Contains("static", StringComparer.OrdinalIgnoreCase))
                 {
-                    if (TargetOperationSystem == OperatingSystemType.iOS)
-                    {
-                        Projects.Add(GenerateSampleProject(SampleName, SamplePath));
-                    }
+                    ProductTargetType = TargetType.StaticLibrary;
                 }
-                else
+                if (IsOperationSystemMatchExtensions(Extensions, TargetOperationSystem))
                 {
-                    Projects.Add(GenerateSampleProject(SampleName, SamplePath));
+                    Projects.Add(GenerateProductProject(ProductName, ProductPath, ProductTargetType));
                 }
             }
             if (Toolchain == ToolchainType.Windows_VisualC)
@@ -112,7 +116,7 @@ namespace TypeMake
             var InlcudeDirectories = new List<String> { };
             var SourceDirectories = new List<String> { Path.Combine(ModulePath, "include"), Path.Combine(ModulePath, "src") };
             var Libs = new List<String> { };
-            var Files = SourceDirectories.SelectMany(d => GetFilesInDirectory(d)).ToList();
+            var Files = SourceDirectories.SelectMany(d => GetFilesInDirectory(d, TargetOperationSystem)).ToList();
             var ProjectReferences = new List<ProjectReference> { };
 
             var RelativeIncludeDirectories = new List<String>
@@ -253,19 +257,28 @@ namespace TypeMake
                 FilePath = Path.Combine(BuildDirectory, Path.Combine("projects", GetProjectFileName(TestName)))
             }, ProjectReferences);
         }
-        private KeyValuePair<ProjectReference, List<ProjectReference>> GenerateSampleProject(String SampleName, String SamplePath)
+        private KeyValuePair<ProjectReference, List<ProjectReference>> GenerateProductProject(String ProductName, String ProductPath, TargetType ProductTargetType)
         {
-            var InlcudeDirectories = new List<String> { SamplePath };
-            var SourceDirectories = new List<String> { SamplePath };
+            var InlcudeDirectories = new List<String> { ProductPath };
+            var SourceDirectories = new List<String> { ProductPath };
             var Libs = new List<String> { };
-            var Files = SourceDirectories.SelectMany(d => GetFilesInDirectory(d)).ToList();
+            var Files = SourceDirectories.SelectMany(d => GetFilesInDirectory(d, TargetOperationSystem)).ToList();
             var ProjectReferences = new List<ProjectReference> { };
 
-            if (ModuleDependencies.ContainsKey(SampleName))
+            var RelativeIncludeDirectories = new List<String>
             {
-                foreach (var ReferenceModule in GetAllModuleDependencies(SampleName, false))
+                "include",
+                "src"
+            };
+            foreach (var RelativeIncludeDirectory in RelativeIncludeDirectories)
+            {
+                InlcudeDirectories.Add(Path.GetFullPath(Path.Combine(ProductPath, RelativeIncludeDirectory)));
+            }
+            if (ModuleDependencies.ContainsKey(ProductName))
+            {
+                foreach (var ReferenceModule in GetAllModuleDependencies(ProductName, false))
                 {
-                    InlcudeDirectories.Add(Path.GetFullPath(Path.Combine(SamplePath, Path.Combine("..", Path.Combine("..", Path.Combine("modules", Path.Combine(ReferenceModule, "include")))))));
+                    InlcudeDirectories.Add(Path.GetFullPath(Path.Combine(ProductPath, Path.Combine("..", Path.Combine("..", Path.Combine("modules", Path.Combine(ReferenceModule, "include")))))));
                     ProjectReferences.Add(new ProjectReference
                     {
                         Id = GetIdForProject(ReferenceModule),
@@ -278,12 +291,13 @@ namespace TypeMake
 
             var p = new Project
             {
-                Name = SampleName,
+                Name = ProductName,
+                TargetName = ProductName.Split('.').Take(1).Single(),
                 Configurations = (new List<Configuration>
                 {
                     new Configuration
                     {
-                        TargetType = TargetType.Executable,
+                        TargetType = ProductTargetType,
                         IncludeDirectories = InlcudeDirectories,
                         Libs = Libs,
                         Files = Files
@@ -291,7 +305,7 @@ namespace TypeMake
                     new Configuration
                     {
                         TargetOperatingSystem = OperatingSystemType.iOS,
-                        BundleIdentifier = SolutionName + "." + SampleName
+                        BundleIdentifier = SolutionName + "." + ProductName
                     }
                 }).Concat(GetCommonConfigurations()).ToList()
             };
@@ -299,18 +313,18 @@ namespace TypeMake
             {
                 var VcxprojTemplateText = Resource.GetResourceText(@"Templates\vc15\Default.vcxproj");
                 var VcxprojFilterTemplateText = Resource.GetResourceText(@"Templates\vc15\Default.vcxproj.filters");
-                var g = new VcxprojGenerator(p, GetIdForProject(SampleName), ProjectReferences, SamplePath, Path.Combine(BuildDirectory, "projects"), VcxprojTemplateText, VcxprojFilterTemplateText, BuildingOperatingSystem, TargetOperationSystem);
+                var g = new VcxprojGenerator(p, GetIdForProject(ProductName), ProjectReferences, ProductPath, Path.Combine(BuildDirectory, "projects"), VcxprojTemplateText, VcxprojFilterTemplateText, BuildingOperatingSystem, TargetOperationSystem);
                 g.Generate(EnableRebuild);
             }
             else if (Toolchain == ToolchainType.Mac_XCode)
             {
                 var PbxprojTemplateText = Resource.GetResourceText(@"Templates\xcode9\Default.xcodeproj\project.pbxproj");
-                var g = new PbxprojGenerator(p, ProjectReferences, SamplePath, Path.Combine(BuildDirectory, "projects"), PbxprojTemplateText, BuildingOperatingSystem, TargetOperationSystem);
+                var g = new PbxprojGenerator(p, ProjectReferences, ProductPath, Path.Combine(BuildDirectory, "projects"), PbxprojTemplateText, BuildingOperatingSystem, TargetOperationSystem);
                 g.Generate(EnableRebuild);
             }
             else if (Toolchain == ToolchainType.CMake)
             {
-                var g = new CMakeProjectGenerator(p, ProjectReferences, SamplePath, Path.Combine(BuildDirectory, "projects"), Toolchain, Compiler, BuildingOperatingSystem, TargetOperationSystem);
+                var g = new CMakeProjectGenerator(p, ProjectReferences, ProductPath, Path.Combine(BuildDirectory, "projects"), Toolchain, Compiler, BuildingOperatingSystem, TargetOperationSystem);
                 g.Generate(EnableRebuild);
             }
             else
@@ -319,10 +333,10 @@ namespace TypeMake
             }
             return new KeyValuePair<ProjectReference, List<ProjectReference>>(new ProjectReference
             {
-                Id = GetIdForProject(SampleName),
-                Name = SampleName,
-                VirtualDir = "samples",
-                FilePath = Path.Combine(BuildDirectory, Path.Combine("projects", GetProjectFileName(SampleName)))
+                Id = GetIdForProject(ProductName),
+                Name = ProductName,
+                VirtualDir = "products",
+                FilePath = Path.Combine(BuildDirectory, Path.Combine("projects", GetProjectFileName(ProductName)))
             }, ProjectReferences);
         }
 
@@ -360,7 +374,7 @@ namespace TypeMake
             };
         }
 
-        private static List<Cpp.File> GetFilesInDirectory(String d)
+        private static List<Cpp.File> GetFilesInDirectory(String d, OperatingSystemType TargetOperationSystem)
         {
             if (!Directory.Exists(d)) { return new List<Cpp.File> { }; }
             var l = new List<Cpp.File>();
@@ -368,6 +382,12 @@ namespace TypeMake
             {
                 var FilePath = Path.GetFullPath(FilePathRelative);
                 var Ext = Path.GetExtension(FilePath).TrimStart('.').ToLowerInvariant();
+                var Extensions = Path.GetFileName(FilePath).Split('.', '_').Skip(1).ToList();
+                if (!IsOperationSystemMatchExtensions(Extensions, TargetOperationSystem))
+                {
+                    l.Add(new Cpp.File { Path = FilePath, Type = FileType.Unknown });
+                    continue;
+                }
                 if ((Ext == "h") || (Ext == "hh") || (Ext == "hpp") || (Ext == "hxx"))
                 {
                     l.Add(new Cpp.File { Path = FilePath, Type = FileType.Header });
@@ -378,14 +398,7 @@ namespace TypeMake
                 }
                 else if ((Ext == "cc") || (Ext == "cpp") || (Ext == "cxx"))
                 {
-                    if (Regex.IsMatch(Path.GetFileNameWithoutExtension(FilePath), @"(_linux|_mac|_android|_ios)$", RegexOptions.ExplicitCapture))
-                    {
-                        l.Add(new Cpp.File { Path = FilePath, Type = FileType.Unknown });
-                    }
-                    else
-                    {
-                        l.Add(new Cpp.File { Path = FilePath, Type = FileType.CppSource });
-                    }
+                    l.Add(new Cpp.File { Path = FilePath, Type = FileType.CppSource });
                 }
                 else if (Ext == "m")
                 {
@@ -443,7 +456,7 @@ namespace TypeMake
             {
                 var m = Queue.Dequeue();
                 if (Added.Contains(m)) { continue; }
-                if (Added.Count != 0 || ContainSelf)
+                if (!((Added.Count == 0) && !ContainSelf))
                 {
                     l.Add(m);
                 }
@@ -476,6 +489,28 @@ namespace TypeMake
             {
                 throw new NotSupportedException();
             }
+        }
+
+        private static bool IsOperationSystemMatchExtensions(IEnumerable<String> Extensions, OperatingSystemType TargetOperationSystem)
+        {
+            var Names = new HashSet<String>(Enum.GetNames(typeof(OperatingSystemType)), StringComparer.OrdinalIgnoreCase);
+            var TargetName = Enum.GetName(typeof(OperatingSystemType), TargetOperationSystem);
+            foreach (var e in Extensions)
+            {
+                if (String.Equals(e, TargetName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+                if ((TargetOperationSystem == OperatingSystemType.Windows) && String.Equals(e, "Win", StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+                if (Names.Contains(e))
+                {
+                    return false;
+                }
+            }
+            return true;
         }
     }
 }

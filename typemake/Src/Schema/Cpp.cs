@@ -86,6 +86,7 @@ namespace TypeMake.Cpp
     public class Project
     {
         public String Name;
+        public String TargetName;
         public List<Configuration> Configurations;
     }
 }
