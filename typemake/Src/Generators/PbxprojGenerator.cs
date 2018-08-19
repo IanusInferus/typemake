@@ -145,7 +145,8 @@ namespace TypeMake.Cpp
                     }
                 }
                 Target["name"] = Value.CreateString(Project.Name);
-                Target["productName"] = Value.CreateString(Project.Name);
+                var ProductName = !String.IsNullOrEmpty(Project.TargetName) ? Project.TargetName : Project.Name;
+                Target["productName"] = Value.CreateString(ProductName);
                 var TargetFile = Objects[Target["productReference"].String];
 
                 if (conf.TargetType == TargetType.Executable)
@@ -163,19 +164,19 @@ namespace TypeMake.Cpp
                         throw new NotSupportedException("NotSupportedTargetOperatingSystem: " + TargetOperatingSystem.ToString());
                     }
                     TargetFile.Dict["explicitFileType"] = Value.CreateString("compiled.mach-o.executable");
-                    TargetFile.Dict["path"] = Value.CreateString(Project.Name);
+                    TargetFile.Dict["path"] = Value.CreateString(ProductName);
                 }
                 else if (conf.TargetType == TargetType.StaticLibrary)
                 {
                     Target["productType"] = Value.CreateString("com.apple.product-type.library.static");
                     TargetFile.Dict["explicitFileType"] = Value.CreateString("archive.ar");
-                    TargetFile.Dict["path"] = Value.CreateString("lib" + Project.Name + ".a");
+                    TargetFile.Dict["path"] = Value.CreateString("lib" + ProductName + ".a");
                 }
                 else if (conf.TargetType == TargetType.DynamicLibrary)
                 {
                     Target["productType"] = Value.CreateString("com.apple.product-type.library.dynamic");
                     TargetFile.Dict["explicitFileType"] = Value.CreateString("compiled.mach-o.dylib");
-                    TargetFile.Dict["path"] = Value.CreateString("lib" + Project.Name + ".dylib");
+                    TargetFile.Dict["path"] = Value.CreateString("lib" + ProductName + ".dylib");
                 }
                 else
                 {

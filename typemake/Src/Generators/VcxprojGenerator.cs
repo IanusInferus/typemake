@@ -118,6 +118,10 @@ namespace TypeMake.Cpp
                     PropertyGroup = new XElement(xn + "PropertyGroup", new XAttribute("Condition", "'$(Configuration)|$(Platform)'=='" + Name + "'"));
                 }
 
+                if (!String.IsNullOrEmpty(Project.TargetName) && (Project.TargetName != Project.Name))
+                {
+                    PropertyGroup.SetElementValue(xn + "TargetName", Project.TargetName);
+                }
                 if (conf.TargetType == TargetType.Executable)
                 {
                     PropertyGroup.SetElementValue(xn + "ConfigurationType", "Application");
