@@ -21,8 +21,8 @@ namespace TypeMake.Cpp
         {
             this.Project = Project;
             this.ProjectReferences = ProjectReferences;
-            this.InputDirectory = InputDirectory;
-            this.OutputDirectory = OutputDirectory;
+            this.InputDirectory = Path.GetFullPath(InputDirectory);
+            this.OutputDirectory = Path.GetFullPath(OutputDirectory);
             this.PbxprojTemplateText = PbxprojTemplateText;
             this.BuildingOperatingSystem = BuildingOperatingSystem;
             this.TargetOperatingSystem = TargetOperatingSystem;
@@ -31,7 +31,7 @@ namespace TypeMake.Cpp
         public void Generate(bool EnableRebuild)
         {
             var PbxprojPath = Path.Combine(OutputDirectory, Path.Combine(Project.Name + ".xcodeproj", "project.pbxproj"));
-            var BaseDirPath = Path.GetDirectoryName(Path.GetDirectoryName(Path.GetFullPath(PbxprojPath)));
+            var BaseDirPath = Path.GetDirectoryName(Path.GetDirectoryName(PbxprojPath));
 
             var p = Plist.FromString(PbxprojTemplateText);
 
@@ -82,7 +82,7 @@ namespace TypeMake.Cpp
             {
                 foreach (var f in conf.Files)
                 {
-                    var PathParts = GetPathParts(FileNameHandling.GetRelativePath(f.Path, InputDirectory).Replace('\\', '/'));
+                    var PathParts = GetPathParts(FileNameHandling.GetRelativePath(Path.GetFullPath(f.Path), InputDirectory).Replace('\\', '/'));
                     PathParts[0] = Path.Combine(FileNameHandling.GetRelativePath(InputDirectory, OutputDirectory), PathParts[0]).Replace('\\', '/');
                     var RelativePath = String.Join("/", PathParts);
                     if (RelativePathToObjects.ContainsKey(RelativePath)) { continue; }
@@ -117,7 +117,7 @@ namespace TypeMake.Cpp
                         {
                             if ((f.Type == FileType.CSource) || (f.Type == FileType.CppSource) || (f.Type == FileType.ObjectiveCSource) || (f.Type == FileType.ObjectiveCppSource))
                             {
-                                var PathParts = GetPathParts(FileNameHandling.GetRelativePath(f.Path, InputDirectory).Replace('\\', '/'));
+                                var PathParts = GetPathParts(FileNameHandling.GetRelativePath(Path.GetFullPath(f.Path), InputDirectory).Replace('\\', '/'));
                                 PathParts[0] = Path.Combine(FileNameHandling.GetRelativePath(InputDirectory, OutputDirectory), PathParts[0]).Replace('\\', '/');
                                 var RelativePath = String.Join("/", PathParts);
                                 var File = new Dictionary<String, Value>();
@@ -191,7 +191,7 @@ namespace TypeMake.Cpp
 
                 var conf = ConfigurationUtils.GetMergedConfiguration(ToolchainType.Mac_XCode, CompilerType.clang, BuildingOperatingSystem, TargetOperatingSystem, ConfigurationType, null, Project.Configurations);
 
-                var IncludeDirectories = conf.IncludeDirectories.Select(d => FileNameHandling.GetRelativePath(d, BaseDirPath).Replace('\\', '/')).ToList();
+                var IncludeDirectories = conf.IncludeDirectories.Select(d => FileNameHandling.GetRelativePath(Path.GetFullPath(d), BaseDirPath).Replace('\\', '/')).ToList();
                 if (IncludeDirectories.Count != 0)
                 {
                     BuildSettings.SetItem("HEADER_SEARCH_PATHS", Value.CreateArray(IncludeDirectories.Concat(new List<String> { "$(inherited)" }).Select(d => Value.CreateString(d)).ToList()));
@@ -214,7 +214,7 @@ namespace TypeMake.Cpp
 
                 if ((conf.TargetType == TargetType.Executable) || (conf.TargetType == TargetType.DynamicLibrary))
                 {
-                    var LibDirectories = conf.LibDirectories.Select(d => FileNameHandling.GetRelativePath(d, BaseDirPath).Replace('\\', '/')).ToList();
+                    var LibDirectories = conf.LibDirectories.Select(d => FileNameHandling.GetRelativePath(Path.GetFullPath(d), BaseDirPath).Replace('\\', '/')).ToList();
                     if (LibDirectories.Count != 0)
                     {
                         BuildSettings.SetItem("LIBRARY_SEARCH_PATHS", Value.CreateArray(LibDirectories.Concat(new List<String> { "$(inherited)" }).Select(d => Value.CreateString(d)).ToList()));

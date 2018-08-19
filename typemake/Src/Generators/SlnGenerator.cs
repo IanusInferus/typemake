@@ -19,14 +19,14 @@ namespace TypeMake
             this.SolutionName = SolutionName;
             this.SolutionId = SolutionId;
             this.ProjectReferences = ProjectReferences;
-            this.OutputDirectory = OutputDirectory;
+            this.OutputDirectory = Path.GetFullPath(OutputDirectory);
             this.SlnTemplateText = SlnTemplateText;
         }
 
         public void Generate(bool EnableRebuild)
         {
             var s = new SlnFile();
-            s.FullPath = Path.GetFullPath(Path.Combine(OutputDirectory, SolutionName + ".sln"));
+            s.FullPath = Path.Combine(OutputDirectory, SolutionName + ".sln");
             using (var sr = new StringReader(SlnTemplateText))
             {
                 s.Read(sr);
@@ -57,12 +57,12 @@ namespace TypeMake
                 if (!Filters.ContainsKey(Dir))
                 {
                     var CurrentDir = Dir;
-                    while ((CurrentDir != "") && !Filters.ContainsKey(CurrentDir))
+                    while (!String.IsNullOrEmpty(CurrentDir) && !Filters.ContainsKey(CurrentDir))
                     {
                         var g = Guid.ParseExact(Hash.GetHashForPath(CurrentDir, 32), "N").ToString().ToUpper();
                         Filters.Add(CurrentDir, g);
                         CurrentDir = Path.GetDirectoryName(CurrentDir);
-                        if (CurrentDir != "")
+                        if (!String.IsNullOrEmpty(CurrentDir))
                         {
                             var gUpper = Guid.ParseExact(Hash.GetHashForPath(CurrentDir, 32), "N").ToString().ToUpper();
                             NestedProjects.Properties.SetValue("{" + g + "}", "{" + gUpper + "}");
@@ -74,7 +74,7 @@ namespace TypeMake
                 {
                     TypeGuid = "{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}",
                     Name = Project.Name,
-                    FilePath = FileNameHandling.GetRelativePath(Project.FilePath, OutputDirectory),
+                    FilePath = FileNameHandling.GetRelativePath(Path.GetFullPath(Project.FilePath), OutputDirectory),
                     Id = "{" + Project.Id + "}"
                 });
 

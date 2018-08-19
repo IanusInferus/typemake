@@ -26,8 +26,8 @@ namespace TypeMake.Cpp
             this.Project = Project;
             this.ProjectId = ProjectId;
             this.ProjectReferences = ProjectReferences;
-            this.InputDirectory = InputDirectory;
-            this.OutputDirectory = OutputDirectory;
+            this.InputDirectory = Path.GetFullPath(InputDirectory);
+            this.OutputDirectory = Path.GetFullPath(OutputDirectory);
             this.VcxprojTemplateText = VcxprojTemplateText;
             this.VcxprojFilterTemplateText = VcxprojFilterTemplateText;
             this.BuildingOperatingSystem = BuildingOperatingSystem;
@@ -147,7 +147,7 @@ namespace TypeMake.Cpp
                     ClCompile = new XElement(xn + "ClCompile");
                     ItemDefinitionGroup.Add(ClCompile);
                 }
-                var IncludeDirectories = conf.IncludeDirectories.Select(d => FileNameHandling.GetRelativePath(d, BaseDirPath)).ToList();
+                var IncludeDirectories = conf.IncludeDirectories.Select(d => FileNameHandling.GetRelativePath(Path.GetFullPath(d), BaseDirPath)).ToList();
                 if (IncludeDirectories.Count != 0)
                 {
                     ClCompile.SetElementValue(xn + "AdditionalIncludeDirectories", String.Join(";", IncludeDirectories) + ";%(AdditionalIncludeDirectories)");
@@ -171,7 +171,7 @@ namespace TypeMake.Cpp
                         Link = new XElement(xn + "Link");
                         ItemDefinitionGroup.Add(ClCompile);
                     }
-                    var LibDirectories = conf.LibDirectories.Select(d => FileNameHandling.GetRelativePath(d, BaseDirPath)).ToList();
+                    var LibDirectories = conf.LibDirectories.Select(d => FileNameHandling.GetRelativePath(Path.GetFullPath(d), BaseDirPath)).ToList();
                     if (LibDirectories.Count != 0)
                     {
                         Link.SetElementValue(xn + "AdditionalLibraryDirectories", String.Join(";", LibDirectories) + ";%(AdditionalLibraryDirectories)");
@@ -221,7 +221,7 @@ namespace TypeMake.Cpp
                 }
                 foreach (var f in conf.Files)
                 {
-                    var RelativePath = FileNameHandling.GetRelativePath(f.Path, BaseDirPath);
+                    var RelativePath = FileNameHandling.GetRelativePath(Path.GetFullPath(f.Path), BaseDirPath);
                     XElement x;
                     if (f.Type == FileType.Header)
                     {
@@ -259,7 +259,7 @@ namespace TypeMake.Cpp
             }
             foreach (var p in ProjectReferences)
             {
-                var RelativePath = FileNameHandling.GetRelativePath(p.FilePath, BaseDirPath);
+                var RelativePath = FileNameHandling.GetRelativePath(Path.GetFullPath(p.FilePath), BaseDirPath);
                 var x = new XElement(xn + "ProjectReference", new XAttribute("Include", RelativePath));
                 x.Add(new XElement(xn + "Project", "{" + p.Id.ToUpper() + "}"));
                 x.Add(new XElement(xn + "Name", "{" + p.Name + "}"));
@@ -277,7 +277,7 @@ namespace TypeMake.Cpp
         private void GenerateVcxprojFilters(bool EnableRebuild)
         {
             var FilterPath = Path.Combine(OutputDirectory, Project.Name + ".vcxproj") + ".filters";
-            var BaseDirPath = Path.GetDirectoryName(Path.GetFullPath(FilterPath));
+            var BaseDirPath = Path.GetDirectoryName(FilterPath);
 
             var xFilter = XmlFile.FromString(VcxprojFilterTemplateText);
             Trim(xFilter);
@@ -328,8 +328,8 @@ namespace TypeMake.Cpp
                     if (Files.Contains(f.Path)) { continue; }
                     Files.Add(f.Path);
 
-                    var RelativePath = FileNameHandling.GetRelativePath(f.Path, BaseDirPath);
-                    var Dir = Path.GetDirectoryName(FileNameHandling.GetRelativePath(f.Path, InputDirectory)).Replace('/', '\\');
+                    var RelativePath = FileNameHandling.GetRelativePath(Path.GetFullPath(f.Path), BaseDirPath);
+                    var Dir = Path.GetDirectoryName(FileNameHandling.GetRelativePath(Path.GetFullPath(f.Path), InputDirectory)).Replace('/', '\\');
                     while (Dir.StartsWith(@"..\"))
                     {
                         Dir = Dir.Substring(3);
@@ -337,7 +337,7 @@ namespace TypeMake.Cpp
                     if (!Filters.Contains(Dir))
                     {
                         var CurrentDir = Dir;
-                        while (CurrentDir != "" && !Filters.Contains(CurrentDir))
+                        while (!String.IsNullOrEmpty(CurrentDir) && !Filters.Contains(CurrentDir))
                         {
                             Filters.Add(CurrentDir);
                             CurrentDir = Path.GetDirectoryName(CurrentDir);

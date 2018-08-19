@@ -16,7 +16,7 @@ namespace TypeMake
         {
             this.SolutionName = SolutionName;
             this.ProjectReferences = ProjectReferences;
-            this.OutputDirectory = OutputDirectory;
+            this.OutputDirectory = Path.GetFullPath(OutputDirectory);
         }
 
         public void Generate(bool EnableRebuild)
@@ -33,7 +33,7 @@ namespace TypeMake
             yield return $@"project({SolutionName})";
             foreach (var p in ProjectReferences)
             {
-                yield return @"add_subdirectory(" + FileNameHandling.GetRelativePath(p.FilePath, OutputDirectory).Replace('\\', '/') + ")";
+                yield return @"add_subdirectory(" + FileNameHandling.GetRelativePath(Path.GetFullPath(p.FilePath), OutputDirectory).Replace('\\', '/') + ")";
             }
             yield return "";
         }

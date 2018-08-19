@@ -35,8 +35,8 @@ namespace TypeMake
             this.Toolchain = Toolchain;
             this.Compiler = Compiler;
             this.TargetOperationSystem = TargetOperationSystem;
-            this.SourceDirectory = SourceDirectory;
-            this.BuildDirectory = BuildDirectory;
+            this.SourceDirectory = Path.GetFullPath(SourceDirectory);
+            this.BuildDirectory = Path.GetFullPath(BuildDirectory);
             this.EnableRebuild = EnableRebuild;
             this.BuildingOperatingSystem = OperatingSystemType.Windows;
         }
@@ -53,7 +53,7 @@ namespace TypeMake
                     foreach (var TestFile in GetFilesInDirectory(Path.Combine(ModulePath, "test")))
                     {
                         if (TestFile.Type != FileType.CppSource) { continue; }
-                        var TestName = ModuleName + "_" + Path.GetFileNameWithoutExtension(Regex.Replace(FileNameHandling.GetRelativePath(TestFile.Path, ModulePath), @"[\\/]", "_"));
+                        var TestName = ModuleName + "_" + Path.GetFileNameWithoutExtension(Regex.Replace(FileNameHandling.GetRelativePath(Path.GetFullPath(TestFile.Path), ModulePath), @"[\\/]", "_"));
                         Projects.Add(GenerateTestProject(ModuleName, ModulePath, TestName, TestFile));
                     }
                 }
@@ -364,8 +364,9 @@ namespace TypeMake
         {
             if (!Directory.Exists(d)) { return new List<Cpp.File> { }; }
             var l = new List<Cpp.File>();
-            foreach (var FilePath in Directory.EnumerateFiles(d, "*", SearchOption.AllDirectories))
+            foreach (var FilePathRelative in Directory.EnumerateFiles(d, "*", SearchOption.AllDirectories))
             {
+                var FilePath = Path.GetFullPath(FilePathRelative);
                 var Ext = Path.GetExtension(FilePath).TrimStart('.').ToLowerInvariant();
                 if ((Ext == "h") || (Ext == "hh") || (Ext == "hpp") || (Ext == "hxx"))
                 {
