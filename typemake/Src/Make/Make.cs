@@ -23,6 +23,7 @@ namespace TypeMake
                 { "standard.dynamic", new List<String> { "math" } },
                 { "hello.executable", new List<String> { "math" } },
                 { "hello.executable.ios", new List<String> { "math" } },
+                { "hello.gradle.android", new List<String> { "math" } },
             };
 
         private ToolchainType Toolchain;
@@ -80,6 +81,10 @@ namespace TypeMake
                 {
                     ProductTargetType = TargetType.StaticLibrary;
                 }
+                else if (Extensions.Contains("gradle", StringComparer.OrdinalIgnoreCase))
+                {
+                    ProductTargetType = TargetType.GradleApplication;
+                }
                 if (IsOperationSystemMatchExtensions(Extensions, TargetOperationSystem))
                 {
                     Projects.Add(GenerateProductProject(ProductName, ProductPath, ProductTargetType));
@@ -98,6 +103,14 @@ namespace TypeMake
                 g.Generate(EnableRebuild);
             }
             else if (Toolchain == ToolchainType.CMake)
+            {
+                var ProjectDict = Projects.ToDictionary(p => p.Key.Name, p => p.Key);
+                var ProjectDependencies = Projects.ToDictionary(p => ProjectDict[p.Key.Name], p => p.Value.Select(n => ProjectDict[n.Name]).ToList());
+                var SortedProjects = Projects.Select(p => p.Key).PartialOrderBy(p => ProjectDependencies.ContainsKey(p) ? ProjectDependencies[p] : null).ToList();
+                var g = new CMakeSolutionGenerator(SolutionName, SortedProjects, BuildDirectory);
+                g.Generate(EnableRebuild);
+            }
+            else if (Toolchain == ToolchainType.Gradle_CMake)
             {
                 var ProjectDict = Projects.ToDictionary(p => p.Key.Name, p => p.Key);
                 var ProjectDependencies = Projects.ToDictionary(p => ProjectDict[p.Key.Name], p => p.Value.Select(n => ProjectDict[n.Name]).ToList());
@@ -168,6 +181,11 @@ namespace TypeMake
                 g.Generate(EnableRebuild);
             }
             else if (Toolchain == ToolchainType.CMake)
+            {
+                var g = new CMakeProjectGenerator(p, ProjectReferences, ModulePath, Path.Combine(BuildDirectory, "projects"), Toolchain, Compiler, BuildingOperatingSystem, TargetOperationSystem);
+                g.Generate(EnableRebuild);
+            }
+            else if (Toolchain == ToolchainType.Gradle_CMake)
             {
                 var g = new CMakeProjectGenerator(p, ProjectReferences, ModulePath, Path.Combine(BuildDirectory, "projects"), Toolchain, Compiler, BuildingOperatingSystem, TargetOperationSystem);
                 g.Generate(EnableRebuild);
@@ -245,6 +263,11 @@ namespace TypeMake
                 var g = new CMakeProjectGenerator(p, ProjectReferences, Path.GetDirectoryName(TestFile.Path), Path.Combine(BuildDirectory, "projects"), Toolchain, Compiler, BuildingOperatingSystem, TargetOperationSystem);
                 g.Generate(EnableRebuild);
             }
+            else if (Toolchain == ToolchainType.Gradle_CMake)
+            {
+                var g = new CMakeProjectGenerator(p, ProjectReferences, Path.GetDirectoryName(TestFile.Path), Path.Combine(BuildDirectory, "projects"), Toolchain, Compiler, BuildingOperatingSystem, TargetOperationSystem);
+                g.Generate(EnableRebuild);
+            }
             else
             {
                 throw new NotSupportedException();
@@ -300,6 +323,9 @@ namespace TypeMake
                 Defines.Add(new KeyValuePair<String, String>(SolutionName.ToUpperInvariant() + "_BUILD", null));
                 Defines.Add(new KeyValuePair<String, String>(SolutionName.ToUpperInvariant() + "_DYNAMIC", null));
             }
+            else if (ProductTargetType == TargetType.GradleApplication)
+            {
+            }
             else
             {
                 throw new InvalidOperationException();
@@ -339,6 +365,11 @@ namespace TypeMake
                 g.Generate(EnableRebuild);
             }
             else if (Toolchain == ToolchainType.CMake)
+            {
+                var g = new CMakeProjectGenerator(p, ProjectReferences, ProductPath, Path.Combine(BuildDirectory, "projects"), Toolchain, Compiler, BuildingOperatingSystem, TargetOperationSystem);
+                g.Generate(EnableRebuild);
+            }
+            else if (Toolchain == ToolchainType.Gradle_CMake)
             {
                 var g = new CMakeProjectGenerator(p, ProjectReferences, ProductPath, Path.Combine(BuildDirectory, "projects"), Toolchain, Compiler, BuildingOperatingSystem, TargetOperationSystem);
                 g.Generate(EnableRebuild);
@@ -453,7 +484,7 @@ namespace TypeMake
                 ProjectIds.Add(ProjectName, g);
                 return g;
             }
-            else if (Toolchain == ToolchainType.CMake)
+            else if ((Toolchain == ToolchainType.CMake) || (Toolchain == ToolchainType.Gradle_CMake))
             {
                 return "";
             }
@@ -497,7 +528,7 @@ namespace TypeMake
             {
                 return ProjectName + ".xcodeproj";
             }
-            else if (Toolchain == ToolchainType.CMake)
+            else if ((Toolchain == ToolchainType.CMake) || (Toolchain == ToolchainType.Gradle_CMake))
             {
                 return ProjectName;
             }
