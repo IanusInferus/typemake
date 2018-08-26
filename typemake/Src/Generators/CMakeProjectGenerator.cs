@@ -46,7 +46,7 @@ namespace TypeMake.Cpp
             yield return @"cmake_minimum_required(VERSION 3.0.2)";
             yield return $@"project({Project.Name})";
 
-            if ((conf.TargetType == TargetType.Executable) || (conf.TargetType == TargetType.DynamicLibrary))
+            if ((conf.TargetType == TargetType.Executable) || (conf.TargetType == TargetType.DynamicLibrary) || (conf.TargetType == TargetType.GradleApplication))
             {
                 var LibDirectories = conf.LibDirectories.Select(d => FileNameHandling.GetRelativePath(Path.GetFullPath(d), BaseDirPath).Replace('\\', '/')).ToList();
                 if (LibDirectories.Count != 0)
@@ -68,7 +68,7 @@ namespace TypeMake.Cpp
             {
                 yield return @"add_library(${PROJECT_NAME} STATIC """")";
             }
-            else if (conf.TargetType == TargetType.DynamicLibrary)
+            else if ((conf.TargetType == TargetType.DynamicLibrary) || (conf.TargetType == TargetType.GradleApplication))
             {
                 yield return @"add_library(${PROJECT_NAME} SHARED """")";
             }
@@ -79,6 +79,18 @@ namespace TypeMake.Cpp
             if (!String.IsNullOrEmpty(Project.TargetName) && (Project.TargetName != Project.Name))
             {
                 yield return $@"set_property(TARGET ${{PROJECT_NAME}} PROPERTY OUTPUT_NAME {Project.TargetName})";
+            }
+            if (conf.Toolchain == ToolchainType.Gradle_CMake)
+            {
+                yield return $@"set_property(TARGET ${{PROJECT_NAME}} PROPERTY ARCHIVE_OUTPUT_DIRECTORY ${{CMAKE_CURRENT_BINARY_DIR}}/../../${{ANDROID_ABI}}_${{CMAKE_BUILD_TYPE}})";
+                yield return $@"set_property(TARGET ${{PROJECT_NAME}} PROPERTY LIBRARY_OUTPUT_DIRECTORY ${{CMAKE_CURRENT_BINARY_DIR}}/../../${{ANDROID_ABI}}_${{CMAKE_BUILD_TYPE}})";
+                yield return $@"set_property(TARGET ${{PROJECT_NAME}} PROPERTY RUNTIME_OUTPUT_DIRECTORY ${{CMAKE_CURRENT_BINARY_DIR}}/../../${{ANDROID_ABI}}_${{CMAKE_BUILD_TYPE}})";
+            }
+            else
+            {
+                yield return $@"set_property(TARGET ${{PROJECT_NAME}} PROPERTY ARCHIVE_OUTPUT_DIRECTORY ${{CMAKE_CURRENT_BINARY_DIR}}/../../${{CMAKE_BUILD_TYPE}})";
+                yield return $@"set_property(TARGET ${{PROJECT_NAME}} PROPERTY LIBRARY_OUTPUT_DIRECTORY ${{CMAKE_CURRENT_BINARY_DIR}}/../../${{CMAKE_BUILD_TYPE}})";
+                yield return $@"set_property(TARGET ${{PROJECT_NAME}} PROPERTY RUNTIME_OUTPUT_DIRECTORY ${{CMAKE_CURRENT_BINARY_DIR}}/../../${{CMAKE_BUILD_TYPE}})";
             }
 
             yield return @"target_sources(${PROJECT_NAME} PRIVATE";
@@ -124,19 +136,19 @@ namespace TypeMake.Cpp
             }
             var CFlags = conf.CFlags;
             var CppFlags = conf.CppFlags;
-            var CFlagStr = String.Join("", CFlags.Select(f => (f == null ? "" : Regex.IsMatch(f, @"[ ""^|]") ? "\"" + f.Replace("\"", "\"\"") + "\"" : f)));
-            var CppFlagStr = String.Join("", CppFlags.Select(f => (f == null ? "" : Regex.IsMatch(f, @"[ ""^|]") ? "\"" + f.Replace("\"", "\"\"") + "\"" : f)));
+            var CFlagStr = String.Join(" ", CFlags.Select(f => (f == null ? "" : Regex.IsMatch(f, @"[ ""^|]") ? "\"" + f.Replace("\"", "\"\"") + "\"" : f)));
+            var CppFlagStr = String.Join(" ", CppFlags.Select(f => (f == null ? "" : Regex.IsMatch(f, @"[ ""^|]") ? "\"" + f.Replace("\"", "\"\"") + "\"" : f)));
             if (CFlags.Count + CppFlags.Count != 0)
             {
                 yield return @"target_compile_options(${PROJECT_NAME} PRIVATE " + CFlagStr + (CppFlags.Count > 0 ? "$<$<COMPILE_LANGUAGE:CXX>:" + CppFlagStr + ">" : "") + ")";
             }
 
-            if ((conf.TargetType == TargetType.Executable) || (conf.TargetType == TargetType.DynamicLibrary))
+            if ((conf.TargetType == TargetType.Executable) || (conf.TargetType == TargetType.DynamicLibrary) || (conf.TargetType == TargetType.GradleApplication))
             {
                 var LinkerFlags = conf.LinkerFlags;
                 if (LinkerFlags.Count != 0)
                 {
-                    var LinkerFlagStr = String.Join("", CFlags.Select(f => (f == null ? "" : Regex.IsMatch(f, @"[ ""^|]") ? "\"" + f.Replace("\"", "\"\"") + "\"" : f)));
+                    var LinkerFlagStr = String.Join(" ", CFlags.Select(f => (f == null ? "" : Regex.IsMatch(f, @"[ ""^|]") ? "\"" + f.Replace("\"", "\"\"") + "\"" : f)));
                     yield return @"set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS " + LinkerFlagStr + ")";
                 }
 

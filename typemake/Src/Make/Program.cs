@@ -32,7 +32,7 @@ namespace TypeMake
             if (argv.Length >= 1)
             {
                 var Target = args[0];
-                if (Target == "win")
+                if ((Target == "win") || (Target == "windows"))
                 {
                     if (argv.Length == 3)
                     {
@@ -80,6 +80,19 @@ namespace TypeMake
                         var EnableRebuild = options.ContainsKey("rebuild");
 
                         var m = new Make(Cpp.ToolchainType.Mac_XCode, Cpp.CompilerType.clang, Cpp.OperatingSystemType.iOS, SourceDirectory, BuildDirectory, EnableRebuild);
+                        m.Execute();
+                        return 0;
+                    }
+                }
+                else if (Target == "android")
+                {
+                    if (argv.Length == 3)
+                    {
+                        var SourceDirectory = argv[1];
+                        var BuildDirectory = argv[2];
+                        var EnableRebuild = options.ContainsKey("rebuild");
+
+                        var m = new Make(Cpp.ToolchainType.Gradle_CMake, Cpp.CompilerType.clang, Cpp.OperatingSystemType.Android, SourceDirectory, BuildDirectory, EnableRebuild);
                         m.Execute();
                         return 0;
                     }

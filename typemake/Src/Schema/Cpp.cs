@@ -7,14 +7,15 @@ namespace TypeMake.Cpp
     {
         Executable,
         StaticLibrary,
-        DynamicLibrary
+        DynamicLibrary,
+        GradleApplication
     }
     public enum ToolchainType
     {
         Windows_VisualC,
         Mac_XCode,
         CMake,
-        NDK
+        Gradle_CMake
     }
     public enum CompilerType
     {
