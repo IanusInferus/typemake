@@ -1,0 +1,49 @@
+apply plugin: 'com.android.library'
+
+android {
+    compileSdkVersion 27
+    buildToolsVersion "27.0.3"
+    defaultConfig {
+        minSdkVersion 15
+        targetSdkVersion 27
+        versionCode 1
+        versionName "1.0"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+        }
+    }
+    sourceSets {
+        main {
+            manifest.srcFile '${ProjectSrcDir}/AndroidManifest.xml'
+            java.srcDirs = ['${ProjectSrcDir}/java']
+            res.srcDirs = ['${ProjectSrcDir}/res']
+            assets.srcDirs = ['${ProjectSrcDir}/assets']
+        }
+        debug {
+            jniLibs.srcDirs = ['${SolutionOutputDir}/${ArchitectureType}_Debug/gradle/${ProjectTargetName}']
+        }
+        release {
+            jniLibs.srcDirs = ['${SolutionOutputDir}/${ArchitectureType}_Release/gradle/${ProjectTargetName}']
+        }
+    }
+}
+
+dependencies {
+}
+
+task copySoLibraryDebug(type: Sync) {
+    from '${SolutionOutputDir}/${ArchitectureType}_Debug'
+    include 'lib${ProjectTargetName}.so'
+    into '${SolutionOutputDir}/${ArchitectureType}_Debug/gradle/${ProjectTargetName}/${AndroidAbi}'
+}
+task copySoLibraryRelease(type: Sync) {
+    from '${SolutionOutputDir}/${ArchitectureType}_Release'
+    include 'lib${ProjectTargetName}.so'
+    into '${SolutionOutputDir}/${ArchitectureType}_Release/gradle/${ProjectTargetName}/${AndroidAbi}'
+}
+project.afterEvaluate {
+    preBuild.dependsOn copySoLibraryDebug
+    preBuild.dependsOn copySoLibraryRelease
+}

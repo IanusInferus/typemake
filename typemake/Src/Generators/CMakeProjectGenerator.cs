@@ -17,8 +17,9 @@ namespace TypeMake.Cpp
         private CompilerType Compiler;
         private OperatingSystemType BuildingOperatingSystem;
         private OperatingSystemType TargetOperatingSystem;
+        private ArchitectureType? ArchitectureType;
 
-        public CMakeProjectGenerator(Project Project, List<ProjectReference> ProjectReferences, String InputDirectory, String OutputDirectory, ToolchainType Toolchain, CompilerType Compiler, OperatingSystemType BuildingOperatingSystem, OperatingSystemType TargetOperatingSystem)
+        public CMakeProjectGenerator(Project Project, List<ProjectReference> ProjectReferences, String InputDirectory, String OutputDirectory, ToolchainType Toolchain, CompilerType Compiler, OperatingSystemType BuildingOperatingSystem, OperatingSystemType TargetOperatingSystem, ArchitectureType? ArchitectureType)
         {
             this.Project = Project;
             this.ProjectReferences = ProjectReferences;
@@ -28,6 +29,7 @@ namespace TypeMake.Cpp
             this.Compiler = Compiler;
             this.BuildingOperatingSystem = BuildingOperatingSystem;
             this.TargetOperatingSystem = TargetOperatingSystem;
+            this.ArchitectureType = ArchitectureType;
         }
 
         public void Generate(bool EnableRebuild)
@@ -46,7 +48,7 @@ namespace TypeMake.Cpp
             yield return @"cmake_minimum_required(VERSION 3.0.2)";
             yield return $@"project({Project.Name})";
 
-            if ((conf.TargetType == TargetType.Executable) || (conf.TargetType == TargetType.DynamicLibrary) || (conf.TargetType == TargetType.GradleApplication))
+            if ((conf.TargetType == TargetType.Executable) || (conf.TargetType == TargetType.DynamicLibrary) || (conf.TargetType == TargetType.GradleApplication) || (conf.TargetType == TargetType.GradleLibrary))
             {
                 var LibDirectories = conf.LibDirectories.Select(d => FileNameHandling.GetRelativePath(Path.GetFullPath(d), BaseDirPath).Replace('\\', '/')).ToList();
                 if (LibDirectories.Count != 0)
@@ -68,7 +70,7 @@ namespace TypeMake.Cpp
             {
                 yield return @"add_library(${PROJECT_NAME} STATIC """")";
             }
-            else if ((conf.TargetType == TargetType.DynamicLibrary) || (conf.TargetType == TargetType.GradleApplication))
+            else if ((conf.TargetType == TargetType.DynamicLibrary) || (conf.TargetType == TargetType.GradleApplication) || (conf.TargetType == TargetType.GradleLibrary))
             {
                 yield return @"add_library(${PROJECT_NAME} SHARED """")";
             }
@@ -80,11 +82,12 @@ namespace TypeMake.Cpp
             {
                 yield return $@"set_property(TARGET ${{PROJECT_NAME}} PROPERTY OUTPUT_NAME {Project.TargetName})";
             }
-            if (conf.Toolchain == ToolchainType.Gradle_CMake)
+            if (ArchitectureType.HasValue)
             {
-                yield return $@"set_property(TARGET ${{PROJECT_NAME}} PROPERTY ARCHIVE_OUTPUT_DIRECTORY ${{CMAKE_CURRENT_BINARY_DIR}}/../../${{ANDROID_ABI}}_${{CMAKE_BUILD_TYPE}})";
-                yield return $@"set_property(TARGET ${{PROJECT_NAME}} PROPERTY LIBRARY_OUTPUT_DIRECTORY ${{CMAKE_CURRENT_BINARY_DIR}}/../../${{ANDROID_ABI}}_${{CMAKE_BUILD_TYPE}})";
-                yield return $@"set_property(TARGET ${{PROJECT_NAME}} PROPERTY RUNTIME_OUTPUT_DIRECTORY ${{CMAKE_CURRENT_BINARY_DIR}}/../../${{ANDROID_ABI}}_${{CMAKE_BUILD_TYPE}})";
+                var Architecture = ArchitectureType.Value;
+                yield return $@"set_property(TARGET ${{PROJECT_NAME}} PROPERTY ARCHIVE_OUTPUT_DIRECTORY ${{CMAKE_CURRENT_BINARY_DIR}}/../../{Architecture}_${{CMAKE_BUILD_TYPE}})";
+                yield return $@"set_property(TARGET ${{PROJECT_NAME}} PROPERTY LIBRARY_OUTPUT_DIRECTORY ${{CMAKE_CURRENT_BINARY_DIR}}/../../{Architecture}_${{CMAKE_BUILD_TYPE}})";
+                yield return $@"set_property(TARGET ${{PROJECT_NAME}} PROPERTY RUNTIME_OUTPUT_DIRECTORY ${{CMAKE_CURRENT_BINARY_DIR}}/../../{Architecture}_${{CMAKE_BUILD_TYPE}})";
             }
             else
             {
@@ -143,7 +146,7 @@ namespace TypeMake.Cpp
                 yield return @"target_compile_options(${PROJECT_NAME} PRIVATE " + CFlagStr + (CppFlags.Count > 0 ? "$<$<COMPILE_LANGUAGE:CXX>:" + CppFlagStr + ">" : "") + ")";
             }
 
-            if ((conf.TargetType == TargetType.Executable) || (conf.TargetType == TargetType.DynamicLibrary) || (conf.TargetType == TargetType.GradleApplication))
+            if ((conf.TargetType == TargetType.Executable) || (conf.TargetType == TargetType.DynamicLibrary) || (conf.TargetType == TargetType.GradleApplication) || (conf.TargetType == TargetType.GradleLibrary))
             {
                 var LinkerFlags = conf.LinkerFlags;
                 if (LinkerFlags.Count != 0)
