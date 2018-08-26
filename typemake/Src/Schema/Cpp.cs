@@ -8,7 +8,8 @@ namespace TypeMake.Cpp
         Executable,
         StaticLibrary,
         DynamicLibrary,
-        GradleApplication
+        GradleApplication,
+        GradleLibrary
     }
     public enum ToolchainType
     {
@@ -41,7 +42,7 @@ namespace TypeMake.Cpp
         x86,
         x86_64,
         armeabi_v7a,
-        aarch64
+        arm64_v8a
     }
     public enum FileType
     {
@@ -88,6 +89,7 @@ namespace TypeMake.Cpp
     {
         public String Name;
         public String TargetName;
+        public String ApplicationIdentifier;
         public List<Configuration> Configurations;
     }
 }

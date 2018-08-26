@@ -48,6 +48,7 @@
     <Compile Include="Base\TopologicalSort.cs" />
     <Compile Include="Generators\CMakeProjectGenerator.cs" />
     <Compile Include="Generators\CMakeSolutionGenerator.cs" />
+    <Compile Include="Generators\GradleProjectGenerator.cs" />
     <Compile Include="Generators\PbxprojGenerator.cs" />
     <Compile Include="Generators\PbxprojSolutionGenerator.cs" />
     <Compile Include="Generators\SlnGenerator.cs" />
@@ -63,11 +64,12 @@
   <ItemGroup>
     <EmbeddedResource Include="Templates\vc15\Default.sln" />
     <EmbeddedResource Include="Templates\vc15\Default.vcxproj.filters" />
-  </ItemGroup>
-  <ItemGroup>
     <EmbeddedResource Include="Templates\vc15\Default.vcxproj" />
-  </ItemGroup>
-  <ItemGroup>
+    <None Include="Templates\gradle\**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <EmbeddedResource Include="Templates\gradle_application\build.gradle" />
+    <EmbeddedResource Include="Templates\gradle_library\build.gradle" />
     <None Include="Templates\xcode9\Default.xcodeproj\ConvertToXml.sh" />
     <EmbeddedResource Include="Templates\xcode9\Default.xcodeproj\project.pbxproj" />
     <None Include="Templates\xcode9\Dummy.m" />

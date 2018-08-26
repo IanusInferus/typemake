@@ -421,7 +421,7 @@ namespace TypeMake.Cpp
             {
                 return "ARM";
             }
-            else if (Architecture == ArchitectureType.aarch64)
+            else if (Architecture == ArchitectureType.arm64_v8a)
             {
                 return "ARM64";
             }

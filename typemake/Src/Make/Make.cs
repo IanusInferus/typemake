@@ -32,11 +32,12 @@ namespace TypeMake
         private String SourceDirectory;
         private String BuildDirectory;
         private bool EnableRebuild;
-
         private OperatingSystemType BuildingOperatingSystem;
+        private ArchitectureType? ArchitectureType;
+
         private Dictionary<String, String> ProjectIds = new Dictionary<String, String>();
 
-        public Make(ToolchainType Toolchain, CompilerType Compiler, OperatingSystemType TargetOperationSystem, String SourceDirectory, String BuildDirectory, bool EnableRebuild)
+        public Make(ToolchainType Toolchain, CompilerType Compiler, OperatingSystemType BuildingOperatingSystem, OperatingSystemType TargetOperationSystem, ArchitectureType? ArchitectureType, String SourceDirectory, String BuildDirectory, bool EnableRebuild)
         {
             this.Toolchain = Toolchain;
             this.Compiler = Compiler;
@@ -44,7 +45,8 @@ namespace TypeMake
             this.SourceDirectory = Path.GetFullPath(SourceDirectory);
             this.BuildDirectory = Path.GetFullPath(BuildDirectory);
             this.EnableRebuild = EnableRebuild;
-            this.BuildingOperatingSystem = OperatingSystemType.Windows;
+            this.BuildingOperatingSystem = BuildingOperatingSystem;
+            this.ArchitectureType = ArchitectureType;
         }
 
         public void Execute()
@@ -68,22 +70,32 @@ namespace TypeMake
                     }
                 }
             }
+            var GradleProjectNames = new List<String>();
             foreach (var ProductPath in Directory.EnumerateDirectories(Path.Combine(SourceDirectory, "products"), "*", SearchOption.TopDirectoryOnly))
             {
                 var ProductName = Path.GetFileName(ProductPath);
                 var Extensions = ProductName.Split('.').Skip(1).ToArray();
                 var ProductTargetType = TargetType.Executable;
-                if (Extensions.Contains("dynamic", StringComparer.OrdinalIgnoreCase))
+                if (Extensions.Contains("gradle", StringComparer.OrdinalIgnoreCase))
+                {
+                    if (Extensions.Contains("dynamic", StringComparer.OrdinalIgnoreCase))
+                    {
+                        ProductTargetType = TargetType.GradleLibrary;
+                        GradleProjectNames.Add(ProductName);
+                    }
+                    else
+                    {
+                        ProductTargetType = TargetType.GradleApplication;
+                        GradleProjectNames.Add(ProductName);
+                    }
+                }
+                else if (Extensions.Contains("dynamic", StringComparer.OrdinalIgnoreCase))
                 {
                     ProductTargetType = TargetType.DynamicLibrary;
                 }
                 else if (Extensions.Contains("static", StringComparer.OrdinalIgnoreCase))
                 {
                     ProductTargetType = TargetType.StaticLibrary;
-                }
-                else if (Extensions.Contains("gradle", StringComparer.OrdinalIgnoreCase))
-                {
-                    ProductTargetType = TargetType.GradleApplication;
                 }
                 if (IsOperationSystemMatchExtensions(Extensions, TargetOperationSystem))
                 {
@@ -112,11 +124,13 @@ namespace TypeMake
             }
             else if (Toolchain == ToolchainType.Gradle_CMake)
             {
+                CopyDirectory(Path.Combine(Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location), "Templates"), "gradle"), Path.Combine(BuildDirectory, "gradle"));
                 var ProjectDict = Projects.ToDictionary(p => p.Key.Name, p => p.Key);
                 var ProjectDependencies = Projects.ToDictionary(p => ProjectDict[p.Key.Name], p => p.Value.Select(n => ProjectDict[n.Name]).ToList());
                 var SortedProjects = Projects.Select(p => p.Key).PartialOrderBy(p => ProjectDependencies.ContainsKey(p) ? ProjectDependencies[p] : null).ToList();
                 var g = new CMakeSolutionGenerator(SolutionName, SortedProjects, BuildDirectory);
                 g.Generate(EnableRebuild);
+                TextFile.WriteToFile(Path.Combine(Path.Combine(BuildDirectory, "gradle"), "settings.gradle"), "include " + String.Join(", ", GradleProjectNames.Select(n => "':" + n + "'")), new UTF8Encoding(false), !EnableRebuild);
             }
             else
             {
@@ -182,12 +196,12 @@ namespace TypeMake
             }
             else if (Toolchain == ToolchainType.CMake)
             {
-                var g = new CMakeProjectGenerator(p, ProjectReferences, ModulePath, Path.Combine(BuildDirectory, "projects"), Toolchain, Compiler, BuildingOperatingSystem, TargetOperationSystem);
+                var g = new CMakeProjectGenerator(p, ProjectReferences, ModulePath, Path.Combine(BuildDirectory, "projects"), Toolchain, Compiler, BuildingOperatingSystem, TargetOperationSystem, ArchitectureType);
                 g.Generate(EnableRebuild);
             }
             else if (Toolchain == ToolchainType.Gradle_CMake)
             {
-                var g = new CMakeProjectGenerator(p, ProjectReferences, ModulePath, Path.Combine(BuildDirectory, "projects"), Toolchain, Compiler, BuildingOperatingSystem, TargetOperationSystem);
+                var g = new CMakeProjectGenerator(p, ProjectReferences, ModulePath, Path.Combine(BuildDirectory, "projects"), Toolchain, Compiler, BuildingOperatingSystem, TargetOperationSystem, ArchitectureType);
                 g.Generate(EnableRebuild);
             }
             else
@@ -260,12 +274,12 @@ namespace TypeMake
             }
             else if (Toolchain == ToolchainType.CMake)
             {
-                var g = new CMakeProjectGenerator(p, ProjectReferences, Path.GetDirectoryName(TestFile.Path), Path.Combine(BuildDirectory, "projects"), Toolchain, Compiler, BuildingOperatingSystem, TargetOperationSystem);
+                var g = new CMakeProjectGenerator(p, ProjectReferences, Path.GetDirectoryName(TestFile.Path), Path.Combine(BuildDirectory, "projects"), Toolchain, Compiler, BuildingOperatingSystem, TargetOperationSystem, ArchitectureType);
                 g.Generate(EnableRebuild);
             }
             else if (Toolchain == ToolchainType.Gradle_CMake)
             {
-                var g = new CMakeProjectGenerator(p, ProjectReferences, Path.GetDirectoryName(TestFile.Path), Path.Combine(BuildDirectory, "projects"), Toolchain, Compiler, BuildingOperatingSystem, TargetOperationSystem);
+                var g = new CMakeProjectGenerator(p, ProjectReferences, Path.GetDirectoryName(TestFile.Path), Path.Combine(BuildDirectory, "projects"), Toolchain, Compiler, BuildingOperatingSystem, TargetOperationSystem, ArchitectureType);
                 g.Generate(EnableRebuild);
             }
             else
@@ -326,6 +340,11 @@ namespace TypeMake
             else if (ProductTargetType == TargetType.GradleApplication)
             {
             }
+            else if (ProductTargetType == TargetType.GradleLibrary)
+            {
+                Defines.Add(new KeyValuePair<String, String>(SolutionName.ToUpperInvariant() + "_BUILD", null));
+                Defines.Add(new KeyValuePair<String, String>(SolutionName.ToUpperInvariant() + "_DYNAMIC", null));
+            }
             else
             {
                 throw new InvalidOperationException();
@@ -366,13 +385,25 @@ namespace TypeMake
             }
             else if (Toolchain == ToolchainType.CMake)
             {
-                var g = new CMakeProjectGenerator(p, ProjectReferences, ProductPath, Path.Combine(BuildDirectory, "projects"), Toolchain, Compiler, BuildingOperatingSystem, TargetOperationSystem);
+                var g = new CMakeProjectGenerator(p, ProjectReferences, ProductPath, Path.Combine(BuildDirectory, "projects"), Toolchain, Compiler, BuildingOperatingSystem, TargetOperationSystem, ArchitectureType);
                 g.Generate(EnableRebuild);
             }
             else if (Toolchain == ToolchainType.Gradle_CMake)
             {
-                var g = new CMakeProjectGenerator(p, ProjectReferences, ProductPath, Path.Combine(BuildDirectory, "projects"), Toolchain, Compiler, BuildingOperatingSystem, TargetOperationSystem);
+                var g = new CMakeProjectGenerator(p, ProjectReferences, ProductPath, Path.Combine(BuildDirectory, "projects"), Toolchain, Compiler, BuildingOperatingSystem, TargetOperationSystem, ArchitectureType);
                 g.Generate(EnableRebuild);
+                if (ProductTargetType == TargetType.GradleApplication)
+                {
+                    var BuildGradleTemplateText = Resource.GetResourceText(@"Templates\gradle_application\build.gradle");
+                    var gGradle = new GradleProjectGenerator(SolutionName, p, ProjectReferences, ProductPath, Path.Combine(BuildDirectory, "gradle"), BuildDirectory, BuildGradleTemplateText, Toolchain, Compiler, BuildingOperatingSystem, TargetOperationSystem, ArchitectureType);
+                    gGradle.Generate(EnableRebuild);
+                }
+                else if (ProductTargetType == TargetType.GradleLibrary)
+                {
+                    var BuildGradleTemplateText = Resource.GetResourceText(@"Templates\gradle_library\build.gradle");
+                    var gGradle = new GradleProjectGenerator(SolutionName, p, ProjectReferences, ProductPath, Path.Combine(BuildDirectory, "gradle"), BuildDirectory, BuildGradleTemplateText, Toolchain, Compiler, BuildingOperatingSystem, TargetOperationSystem, ArchitectureType);
+                    gGradle.Generate(EnableRebuild);
+                }
             }
             else
             {
@@ -558,6 +589,18 @@ namespace TypeMake
                 }
             }
             return true;
+        }
+        private static void CopyDirectory(String SourceDirectory, String DestinationDirectory)
+        {
+            foreach (var f in Directory.EnumerateFiles(SourceDirectory, "*", SearchOption.AllDirectories))
+            {
+                var NewDir = Path.GetDirectoryName(Path.Combine(DestinationDirectory, FileNameHandling.GetRelativePath(f, SourceDirectory)));
+                if ((NewDir != "") && !Directory.Exists(NewDir))
+                {
+                    Directory.CreateDirectory(NewDir);
+                }
+                System.IO.File.Copy(f, Path.Combine(NewDir, Path.GetFileName(f)), true);
+            }
         }
     }
 }
