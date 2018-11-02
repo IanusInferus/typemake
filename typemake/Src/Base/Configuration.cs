@@ -29,8 +29,6 @@ namespace TypeMake.Cpp
                 Defines = Configurations.Where(Filter).SelectMany(c => c.Defines).ToList(),
                 CFlags = Configurations.Where(Filter).SelectMany(c => c.CFlags).ToList(),
                 CppFlags = Configurations.Where(Filter).SelectMany(c => c.CppFlags).ToList(),
-                ObjectiveCFlags = Configurations.Where(Filter).SelectMany(c => c.ObjectiveCFlags).ToList(),
-                ObjectiveCppFlags = Configurations.Where(Filter).SelectMany(c => c.ObjectiveCppFlags).ToList(),
                 LinkerFlags = Configurations.Where(Filter).SelectMany(c => c.LinkerFlags).ToList(),
                 Files = Configurations.Where(Filter).SelectMany(c => c.Files).ToList(),
                 BundleIdentifier = Configurations.Where(Filter).Select(c => c.BundleIdentifier).Where(v => v != null).LastOrDefault()
