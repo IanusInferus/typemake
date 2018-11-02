@@ -19,12 +19,12 @@ namespace TypeMake
             this.OutputDirectory = Path.GetFullPath(OutputDirectory);
         }
 
-        public void Generate(bool EnableRebuild)
+        public void Generate(bool ForceRegenerate)
         {
             var CMakeListsPath = Path.Combine(OutputDirectory, "CMakeLists.txt");
 
             var Lines = GenerateLines(CMakeListsPath).ToList();
-            TextFile.WriteToFile(CMakeListsPath, String.Join("\n", Lines), new UTF8Encoding(false), !EnableRebuild);
+            TextFile.WriteToFile(CMakeListsPath, String.Join("\n", Lines), new UTF8Encoding(false), !ForceRegenerate);
         }
 
         private IEnumerable<String> GenerateLines(String CMakeListsPath)

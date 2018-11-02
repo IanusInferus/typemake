@@ -23,7 +23,7 @@ namespace TypeMake
             this.SlnTemplateText = SlnTemplateText;
         }
 
-        public void Generate(bool EnableRebuild)
+        public void Generate(bool ForceRegenerate)
         {
             var s = new SlnFile();
             s.FullPath = Path.Combine(OutputDirectory, SolutionName + ".sln");
@@ -112,7 +112,7 @@ namespace TypeMake
                 s.Write(sw);
                 Text = sw.ToString();
             }
-            TextFile.WriteToFile(s.FullPath, Text, Encoding.UTF8, !EnableRebuild);
+            TextFile.WriteToFile(s.FullPath, Text, Encoding.UTF8, !ForceRegenerate);
         }
     }
 }

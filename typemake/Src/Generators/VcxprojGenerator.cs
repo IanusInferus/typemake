@@ -34,13 +34,13 @@ namespace TypeMake.Cpp
             this.TargetOperatingSystem = TargetOperatingSystem;
         }
 
-        public void Generate(bool EnableRebuild)
+        public void Generate(bool ForceRegenerate)
         {
-            GenerateVcxproj(EnableRebuild);
-            GenerateVcxprojFilters(EnableRebuild);
+            GenerateVcxproj(ForceRegenerate);
+            GenerateVcxprojFilters(ForceRegenerate);
         }
 
-        private void GenerateVcxproj(bool EnableRebuild)
+        private void GenerateVcxproj(bool ForceRegenerate)
         {
             var VcxprojPath = Path.Combine(OutputDirectory, Project.Name + ".vcxproj");
             var BaseDirPath = Path.GetDirectoryName(Path.GetFullPath(VcxprojPath));
@@ -275,10 +275,10 @@ namespace TypeMake.Cpp
             }
 
             var sVcxproj = XmlFile.ToString(xVcxproj);
-            TextFile.WriteToFile(VcxprojPath, sVcxproj, Encoding.UTF8, !EnableRebuild);
+            TextFile.WriteToFile(VcxprojPath, sVcxproj, Encoding.UTF8, !ForceRegenerate);
         }
 
-        private void GenerateVcxprojFilters(bool EnableRebuild)
+        private void GenerateVcxprojFilters(bool ForceRegenerate)
         {
             var FilterPath = Path.Combine(OutputDirectory, Project.Name + ".vcxproj") + ".filters";
             var BaseDirPath = Path.GetDirectoryName(FilterPath);
@@ -388,7 +388,7 @@ namespace TypeMake.Cpp
             }
 
             var sFilter = XmlFile.ToString(xFilter);
-            TextFile.WriteToFile(FilterPath, sFilter, Encoding.UTF8, !EnableRebuild);
+            TextFile.WriteToFile(FilterPath, sFilter, Encoding.UTF8, !ForceRegenerate);
         }
 
         private static void Trim(XElement x)
