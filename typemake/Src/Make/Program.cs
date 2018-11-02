@@ -31,6 +31,8 @@ namespace TypeMake
 
             var argv = args.Where(arg => !arg.StartsWith("--")).ToArray();
             var options = args.Where(arg => arg.StartsWith("--")).Select(arg => arg.Substring(2).Split(new Char[] { ':' }, 2)).GroupBy(p => p[0]).ToDictionary(g => g.Key, g => g.Last().Skip(1).SingleOrDefault(), StringComparer.OrdinalIgnoreCase);
+            var ForceRegenerate = options.ContainsKey("regen");
+            var EnableNonTargetingOperatingSystemDummy = options.ContainsKey("dummy");
             if (argv.Length >= 1)
             {
                 var Target = args[0];
@@ -40,9 +42,8 @@ namespace TypeMake
                     {
                         var SourceDirectory = argv[1];
                         var BuildDirectory = argv[2];
-                        var EnableRebuild = options.ContainsKey("rebuild");
 
-                        var m = new Make(Cpp.ToolchainType.Windows_VisualC, Cpp.CompilerType.VisualC, BuildingOperatingSystem, Cpp.OperatingSystemType.Windows, null, SourceDirectory, BuildDirectory, EnableRebuild);
+                        var m = new Make(Cpp.ToolchainType.Windows_VisualC, Cpp.CompilerType.VisualC, BuildingOperatingSystem, Cpp.OperatingSystemType.Windows, null, SourceDirectory, BuildDirectory, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
                         m.Execute();
                         return 0;
                     }
@@ -53,9 +54,8 @@ namespace TypeMake
                     {
                         var SourceDirectory = argv[1];
                         var BuildDirectory = argv[2];
-                        var EnableRebuild = options.ContainsKey("rebuild");
 
-                        var m = new Make(Cpp.ToolchainType.CMake, Cpp.CompilerType.gcc, BuildingOperatingSystem, Cpp.OperatingSystemType.Linux, null, SourceDirectory, BuildDirectory, EnableRebuild);
+                        var m = new Make(Cpp.ToolchainType.CMake, Cpp.CompilerType.gcc, BuildingOperatingSystem, Cpp.OperatingSystemType.Linux, null, SourceDirectory, BuildDirectory, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
                         m.Execute();
                         return 0;
                     }
@@ -66,9 +66,8 @@ namespace TypeMake
                     {
                         var SourceDirectory = argv[1];
                         var BuildDirectory = argv[2];
-                        var EnableRebuild = options.ContainsKey("rebuild");
 
-                        var m = new Make(Cpp.ToolchainType.Mac_XCode, Cpp.CompilerType.clang, BuildingOperatingSystem, Cpp.OperatingSystemType.Mac, null, SourceDirectory, BuildDirectory, EnableRebuild);
+                        var m = new Make(Cpp.ToolchainType.Mac_XCode, Cpp.CompilerType.clang, BuildingOperatingSystem, Cpp.OperatingSystemType.Mac, null, SourceDirectory, BuildDirectory, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
                         m.Execute();
                         return 0;
                     }
@@ -79,9 +78,8 @@ namespace TypeMake
                     {
                         var SourceDirectory = argv[1];
                         var BuildDirectory = argv[2];
-                        var EnableRebuild = options.ContainsKey("rebuild");
 
-                        var m = new Make(Cpp.ToolchainType.Mac_XCode, Cpp.CompilerType.clang, BuildingOperatingSystem, Cpp.OperatingSystemType.iOS, null, SourceDirectory, BuildDirectory, EnableRebuild);
+                        var m = new Make(Cpp.ToolchainType.Mac_XCode, Cpp.CompilerType.clang, BuildingOperatingSystem, Cpp.OperatingSystemType.iOS, null, SourceDirectory, BuildDirectory, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
                         m.Execute();
                         return 0;
                     }
@@ -92,12 +90,18 @@ namespace TypeMake
                     {
                         var SourceDirectory = argv[1];
                         var BuildDirectory = argv[2];
-                        var EnableRebuild = options.ContainsKey("rebuild");
 
-                        //TODO: ArchitectureType
+                        //TODO: command line call
+
+                        //TODO: option input
                         //TODO: sdk/ndk path
+                        //TODO: ArchitectureType
+                        //TODO: automatic build
+                        //TODO: quiet mode/non-interactive mode
+
                         //TODO: create remake script for all targets
-                        var m = new Make(Cpp.ToolchainType.Gradle_CMake, Cpp.CompilerType.clang, BuildingOperatingSystem, Cpp.OperatingSystemType.Android, Cpp.ArchitectureType.armeabi_v7a, SourceDirectory, BuildDirectory, EnableRebuild);
+
+                        var m = new Make(Cpp.ToolchainType.Gradle_CMake, Cpp.CompilerType.clang, BuildingOperatingSystem, Cpp.OperatingSystemType.Android, Cpp.ArchitectureType.armeabi_v7a, SourceDirectory, BuildDirectory, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
                         m.Execute();
                         return 0;
                     }

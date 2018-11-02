@@ -6,20 +6,20 @@ namespace TypeMake.Cpp
 {
     public static class ConfigurationUtils
     {
-        public static Configuration GetMergedConfiguration(ToolchainType? Toolchain, CompilerType? Compiler, OperatingSystemType? BuildingOperatingSystem, OperatingSystemType? TargetOperationSystem, ConfigurationType? ConfigurationType, ArchitectureType? Architecture, List<Configuration> Configurations)
+        public static Configuration GetMergedConfiguration(ToolchainType? Toolchain, CompilerType? Compiler, OperatingSystemType? BuildingOperatingSystem, OperatingSystemType? TargetOperatingSystem, ConfigurationType? ConfigurationType, ArchitectureType? Architecture, List<Configuration> Configurations)
         {
             Func<Configuration, bool> Filter = (Configuration c) =>
                 ((c.Toolchain == null) || (c.Toolchain == Toolchain))
                 && ((c.Compiler == null) || (c.Compiler == Compiler))
                 && ((c.BuildingOperatingSystem == null) || (c.BuildingOperatingSystem == BuildingOperatingSystem))
-                && ((c.TargetOperatingSystem == null) || (c.TargetOperatingSystem == TargetOperationSystem))
+                && ((c.TargetOperatingSystem == null) || (c.TargetOperatingSystem == TargetOperatingSystem))
                 && ((c.ConfigurationType == null) || (c.ConfigurationType == ConfigurationType))
                 && ((c.Architecture == null) || (c.Architecture == Architecture));
             var conf = new Configuration
             {
                 Toolchain = Toolchain,
                 Compiler = Compiler,
-                TargetOperatingSystem = TargetOperationSystem,
+                TargetOperatingSystem = TargetOperatingSystem,
                 ConfigurationType = ConfigurationType,
                 Architecture = Architecture,
                 TargetType = Configurations.Where(Filter).Select(c => c.TargetType).Where(t => t != null).LastOrDefault(),

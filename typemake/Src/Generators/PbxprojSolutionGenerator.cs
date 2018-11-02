@@ -22,7 +22,7 @@ namespace TypeMake
             this.PbxprojTemplateText = PbxprojTemplateText;
         }
 
-        public void Generate(bool EnableRebuild)
+        public void Generate(bool ForceRegenerate)
         {
             var PbxprojPath = Path.Combine(OutputDirectory, Path.Combine(SolutionName + ".xcodeproj", "project.pbxproj"));
             var BaseDirPath = Path.GetDirectoryName(Path.GetDirectoryName(PbxprojPath));
@@ -95,7 +95,7 @@ namespace TypeMake
             }
 
             ObjectReferenceValidityTest(Objects, RootObjectKey);
-            TextFile.WriteToFile(PbxprojPath, Plist.ToString(p), new UTF8Encoding(false), !EnableRebuild);
+            TextFile.WriteToFile(PbxprojPath, Plist.ToString(p), new UTF8Encoding(false), !ForceRegenerate);
         }
 
         private static bool AddProject(Dictionary<String, Value> Objects, String GroupOrFileKey, LinkedList<String> Stack, LinkedList<String> RelativePathStack, ProjectReference Project, String BaseDirPath, Dictionary<String, String> RelativePathToFileObjectKey, bool Top = true)

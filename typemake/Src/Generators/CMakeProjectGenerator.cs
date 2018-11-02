@@ -32,13 +32,13 @@ namespace TypeMake.Cpp
             this.ArchitectureType = ArchitectureType;
         }
 
-        public void Generate(bool EnableRebuild)
+        public void Generate(bool ForceRegenerate)
         {
             var CMakeListsPath = Path.Combine(OutputDirectory, Path.Combine(Project.Name, "CMakeLists.txt"));
             var BaseDirPath = Path.GetDirectoryName(CMakeListsPath);
 
             var Lines = GenerateLines(CMakeListsPath, BaseDirPath).ToList();
-            TextFile.WriteToFile(CMakeListsPath, String.Join("\n", Lines), new UTF8Encoding(false), !EnableRebuild);
+            TextFile.WriteToFile(CMakeListsPath, String.Join("\n", Lines), new UTF8Encoding(false), !ForceRegenerate);
         }
 
         private IEnumerable<String> GenerateLines(String CMakeListsPath, String BaseDirPath)

@@ -17,7 +17,7 @@ android {
     sourceSets {
         main {
             manifest.srcFile '${ProjectSrcDir}/AndroidManifest.xml'
-            java.srcDirs = ['${ProjectSrcDir}/java']
+            java.srcDirs = ['${ProjectSrcDir}/java', '${ProjectSrcDir}/cpp']
             res.srcDirs = ['${ProjectSrcDir}/res']
             assets.srcDirs = ['${ProjectSrcDir}/assets']
         }

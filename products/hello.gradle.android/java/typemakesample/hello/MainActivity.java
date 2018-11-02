@@ -12,9 +12,9 @@ import android.view.MenuItem;
 
 public class MainActivity extends AppCompatActivity {
 
-    // Used to load the 'native-lib' library on application startup.
+    // Used to load the 'hello' library on application startup.
     static {
-        System.loadLibrary("native-lib");
+        System.loadLibrary("hello");
     }
 
     @Override

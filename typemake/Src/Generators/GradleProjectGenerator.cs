@@ -38,13 +38,13 @@ namespace TypeMake.Cpp
             this.ArchitectureType = ArchitectureType;
         }
 
-        public void Generate(bool EnableRebuild)
+        public void Generate(bool ForceRegenerate)
         {
             var BuildGradlePath = Path.Combine(OutputDirectory, Path.Combine(Project.Name, "build.gradle"));
             var BaseDirPath = Path.GetDirectoryName(BuildGradlePath);
 
             var Lines = GenerateLines(BuildGradlePath, BaseDirPath).ToList();
-            TextFile.WriteToFile(BuildGradlePath, String.Join("\n", Lines), new UTF8Encoding(false), !EnableRebuild);
+            TextFile.WriteToFile(BuildGradlePath, String.Join("\n", Lines), new UTF8Encoding(false), !ForceRegenerate);
         }
 
         private IEnumerable<String> GenerateLines(String BuildGradlePath, String BaseDirPath)
