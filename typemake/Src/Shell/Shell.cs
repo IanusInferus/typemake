@@ -174,13 +174,13 @@ namespace TypeMake
             p.WaitForExit();
             return p.ExitCode;
         }
-        private static String EscapeArgument(String Argument)
+        public static String EscapeArgument(String Argument)
         {
             var arg = Argument.Replace("\"", "\"\"\"");
             return arg.Contains(' ') ? "\"" + arg + "\"" : arg;
         }
 
-        public static void RequireEnvironmentVariable(String Name, out String Value, bool Quiet, Func<String, bool> Validator = null, Func<String, String> PostMapper = null, String DefaultValue = "", String InputDisplay = null, bool OutputVariable = true)
+        public static void RequireEnvironmentVariable(Dictionary<String, String> Memory, String Name, out String Value, bool Quiet, Func<String, bool> Validator = null, Func<String, String> PostMapper = null, String DefaultValue = "", String InputDisplay = null, bool OutputVariable = true)
         {
             var d = InputDisplay ?? (DefaultValue != "" ? "[" + DefaultValue + "]" : "");
             var v = Environment.GetEnvironmentVariable(Name);
@@ -210,17 +210,25 @@ namespace TypeMake
             }
             Value = v;
             Console.WriteLine(Name + "=" + v);
+            if (Memory.ContainsKey(Name))
+            {
+                Memory[Name] = v;
+            }
+            else
+            {
+                Memory.Add(Name, v);
+            }
         }
-        public static void RequireEnvironmentVariableEnum<T>(String Name, out T Value, bool Quiet, T DefaultValue = default(T), bool OutputVariable = true) where T : struct
+        public static void RequireEnvironmentVariableEnum<T>(Dictionary<String, String> Memory, String Name, out T Value, bool Quiet, T DefaultValue = default(T), bool OutputVariable = true) where T : struct
         {
-            RequireEnvironmentVariableEnum<T>(Name, out Value, Quiet, new HashSet<T>(Enum.GetValues(typeof(T)).Cast<T>()), DefaultValue, OutputVariable);
+            RequireEnvironmentVariableEnum<T>(Memory, Name, out Value, Quiet, new HashSet<T>(Enum.GetValues(typeof(T)).Cast<T>()), DefaultValue, OutputVariable);
         }
-        public static void RequireEnvironmentVariableEnum<T>(String Name, out T Value, bool Quiet, HashSet<T> Selections, T DefaultValue = default(T), bool OutputVariable = true) where T : struct
+        public static void RequireEnvironmentVariableEnum<T>(Dictionary<String, String> Memory, String Name, out T Value, bool Quiet, HashSet<T> Selections, T DefaultValue = default(T), bool OutputVariable = true) where T : struct
         {
             var InputDisplay = String.Join("|", Selections.Select(e => e.Equals(DefaultValue) ? "[" + e.ToString() + "]" : e.ToString()));
             String s;
             T Output = default(T);
-            RequireEnvironmentVariable(Name, out s, Quiet, v =>
+            RequireEnvironmentVariable(Memory, Name, out s, Quiet, v =>
             {
                 T o;
                 var b = Enum.TryParse<T>(v, true, out o);
@@ -230,11 +238,11 @@ namespace TypeMake
             }, v => Output.ToString(), DefaultValue.ToString(), InputDisplay, OutputVariable);
             Value = Output;
         }
-        public static void RequireEnvironmentVariableSelection(String Name, out String Value, bool Quiet, HashSet<String> Selections, String DefaultValue = "", bool OutputVariable = true)
+        public static void RequireEnvironmentVariableSelection(Dictionary<String, String> Memory, String Name, out String Value, bool Quiet, HashSet<String> Selections, String DefaultValue = "", bool OutputVariable = true)
         {
             var InputDisplay = String.Join("|", Selections.Select(c => c.Equals(DefaultValue) ? "[" + c.ToString() + "]" : c.ToString()));
             String s;
-            RequireEnvironmentVariable(Name, out s, Quiet, v => Selections.Contains(v), null, DefaultValue.ToString(), InputDisplay, OutputVariable);
+            RequireEnvironmentVariable(Memory, Name, out s, Quiet, v => Selections.Contains(v), null, DefaultValue.ToString(), InputDisplay, OutputVariable);
             Value = s;
         }
     }

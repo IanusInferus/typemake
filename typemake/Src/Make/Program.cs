@@ -76,35 +76,39 @@ namespace TypeMake
             var ForceRegenerate = options.ContainsKey("regen");
             var EnableNonTargetingOperatingSystemDummy = options.ContainsKey("dummy");
             var Quiet = options.ContainsKey("quiet");
+
+            var Memory = new Dictionary<String, String>();
+
             String SourceDirectory;
             String BuildDirectory;
-            Shell.RequireEnvironmentVariable("SourceDirectory", out SourceDirectory, Quiet, p => Directory.Exists(p), p => Path.GetFullPath(p));
+            Shell.RequireEnvironmentVariable(Memory, "SourceDirectory", out SourceDirectory, Quiet, p => Directory.Exists(p), p => Path.GetFullPath(p));
 
             Cpp.OperatingSystemType TargetOperatingSystem;
-            Shell.RequireEnvironmentVariableEnum<Cpp.OperatingSystemType>("TargetOperatingSystem", out TargetOperatingSystem, Quiet, BuildingOperatingSystem);
+            Shell.RequireEnvironmentVariableEnum<Cpp.OperatingSystemType>(Memory, "TargetOperatingSystem", out TargetOperatingSystem, Quiet, BuildingOperatingSystem);
 
+            //TODO: create make script for all targets
             //TODO: automatic build after generation
-            //TODO: create remake script for all targets, quiet by default
 
             if (TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
             {
-                Shell.RequireEnvironmentVariable("BuildDirectory", out BuildDirectory, Quiet, p => !File.Exists(p), p => Path.GetFullPath(p), "build/windows");
+                Shell.RequireEnvironmentVariable(Memory, "BuildDirectory", out BuildDirectory, Quiet, p => !File.Exists(p), p => Path.GetFullPath(p), "build/windows");
                 var m = new Make(Cpp.ToolchainType.Windows_VisualC, Cpp.CompilerType.VisualC, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, SourceDirectory, BuildDirectory, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
                 m.Execute();
+                GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, ForceRegenerate);
                 Console.WriteLine("Generation successful.");
                 return 0;
             }
             else if (TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
             {
                 Cpp.ConfigurationType Configuration;
-                Shell.RequireEnvironmentVariableEnum("Configuration", out Configuration, Quiet, Cpp.ConfigurationType.Debug);
-                Shell.RequireEnvironmentVariable("BuildDirectory", out BuildDirectory, Quiet, p => !File.Exists(p), p => Path.GetFullPath(p), $"build/linux_{Configuration}");
+                Shell.RequireEnvironmentVariableEnum(Memory, "Configuration", out Configuration, Quiet, Cpp.ConfigurationType.Debug);
+                Shell.RequireEnvironmentVariable(Memory, "BuildDirectory", out BuildDirectory, Quiet, p => !File.Exists(p), p => Path.GetFullPath(p), $"build/linux_{Configuration}");
                 var m = new Make(Cpp.ToolchainType.CMake, Cpp.CompilerType.gcc, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, SourceDirectory, BuildDirectory, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
                 m.Execute();
                 if (BuildingOperatingSystem == Cpp.OperatingSystemType.Linux)
                 {
                     String CMake;
-                    Shell.RequireEnvironmentVariable("CMake", out CMake, Quiet, p => File.Exists(p), p => Path.GetFullPath(p), Shell.TryLocate("cmake") ?? (BuildingOperatingSystem == Cpp.OperatingSystemType.Windows ? Path.Combine(Environment.GetEnvironmentVariable("ProgramFiles"), @"CMake\bin\cmake.exe") : ""));
+                    Shell.RequireEnvironmentVariable(Memory, "CMake", out CMake, Quiet, p => File.Exists(p), p => Path.GetFullPath(p), Shell.TryLocate("cmake") ?? (BuildingOperatingSystem == Cpp.OperatingSystemType.Windows ? Path.Combine(Environment.GetEnvironmentVariable("ProgramFiles"), @"CMake\bin\cmake.exe") : ""));
                     using (var d = Shell.PushDirectory(BuildDirectory))
                     {
                         var Arguments = new List<String>();
@@ -113,38 +117,41 @@ namespace TypeMake
                         Shell.Execute(CMake, Arguments.ToArray());
                     }
                 }
+                GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, ForceRegenerate);
                 Console.WriteLine("Generation successful.");
                 return 0;
             }
             else if (TargetOperatingSystem == Cpp.OperatingSystemType.Mac)
             {
-                Shell.RequireEnvironmentVariable("BuildDirectory", out BuildDirectory, Quiet, p => !File.Exists(p), p => Path.GetFullPath(p), "build/mac");
+                Shell.RequireEnvironmentVariable(Memory, "BuildDirectory", out BuildDirectory, Quiet, p => !File.Exists(p), p => Path.GetFullPath(p), "build/mac");
                 var m = new Make(Cpp.ToolchainType.Mac_XCode, Cpp.CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, SourceDirectory, BuildDirectory, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
                 m.Execute();
+                GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, ForceRegenerate);
                 Console.WriteLine("Generation successful.");
                 return 0;
             }
             else if (TargetOperatingSystem == Cpp.OperatingSystemType.iOS)
             {
-                Shell.RequireEnvironmentVariable("BuildDirectory", out BuildDirectory, Quiet, p => !File.Exists(p), p => Path.GetFullPath(p), "build/ios");
+                Shell.RequireEnvironmentVariable(Memory, "BuildDirectory", out BuildDirectory, Quiet, p => !File.Exists(p), p => Path.GetFullPath(p), "build/ios");
                 var m = new Make(Cpp.ToolchainType.Mac_XCode, Cpp.CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, SourceDirectory, BuildDirectory, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
                 m.Execute();
+                GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, ForceRegenerate);
                 Console.WriteLine("Generation successful.");
                 return 0;
             }
             else if (TargetOperatingSystem == Cpp.OperatingSystemType.Android)
             {
                 String AndroidSdk;
-                Shell.RequireEnvironmentVariable("AndroidSdk", out AndroidSdk, Quiet, p => Directory.Exists(Path.Combine(p, "platform-tools")), p => Path.GetFullPath(p), BuildingOperatingSystem == Cpp.OperatingSystemType.Windows ? Path.Combine(Environment.GetEnvironmentVariable("LocalAppData"), @"Android\sdk") : "");
+                Shell.RequireEnvironmentVariable(Memory, "AndroidSdk", out AndroidSdk, Quiet, p => Directory.Exists(Path.Combine(p, "platform-tools")), p => Path.GetFullPath(p), BuildingOperatingSystem == Cpp.OperatingSystemType.Windows ? Path.Combine(Environment.GetEnvironmentVariable("LocalAppData"), @"Android\sdk") : "");
                 String AndroidNdk;
-                Shell.RequireEnvironmentVariable("AndroidNdk", out AndroidNdk, Quiet, p => Directory.Exists(Path.Combine(p, "build")), p => Path.GetFullPath(p), Path.Combine(AndroidSdk, "ndk-bundle"));
+                Shell.RequireEnvironmentVariable(Memory, "AndroidNdk", out AndroidNdk, Quiet, p => Directory.Exists(Path.Combine(p, "build")), p => Path.GetFullPath(p), Path.Combine(AndroidSdk, "ndk-bundle"));
                 String CMake;
-                Shell.RequireEnvironmentVariable("CMake", out CMake, Quiet, p => File.Exists(p), p => Path.GetFullPath(p), Shell.TryLocate("cmake") ?? (BuildingOperatingSystem == Cpp.OperatingSystemType.Windows ? Path.Combine(Environment.GetEnvironmentVariable("ProgramFiles"), @"CMake\bin\cmake.exe") : ""));
+                Shell.RequireEnvironmentVariable(Memory, "CMake", out CMake, Quiet, p => File.Exists(p), p => Path.GetFullPath(p), Shell.TryLocate("cmake") ?? (BuildingOperatingSystem == Cpp.OperatingSystemType.Windows ? Path.Combine(Environment.GetEnvironmentVariable("ProgramFiles"), @"CMake\bin\cmake.exe") : ""));
                 Cpp.ArchitectureType TargetArchitecture;
-                Shell.RequireEnvironmentVariableEnum("TargetArchitecture", out TargetArchitecture, Quiet, Cpp.ArchitectureType.armeabi_v7a);
+                Shell.RequireEnvironmentVariableEnum(Memory, "TargetArchitecture", out TargetArchitecture, Quiet, Cpp.ArchitectureType.armeabi_v7a);
                 Cpp.ConfigurationType Configuration;
-                Shell.RequireEnvironmentVariableEnum("Configuration", out Configuration, Quiet, Cpp.ConfigurationType.Debug);
-                Shell.RequireEnvironmentVariable("BuildDirectory", out BuildDirectory, Quiet, p => !File.Exists(p), p => Path.GetFullPath(p), $"build/android_{TargetArchitecture}_{Configuration}");
+                Shell.RequireEnvironmentVariableEnum(Memory, "Configuration", out Configuration, Quiet, Cpp.ConfigurationType.Debug);
+                Shell.RequireEnvironmentVariable(Memory, "BuildDirectory", out BuildDirectory, Quiet, p => !File.Exists(p), p => Path.GetFullPath(p), $"build/android_{TargetArchitecture}_{Configuration}");
                 var m = new Make(Cpp.ToolchainType.Gradle_CMake, Cpp.CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture, SourceDirectory, BuildDirectory, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
                 m.Execute();
                 using (var d = Shell.PushDirectory(BuildDirectory))
@@ -175,6 +182,7 @@ namespace TypeMake
                     }
                     else
                     {
+                        GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, ForceRegenerate);
                         Console.WriteLine("UnsupportedBuildingOperatingSystemArchitecture: " + Shell.OperatingSystemArchitecture.ToString());
                         return 1;
                     }
@@ -189,12 +197,76 @@ namespace TypeMake
                     }
                     Shell.Execute(CMake, Arguments.ToArray());
                 }
+                GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, ForceRegenerate);
                 Console.WriteLine("Generation successful.");
                 return 0;
             }
 
             DisplayInfo();
             return 1;
+        }
+
+        private static void GenerateRetypemakeScript(Cpp.OperatingSystemType BuildingOperatingSystem, String SourceDirectory, String BuildDirectory, Dictionary<String, String> Memory, bool ForceRegenerate)
+        {
+            if (BuildingOperatingSystem == Cpp.OperatingSystemType.Windows)
+            {
+                var Lines = new List<String>();
+                Lines.Add("@echo off");
+                Lines.Add("");
+                Lines.Add("setlocal");
+                Lines.Add("if \"%SUB_NO_PAUSE_SYMBOL%\"==\"1\" set NO_PAUSE_SYMBOL=1");
+                Lines.Add("if /I \"%COMSPEC%\" == %CMDCMDLINE% set NO_PAUSE_SYMBOL=1");
+                Lines.Add("set SUB_NO_PAUSE_SYMBOL=1");
+                Lines.Add("");
+                foreach (var p in Memory)
+                {
+                    if (p.Key == "BuildDirectory")
+                    {
+                        Lines.Add("set BuildDirectory=%~dp0");
+                    }
+                    else
+                    {
+                        Lines.Add($"set {p.Key}={p.Value}");
+                    }
+                }
+                Lines.Add("pushd \"%SourceDirectory%\"");
+                Lines.Add(@"call .\typemake.cmd --quiet %*");
+                Lines.Add("popd");
+                Lines.Add("");
+                Lines.Add("if not \"%NO_PAUSE_SYMBOL%\"==\"1\" pause");
+                Lines.Add("exit /b %EXIT_CODE%");
+                Lines.Add("");
+                var RetypemakePath = Path.Combine(BuildDirectory, "retypemake.cmd");
+                if (ForceRegenerate || !File.Exists(RetypemakePath))
+                {
+                    TextFile.WriteToFile(RetypemakePath, String.Join("\r\n", Lines), System.Text.Encoding.Default, false);
+                }
+            }
+            else
+            {
+                var Lines = new List<String>();
+                foreach (var p in Memory)
+                {
+                    if (p.Key == "BuildDirectory")
+                    {
+                        Lines.Add("export BuildDirectory=$(cd `dirname \"$0\"`; pwd)");
+                    }
+                    else
+                    {
+                        Lines.Add($"export {p.Key}={p.Value}");
+                    }
+                }
+                Lines.Add("pushd \"${SourceDirectory}\"");
+                Lines.Add("./typemake.sh --quiet \"$@\"");
+                Lines.Add("popd");
+                Lines.Add("");
+                var RetypemakePath = Path.Combine(BuildDirectory, "retypemake.sh");
+                if (ForceRegenerate || !File.Exists(RetypemakePath))
+                {
+                    TextFile.WriteToFile(RetypemakePath, String.Join("\n", Lines), new System.Text.UTF8Encoding(false), false);
+                    Shell.Execute("chmod", "+x", RetypemakePath);
+                }
+            }
         }
 
         public static void DisplayInfo()
