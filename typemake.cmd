@@ -13,6 +13,7 @@ if not exist typemake/Bin/TypeMake.exe (
   popd
 )
 
+set SourceDirectory=.
 typemake\Bin\TypeMake.exe %*
 
 if not "%NO_PAUSE_SYMBOL%"=="1" pause

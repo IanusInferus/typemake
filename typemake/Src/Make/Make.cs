@@ -442,6 +442,11 @@ namespace TypeMake
                 },
                 new Configuration
                 {
+                    TargetOperatingSystem = OperatingSystemType.Linux,
+                    CFlags = new List<String> { "-fPIC" }
+                },
+                new Configuration
+                {
                     ConfigurationType = ConfigurationType.Debug,
                     Defines = ParseDefines("_DEBUG;DEBUG=1")
                 },

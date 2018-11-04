@@ -15,4 +15,5 @@ command -v mono >/dev/null 2>&1 || {
   exit 1
 }
 
+export SourceDirectory=.
 mono typemake/Bin/TypeMake.exe "$@"

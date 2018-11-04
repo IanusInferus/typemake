@@ -163,6 +163,7 @@ namespace TypeMake
         }
         private static int ExecuteInner(String ProgramPath, String Arguments)
         {
+            Console.WriteLine(Arguments == "" ? EscapeArgument(ProgramPath) : EscapeArgument(ProgramPath) + " " + Arguments);
             var psi = new ProcessStartInfo()
             {
                 FileName = ProgramPath,
@@ -177,6 +178,64 @@ namespace TypeMake
         {
             var arg = Argument.Replace("\"", "\"\"\"");
             return arg.Contains(' ') ? "\"" + arg + "\"" : arg;
+        }
+
+        public static void RequireEnvironmentVariable(String Name, out String Value, bool Quiet, Func<String, bool> Validator = null, Func<String, String> PostMapper = null, String DefaultValue = "", String InputDisplay = null, bool OutputVariable = true)
+        {
+            var d = InputDisplay ?? (DefaultValue != "" ? "[" + DefaultValue + "]" : "");
+            var v = Environment.GetEnvironmentVariable(Name);
+            if (v == null)
+            {
+                if (Quiet) { throw new InvalidOperationException("Variable '" + Name + "' not exist."); }
+                Console.Write("'" + Name + "' not exist, input" + (d == "" ? "" : " " + d) + ": ");
+                v = Console.ReadLine();
+                if (v == "")
+                {
+                    v = DefaultValue;
+                }
+            }
+            while ((Validator != null) && !Validator(v))
+            {
+                if (Quiet) { throw new InvalidOperationException("Variable '" + Name + "' invalid."); }
+                Console.Write("'" + Name + "' invalid, input" + (d == "" ? "" : " " + d) + ": ");
+                v = Console.ReadLine();
+                if (v == "")
+                {
+                    v = DefaultValue;
+                }
+            }
+            if (PostMapper != null)
+            {
+                v = PostMapper(v);
+            }
+            Value = v;
+            Console.WriteLine(Name + "=" + v);
+        }
+        public static void RequireEnvironmentVariableEnum<T>(String Name, out T Value, bool Quiet, T DefaultValue = default(T), bool OutputVariable = true) where T : struct
+        {
+            RequireEnvironmentVariableEnum<T>(Name, out Value, Quiet, new HashSet<T>(Enum.GetValues(typeof(T)).Cast<T>()), DefaultValue, OutputVariable);
+        }
+        public static void RequireEnvironmentVariableEnum<T>(String Name, out T Value, bool Quiet, HashSet<T> Selections, T DefaultValue = default(T), bool OutputVariable = true) where T : struct
+        {
+            var InputDisplay = String.Join("|", Selections.Select(e => e.Equals(DefaultValue) ? "[" + e.ToString() + "]" : e.ToString()));
+            String s;
+            T Output = default(T);
+            RequireEnvironmentVariable(Name, out s, Quiet, v =>
+            {
+                T o;
+                var b = Enum.TryParse<T>(v, true, out o);
+                if (!Selections.Contains(o)) { return false; }
+                Output = o;
+                return b;
+            }, v => Output.ToString(), DefaultValue.ToString(), InputDisplay, OutputVariable);
+            Value = Output;
+        }
+        public static void RequireEnvironmentVariableSelection(String Name, out String Value, bool Quiet, HashSet<String> Selections, String DefaultValue = "", bool OutputVariable = true)
+        {
+            var InputDisplay = String.Join("|", Selections.Select(c => c.Equals(DefaultValue) ? "[" + c.ToString() + "]" : c.ToString()));
+            String s;
+            RequireEnvironmentVariable(Name, out s, Quiet, v => Selections.Contains(v), null, DefaultValue.ToString(), InputDisplay, OutputVariable);
+            Value = s;
         }
     }
 }
