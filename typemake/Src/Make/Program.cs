@@ -149,7 +149,7 @@ namespace TypeMake
         {
             Console.WriteLine(@"TypeMake");
             Console.WriteLine(@"Usage:");
-            Console.WriteLine(@"TypeMake <Target> <SourceDirectory> <BuildDirectory> [/rebuild]");
+            Console.WriteLine(@"TypeMake <Target> <SourceDirectory> <BuildDirectory> [/regen] [/dummy]");
             Console.WriteLine(@"Example:");
             Console.WriteLine(@"TypeMake win C:\Project\TypeMake\Repo C:\Project\TypeMake\Repo\build\vc15");
         }
