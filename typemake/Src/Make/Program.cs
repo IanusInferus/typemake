@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace TypeMake
@@ -61,83 +62,134 @@ namespace TypeMake
 
             var argv = args.Where(arg => !arg.StartsWith("--")).ToArray();
             var options = args.Where(arg => arg.StartsWith("--")).Select(arg => arg.Substring(2).Split(new Char[] { ':' }, 2)).GroupBy(p => p[0]).ToDictionary(g => g.Key, g => g.Last().Skip(1).SingleOrDefault(), StringComparer.OrdinalIgnoreCase);
-            var ForceRegenerate = options.ContainsKey("regen");
-            var EnableNonTargetingOperatingSystemDummy = options.ContainsKey("dummy");
-            if (argv.Length >= 1)
-            {
-                var Target = args[0];
-                if ((Target == "win") || (Target == "windows"))
-                {
-                    if (argv.Length == 3)
-                    {
-                        var SourceDirectory = argv[1];
-                        var BuildDirectory = argv[2];
-
-                        var m = new Make(Cpp.ToolchainType.Windows_VisualC, Cpp.CompilerType.VisualC, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, Cpp.OperatingSystemType.Windows, null, SourceDirectory, BuildDirectory, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
-                        m.Execute();
-                        return 0;
-                    }
-                }
-                else if (Target == "linux")
-                {
-                    if (argv.Length == 3)
-                    {
-                        var SourceDirectory = argv[1];
-                        var BuildDirectory = argv[2];
-
-                        var m = new Make(Cpp.ToolchainType.CMake, Cpp.CompilerType.gcc, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, Cpp.OperatingSystemType.Linux, null, SourceDirectory, BuildDirectory, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
-                        m.Execute();
-                        return 0;
-                    }
-                }
-                else if (Target == "mac")
-                {
-                    if (argv.Length == 3)
-                    {
-                        var SourceDirectory = argv[1];
-                        var BuildDirectory = argv[2];
-
-                        var m = new Make(Cpp.ToolchainType.Mac_XCode, Cpp.CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, Cpp.OperatingSystemType.Mac, null, SourceDirectory, BuildDirectory, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
-                        m.Execute();
-                        return 0;
-                    }
-                }
-                else if (Target == "ios")
-                {
-                    if (argv.Length == 3)
-                    {
-                        var SourceDirectory = argv[1];
-                        var BuildDirectory = argv[2];
-
-                        var m = new Make(Cpp.ToolchainType.Mac_XCode, Cpp.CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, Cpp.OperatingSystemType.iOS, null, SourceDirectory, BuildDirectory, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
-                        m.Execute();
-                        return 0;
-                    }
-                }
-                else if (Target == "android")
-                {
-                    if (argv.Length == 3)
-                    {
-                        var SourceDirectory = argv[1];
-                        var BuildDirectory = argv[2];
-
-                        //TODO: option input
-                        //TODO: sdk/ndk path
-                        //TODO: automatic build
-                        //TODO: quiet mode/non-interactive mode
-
-                        //TODO: create remake script for all targets
-
-                        var m = new Make(Cpp.ToolchainType.Gradle_CMake, Cpp.CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, Cpp.OperatingSystemType.Android, Cpp.ArchitectureType.armeabi_v7a, SourceDirectory, BuildDirectory, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
-                        m.Execute();
-
-                        return 0;
-                    }
-                }
-            }
-            else
+            var Help = options.ContainsKey("help");
+            if (Help)
             {
                 DisplayInfo();
+                return 0;
+            }
+            if (argv.Length != 0)
+            {
+                DisplayInfo();
+                return 1;
+            }
+            var ForceRegenerate = options.ContainsKey("regen");
+            var EnableNonTargetingOperatingSystemDummy = options.ContainsKey("dummy");
+            var Quiet = options.ContainsKey("quiet");
+            String SourceDirectory;
+            String BuildDirectory;
+            Shell.RequireEnvironmentVariable("SourceDirectory", out SourceDirectory, Quiet, p => Directory.Exists(p), p => Path.GetFullPath(p));
+
+            Cpp.OperatingSystemType TargetOperatingSystem;
+            Shell.RequireEnvironmentVariableEnum<Cpp.OperatingSystemType>("TargetOperatingSystem", out TargetOperatingSystem, Quiet, BuildingOperatingSystem);
+
+            //TODO: automatic build after generation
+            //TODO: create remake script for all targets, quiet by default
+
+            if (TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
+            {
+                Shell.RequireEnvironmentVariable("BuildDirectory", out BuildDirectory, Quiet, p => !File.Exists(p), p => Path.GetFullPath(p), "build/windows");
+                var m = new Make(Cpp.ToolchainType.Windows_VisualC, Cpp.CompilerType.VisualC, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, SourceDirectory, BuildDirectory, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
+                m.Execute();
+                Console.WriteLine("Generation successful.");
+                return 0;
+            }
+            else if (TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
+            {
+                Cpp.ConfigurationType Configuration;
+                Shell.RequireEnvironmentVariableEnum("Configuration", out Configuration, Quiet, Cpp.ConfigurationType.Debug);
+                Shell.RequireEnvironmentVariable("BuildDirectory", out BuildDirectory, Quiet, p => !File.Exists(p), p => Path.GetFullPath(p), $"build/linux_{Configuration}");
+                var m = new Make(Cpp.ToolchainType.CMake, Cpp.CompilerType.gcc, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, SourceDirectory, BuildDirectory, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
+                m.Execute();
+                if (BuildingOperatingSystem == Cpp.OperatingSystemType.Linux)
+                {
+                    String CMake;
+                    Shell.RequireEnvironmentVariable("CMake", out CMake, Quiet, p => File.Exists(p), p => Path.GetFullPath(p), Shell.TryLocate("cmake") ?? (BuildingOperatingSystem == Cpp.OperatingSystemType.Windows ? Path.Combine(Environment.GetEnvironmentVariable("ProgramFiles"), @"CMake\bin\cmake.exe") : ""));
+                    using (var d = Shell.PushDirectory(BuildDirectory))
+                    {
+                        var Arguments = new List<String>();
+                        Arguments.Add(BuildDirectory);
+                        Arguments.Add($"-DCMAKE_BUILD_TYPE={Configuration}");
+                        Shell.Execute(CMake, Arguments.ToArray());
+                    }
+                }
+                Console.WriteLine("Generation successful.");
+                return 0;
+            }
+            else if (TargetOperatingSystem == Cpp.OperatingSystemType.Mac)
+            {
+                Shell.RequireEnvironmentVariable("BuildDirectory", out BuildDirectory, Quiet, p => !File.Exists(p), p => Path.GetFullPath(p), "build/mac");
+                var m = new Make(Cpp.ToolchainType.Mac_XCode, Cpp.CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, SourceDirectory, BuildDirectory, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
+                m.Execute();
+                Console.WriteLine("Generation successful.");
+                return 0;
+            }
+            else if (TargetOperatingSystem == Cpp.OperatingSystemType.iOS)
+            {
+                Shell.RequireEnvironmentVariable("BuildDirectory", out BuildDirectory, Quiet, p => !File.Exists(p), p => Path.GetFullPath(p), "build/ios");
+                var m = new Make(Cpp.ToolchainType.Mac_XCode, Cpp.CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, SourceDirectory, BuildDirectory, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
+                m.Execute();
+                Console.WriteLine("Generation successful.");
+                return 0;
+            }
+            else if (TargetOperatingSystem == Cpp.OperatingSystemType.Android)
+            {
+                String AndroidSdk;
+                Shell.RequireEnvironmentVariable("AndroidSdk", out AndroidSdk, Quiet, p => Directory.Exists(Path.Combine(p, "platform-tools")), p => Path.GetFullPath(p), BuildingOperatingSystem == Cpp.OperatingSystemType.Windows ? Path.Combine(Environment.GetEnvironmentVariable("LocalAppData"), @"Android\sdk") : "");
+                String AndroidNdk;
+                Shell.RequireEnvironmentVariable("AndroidNdk", out AndroidNdk, Quiet, p => Directory.Exists(Path.Combine(p, "build")), p => Path.GetFullPath(p), Path.Combine(AndroidSdk, "ndk-bundle"));
+                String CMake;
+                Shell.RequireEnvironmentVariable("CMake", out CMake, Quiet, p => File.Exists(p), p => Path.GetFullPath(p), Shell.TryLocate("cmake") ?? (BuildingOperatingSystem == Cpp.OperatingSystemType.Windows ? Path.Combine(Environment.GetEnvironmentVariable("ProgramFiles"), @"CMake\bin\cmake.exe") : ""));
+                Cpp.ArchitectureType TargetArchitecture;
+                Shell.RequireEnvironmentVariableEnum("TargetArchitecture", out TargetArchitecture, Quiet, Cpp.ArchitectureType.armeabi_v7a);
+                Cpp.ConfigurationType Configuration;
+                Shell.RequireEnvironmentVariableEnum("Configuration", out Configuration, Quiet, Cpp.ConfigurationType.Debug);
+                Shell.RequireEnvironmentVariable("BuildDirectory", out BuildDirectory, Quiet, p => !File.Exists(p), p => Path.GetFullPath(p), $"build/android_{TargetArchitecture}_{Configuration}");
+                var m = new Make(Cpp.ToolchainType.Gradle_CMake, Cpp.CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture, SourceDirectory, BuildDirectory, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
+                m.Execute();
+                using (var d = Shell.PushDirectory(BuildDirectory))
+                {
+                    var Arguments = new List<String>();
+                    Arguments.Add(BuildDirectory.Replace("\\", "/"));
+                    Arguments.Add("-G");
+                    Arguments.Add("Unix Makefiles");
+                    Arguments.Add($"-DCMAKE_BUILD_TYPE={Configuration}");
+                    if (BuildingOperatingSystemArchitecture == Cpp.ArchitectureType.x86_64)
+                    {
+                        if (BuildingOperatingSystem == Cpp.OperatingSystemType.Windows)
+                        {
+                            Arguments.Add($"-DCMAKE_MAKE_PROGRAM={AndroidNdk.Replace("\\", "/")}/prebuilt/windows-x86_64/bin/make.exe");
+                        }
+                        else if (BuildingOperatingSystem == Cpp.OperatingSystemType.Linux)
+                        {
+                            Arguments.Add($"-DCMAKE_MAKE_PROGRAM={AndroidNdk}/prebuilt/linux-x86_64/bin/make");
+                        }
+                        else if (BuildingOperatingSystem == Cpp.OperatingSystemType.Mac)
+                        {
+                            Arguments.Add($"-DCMAKE_MAKE_PROGRAM={AndroidNdk}/prebuilt/darwin-x86_64/bin/make");
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException();
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("UnsupportedBuildingOperatingSystemArchitecture: " + Shell.OperatingSystemArchitecture.ToString());
+                        return 1;
+                    }
+                    Arguments.Add($"-DANDROID_NDK={AndroidNdk.Replace("\\", "/")}");
+                    Arguments.Add($"-DCMAKE_TOOLCHAIN_FILE={AndroidNdk.Replace("\\", "/")}/build/cmake/android.toolchain.cmake");
+                    Arguments.Add($"-DANDROID_STL=c++_static");
+                    Arguments.Add($"-DANDROID_PLATFORM=android-17");
+                    Arguments.Add($"-DANDROID_ABI={Cpp.GradleProjectGenerator.GetArchitectureString(TargetArchitecture)}");
+                    if (TargetArchitecture == Cpp.ArchitectureType.armeabi_v7a)
+                    {
+                        Arguments.Add($"-DANDROID_ARM_NEON=ON");
+                    }
+                    Shell.Execute(CMake, Arguments.ToArray());
+                }
+                Console.WriteLine("Generation successful.");
                 return 0;
             }
 
@@ -149,9 +201,9 @@ namespace TypeMake
         {
             Console.WriteLine(@"TypeMake");
             Console.WriteLine(@"Usage:");
-            Console.WriteLine(@"TypeMake <Target> <SourceDirectory> <BuildDirectory> [/regen] [/dummy]");
+            Console.WriteLine(@"TypeMake [--regen] [--dummy] [--quiet]");
             Console.WriteLine(@"Example:");
-            Console.WriteLine(@"TypeMake win C:\Project\TypeMake\Repo C:\Project\TypeMake\Repo\build\vc15");
+            Console.WriteLine(@"TypeMake");
         }
     }
 }

@@ -145,7 +145,7 @@ namespace TypeMake.Cpp
             var CppFlagStr = String.Join(" ", CppFlags.Select(f => (f == null ? "" : Regex.IsMatch(f, @"[ ""^|]") ? "\"" + f.Replace("\"", "\"\"") + "\"" : f)));
             if (CFlags.Count + CppFlags.Count != 0)
             {
-                yield return @"target_compile_options(${PROJECT_NAME} PRIVATE " + CFlagStr + (CppFlags.Count > 0 ? "$<$<COMPILE_LANGUAGE:CXX>:" + CppFlagStr + ">" : "") + ")";
+                yield return @"target_compile_options(${PROJECT_NAME} PRIVATE " + CFlagStr + ((CFlags.Count > 0) && (CppFlags.Count > 0) ? " " : "") + (CppFlags.Count > 0 ? "$<$<COMPILE_LANGUAGE:CXX>:" + CppFlagStr + ">" : "") + ")";
             }
 
             if ((conf.TargetType == TargetType.Executable) || (conf.TargetType == TargetType.DynamicLibrary) || (conf.TargetType == TargetType.GradleApplication) || (conf.TargetType == TargetType.GradleLibrary))

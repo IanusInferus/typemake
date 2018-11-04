@@ -68,7 +68,7 @@ namespace TypeMake.Cpp
             return Results;
         }
 
-        private static String GetArchitectureString(ArchitectureType Architecture)
+        public static String GetArchitectureString(ArchitectureType Architecture)
         {
             if (Architecture == Cpp.ArchitectureType.x86)
             {
