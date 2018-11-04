@@ -16,10 +16,11 @@ namespace TypeMake.Cpp
         private ToolchainType Toolchain;
         private CompilerType Compiler;
         private OperatingSystemType BuildingOperatingSystem;
+        private ArchitectureType BuildingOperatingSystemArchitecture;
         private OperatingSystemType TargetOperatingSystem;
-        private ArchitectureType? ArchitectureType;
+        private ArchitectureType? TargetArchitectureType;
 
-        public CMakeProjectGenerator(Project Project, List<ProjectReference> ProjectReferences, String InputDirectory, String OutputDirectory, ToolchainType Toolchain, CompilerType Compiler, OperatingSystemType BuildingOperatingSystem, OperatingSystemType TargetOperatingSystem, ArchitectureType? ArchitectureType)
+        public CMakeProjectGenerator(Project Project, List<ProjectReference> ProjectReferences, String InputDirectory, String OutputDirectory, ToolchainType Toolchain, CompilerType Compiler, OperatingSystemType BuildingOperatingSystem, ArchitectureType BuildingOperatingSystemArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType? TargetArchitectureType)
         {
             this.Project = Project;
             this.ProjectReferences = ProjectReferences;
@@ -28,8 +29,9 @@ namespace TypeMake.Cpp
             this.Toolchain = Toolchain;
             this.Compiler = Compiler;
             this.BuildingOperatingSystem = BuildingOperatingSystem;
+            this.BuildingOperatingSystemArchitecture = BuildingOperatingSystemArchitecture;
             this.TargetOperatingSystem = TargetOperatingSystem;
-            this.ArchitectureType = ArchitectureType;
+            this.TargetArchitectureType = TargetArchitectureType;
         }
 
         public void Generate(bool ForceRegenerate)
@@ -43,7 +45,7 @@ namespace TypeMake.Cpp
 
         private IEnumerable<String> GenerateLines(String CMakeListsPath, String BaseDirPath)
         {
-            var conf = ConfigurationUtils.GetMergedConfiguration(Toolchain, Compiler, BuildingOperatingSystem, TargetOperatingSystem, null, null, Project.Configurations);
+            var conf = ConfigurationUtils.GetMergedConfiguration(Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, null, Project.Configurations);
 
             yield return @"cmake_minimum_required(VERSION 3.0.2)";
             yield return $@"project({Project.Name})";
@@ -82,9 +84,9 @@ namespace TypeMake.Cpp
             {
                 yield return $@"set_property(TARGET ${{PROJECT_NAME}} PROPERTY OUTPUT_NAME {Project.TargetName})";
             }
-            if (ArchitectureType.HasValue)
+            if (TargetArchitectureType.HasValue)
             {
-                var Architecture = ArchitectureType.Value;
+                var Architecture = TargetArchitectureType.Value;
                 yield return $@"set_property(TARGET ${{PROJECT_NAME}} PROPERTY ARCHIVE_OUTPUT_DIRECTORY ${{CMAKE_CURRENT_BINARY_DIR}}/../../{Architecture}_${{CMAKE_BUILD_TYPE}})";
                 yield return $@"set_property(TARGET ${{PROJECT_NAME}} PROPERTY LIBRARY_OUTPUT_DIRECTORY ${{CMAKE_CURRENT_BINARY_DIR}}/../../{Architecture}_${{CMAKE_BUILD_TYPE}})";
                 yield return $@"set_property(TARGET ${{PROJECT_NAME}} PROPERTY RUNTIME_OUTPUT_DIRECTORY ${{CMAKE_CURRENT_BINARY_DIR}}/../../{Architecture}_${{CMAKE_BUILD_TYPE}})";

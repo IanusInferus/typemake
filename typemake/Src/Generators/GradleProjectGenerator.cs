@@ -19,10 +19,11 @@ namespace TypeMake.Cpp
         private ToolchainType Toolchain;
         private CompilerType Compiler;
         private OperatingSystemType BuildingOperatingSystem;
+        private ArchitectureType BuildingOperatingSystemArchitecture;
         private OperatingSystemType TargetOperatingSystem;
-        private ArchitectureType? ArchitectureType;
+        private ArchitectureType? TargetArchitectureType;
 
-        public GradleProjectGenerator(String SolutionName, Project Project, List<ProjectReference> ProjectReferences, String InputDirectory, String OutputDirectory, String SolutionOutputDirectory, String BuildGradleTemplateText, ToolchainType Toolchain, CompilerType Compiler, OperatingSystemType BuildingOperatingSystem, OperatingSystemType TargetOperatingSystem, ArchitectureType? ArchitectureType)
+        public GradleProjectGenerator(String SolutionName, Project Project, List<ProjectReference> ProjectReferences, String InputDirectory, String OutputDirectory, String SolutionOutputDirectory, String BuildGradleTemplateText, ToolchainType Toolchain, CompilerType Compiler, OperatingSystemType BuildingOperatingSystem, ArchitectureType BuildingOperatingSystemArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType? TargetArchitectureType)
         {
             this.SolutionName = SolutionName;
             this.Project = Project;
@@ -34,8 +35,9 @@ namespace TypeMake.Cpp
             this.Toolchain = Toolchain;
             this.Compiler = Compiler;
             this.BuildingOperatingSystem = BuildingOperatingSystem;
+            this.BuildingOperatingSystemArchitecture = BuildingOperatingSystemArchitecture;
             this.TargetOperatingSystem = TargetOperatingSystem;
-            this.ArchitectureType = ArchitectureType;
+            this.TargetArchitectureType = TargetArchitectureType;
         }
 
         public void Generate(bool ForceRegenerate)
@@ -49,18 +51,18 @@ namespace TypeMake.Cpp
 
         private IEnumerable<String> GenerateLines(String BuildGradlePath, String BaseDirPath)
         {
-            var conf = ConfigurationUtils.GetMergedConfiguration(Toolchain, Compiler, BuildingOperatingSystem, TargetOperatingSystem, null, null, Project.Configurations);
+            var conf = ConfigurationUtils.GetMergedConfiguration(Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, null, Project.Configurations);
 
             var Results = BuildGradleTemplateText.Replace("\r\n", "\n").Split('\n').AsEnumerable();
             Results = Results.Select(Line => Line.Replace("${ApplicationId}", Project.ApplicationIdentifier ?? (SolutionName + "." + Project.TargetName ?? Project.Name).ToLower()));
             Results = Results.Select(Line => Line.Replace("${ProjectSrcDir}", FileNameHandling.GetRelativePath(InputDirectory, BaseDirPath).Replace('\\', '/')));
             Results = Results.Select(Line => Line.Replace("${SolutionOutputDir}", FileNameHandling.GetRelativePath(SolutionOutputDirectory, BaseDirPath).Replace('\\', '/').TrimEnd('/')));
-            if (!ArchitectureType.HasValue)
+            if (!TargetArchitectureType.HasValue)
             {
                 throw new NotSupportedException("ArchitectureTypeIsNull");
             }
-            Results = Results.Select(Line => Line.Replace("${ArchitectureType}", ArchitectureType.Value.ToString()));
-            Results = Results.Select(Line => Line.Replace("${AndroidAbi}", GetArchitectureString(ArchitectureType.Value)));
+            Results = Results.Select(Line => Line.Replace("${ArchitectureType}", TargetArchitectureType.Value.ToString()));
+            Results = Results.Select(Line => Line.Replace("${AndroidAbi}", GetArchitectureString(TargetArchitectureType.Value)));
             Results = Results.Select(Line => Line.Replace("${ProjectTargetName}", Project.TargetName ?? Project.Name));
 
             return Results;

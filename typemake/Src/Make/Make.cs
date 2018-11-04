@@ -28,23 +28,25 @@ namespace TypeMake
 
         private ToolchainType Toolchain;
         private CompilerType Compiler;
+        private OperatingSystemType BuildingOperatingSystem;
+        private ArchitectureType BuildingOperatingSystemArchitecture;
         private OperatingSystemType TargetOperatingSystem;
+        private ArchitectureType? TargetArchitecture;
         private String SourceDirectory;
         private String BuildDirectory;
         private bool ForceRegenerate;
         private bool EnableNonTargetingOperatingSystemDummy;
-        private OperatingSystemType BuildingOperatingSystem;
-        private ArchitectureType? ArchitectureType;
 
         private Dictionary<String, String> ProjectIds = new Dictionary<String, String>();
 
-        public Make(ToolchainType Toolchain, CompilerType Compiler, OperatingSystemType BuildingOperatingSystem, OperatingSystemType TargetOperatingSystem, ArchitectureType? ArchitectureType, String SourceDirectory, String BuildDirectory, bool ForceRegenerate, bool EnableNonTargetingOperatingSystemDummy)
+        public Make(ToolchainType Toolchain, CompilerType Compiler, OperatingSystemType BuildingOperatingSystem, ArchitectureType BuildingOperatingSystemArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType? TargetArchitecture, String SourceDirectory, String BuildDirectory, bool ForceRegenerate, bool EnableNonTargetingOperatingSystemDummy)
         {
             this.Toolchain = Toolchain;
             this.Compiler = Compiler;
             this.BuildingOperatingSystem = BuildingOperatingSystem;
+            this.BuildingOperatingSystemArchitecture = BuildingOperatingSystemArchitecture;
             this.TargetOperatingSystem = TargetOperatingSystem;
-            this.ArchitectureType = ArchitectureType;
+            this.TargetArchitecture = TargetArchitecture;
             this.SourceDirectory = Path.GetFullPath(SourceDirectory);
             this.BuildDirectory = Path.GetFullPath(BuildDirectory);
             this.ForceRegenerate = ForceRegenerate;
@@ -189,23 +191,23 @@ namespace TypeMake
             {
                 var VcxprojTemplateText = Resource.GetResourceText(@"Templates\vc15\Default.vcxproj");
                 var VcxprojFilterTemplateText = Resource.GetResourceText(@"Templates\vc15\Default.vcxproj.filters");
-                var g = new VcxprojGenerator(p, GetIdForProject(ModuleName), ProjectReferences, ModulePath, Path.Combine(BuildDirectory, "projects"), VcxprojTemplateText, VcxprojFilterTemplateText, BuildingOperatingSystem, TargetOperatingSystem);
+                var g = new VcxprojGenerator(p, GetIdForProject(ModuleName), ProjectReferences, ModulePath, Path.Combine(BuildDirectory, "projects"), VcxprojTemplateText, VcxprojFilterTemplateText, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem);
                 g.Generate(ForceRegenerate);
             }
             else if (Toolchain == ToolchainType.Mac_XCode)
             {
                 var PbxprojTemplateText = Resource.GetResourceText(@"Templates\xcode9\Default.xcodeproj\project.pbxproj");
-                var g = new PbxprojGenerator(p, ProjectReferences, ModulePath, Path.Combine(BuildDirectory, "projects"), PbxprojTemplateText, BuildingOperatingSystem, TargetOperatingSystem);
+                var g = new PbxprojGenerator(p, ProjectReferences, ModulePath, Path.Combine(BuildDirectory, "projects"), PbxprojTemplateText, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem);
                 g.Generate(ForceRegenerate);
             }
             else if (Toolchain == ToolchainType.CMake)
             {
-                var g = new CMakeProjectGenerator(p, ProjectReferences, ModulePath, Path.Combine(BuildDirectory, "projects"), Toolchain, Compiler, BuildingOperatingSystem, TargetOperatingSystem, ArchitectureType);
+                var g = new CMakeProjectGenerator(p, ProjectReferences, ModulePath, Path.Combine(BuildDirectory, "projects"), Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture);
                 g.Generate(ForceRegenerate);
             }
             else if (Toolchain == ToolchainType.Gradle_CMake)
             {
-                var g = new CMakeProjectGenerator(p, ProjectReferences, ModulePath, Path.Combine(BuildDirectory, "projects"), Toolchain, Compiler, BuildingOperatingSystem, TargetOperatingSystem, ArchitectureType);
+                var g = new CMakeProjectGenerator(p, ProjectReferences, ModulePath, Path.Combine(BuildDirectory, "projects"), Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture);
                 g.Generate(ForceRegenerate);
             }
             else
@@ -267,23 +269,23 @@ namespace TypeMake
             {
                 var VcxprojTemplateText = Resource.GetResourceText(@"Templates\vc15\Default.vcxproj");
                 var VcxprojFilterTemplateText = Resource.GetResourceText(@"Templates\vc15\Default.vcxproj.filters");
-                var g = new VcxprojGenerator(p, GetIdForProject(TestName), ProjectReferences, Path.GetDirectoryName(TestFile.Path), Path.Combine(BuildDirectory, "projects"), VcxprojTemplateText, VcxprojFilterTemplateText, BuildingOperatingSystem, TargetOperatingSystem);
+                var g = new VcxprojGenerator(p, GetIdForProject(TestName), ProjectReferences, Path.GetDirectoryName(TestFile.Path), Path.Combine(BuildDirectory, "projects"), VcxprojTemplateText, VcxprojFilterTemplateText, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem);
                 g.Generate(ForceRegenerate);
             }
             else if (Toolchain == ToolchainType.Mac_XCode)
             {
                 var PbxprojTemplateText = Resource.GetResourceText(@"Templates\xcode9\Default.xcodeproj\project.pbxproj");
-                var g = new PbxprojGenerator(p, ProjectReferences, Path.GetDirectoryName(TestFile.Path), Path.Combine(BuildDirectory, "projects"), PbxprojTemplateText, BuildingOperatingSystem, TargetOperatingSystem);
+                var g = new PbxprojGenerator(p, ProjectReferences, Path.GetDirectoryName(TestFile.Path), Path.Combine(BuildDirectory, "projects"), PbxprojTemplateText, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem);
                 g.Generate(ForceRegenerate);
             }
             else if (Toolchain == ToolchainType.CMake)
             {
-                var g = new CMakeProjectGenerator(p, ProjectReferences, Path.GetDirectoryName(TestFile.Path), Path.Combine(BuildDirectory, "projects"), Toolchain, Compiler, BuildingOperatingSystem, TargetOperatingSystem, ArchitectureType);
+                var g = new CMakeProjectGenerator(p, ProjectReferences, Path.GetDirectoryName(TestFile.Path), Path.Combine(BuildDirectory, "projects"), Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture);
                 g.Generate(ForceRegenerate);
             }
             else if (Toolchain == ToolchainType.Gradle_CMake)
             {
-                var g = new CMakeProjectGenerator(p, ProjectReferences, Path.GetDirectoryName(TestFile.Path), Path.Combine(BuildDirectory, "projects"), Toolchain, Compiler, BuildingOperatingSystem, TargetOperatingSystem, ArchitectureType);
+                var g = new CMakeProjectGenerator(p, ProjectReferences, Path.GetDirectoryName(TestFile.Path), Path.Combine(BuildDirectory, "projects"), Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture);
                 g.Generate(ForceRegenerate);
             }
             else
@@ -378,34 +380,34 @@ namespace TypeMake
             {
                 var VcxprojTemplateText = Resource.GetResourceText(@"Templates\vc15\Default.vcxproj");
                 var VcxprojFilterTemplateText = Resource.GetResourceText(@"Templates\vc15\Default.vcxproj.filters");
-                var g = new VcxprojGenerator(p, GetIdForProject(ProductName), ProjectReferences, ProductPath, Path.Combine(BuildDirectory, "projects"), VcxprojTemplateText, VcxprojFilterTemplateText, BuildingOperatingSystem, TargetOperatingSystem);
+                var g = new VcxprojGenerator(p, GetIdForProject(ProductName), ProjectReferences, ProductPath, Path.Combine(BuildDirectory, "projects"), VcxprojTemplateText, VcxprojFilterTemplateText, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem);
                 g.Generate(ForceRegenerate);
             }
             else if (Toolchain == ToolchainType.Mac_XCode)
             {
                 var PbxprojTemplateText = Resource.GetResourceText(@"Templates\xcode9\Default.xcodeproj\project.pbxproj");
-                var g = new PbxprojGenerator(p, ProjectReferences, ProductPath, Path.Combine(BuildDirectory, "projects"), PbxprojTemplateText, BuildingOperatingSystem, TargetOperatingSystem);
+                var g = new PbxprojGenerator(p, ProjectReferences, ProductPath, Path.Combine(BuildDirectory, "projects"), PbxprojTemplateText, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem);
                 g.Generate(ForceRegenerate);
             }
             else if (Toolchain == ToolchainType.CMake)
             {
-                var g = new CMakeProjectGenerator(p, ProjectReferences, ProductPath, Path.Combine(BuildDirectory, "projects"), Toolchain, Compiler, BuildingOperatingSystem, TargetOperatingSystem, ArchitectureType);
+                var g = new CMakeProjectGenerator(p, ProjectReferences, ProductPath, Path.Combine(BuildDirectory, "projects"), Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture);
                 g.Generate(ForceRegenerate);
             }
             else if (Toolchain == ToolchainType.Gradle_CMake)
             {
-                var g = new CMakeProjectGenerator(p, ProjectReferences, ProductPath, Path.Combine(BuildDirectory, "projects"), Toolchain, Compiler, BuildingOperatingSystem, TargetOperatingSystem, ArchitectureType);
+                var g = new CMakeProjectGenerator(p, ProjectReferences, ProductPath, Path.Combine(BuildDirectory, "projects"), Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture);
                 g.Generate(ForceRegenerate);
                 if (ProductTargetType == TargetType.GradleApplication)
                 {
                     var BuildGradleTemplateText = Resource.GetResourceText(@"Templates\gradle_application\build.gradle");
-                    var gGradle = new GradleProjectGenerator(SolutionName, p, ProjectReferences, ProductPath, Path.Combine(BuildDirectory, "gradle"), BuildDirectory, BuildGradleTemplateText, Toolchain, Compiler, BuildingOperatingSystem, TargetOperatingSystem, ArchitectureType);
+                    var gGradle = new GradleProjectGenerator(SolutionName, p, ProjectReferences, ProductPath, Path.Combine(BuildDirectory, "gradle"), BuildDirectory, BuildGradleTemplateText, Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture);
                     gGradle.Generate(ForceRegenerate);
                 }
                 else if (ProductTargetType == TargetType.GradleLibrary)
                 {
                     var BuildGradleTemplateText = Resource.GetResourceText(@"Templates\gradle_library\build.gradle");
-                    var gGradle = new GradleProjectGenerator(SolutionName, p, ProjectReferences, ProductPath, Path.Combine(BuildDirectory, "gradle"), BuildDirectory, BuildGradleTemplateText, Toolchain, Compiler, BuildingOperatingSystem, TargetOperatingSystem, ArchitectureType);
+                    var gGradle = new GradleProjectGenerator(SolutionName, p, ProjectReferences, ProductPath, Path.Combine(BuildDirectory, "gradle"), BuildDirectory, BuildGradleTemplateText, Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture);
                     gGradle.Generate(ForceRegenerate);
                 }
             }
