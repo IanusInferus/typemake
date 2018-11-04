@@ -15,9 +15,10 @@ namespace TypeMake.Cpp
         private String OutputDirectory;
         private String PbxprojTemplateText;
         private OperatingSystemType BuildingOperatingSystem;
+        private ArchitectureType BuildingOperatingSystemArchitecture;
         private OperatingSystemType TargetOperatingSystem;
 
-        public PbxprojGenerator(Project Project, List<ProjectReference> ProjectReferences, String InputDirectory, String OutputDirectory, String PbxprojTemplateText, OperatingSystemType BuildingOperatingSystem, OperatingSystemType TargetOperatingSystem)
+        public PbxprojGenerator(Project Project, List<ProjectReference> ProjectReferences, String InputDirectory, String OutputDirectory, String PbxprojTemplateText, OperatingSystemType BuildingOperatingSystem, ArchitectureType BuildingOperatingSystemArchitecture, OperatingSystemType TargetOperatingSystem)
         {
             this.Project = Project;
             this.ProjectReferences = ProjectReferences;
@@ -25,6 +26,7 @@ namespace TypeMake.Cpp
             this.OutputDirectory = Path.GetFullPath(OutputDirectory);
             this.PbxprojTemplateText = PbxprojTemplateText;
             this.BuildingOperatingSystem = BuildingOperatingSystem;
+            this.BuildingOperatingSystemArchitecture = BuildingOperatingSystemArchitecture;
             this.TargetOperatingSystem = TargetOperatingSystem;
         }
 
@@ -102,7 +104,7 @@ namespace TypeMake.Cpp
 
             foreach (var TargetKey in Targets)
             {
-                var conf = ConfigurationUtils.GetMergedConfiguration(ToolchainType.Mac_XCode, CompilerType.clang, BuildingOperatingSystem, TargetOperatingSystem, null, null, Project.Configurations);
+                var conf = ConfigurationUtils.GetMergedConfiguration(ToolchainType.Mac_XCode, CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, null, Project.Configurations);
 
                 var Target = Objects[TargetKey.String].Dict;
                 var TargetName = Target["name"].String;
@@ -190,7 +192,7 @@ namespace TypeMake.Cpp
                 var ConfigurationType = (ConfigurationType)(Enum.Parse(typeof(ConfigurationType), BuildConfiguration["name"].String));
                 var BuildSettings = BuildConfiguration["buildSettings"].Dict;
 
-                var conf = ConfigurationUtils.GetMergedConfiguration(ToolchainType.Mac_XCode, CompilerType.clang, BuildingOperatingSystem, TargetOperatingSystem, ConfigurationType, null, Project.Configurations);
+                var conf = ConfigurationUtils.GetMergedConfiguration(ToolchainType.Mac_XCode, CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, ConfigurationType, null, Project.Configurations);
 
                 var IncludeDirectories = conf.IncludeDirectories.Select(d => FileNameHandling.GetRelativePath(Path.GetFullPath(d), BaseDirPath).Replace('\\', '/')).ToList();
                 if (IncludeDirectories.Count != 0)

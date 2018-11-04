@@ -64,9 +64,10 @@ namespace TypeMake.Cpp
         public ToolchainType? Toolchain = null;
         public CompilerType? Compiler = null;
         public OperatingSystemType? BuildingOperatingSystem = null;
+        public ArchitectureType? BuildingOperatingSystemArchitecture = null;
         public OperatingSystemType? TargetOperatingSystem = null;
+        public ArchitectureType? TargetArchitecture = null;
         public ConfigurationType? ConfigurationType = null;
-        public ArchitectureType? Architecture = null;
 
         public TargetType? TargetType = null;
 

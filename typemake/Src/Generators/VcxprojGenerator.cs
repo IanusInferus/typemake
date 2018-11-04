@@ -19,9 +19,10 @@ namespace TypeMake.Cpp
         private String VcxprojTemplateText;
         private String VcxprojFilterTemplateText;
         private OperatingSystemType BuildingOperatingSystem;
+        private ArchitectureType BuildingOperatingSystemArchitecture;
         private OperatingSystemType TargetOperatingSystem;
 
-        public VcxprojGenerator(Project Project, String ProjectId, List<ProjectReference> ProjectReferences, String InputDirectory, String OutputDirectory, String VcxprojTemplateText, String VcxprojFilterTemplateText, OperatingSystemType BuildingOperatingSystem, OperatingSystemType TargetOperatingSystem)
+        public VcxprojGenerator(Project Project, String ProjectId, List<ProjectReference> ProjectReferences, String InputDirectory, String OutputDirectory, String VcxprojTemplateText, String VcxprojFilterTemplateText, OperatingSystemType BuildingOperatingSystem, ArchitectureType BuildingOperatingSystemArchitecture, OperatingSystemType TargetOperatingSystem)
         {
             this.Project = Project;
             this.ProjectId = ProjectId;
@@ -31,6 +32,7 @@ namespace TypeMake.Cpp
             this.VcxprojTemplateText = VcxprojTemplateText;
             this.VcxprojFilterTemplateText = VcxprojFilterTemplateText;
             this.BuildingOperatingSystem = BuildingOperatingSystem;
+            this.BuildingOperatingSystemArchitecture = BuildingOperatingSystemArchitecture;
             this.TargetOperatingSystem = TargetOperatingSystem;
         }
 
@@ -110,7 +112,7 @@ namespace TypeMake.Cpp
                 var Architecture = Pair.Key.Value;
                 var Name = Pair.Value;
 
-                var conf = ConfigurationUtils.GetMergedConfiguration(ToolchainType.Windows_VisualC, CompilerType.VisualC, BuildingOperatingSystem, TargetOperatingSystem, ConfigurationType, Architecture, Project.Configurations);
+                var conf = ConfigurationUtils.GetMergedConfiguration(ToolchainType.Windows_VisualC, CompilerType.VisualC, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, ConfigurationType, Architecture, Project.Configurations);
 
                 var PropertyGroup = xVcxproj.Elements(xn + "PropertyGroup").Where(e => (e.Attribute("Condition") != null) && (e.Attribute("Condition").Value == "'$(Configuration)|$(Platform)'=='" + Name + "'")).LastOrDefault();
                 if (PropertyGroup == null)
@@ -206,7 +208,7 @@ namespace TypeMake.Cpp
                 {
                     xVcxproj.Add(FileItemGroup);
                 }
-                if ((conf.ConfigurationType != null) || (conf.Architecture != null))
+                if ((conf.ConfigurationType != null) || (conf.TargetArchitecture != null))
                 {
                     var Keys = new List<String> { };
                     var Values = new List<String> { };
@@ -215,10 +217,10 @@ namespace TypeMake.Cpp
                         Keys.Add("$(Configuration)");
                         Values.Add(conf.ConfigurationType.ToString());
                     }
-                    if (conf.Architecture != null)
+                    if (conf.TargetArchitecture != null)
                     {
                         Keys.Add("$(Platform)");
-                        Values.Add(GetArchitectureString(conf.Architecture.Value));
+                        Values.Add(GetArchitectureString(conf.TargetArchitecture.Value));
                     }
                     var Condition = "'" + String.Join("|", Keys) + "' == '" + String.Join("|", Values) + "'";
                     FileItemGroup.Add(new XAttribute("Condition", Condition));
