@@ -201,9 +201,10 @@ namespace TypeMake
         {
             Console.WriteLine(@"TypeMake");
             Console.WriteLine(@"Usage:");
-            Console.WriteLine(@"TypeMake [--regen] [--dummy] [--quiet]");
-            Console.WriteLine(@"Example:");
-            Console.WriteLine(@"TypeMake");
+            Console.WriteLine(@"TypeMake [--regen] [--dummy] [--quiet] [--help]");
+            Console.WriteLine(@"--regen forcely regenerate project files");
+            Console.WriteLine(@"--dummy generate dummy projects for non-targeting operating systems");
+            Console.WriteLine(@"--quiet no interactive variable input, all variables must be input from environment variables");
         }
     }
 }
