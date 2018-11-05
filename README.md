@@ -11,6 +11,7 @@ TypeMake --help
 
 ## Support matrix
 Target Operating System vs Building Operating System
+
 |                                         |   Windows 10 x64   |      Linux x64     |      MacOS x64     |
 | :-------------------------------------: | :----------------: | :----------------: | :----------------: |
 |             Windows x86/x64             |       VS2017       |                    |                    |
