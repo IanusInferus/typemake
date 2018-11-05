@@ -180,7 +180,13 @@ namespace TypeMake
             return arg.Contains(' ') ? "\"" + arg + "\"" : arg;
         }
 
-        public static void RequireEnvironmentVariable(Dictionary<String, String> Memory, String Name, out String Value, bool Quiet, Func<String, bool> Validator = null, Func<String, String> PostMapper = null, String DefaultValue = "", String InputDisplay = null, bool OutputVariable = true)
+        public class EnvironmentVariableMemory
+        {
+            public Dictionary<String, String> Variables = new Dictionary<String, String>();
+            public Dictionary<String, List<String>> VariableSelections = new Dictionary<String, List<String>>();
+        }
+
+        public static void RequireEnvironmentVariable(EnvironmentVariableMemory Memory, String Name, out String Value, bool Quiet, Func<String, bool> Validator = null, Func<String, String> PostMapper = null, String DefaultValue = "", String InputDisplay = null, bool OutputVariable = true)
         {
             var d = InputDisplay ?? (!String.IsNullOrEmpty(DefaultValue) ? "[" + DefaultValue + "]" : "");
             var v = Environment.GetEnvironmentVariable(Name);
@@ -210,20 +216,16 @@ namespace TypeMake
             }
             Value = v;
             Console.WriteLine(Name + "=" + v);
-            if (Memory.ContainsKey(Name))
+            if (Memory.Variables.ContainsKey(Name))
             {
-                Memory[Name] = v;
+                Memory.Variables[Name] = v;
             }
             else
             {
-                Memory.Add(Name, v);
+                Memory.Variables.Add(Name, v);
             }
         }
-        public static void RequireEnvironmentVariableEnum<T>(Dictionary<String, String> Memory, String Name, out T Value, bool Quiet, T DefaultValue = default(T), bool OutputVariable = true) where T : struct
-        {
-            RequireEnvironmentVariableEnum<T>(Memory, Name, out Value, Quiet, new HashSet<T>(Enum.GetValues(typeof(T)).Cast<T>()), DefaultValue, OutputVariable);
-        }
-        public static void RequireEnvironmentVariableEnum<T>(Dictionary<String, String> Memory, String Name, out T Value, bool Quiet, HashSet<T> Selections, T DefaultValue = default(T), bool OutputVariable = true) where T : struct
+        public static void RequireEnvironmentVariableEnum<T>(EnvironmentVariableMemory Memory, String Name, out T Value, bool Quiet, HashSet<T> Selections, T DefaultValue = default(T), bool OutputVariable = true) where T : struct
         {
             var InputDisplay = String.Join("|", Selections.Select(e => e.Equals(DefaultValue) ? "[" + e.ToString() + "]" : e.ToString()));
             String s;
@@ -237,15 +239,35 @@ namespace TypeMake
                 return b;
             }, v => Output.ToString(), DefaultValue.ToString(), InputDisplay, OutputVariable);
             Value = Output;
+            if (Memory.VariableSelections.ContainsKey(Name))
+            {
+                Memory.VariableSelections[Name] = Selections.Select(v => v.ToString()).ToList();
+            }
+            else
+            {
+                Memory.VariableSelections.Add(Name, Selections.Select(v => v.ToString()).ToList());
+            }
         }
-        public static void RequireEnvironmentVariableSelection(Dictionary<String, String> Memory, String Name, out String Value, bool Quiet, HashSet<String> Selections, String DefaultValue = "", bool OutputVariable = true)
+        public static void RequireEnvironmentVariableEnum<T>(EnvironmentVariableMemory Memory, String Name, out T Value, bool Quiet, T DefaultValue = default(T), bool OutputVariable = true) where T : struct
+        {
+            RequireEnvironmentVariableEnum<T>(Memory, Name, out Value, Quiet, new HashSet<T>(Enum.GetValues(typeof(T)).Cast<T>()), DefaultValue, OutputVariable);
+        }
+        public static void RequireEnvironmentVariableSelection(EnvironmentVariableMemory Memory, String Name, out String Value, bool Quiet, HashSet<String> Selections, String DefaultValue = "", bool OutputVariable = true)
         {
             var InputDisplay = String.Join("|", Selections.Select(c => c.Equals(DefaultValue) ? "[" + c.ToString() + "]" : c.ToString()));
             String s;
             RequireEnvironmentVariable(Memory, Name, out s, Quiet, v => Selections.Contains(v), null, DefaultValue.ToString(), InputDisplay, OutputVariable);
             Value = s;
+            if (Memory.VariableSelections.ContainsKey(Name))
+            {
+                Memory.VariableSelections[Name] = Selections.ToList();
+            }
+            else
+            {
+                Memory.VariableSelections.Add(Name, Selections.ToList());
+            }
         }
-        public static void RequireEnvironmentVariableBoolean(Dictionary<String, String> Memory, String Name, out bool Value, bool Quiet, bool DefaultValue = false, bool OutputVariable = true)
+        public static void RequireEnvironmentVariableBoolean(EnvironmentVariableMemory Memory, String Name, out bool Value, bool Quiet, bool DefaultValue = false, bool OutputVariable = true)
         {
             var Selections = new List<bool> { false, true };
             var InputDisplay = String.Join("|", Selections.Select(c => c.Equals(DefaultValue) ? "[" + c.ToString() + "]" : c.ToString()));
