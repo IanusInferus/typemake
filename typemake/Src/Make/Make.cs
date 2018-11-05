@@ -10,7 +10,7 @@ namespace TypeMake
 {
     public class Make
     {
-        public const String SolutionName = "TypeMakeSample";
+        private const String SolutionName = "TypeMakeSample";
 
         private Dictionary<String, List<String>> ModuleDependencies =
             new Dictionary<String, List<String>>
@@ -53,7 +53,13 @@ namespace TypeMake
             this.EnableNonTargetingOperatingSystemDummy = EnableNonTargetingOperatingSystemDummy;
         }
 
-        public void Execute()
+        public class Result
+        {
+            public String SolutionName;
+            public List<KeyValuePair<ProjectReference, List<ProjectReference>>> Projects;
+            public List<ProjectReference> SortedProjects;
+        }
+        public Result Execute()
         {
             var Projects = new List<KeyValuePair<ProjectReference, List<ProjectReference>>>();
             foreach (var ModulePath in Directory.EnumerateDirectories(Path.Combine(SourceDirectory, "modules"), "*", SearchOption.TopDirectoryOnly))
@@ -103,11 +109,22 @@ namespace TypeMake
                     ProductTargetType = TargetType.StaticLibrary;
                 }
                 var IsTargetOperatingSystemMatched = IsOperatingSystemMatchExtensions(Extensions, TargetOperatingSystem);
+                if ((TargetOperatingSystem != OperatingSystemType.Android) && ((ProductTargetType == TargetType.GradleLibrary) || (ProductTargetType == TargetType.GradleApplication)))
+                {
+                    IsTargetOperatingSystemMatched = false;
+                }
+                if ((TargetOperatingSystem == OperatingSystemType.iOS) && (ProductTargetType == TargetType.Executable))
+                {
+                    IsTargetOperatingSystemMatched = IsOperatingSystemMatchExtensions(Extensions, TargetOperatingSystem, true);
+                }
                 if (IsTargetOperatingSystemMatched || EnableNonTargetingOperatingSystemDummy)
                 {
                     Projects.Add(GenerateProductProject(ProductName, ProductPath, ProductTargetType, IsTargetOperatingSystemMatched));
                 }
             }
+            var ProjectDict = Projects.ToDictionary(p => p.Key.Name, p => p.Key);
+            var ProjectDependencies = Projects.ToDictionary(p => ProjectDict[p.Key.Name], p => p.Value.Select(n => ProjectDict[n.Name]).ToList());
+            var SortedProjects = Projects.Select(p => p.Key).PartialOrderBy(p => ProjectDependencies.ContainsKey(p) ? ProjectDependencies[p] : null).ToList();
             if (Toolchain == ToolchainType.Windows_VisualC)
             {
                 var SlnTemplateText = Resource.GetResourceText(@"Templates\vc15\Default.sln");
@@ -122,18 +139,12 @@ namespace TypeMake
             }
             else if (Toolchain == ToolchainType.CMake)
             {
-                var ProjectDict = Projects.ToDictionary(p => p.Key.Name, p => p.Key);
-                var ProjectDependencies = Projects.ToDictionary(p => ProjectDict[p.Key.Name], p => p.Value.Select(n => ProjectDict[n.Name]).ToList());
-                var SortedProjects = Projects.Select(p => p.Key).PartialOrderBy(p => ProjectDependencies.ContainsKey(p) ? ProjectDependencies[p] : null).ToList();
                 var g = new CMakeSolutionGenerator(SolutionName, SortedProjects, BuildDirectory);
                 g.Generate(ForceRegenerate);
             }
             else if (Toolchain == ToolchainType.Gradle_CMake)
             {
                 CopyDirectory(Path.Combine(Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location), "Templates"), "gradle"), Path.Combine(BuildDirectory, "gradle"));
-                var ProjectDict = Projects.ToDictionary(p => p.Key.Name, p => p.Key);
-                var ProjectDependencies = Projects.ToDictionary(p => ProjectDict[p.Key.Name], p => p.Value.Select(n => ProjectDict[n.Name]).ToList());
-                var SortedProjects = Projects.Select(p => p.Key).PartialOrderBy(p => ProjectDependencies.ContainsKey(p) ? ProjectDependencies[p] : null).ToList();
                 var g = new CMakeSolutionGenerator(SolutionName, SortedProjects, BuildDirectory);
                 g.Generate(ForceRegenerate);
                 TextFile.WriteToFile(Path.Combine(Path.Combine(BuildDirectory, "gradle"), "settings.gradle"), "include " + String.Join(", ", GradleProjectNames.Select(n => "':" + n + "'")), new UTF8Encoding(false), !ForceRegenerate);
@@ -142,6 +153,7 @@ namespace TypeMake
             {
                 throw new NotSupportedException();
             }
+            return new Result { SolutionName = SolutionName, Projects = Projects, SortedProjects = SortedProjects };
         }
 
         private KeyValuePair<ProjectReference, List<ProjectReference>> GenerateModuleProject(String ModuleName, String ModulePath, bool IsTargetOperatingSystemMatched)
@@ -580,7 +592,7 @@ namespace TypeMake
             }
         }
 
-        private static bool IsOperatingSystemMatchExtensions(IEnumerable<String> Extensions, OperatingSystemType TargetOperatingSystem)
+        private static bool IsOperatingSystemMatchExtensions(IEnumerable<String> Extensions, OperatingSystemType TargetOperatingSystem, bool IsExact = false)
         {
             var Names = new HashSet<String>(Enum.GetNames(typeof(OperatingSystemType)), StringComparer.OrdinalIgnoreCase);
             var TargetName = Enum.GetName(typeof(OperatingSystemType), TargetOperatingSystem);
@@ -599,7 +611,7 @@ namespace TypeMake
                     return false;
                 }
             }
-            return true;
+            return !IsExact;
         }
         private static void CopyDirectory(String SourceDirectory, String DestinationDirectory)
         {

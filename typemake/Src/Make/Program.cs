@@ -98,16 +98,13 @@ namespace TypeMake
             Cpp.OperatingSystemType TargetOperatingSystem;
             Shell.RequireEnvironmentVariableEnum<Cpp.OperatingSystemType>(Memory, "TargetOperatingSystem", out TargetOperatingSystem, Quiet, BuildingOperatingSystem);
 
-            //TODO: create make script for all targets
-            //TODO: automatic build after generation
-
             if (TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
             {
                 Shell.RequireEnvironmentVariable(Memory, "BuildDirectory", out BuildDirectory, Quiet, p => !File.Exists(p), p => Path.GetFullPath(p), "build/windows");
                 var VSDir = "";
                 var TargetArchitecture = Cpp.ArchitectureType.x86_64;
                 var Configuration = Cpp.ConfigurationType.Debug;
-                if (BuildAfterGenerate && (Shell.OperatingSystem == Shell.BuildingOperatingSystemType.Windows))
+                if (BuildAfterGenerate && (BuildingOperatingSystem == Cpp.OperatingSystemType.Windows))
                 {
                     String DefaultVSDir = "";
                     var ProgramFiles = Environment.GetEnvironmentVariable("ProgramFiles(x86)");
@@ -128,14 +125,14 @@ namespace TypeMake
                     Shell.RequireEnvironmentVariableEnum(Memory, "Configuration", out Configuration, Quiet, Cpp.ConfigurationType.Debug);
                 }
                 var m = new Make(Cpp.ToolchainType.Windows_VisualC, Cpp.CompilerType.VisualC, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, SourceDirectory, BuildDirectory, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
-                m.Execute();
+                var r = m.Execute();
                 GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, ForceRegenerate);
-                if (BuildAfterGenerate && (Shell.OperatingSystem == Shell.BuildingOperatingSystemType.Windows))
+                if (BuildAfterGenerate && (BuildingOperatingSystem == Cpp.OperatingSystemType.Windows))
                 {
-                    GenerateBuildScriptWindows(BuildDirectory, Make.SolutionName, Cpp.ArchitectureType.x86, Cpp.ConfigurationType.Debug, VSDir, ForceRegenerate);
-                    GenerateBuildScriptWindows(BuildDirectory, Make.SolutionName, Cpp.ArchitectureType.x86, Cpp.ConfigurationType.Release, VSDir, ForceRegenerate);
-                    GenerateBuildScriptWindows(BuildDirectory, Make.SolutionName, Cpp.ArchitectureType.x86_64, Cpp.ConfigurationType.Debug, VSDir, ForceRegenerate);
-                    GenerateBuildScriptWindows(BuildDirectory, Make.SolutionName, Cpp.ArchitectureType.x86_64, Cpp.ConfigurationType.Release, VSDir, ForceRegenerate);
+                    GenerateBuildScriptWindows(BuildDirectory, r.SolutionName, Cpp.ArchitectureType.x86, Cpp.ConfigurationType.Debug, VSDir, ForceRegenerate);
+                    GenerateBuildScriptWindows(BuildDirectory, r.SolutionName, Cpp.ArchitectureType.x86, Cpp.ConfigurationType.Release, VSDir, ForceRegenerate);
+                    GenerateBuildScriptWindows(BuildDirectory, r.SolutionName, Cpp.ArchitectureType.x86_64, Cpp.ConfigurationType.Debug, VSDir, ForceRegenerate);
+                    GenerateBuildScriptWindows(BuildDirectory, r.SolutionName, Cpp.ArchitectureType.x86_64, Cpp.ConfigurationType.Release, VSDir, ForceRegenerate);
                     using (var d = Shell.PushDirectory(BuildDirectory))
                     {
                         MergeExitCode(Shell.Execute($"build_{TargetArchitecture}_{Configuration}.cmd"));
@@ -153,7 +150,7 @@ namespace TypeMake
                     Shell.RequireEnvironmentVariable(Memory, "CMake", out CMake, Quiet, p => File.Exists(p), p => Path.GetFullPath(p), Shell.TryLocate("cmake") ?? "");
                 }
                 var Make = "";
-                if (BuildAfterGenerate && (Shell.OperatingSystem == Shell.BuildingOperatingSystemType.Linux))
+                if (BuildAfterGenerate && (BuildingOperatingSystem == Cpp.OperatingSystemType.Linux))
                 {
                     Shell.RequireEnvironmentVariable(Memory, "Make", out Make, Quiet, p => File.Exists(p), p => Path.GetFullPath(p), Shell.TryLocate("make") ?? "");
                 }
@@ -170,7 +167,7 @@ namespace TypeMake
                     }
                 }
                 GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, ForceRegenerate);
-                if (BuildAfterGenerate && (Shell.OperatingSystem == Shell.BuildingOperatingSystemType.Linux))
+                if (BuildAfterGenerate && (BuildingOperatingSystem == Cpp.OperatingSystemType.Linux))
                 {
                     using (var d = Shell.PushDirectory(BuildDirectory))
                     {
@@ -182,15 +179,32 @@ namespace TypeMake
             {
                 Shell.RequireEnvironmentVariable(Memory, "BuildDirectory", out BuildDirectory, Quiet, p => !File.Exists(p), p => Path.GetFullPath(p), "build/mac");
                 var m = new Make(Cpp.ToolchainType.Mac_XCode, Cpp.CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, SourceDirectory, BuildDirectory, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
-                m.Execute();
+                var r = m.Execute();
                 GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, ForceRegenerate);
+                GenerateBuildScriptXCode(BuildingOperatingSystem, BuildDirectory, r, ForceRegenerate);
+                if (BuildAfterGenerate && (BuildingOperatingSystem == Cpp.OperatingSystemType.Mac))
+                {
+                    using (var d = Shell.PushDirectory(BuildDirectory))
+                    {
+                        MergeExitCode(Shell.Execute("./build.sh"));
+                    }
+                }
             }
             else if (TargetOperatingSystem == Cpp.OperatingSystemType.iOS)
             {
                 Shell.RequireEnvironmentVariable(Memory, "BuildDirectory", out BuildDirectory, Quiet, p => !File.Exists(p), p => Path.GetFullPath(p), "build/ios");
                 var m = new Make(Cpp.ToolchainType.Mac_XCode, Cpp.CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, SourceDirectory, BuildDirectory, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
                 m.Execute();
+                var r = m.Execute();
                 GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, ForceRegenerate);
+                GenerateBuildScriptXCode(BuildingOperatingSystem, BuildDirectory, r, ForceRegenerate);
+                if (BuildAfterGenerate && (BuildingOperatingSystem == Cpp.OperatingSystemType.Mac))
+                {
+                    using (var d = Shell.PushDirectory(BuildDirectory))
+                    {
+                        MergeExitCode(Shell.Execute("./build.sh"));
+                    }
+                }
             }
             else if (TargetOperatingSystem == Cpp.OperatingSystemType.Android)
             {
@@ -260,11 +274,11 @@ namespace TypeMake
                     {
                         if (BuildingOperatingSystem == Cpp.OperatingSystemType.Windows)
                         {
-                            MergeExitCode(Shell.Execute($"build.cmd"));
+                            MergeExitCode(Shell.Execute(@".\build.cmd"));
                         }
                         else
                         {
-                            MergeExitCode(Shell.Execute($"build.sh"));
+                            MergeExitCode(Shell.Execute("./build.sh"));
                         }
                     }
                 }
@@ -373,6 +387,21 @@ namespace TypeMake
             Lines.Add("");
             var BuildPath = Path.Combine(BuildDirectory, $"build_{TargetArchitecture}_{Configuration}.cmd");
             TextFile.WriteToFile(BuildPath, String.Join("\r\n", Lines), System.Text.Encoding.Default, !ForceRegenerate);
+        }
+        private static void GenerateBuildScriptXCode(Cpp.OperatingSystemType BuildingOperatingSystem, String BuildDirectory, Make.Result Result, bool ForceRegenerate)
+        {
+            var Lines = new List<String>();
+            foreach (var p in Result.SortedProjects)
+            {
+                Lines.Add($"xcodebuild -project projects/{p.Name}.xcodeproj");
+            }
+            Lines.Add("");
+            var BuildPath = Path.Combine(BuildDirectory, "build.sh");
+            TextFile.WriteToFile(BuildPath, String.Join("\n", Lines), new System.Text.UTF8Encoding(false), !ForceRegenerate);
+            if (BuildingOperatingSystem != Cpp.OperatingSystemType.Windows)
+            {
+                MergeExitCode(Shell.Execute("chmod", "+x", BuildPath));
+            }
         }
         private static void GenerateBuildScriptAndroid(Cpp.OperatingSystemType BuildingOperatingSystem, String BuildDirectory, String Make, bool ForceRegenerate)
         {
