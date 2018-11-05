@@ -159,6 +159,18 @@ namespace TypeMake
                     return ExecuteInner("cmd", "/C " + EscapeArgument(ProgramPath) + (Arguments == "" ? "" : " " + Arguments));
                 }
             }
+            else
+            {
+                if (ProgramPath.EndsWith(".sh", StringComparison.Ordinal))
+                {
+                    var BashPath = TryLocate("bash");
+                    if (BashPath == null)
+                    {
+                        throw new InvalidOperationException("BashNotFound");
+                    }
+                    return ExecuteInner(BashPath, "-c " + EscapeArgument(ProgramPath) + (Arguments == "" ? "" : " " + Arguments));
+                }
+            }
             return ExecuteInner(ProgramPath, Arguments);
         }
         private static int ExecuteInner(String ProgramPath, String Arguments)
