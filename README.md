@@ -6,10 +6,11 @@ It's never easy to develop a cross-platform C++ project. When there is no prebui
 
 To solve the above problems, and to make the build process of a C++ project debuggable, I propose the TypeMake build system. It is developed fully in C#, making it a typed and debuggable program. Both developers and users can debug a build process easily like a trivial C# project. No more "Please help me on building the project on Windows" issues.
 
-For Usage:
+## Usage
 TypeMake --help
 
-Support matrix(Target Operating System vs Building Operating System):
+## Support matrix
+Target Operating System vs Building Operating System
 |                                         |   Windows 10 x64   |      Linux x64     |      MacOS x64     |
 | :-------------------------------------: | :----------------: | :----------------: | :----------------: |
 |             Windows x86/x64             |       VS2017       |                    |                    |
@@ -18,6 +19,6 @@ Support matrix(Target Operating System vs Building Operating System):
 |  Android x86/x64/armeabi-v7a/arm64-v8a  |  NDK+cmake+gradle  |  NDK+cmake+gradle  |  NDK+cmake+gradle  |
 |                   iOS                   |                    |                    |        XCode       |
 
-Notice:
+## Notice
 You need to set a key to build Android release APK and iOS applications/dynamic libraries.
 You need to set Configuration - Debugger - Debug type to Native/Dual to debug C++ code in Android Studio.
