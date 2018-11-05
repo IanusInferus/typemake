@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.IO;
 using System.Text;
+using TypeMake.Cpp;
 
 namespace TypeMake
 {
@@ -113,6 +114,30 @@ namespace TypeMake
                 Text = sw.ToString();
             }
             TextFile.WriteToFile(s.FullPath, Text, Encoding.UTF8, !ForceRegenerate);
+        }
+
+        public static String GetArchitectureString(ArchitectureType Architecture)
+        {
+            if (Architecture == ArchitectureType.x86)
+            {
+                return "x86";
+            }
+            else if (Architecture == ArchitectureType.x86_64)
+            {
+                return "x64";
+            }
+            else if (Architecture == ArchitectureType.armeabi_v7a)
+            {
+                return "ARM";
+            }
+            else if (Architecture == ArchitectureType.arm64_v8a)
+            {
+                return "ARM64";
+            }
+            else
+            {
+                throw new NotSupportedException("NotSupportedArchitecture: " + Architecture.ToString());
+            }
         }
     }
 }

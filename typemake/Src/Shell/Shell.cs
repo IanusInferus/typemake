@@ -156,7 +156,7 @@ namespace TypeMake
             {
                 if (ProgramPath.EndsWith(".cmd", StringComparison.OrdinalIgnoreCase) || ProgramPath.EndsWith(".bat", StringComparison.OrdinalIgnoreCase))
                 {
-                    return ExecuteInner("cmd", Arguments == "" ? EscapeArgument(ProgramPath) : EscapeArgument(ProgramPath) + " " + Arguments);
+                    return ExecuteInner("cmd", "/C " + EscapeArgument(ProgramPath) + (Arguments == "" ? "" : " " + Arguments));
                 }
             }
             return ExecuteInner(ProgramPath, Arguments);
@@ -182,7 +182,7 @@ namespace TypeMake
 
         public static void RequireEnvironmentVariable(Dictionary<String, String> Memory, String Name, out String Value, bool Quiet, Func<String, bool> Validator = null, Func<String, String> PostMapper = null, String DefaultValue = "", String InputDisplay = null, bool OutputVariable = true)
         {
-            var d = InputDisplay ?? (DefaultValue != "" ? "[" + DefaultValue + "]" : "");
+            var d = InputDisplay ?? (!String.IsNullOrEmpty(DefaultValue) ? "[" + DefaultValue + "]" : "");
             var v = Environment.GetEnvironmentVariable(Name);
             if (v == null)
             {
@@ -244,6 +244,31 @@ namespace TypeMake
             String s;
             RequireEnvironmentVariable(Memory, Name, out s, Quiet, v => Selections.Contains(v), null, DefaultValue.ToString(), InputDisplay, OutputVariable);
             Value = s;
+        }
+        public static void RequireEnvironmentVariableBoolean(Dictionary<String, String> Memory, String Name, out bool Value, bool Quiet, bool DefaultValue = false, bool OutputVariable = true)
+        {
+            var Selections = new List<bool> { false, true };
+            var InputDisplay = String.Join("|", Selections.Select(c => c.Equals(DefaultValue) ? "[" + c.ToString() + "]" : c.ToString()));
+            String s;
+            bool Output = false;
+            RequireEnvironmentVariable(Memory, Name, out s, Quiet, v =>
+            {
+                if (String.Equals(v, "False", StringComparison.OrdinalIgnoreCase))
+                {
+                    Output = false;
+                    return true;
+                }
+                else if (String.Equals(v, "True", StringComparison.OrdinalIgnoreCase))
+                {
+                    Output = true;
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }, v => Output.ToString(), DefaultValue.ToString(), InputDisplay, OutputVariable);
+            Value = Output;
         }
     }
 }

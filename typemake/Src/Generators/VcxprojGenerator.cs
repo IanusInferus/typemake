@@ -409,7 +409,7 @@ namespace TypeMake.Cpp
             }
         }
 
-        private static String GetArchitectureString(ArchitectureType Architecture)
+        public static String GetArchitectureString(ArchitectureType Architecture)
         {
             if (Architecture == ArchitectureType.x86)
             {

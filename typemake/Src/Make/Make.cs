@@ -10,7 +10,7 @@ namespace TypeMake
 {
     public class Make
     {
-        private const String SolutionName = "TypeMakeSample";
+        public const String SolutionName = "TypeMakeSample";
 
         private Dictionary<String, List<String>> ModuleDependencies =
             new Dictionary<String, List<String>>

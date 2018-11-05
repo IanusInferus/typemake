@@ -79,6 +79,9 @@ namespace TypeMake
 
             var Memory = new Dictionary<String, String>();
 
+            bool BuildAfterGenerate;
+            Shell.RequireEnvironmentVariableBoolean(Memory, "BuildAfterGenerate", out BuildAfterGenerate, Quiet, true);
+
             String SourceDirectory;
             String BuildDirectory;
             Shell.RequireEnvironmentVariable(Memory, "SourceDirectory", out SourceDirectory, Quiet, p => Directory.Exists(p), p => Path.GetFullPath(p));
@@ -92,11 +95,43 @@ namespace TypeMake
             if (TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
             {
                 Shell.RequireEnvironmentVariable(Memory, "BuildDirectory", out BuildDirectory, Quiet, p => !File.Exists(p), p => Path.GetFullPath(p), "build/windows");
+                var VSDir = "";
+                var TargetArchitecture = Cpp.ArchitectureType.x86_64;
+                var Configuration = Cpp.ConfigurationType.Debug;
+                if (BuildAfterGenerate && (Shell.OperatingSystem == Shell.BuildingOperatingSystemType.Windows))
+                {
+                    String DefaultVSDir = "";
+                    var ProgramFiles = Environment.GetEnvironmentVariable("ProgramFiles(x86)");
+                    if (ProgramFiles != null)
+                    {
+                        foreach (var d in new String[] { "Enterprise", "Professional", "Community", "BuildTools" })
+                        {
+                            var p = Path.Combine(Path.Combine(ProgramFiles, @"Microsoft Visual Studio\2017"), d);
+                            if (Directory.Exists(p))
+                            {
+                                DefaultVSDir = p;
+                                break;
+                            }
+                        }
+                    }
+                    Shell.RequireEnvironmentVariable(Memory, "VSDir", out VSDir, Quiet, p => Directory.Exists(p), p => Path.GetFullPath(p), DefaultVSDir);
+                    Shell.RequireEnvironmentVariableEnum(Memory, "TargetArchitecture", out TargetArchitecture, Quiet, new HashSet<Cpp.ArchitectureType> { Cpp.ArchitectureType.x86, Cpp.ArchitectureType.x86_64 }, Cpp.ArchitectureType.x86_64);
+                    Shell.RequireEnvironmentVariableEnum(Memory, "Configuration", out Configuration, Quiet, Cpp.ConfigurationType.Debug);
+                }
                 var m = new Make(Cpp.ToolchainType.Windows_VisualC, Cpp.CompilerType.VisualC, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, SourceDirectory, BuildDirectory, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
                 m.Execute();
                 GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, ForceRegenerate);
-                Console.WriteLine("Generation successful.");
-                return 0;
+                if (BuildAfterGenerate && (Shell.OperatingSystem == Shell.BuildingOperatingSystemType.Windows))
+                {
+                    GenerateBuildScriptWindows(BuildDirectory, Make.SolutionName, Cpp.ArchitectureType.x86, Cpp.ConfigurationType.Debug, VSDir, ForceRegenerate);
+                    GenerateBuildScriptWindows(BuildDirectory, Make.SolutionName, Cpp.ArchitectureType.x86, Cpp.ConfigurationType.Release, VSDir, ForceRegenerate);
+                    GenerateBuildScriptWindows(BuildDirectory, Make.SolutionName, Cpp.ArchitectureType.x86_64, Cpp.ConfigurationType.Debug, VSDir, ForceRegenerate);
+                    GenerateBuildScriptWindows(BuildDirectory, Make.SolutionName, Cpp.ArchitectureType.x86_64, Cpp.ConfigurationType.Release, VSDir, ForceRegenerate);
+                    using (var d = Shell.PushDirectory(BuildDirectory))
+                    {
+                        Shell.Execute($"build_{TargetArchitecture}_{Configuration}.cmd");
+                    }
+                }
             }
             else if (TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
             {
@@ -118,8 +153,6 @@ namespace TypeMake
                     }
                 }
                 GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, ForceRegenerate);
-                Console.WriteLine("Generation successful.");
-                return 0;
             }
             else if (TargetOperatingSystem == Cpp.OperatingSystemType.Mac)
             {
@@ -127,8 +160,6 @@ namespace TypeMake
                 var m = new Make(Cpp.ToolchainType.Mac_XCode, Cpp.CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, SourceDirectory, BuildDirectory, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
                 m.Execute();
                 GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, ForceRegenerate);
-                Console.WriteLine("Generation successful.");
-                return 0;
             }
             else if (TargetOperatingSystem == Cpp.OperatingSystemType.iOS)
             {
@@ -136,8 +167,6 @@ namespace TypeMake
                 var m = new Make(Cpp.ToolchainType.Mac_XCode, Cpp.CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, SourceDirectory, BuildDirectory, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
                 m.Execute();
                 GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, ForceRegenerate);
-                Console.WriteLine("Generation successful.");
-                return 0;
             }
             else if (TargetOperatingSystem == Cpp.OperatingSystemType.Android)
             {
@@ -198,12 +227,14 @@ namespace TypeMake
                     Shell.Execute(CMake, Arguments.ToArray());
                 }
                 GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, ForceRegenerate);
-                Console.WriteLine("Generation successful.");
-                return 0;
             }
-
-            DisplayInfo();
-            return 1;
+            else
+            {
+                DisplayInfo();
+                return 1;
+            }
+            Console.WriteLine("Generation successful.");
+            return 0;
         }
 
         private static void GenerateRetypemakeScript(Cpp.OperatingSystemType BuildingOperatingSystem, String SourceDirectory, String BuildDirectory, Dictionary<String, String> Memory, bool ForceRegenerate)
@@ -220,7 +251,11 @@ namespace TypeMake
                 Lines.Add("");
                 foreach (var p in Memory)
                 {
-                    if (p.Key == "BuildDirectory")
+                    if (p.Key == "BuildAfterGenerate")
+                    {
+                        Lines.Add("set BuildAfterGenerate=False");
+                    }
+                    else if (p.Key == "BuildDirectory")
                     {
                         Lines.Add("set BuildDirectory=%~dp0");
                     }
@@ -247,7 +282,11 @@ namespace TypeMake
                 var Lines = new List<String>();
                 foreach (var p in Memory)
                 {
-                    if (p.Key == "BuildDirectory")
+                    if (p.Key == "BuildAfterGenerate")
+                    {
+                        Lines.Add("export BuildAfterGenerate=False");
+                    }
+                    else if (p.Key == "BuildDirectory")
                     {
                         Lines.Add("export BuildDirectory=$(cd `dirname \"$0\"`; pwd)");
                     }
@@ -267,6 +306,24 @@ namespace TypeMake
                     Shell.Execute("chmod", "+x", RetypemakePath);
                 }
             }
+        }
+        private static void GenerateBuildScriptWindows(String BuildDirectory, String SolutionName, Cpp.ArchitectureType TargetArchitecture, Cpp.ConfigurationType Configuration, String VSDir, bool ForceRegenerate)
+        {
+            var Lines = new List<String>();
+            Lines.Add("@echo off");
+            Lines.Add("");
+            Lines.Add("setlocal");
+            Lines.Add("if \"%SUB_NO_PAUSE_SYMBOL%\"==\"1\" set NO_PAUSE_SYMBOL=1");
+            Lines.Add("if /I \"%COMSPEC%\" == %CMDCMDLINE% set NO_PAUSE_SYMBOL=1");
+            Lines.Add("set SUB_NO_PAUSE_SYMBOL=1");
+            Lines.Add("");
+            Lines.Add($@"""{VSDir}\MSBuild\15.0\Bin\MSBuild.exe"" {SolutionName}.sln /p:Configuration={Configuration} /p:Platform={SlnGenerator.GetArchitectureString(TargetArchitecture)}");
+            Lines.Add("");
+            Lines.Add("if not \"%NO_PAUSE_SYMBOL%\"==\"1\" pause");
+            Lines.Add("exit /b %EXIT_CODE%");
+            Lines.Add("");
+            var BuildPath = Path.Combine(BuildDirectory, $"build_{TargetArchitecture}_{Configuration}.cmd");
+            TextFile.WriteToFile(BuildPath, String.Join("\r\n", Lines), System.Text.Encoding.Default, !ForceRegenerate);
         }
 
         public static void DisplayInfo()
