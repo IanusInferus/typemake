@@ -118,29 +118,18 @@ namespace TypeMake.Cpp
                     var BuildSettings = BuildConfiguration["buildSettings"].Dict;
 
                     BuildSettings["PRODUCT_NAME"] = Value.CreateString(ProductName);
+                    if (conf.TargetType == TargetType.DynamicLibrary)
+                    {
+                        BuildSettings["EXECUTABLE_PREFIX"] = Value.CreateString("lib");
+                    }
                     if (TargetOperatingSystem == OperatingSystemType.iOS)
                     {
                         if ((conf.TargetType == TargetType.Executable) || (conf.TargetType == TargetType.DynamicLibrary))
                         {
-                            if (BuildSettings.ContainsKey("CODE_SIGN_IDENTITY"))
-                            {
-                                BuildSettings["CODE_SIGN_IDENTITY"] = Value.CreateString("iPhone Developer");
-                            }
-                            else
-                            {
-                                BuildSettings.Add("CODE_SIGN_IDENTITY", Value.CreateString("iPhone Developer"));
-                            }
-                            if (BuildSettings.ContainsKey("PROVISIONING_PROFILE_SPECIFIER"))
-                            {
-                                BuildSettings["PROVISIONING_PROFILE_SPECIFIER"] = Value.CreateString("");
-                            }
-                            else
-                            {
-                                BuildSettings.Add("PROVISIONING_PROFILE_SPECIFIER", Value.CreateString(""));
-                            }
+                            BuildSettings["CODE_SIGN_IDENTITY"] = Value.CreateString("iPhone Developer");
+                            BuildSettings["PROVISIONING_PROFILE_SPECIFIER"] = Value.CreateString("");
                         }
                     }
-
                 }
 
                 foreach (var PhaseKey in Target["buildPhases"].Array)
