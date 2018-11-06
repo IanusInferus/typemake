@@ -156,16 +156,17 @@ namespace TypeMake.Cpp
                     if (TargetOperatingSystem == OperatingSystemType.Mac)
                     {
                         Target["productType"] = Value.CreateString("com.apple.product-type.tool");
+                        TargetFile.Dict["explicitFileType"] = Value.CreateString("compiled.mach-o.executable");
                     }
                     else if (TargetOperatingSystem == OperatingSystemType.iOS)
                     {
                         Target["productType"] = Value.CreateString("com.apple.product-type.application");
+                        TargetFile.Dict["explicitFileType"] = Value.CreateString("wrapper.application");
                     }
                     else
                     {
                         throw new NotSupportedException("NotSupportedTargetOperatingSystem: " + TargetOperatingSystem.ToString());
                     }
-                    TargetFile.Dict["explicitFileType"] = Value.CreateString("compiled.mach-o.executable");
                     TargetFile.Dict["path"] = Value.CreateString(ProductName);
                 }
                 else if (conf.TargetType == TargetType.StaticLibrary)
