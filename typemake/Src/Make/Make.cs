@@ -367,10 +367,11 @@ namespace TypeMake
             {
                 throw new InvalidOperationException();
             }
+            var TargetName = ProductName.Split('.').Take(1).Single();
             var p = new Project
             {
                 Name = ProductName,
-                TargetName = ProductName.Split('.').Take(1).Single(),
+                TargetName = TargetName,
                 Configurations = (new List<Configuration>
                 {
                     new Configuration
@@ -384,7 +385,7 @@ namespace TypeMake
                     new Configuration
                     {
                         TargetOperatingSystem = OperatingSystemType.iOS,
-                        BundleIdentifier = SolutionName + "." + ProductName
+                        BundleIdentifier = SolutionName + "." + TargetName
                     }
                 }).Concat(GetCommonConfigurations()).ToList()
             };
