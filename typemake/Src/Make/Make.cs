@@ -34,12 +34,13 @@ namespace TypeMake
         private ArchitectureType? TargetArchitecture;
         private String SourceDirectory;
         private String BuildDirectory;
+        private String XCodeDevelopmentTeam;
         private bool ForceRegenerate;
         private bool EnableNonTargetingOperatingSystemDummy;
 
         private Dictionary<String, String> ProjectIds = new Dictionary<String, String>();
 
-        public Make(ToolchainType Toolchain, CompilerType Compiler, OperatingSystemType BuildingOperatingSystem, ArchitectureType BuildingOperatingSystemArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType? TargetArchitecture, String SourceDirectory, String BuildDirectory, bool ForceRegenerate, bool EnableNonTargetingOperatingSystemDummy)
+        public Make(ToolchainType Toolchain, CompilerType Compiler, OperatingSystemType BuildingOperatingSystem, ArchitectureType BuildingOperatingSystemArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType? TargetArchitecture, String SourceDirectory, String BuildDirectory, String XCodeDevelopmentTeam, bool ForceRegenerate, bool EnableNonTargetingOperatingSystemDummy)
         {
             this.Toolchain = Toolchain;
             this.Compiler = Compiler;
@@ -49,6 +50,7 @@ namespace TypeMake
             this.TargetArchitecture = TargetArchitecture;
             this.SourceDirectory = Path.GetFullPath(SourceDirectory);
             this.BuildDirectory = Path.GetFullPath(BuildDirectory);
+            this.XCodeDevelopmentTeam = XCodeDevelopmentTeam;
             this.ForceRegenerate = ForceRegenerate;
             this.EnableNonTargetingOperatingSystemDummy = EnableNonTargetingOperatingSystemDummy;
         }
@@ -209,7 +211,7 @@ namespace TypeMake
             else if (Toolchain == ToolchainType.Mac_XCode)
             {
                 var PbxprojTemplateText = Resource.GetResourceText(@"Templates\xcode9\Default.xcodeproj\project.pbxproj");
-                var g = new PbxprojGenerator(p, ProjectReferences, ModulePath, Path.Combine(BuildDirectory, "projects"), PbxprojTemplateText, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem);
+                var g = new PbxprojGenerator(p, ProjectReferences, ModulePath, Path.Combine(BuildDirectory, "projects"), PbxprojTemplateText, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, XCodeDevelopmentTeam);
                 g.Generate(ForceRegenerate);
             }
             else if (Toolchain == ToolchainType.CMake)
@@ -287,7 +289,7 @@ namespace TypeMake
             else if (Toolchain == ToolchainType.Mac_XCode)
             {
                 var PbxprojTemplateText = Resource.GetResourceText(@"Templates\xcode9\Default.xcodeproj\project.pbxproj");
-                var g = new PbxprojGenerator(p, ProjectReferences, Path.GetDirectoryName(TestFile.Path), Path.Combine(BuildDirectory, "projects"), PbxprojTemplateText, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem);
+                var g = new PbxprojGenerator(p, ProjectReferences, Path.GetDirectoryName(TestFile.Path), Path.Combine(BuildDirectory, "projects"), PbxprojTemplateText, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, XCodeDevelopmentTeam);
                 g.Generate(ForceRegenerate);
             }
             else if (Toolchain == ToolchainType.CMake)
@@ -399,7 +401,7 @@ namespace TypeMake
             else if (Toolchain == ToolchainType.Mac_XCode)
             {
                 var PbxprojTemplateText = Resource.GetResourceText(@"Templates\xcode9\Default.xcodeproj\project.pbxproj");
-                var g = new PbxprojGenerator(p, ProjectReferences, ProductPath, Path.Combine(BuildDirectory, "projects"), PbxprojTemplateText, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem);
+                var g = new PbxprojGenerator(p, ProjectReferences, ProductPath, Path.Combine(BuildDirectory, "projects"), PbxprojTemplateText, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, XCodeDevelopmentTeam);
                 g.Generate(ForceRegenerate);
             }
             else if (Toolchain == ToolchainType.CMake)

@@ -162,7 +162,7 @@ namespace TypeMake
                     Shell.RequireEnvironmentVariableEnum(Memory, "TargetArchitecture", out TargetArchitecture, Quiet, new HashSet<Cpp.ArchitectureType> { Cpp.ArchitectureType.x86, Cpp.ArchitectureType.x86_64 }, Cpp.ArchitectureType.x86_64);
                     Shell.RequireEnvironmentVariableEnum(Memory, "Configuration", out Configuration, Quiet, Cpp.ConfigurationType.Debug);
                 }
-                var m = new Make(Cpp.ToolchainType.Windows_VisualC, Cpp.CompilerType.VisualC, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, SourceDirectory, BuildDirectory, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
+                var m = new Make(Cpp.ToolchainType.Windows_VisualC, Cpp.CompilerType.VisualC, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, SourceDirectory, BuildDirectory, null, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
                 var r = m.Execute();
                 GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, ForceRegenerate);
                 if (BuildAfterGenerate && (BuildingOperatingSystem == Cpp.OperatingSystemType.Windows))
@@ -192,7 +192,7 @@ namespace TypeMake
                 {
                     Shell.RequireEnvironmentVariable(Memory, "Make", out Make, Quiet, p => File.Exists(p), p => Path.GetFullPath(p), Shell.TryLocate("make") ?? "");
                 }
-                var m = new Make(Cpp.ToolchainType.CMake, Cpp.CompilerType.gcc, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, SourceDirectory, BuildDirectory, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
+                var m = new Make(Cpp.ToolchainType.CMake, Cpp.CompilerType.gcc, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, SourceDirectory, BuildDirectory, null, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
                 m.Execute();
                 if (BuildingOperatingSystem == Cpp.OperatingSystemType.Linux)
                 {
@@ -216,7 +216,7 @@ namespace TypeMake
             else if (TargetOperatingSystem == Cpp.OperatingSystemType.Mac)
             {
                 Shell.RequireEnvironmentVariable(Memory, "BuildDirectory", out BuildDirectory, Quiet, p => !File.Exists(p), p => Path.GetFullPath(p), "build/mac");
-                var m = new Make(Cpp.ToolchainType.Mac_XCode, Cpp.CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, SourceDirectory, BuildDirectory, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
+                var m = new Make(Cpp.ToolchainType.Mac_XCode, Cpp.CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, SourceDirectory, BuildDirectory, null, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
                 var r = m.Execute();
                 GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, ForceRegenerate);
                 GenerateBuildScriptXCode(BuildingOperatingSystem, BuildDirectory, r, ForceRegenerate);
@@ -231,7 +231,9 @@ namespace TypeMake
             else if (TargetOperatingSystem == Cpp.OperatingSystemType.iOS)
             {
                 Shell.RequireEnvironmentVariable(Memory, "BuildDirectory", out BuildDirectory, Quiet, p => !File.Exists(p), p => Path.GetFullPath(p), "build/ios");
-                var m = new Make(Cpp.ToolchainType.Mac_XCode, Cpp.CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, SourceDirectory, BuildDirectory, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
+                String DevelopmentTeam;
+                Shell.RequireEnvironmentVariable(Memory, "DevelopmentTeam", out DevelopmentTeam, Quiet, null, null, null, "(find by search an existing pbxproj file with DEVELOPMENT_TEAM)");
+                var m = new Make(Cpp.ToolchainType.Mac_XCode, Cpp.CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, SourceDirectory, BuildDirectory, DevelopmentTeam, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
                 m.Execute();
                 var r = m.Execute();
                 GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, ForceRegenerate);
@@ -257,7 +259,7 @@ namespace TypeMake
                 Cpp.ConfigurationType Configuration;
                 Shell.RequireEnvironmentVariableEnum(Memory, "Configuration", out Configuration, Quiet, Cpp.ConfigurationType.Debug);
                 Shell.RequireEnvironmentVariable(Memory, "BuildDirectory", out BuildDirectory, Quiet, p => !File.Exists(p), p => Path.GetFullPath(p), $"build/android_{TargetArchitecture}_{Configuration}");
-                var m = new Make(Cpp.ToolchainType.Gradle_CMake, Cpp.CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture, SourceDirectory, BuildDirectory, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
+                var m = new Make(Cpp.ToolchainType.Gradle_CMake, Cpp.CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture, SourceDirectory, BuildDirectory, null, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
                 m.Execute();
                 TextFile.WriteToFile(Path.Combine(BuildDirectory, Path.Combine("gradle", "local.properties")), $"sdk.dir={AndroidSdk.Replace("\\", "/")}", new System.Text.UTF8Encoding(false), !ForceRegenerate);
                 GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, ForceRegenerate);

@@ -198,7 +198,7 @@ namespace TypeMake
             public Dictionary<String, List<String>> VariableSelections = new Dictionary<String, List<String>>();
         }
 
-        public static void RequireEnvironmentVariable(EnvironmentVariableMemory Memory, String Name, out String Value, bool Quiet, Func<String, bool> Validator = null, Func<String, String> PostMapper = null, String DefaultValue = "", String InputDisplay = null, bool OutputVariable = true)
+        public static void RequireEnvironmentVariable(EnvironmentVariableMemory Memory, String Name, out String Value, bool Quiet, Func<String, bool> Validator = null, Func<String, String> PostMapper = null, String DefaultValue = null, String InputDisplay = null, bool OutputVariable = true)
         {
             var d = InputDisplay ?? (!String.IsNullOrEmpty(DefaultValue) ? "[" + DefaultValue + "]" : "");
             var v = Environment.GetEnvironmentVariable(Name);
@@ -209,7 +209,7 @@ namespace TypeMake
                 v = Console.ReadLine();
                 if (v == "")
                 {
-                    v = DefaultValue;
+                    v = DefaultValue ?? "";
                 }
             }
             while ((Validator != null) && !Validator(v))
@@ -219,7 +219,7 @@ namespace TypeMake
                 v = Console.ReadLine();
                 if (v == "")
                 {
-                    v = DefaultValue;
+                    v = DefaultValue ?? "";
                 }
             }
             if (PostMapper != null)
