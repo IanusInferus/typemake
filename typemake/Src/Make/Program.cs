@@ -232,7 +232,7 @@ namespace TypeMake
             {
                 Shell.RequireEnvironmentVariable(Memory, "BuildDirectory", out BuildDirectory, Quiet, p => !File.Exists(p), p => Path.GetFullPath(p), "build/ios");
                 String DevelopmentTeam;
-                Shell.RequireEnvironmentVariable(Memory, "DevelopmentTeam", out DevelopmentTeam, Quiet, null, null, null, "(find by search an existing pbxproj file with DEVELOPMENT_TEAM)");
+                Shell.RequireEnvironmentVariable(Memory, "DevelopmentTeam", out DevelopmentTeam, Quiet, null, v => v == "" ? null : v, null, "(optional, find by search an existing pbxproj file with DEVELOPMENT_TEAM)");
                 var m = new Make(Cpp.ToolchainType.Mac_XCode, Cpp.CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, SourceDirectory, BuildDirectory, DevelopmentTeam, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
                 m.Execute();
                 var r = m.Execute();
