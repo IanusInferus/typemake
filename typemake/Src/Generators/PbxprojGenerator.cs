@@ -17,8 +17,9 @@ namespace TypeMake.Cpp
         private OperatingSystemType BuildingOperatingSystem;
         private ArchitectureType BuildingOperatingSystemArchitecture;
         private OperatingSystemType TargetOperatingSystem;
+        private String DevelopmentTeam;
 
-        public PbxprojGenerator(Project Project, List<ProjectReference> ProjectReferences, String InputDirectory, String OutputDirectory, String PbxprojTemplateText, OperatingSystemType BuildingOperatingSystem, ArchitectureType BuildingOperatingSystemArchitecture, OperatingSystemType TargetOperatingSystem)
+        public PbxprojGenerator(Project Project, List<ProjectReference> ProjectReferences, String InputDirectory, String OutputDirectory, String PbxprojTemplateText, OperatingSystemType BuildingOperatingSystem, ArchitectureType BuildingOperatingSystemArchitecture, OperatingSystemType TargetOperatingSystem, String DevelopmentTeam = null)
         {
             this.Project = Project;
             this.ProjectReferences = ProjectReferences;
@@ -28,6 +29,7 @@ namespace TypeMake.Cpp
             this.BuildingOperatingSystem = BuildingOperatingSystem;
             this.BuildingOperatingSystemArchitecture = BuildingOperatingSystemArchitecture;
             this.TargetOperatingSystem = TargetOperatingSystem;
+            this.DevelopmentTeam = DevelopmentTeam;
         }
 
         public void Generate(bool ForceRegenerate)
@@ -122,11 +124,12 @@ namespace TypeMake.Cpp
                     {
                         BuildSettings["EXECUTABLE_PREFIX"] = Value.CreateString("lib");
                     }
-                    if (TargetOperatingSystem == OperatingSystemType.iOS)
+                    if ((TargetOperatingSystem == OperatingSystemType.iOS) && (DevelopmentTeam != null))
                     {
                         if ((conf.TargetType == TargetType.Executable) || (conf.TargetType == TargetType.DynamicLibrary))
                         {
                             BuildSettings["CODE_SIGN_IDENTITY"] = Value.CreateString("iPhone Developer");
+                            BuildSettings["DEVELOPMENT_TEAM"] = Value.CreateString(DevelopmentTeam);
                             BuildSettings["PROVISIONING_PROFILE_SPECIFIER"] = Value.CreateString("");
                         }
                     }
