@@ -6,6 +6,7 @@ command -v xbuild >/dev/null 2>&1 || {
   echo openSUSE: sudo zypper install mono-xbuild
   echo CentOS: sudo yum install mono-xbuild
   echo Ubuntu: sudo apt install mono-xbuild
+  echo MacOS: sudo brew install mono-xbuild
   exit 1
 }
-xbuild
+xbuild Src/TypeMake.sln
