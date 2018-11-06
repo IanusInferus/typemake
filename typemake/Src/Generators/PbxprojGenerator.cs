@@ -35,6 +35,8 @@ namespace TypeMake.Cpp
             var PbxprojPath = Path.Combine(OutputDirectory, Path.Combine(Project.Name + ".xcodeproj", "project.pbxproj"));
             var BaseDirPath = Path.GetDirectoryName(Path.GetDirectoryName(PbxprojPath));
 
+            var ProductName = !String.IsNullOrEmpty(Project.TargetName) ? Project.TargetName : Project.Name;
+
             var p = Plist.FromString(PbxprojTemplateText);
 
             var Objects = p.Dict["objects"].Dict;
@@ -108,6 +110,39 @@ namespace TypeMake.Cpp
 
                 var Target = Objects[TargetKey.String].Dict;
                 var TargetName = Target["name"].String;
+
+                foreach (var BuildConfigurationKey in Objects[Target["buildConfigurationList"].String].Dict["buildConfigurations"].Array)
+                {
+                    var BuildConfiguration = Objects[BuildConfigurationKey.String].Dict;
+                    var ConfigurationType = (ConfigurationType)(Enum.Parse(typeof(ConfigurationType), BuildConfiguration["name"].String));
+                    var BuildSettings = BuildConfiguration["buildSettings"].Dict;
+
+                    BuildSettings["PRODUCT_NAME"] = Value.CreateString(ProductName);
+                    if (TargetOperatingSystem == OperatingSystemType.iOS)
+                    {
+                        if ((conf.TargetType == TargetType.Executable) || (conf.TargetType == TargetType.DynamicLibrary))
+                        {
+                            if (BuildSettings.ContainsKey("CODE_SIGN_IDENTITY"))
+                            {
+                                BuildSettings["CODE_SIGN_IDENTITY"] = Value.CreateString("iPhone Developer");
+                            }
+                            else
+                            {
+                                BuildSettings.Add("CODE_SIGN_IDENTITY", Value.CreateString("iPhone Developer"));
+                            }
+                            if (BuildSettings.ContainsKey("PROVISIONING_PROFILE_SPECIFIER"))
+                            {
+                                BuildSettings["PROVISIONING_PROFILE_SPECIFIER"] = Value.CreateString("");
+                            }
+                            else
+                            {
+                                BuildSettings.Add("PROVISIONING_PROFILE_SPECIFIER", Value.CreateString(""));
+                            }
+                        }
+                    }
+
+                }
+
                 foreach (var PhaseKey in Target["buildPhases"].Array)
                 {
                     var Phase = Objects[PhaseKey.String].Dict;
@@ -147,7 +182,6 @@ namespace TypeMake.Cpp
                     }
                 }
                 Target["name"] = Value.CreateString(Project.Name);
-                var ProductName = !String.IsNullOrEmpty(Project.TargetName) ? Project.TargetName : Project.Name;
                 Target["productName"] = Value.CreateString(ProductName);
                 var TargetFile = Objects[Target["productReference"].String];
 
@@ -157,17 +191,18 @@ namespace TypeMake.Cpp
                     {
                         Target["productType"] = Value.CreateString("com.apple.product-type.tool");
                         TargetFile.Dict["explicitFileType"] = Value.CreateString("compiled.mach-o.executable");
+                        TargetFile.Dict["path"] = Value.CreateString(ProductName);
                     }
                     else if (TargetOperatingSystem == OperatingSystemType.iOS)
                     {
                         Target["productType"] = Value.CreateString("com.apple.product-type.application");
                         TargetFile.Dict["explicitFileType"] = Value.CreateString("wrapper.application");
+                        TargetFile.Dict["path"] = Value.CreateString(ProductName + ".app");
                     }
                     else
                     {
                         throw new NotSupportedException("NotSupportedTargetOperatingSystem: " + TargetOperatingSystem.ToString());
                     }
-                    TargetFile.Dict["path"] = Value.CreateString(ProductName);
                 }
                 else if (conf.TargetType == TargetType.StaticLibrary)
                 {
