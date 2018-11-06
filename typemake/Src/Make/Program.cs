@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace TypeMake
 {
@@ -77,7 +78,44 @@ namespace TypeMake
                 DisplayInfo();
                 return 0;
             }
-            if (argv.Length != 0)
+            if (argv.Length == 1)
+            {
+                var RetypemakeScriptPath = argv[0];
+                String[] Lines;
+                Regex r;
+                if (RetypemakeScriptPath.EndsWith(".cmd"))
+                {
+                    Lines = File.ReadAllLines(RetypemakeScriptPath, System.Text.Encoding.Default);
+                    r = new Regex(@"^set\s+(?<Key>[^=]+)=(?<Value>.*)\s*$");
+                }
+                else if (RetypemakeScriptPath.EndsWith(".sh"))
+                {
+                    Lines = File.ReadAllLines(RetypemakeScriptPath, new System.Text.UTF8Encoding(false));
+                    r = new Regex(@"^export\s+(?<Key>[^=]+)=(?<Value>.*)\s*$");
+                }
+                else
+                {
+                    throw new InvalidOperationException("InvalidRetypemakeScript");
+                }
+                foreach (var Line in Lines)
+                {
+                    var m = r.Match(Line);
+                    if (m.Success)
+                    {
+                        var Key = m.Result("${Key}");
+                        var Value = m.Result("${Value}");
+                        if (Key == "BuildDirectory")
+                        {
+                            Environment.SetEnvironmentVariable(Key, Path.GetDirectoryName(Path.GetFullPath(RetypemakeScriptPath)));
+                        }
+                        else
+                        {
+                            Environment.SetEnvironmentVariable(Key, Value);
+                        }
+                    }
+                }
+            }
+            else if (argv.Length != 0)
             {
                 DisplayInfo();
                 return 1;
@@ -444,7 +482,8 @@ namespace TypeMake
         {
             Console.WriteLine(@"TypeMake");
             Console.WriteLine(@"Usage:");
-            Console.WriteLine(@"TypeMake [--regen] [--dummy] [--quiet] [--help]");
+            Console.WriteLine(@"TypeMake [<RetypemakeScript>] [--regen] [--dummy] [--quiet] [--help]");
+            Console.WriteLine(@"RetypemakeScript batch or bash file to get environment variables for diagnostics");
             Console.WriteLine(@"--regen forcely regenerate project files");
             Console.WriteLine(@"--dummy generate dummy projects for non-targeting operating systems");
             Console.WriteLine(@"--quiet no interactive variable input, all variables must be input from environment variables");
