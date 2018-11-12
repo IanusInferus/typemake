@@ -148,15 +148,31 @@ namespace TypeMake
 
         public static int Execute(String ProgramPath, params String[] Arguments)
         {
-            return ExecuteLine(ProgramPath, String.Join(" ", Arguments.Select(arg => EscapeArgument(arg))));
+            var psi = CreateExecuteStartInfo(ProgramPath, Arguments);
+            Console.WriteLine(GetCommandLine(psi));
+            var p = Process.Start(psi);
+            p.WaitForExit();
+            return p.ExitCode;
         }
         public static int ExecuteLine(String ProgramPath, String Arguments)
+        {
+            var psi = CreateExecuteLineStartInfo(ProgramPath, Arguments);
+            Console.WriteLine(GetCommandLine(psi));
+            var p = Process.Start(psi);
+            p.WaitForExit();
+            return p.ExitCode;
+        }
+        public static ProcessStartInfo CreateExecuteStartInfo(String ProgramPath, params String[] Arguments)
+        {
+            return CreateExecuteLineStartInfo(ProgramPath, String.Join(" ", Arguments.Select(arg => EscapeArgument(arg))));
+        }
+        public static ProcessStartInfo CreateExecuteLineStartInfo(String ProgramPath, String Arguments)
         {
             if (OperatingSystem == BuildingOperatingSystemType.Windows)
             {
                 if (ProgramPath.EndsWith(".cmd", StringComparison.OrdinalIgnoreCase) || ProgramPath.EndsWith(".bat", StringComparison.OrdinalIgnoreCase))
                 {
-                    return ExecuteInner("cmd", "/C " + EscapeArgument(ProgramPath) + (Arguments == "" ? "" : " " + Arguments));
+                    return CreateExecuteLineStartInfoInner("cmd", "/C " + EscapeArgument(ProgramPath) + (Arguments == "" ? "" : " " + Arguments));
                 }
             }
             else
@@ -168,23 +184,26 @@ namespace TypeMake
                     {
                         throw new InvalidOperationException("BashNotFound");
                     }
-                    return ExecuteInner(BashPath, "-c " + EscapeArgument(ProgramPath) + (Arguments == "" ? "" : " " + Arguments));
+                    return CreateExecuteLineStartInfoInner(BashPath, "-c " + EscapeArgument(ProgramPath) + (Arguments == "" ? "" : " " + Arguments));
                 }
             }
-            return ExecuteInner(ProgramPath, Arguments);
+            return CreateExecuteLineStartInfoInner(ProgramPath, Arguments);
         }
-        private static int ExecuteInner(String ProgramPath, String Arguments)
+        private static ProcessStartInfo CreateExecuteLineStartInfoInner(String ProgramPath, String Arguments)
         {
-            Console.WriteLine(Arguments == "" ? EscapeArgument(ProgramPath) : EscapeArgument(ProgramPath) + " " + Arguments);
             var psi = new ProcessStartInfo()
             {
                 FileName = ProgramPath,
                 Arguments = Arguments,
                 UseShellExecute = false
             };
-            var p = Process.Start(psi);
-            p.WaitForExit();
-            return p.ExitCode;
+            return psi;
+        }
+        public static String GetCommandLine(ProcessStartInfo psi)
+        {
+            var ProgramPath = psi.FileName;
+            var Arguments = psi.Arguments;
+            return String.IsNullOrEmpty(Arguments) ? EscapeArgument(ProgramPath) : EscapeArgument(ProgramPath) + " " + Arguments;
         }
         public static String EscapeArgument(String Argument)
         {
