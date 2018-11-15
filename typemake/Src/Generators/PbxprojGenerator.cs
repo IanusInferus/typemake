@@ -120,17 +120,42 @@ namespace TypeMake.Cpp
                     var BuildSettings = BuildConfiguration["buildSettings"].Dict;
 
                     BuildSettings["PRODUCT_NAME"] = Value.CreateString(ProductName);
-                    if (conf.TargetType == TargetType.DynamicLibrary)
+                    if (TargetOperatingSystem == OperatingSystemType.Mac)
                     {
-                        BuildSettings["EXECUTABLE_PREFIX"] = Value.CreateString("lib");
+                        if (conf.TargetType == TargetType.DynamicLibrary)
+                        {
+                            BuildSettings["EXECUTABLE_PREFIX"] = Value.CreateString("lib");
+                        }
                     }
-                    if ((TargetOperatingSystem == OperatingSystemType.iOS) && (DevelopmentTeam != null))
+                    else if (TargetOperatingSystem == OperatingSystemType.iOS)
                     {
+                        if (DevelopmentTeam != null)
+                        {
+                            if ((conf.TargetType == TargetType.Executable) || (conf.TargetType == TargetType.DynamicLibrary))
+                            {
+                                BuildSettings["CODE_SIGN_IDENTITY"] = Value.CreateString("iPhone Developer");
+                                BuildSettings["DEVELOPMENT_TEAM"] = Value.CreateString(DevelopmentTeam);
+                                BuildSettings["PROVISIONING_PROFILE_SPECIFIER"] = Value.CreateString("");
+                            }
+                        }
+                        if (conf.TargetType == TargetType.DynamicLibrary)
+                        {
+                            BuildSettings.SetItem("DYLIB_COMPATIBILITY_VERSION", Value.CreateString("1"));
+                            BuildSettings.SetItem("DYLIB_CURRENT_VERSION", Value.CreateString("1"));
+                            BuildSettings.SetItem("DYLIB_INSTALL_NAME_BASE", Value.CreateString("@rpath"));
+                            BuildSettings.SetItem("INSTALL_PATH", Value.CreateString("$(LOCAL_LIBRARY_DIR)/Frameworks"));
+                            BuildSettings.SetItem("LD_RUNPATH_SEARCH_PATHS", Value.CreateString("$(inherited) @executable_path/Frameworks @loader_path/Frameworks"));
+                            BuildSettings.SetItem("SKIP_INSTALL", Value.CreateString("YES"));
+                        }
                         if ((conf.TargetType == TargetType.Executable) || (conf.TargetType == TargetType.DynamicLibrary))
                         {
-                            BuildSettings["CODE_SIGN_IDENTITY"] = Value.CreateString("iPhone Developer");
-                            BuildSettings["DEVELOPMENT_TEAM"] = Value.CreateString(DevelopmentTeam);
-                            BuildSettings["PROVISIONING_PROFILE_SPECIFIER"] = Value.CreateString("");
+                            var InfoPlistPath = FileNameHandling.GetRelativePath(Path.Combine(InputDirectory, "Info.plist"), BaseDirPath);
+                            if (System.IO.File.Exists(InfoPlistPath))
+                            {
+                                BuildSettings.SetItem("INFOPLIST_FILE", Value.CreateString(InfoPlistPath.Replace('\\', '/')));
+                            }
+                            BuildSettings.SetItem("PRODUCT_BUNDLE_IDENTIFIER", Value.CreateString(conf.BundleIdentifier));
+                            BuildSettings.SetItem("TARGETED_DEVICE_FAMILY", Value.CreateString("1,2"));
                         }
                     }
                 }
@@ -264,11 +289,6 @@ namespace TypeMake.Cpp
                 else if (TargetOperatingSystem == OperatingSystemType.iOS)
                 {
                     BuildSettings.SetItem("SDKROOT", Value.CreateString("iphoneos"));
-                    if (conf.TargetType == TargetType.Executable)
-                    {
-                        BuildSettings.SetItem("INFOPLIST_FILE", Value.CreateString(FileNameHandling.GetRelativePath(Path.Combine(InputDirectory, "Info.plist"), BaseDirPath).Replace('\\', '/')));
-                        BuildSettings.SetItem("PRODUCT_BUNDLE_IDENTIFIER", Value.CreateString(conf.BundleIdentifier));
-                    }
                 }
                 else
                 {
