@@ -246,7 +246,14 @@ namespace TypeMake
                 v = PostMapper(v);
             }
             Value = v;
-            Console.WriteLine(Name + "=" + v);
+            if (OutputVariable)
+            {
+                Console.WriteLine(Name + "=" + v);
+            }
+            else
+            {
+                Console.WriteLine(Name + "=[***]");
+            }
             if (Memory.Variables.ContainsKey(Name))
             {
                 Memory.Variables[Name] = v;
