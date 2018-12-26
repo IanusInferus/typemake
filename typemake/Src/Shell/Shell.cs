@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace TypeMake
 {
@@ -205,10 +206,10 @@ namespace TypeMake
             var Arguments = psi.Arguments;
             return String.IsNullOrEmpty(Arguments) ? EscapeArgument(ProgramPath) : EscapeArgument(ProgramPath) + " " + Arguments;
         }
+        private static Regex rComplexArgument = new Regex(@"[\s!""#$%&'()*+,/;<=>?@\[\\\]^`{|}~]");
         public static String EscapeArgument(String Argument)
         {
-            var arg = Argument.Replace("\"", "\"\"\"");
-            return arg.Contains(' ') ? "\"" + arg + "\"" : arg;
+            return rComplexArgument.IsMatch(Argument) ? "\"" + Argument.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"" : Argument;
         }
 
         public class EnvironmentVariableMemory
