@@ -150,15 +150,8 @@ namespace TypeMake
         public static int Execute(String ProgramPath, params String[] Arguments)
         {
             var psi = CreateExecuteStartInfo(ProgramPath, Arguments);
-            Console.WriteLine(GetCommandLine(psi));
-            var p = Process.Start(psi);
-            p.WaitForExit();
-            return p.ExitCode;
-        }
-        public static int ExecuteLine(String ProgramPath, String Arguments)
-        {
-            var psi = CreateExecuteLineStartInfo(ProgramPath, Arguments);
-            Console.WriteLine(GetCommandLine(psi));
+            var CommandLine = Arguments.Length == 0 ? EscapeArgumentForShell(ProgramPath, OperatingSystem) : EscapeArgumentForShell(ProgramPath, OperatingSystem) + " " + Arguments;
+            Console.WriteLine(CommandLine);
             var p = Process.Start(psi);
             p.WaitForExit();
             return p.ExitCode;
@@ -200,16 +193,47 @@ namespace TypeMake
             };
             return psi;
         }
-        public static String GetCommandLine(ProcessStartInfo psi)
-        {
-            var ProgramPath = psi.FileName;
-            var Arguments = psi.Arguments;
-            return String.IsNullOrEmpty(Arguments) ? EscapeArgument(ProgramPath) : EscapeArgument(ProgramPath) + " " + Arguments;
-        }
-        private static Regex rComplexArgument = new Regex(@"[\s!""#$%&'()*+,/;<=>?@\[\\\]^`{|}~]");
         public static String EscapeArgument(String Argument)
         {
-            return rComplexArgument.IsMatch(Argument) ? "\"" + Argument.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"" : Argument;
+            return EscapeArgument(Argument, OperatingSystem);
+        }
+        private static Regex rBackslashBeforeDoubleQuotes = new Regex(@"\\+((?="")|$)", RegexOptions.ExplicitCapture);
+        private static Regex rComplexChars = new Regex(@"[\s!""#$%&'()*+,/;<=>?@\[\\\]^`{|}~]", RegexOptions.ExplicitCapture);
+        public static String EscapeArgument(String Argument, BuildingOperatingSystemType OperatingSystem)
+        {
+            //\0 \r \n can not be escaped
+            if (Argument.Any(c => c == '\0' || c == '\r' || c == '\n')) { throw new ArgumentException("InvalidChar"); }
+            if (OperatingSystem == BuildingOperatingSystemType.Windows)
+            {
+                //https://docs.microsoft.com/en-us/cpp/cpp/parsing-cpp-command-line-arguments?view=vs-2017
+                //http://csharptest.net/529/how-to-correctly-escape-command-line-arguments-in-c/index.html
+                //backslashes before double quotes must be doubled
+                return rComplexChars.IsMatch(Argument) ? "\"" + rBackslashBeforeDoubleQuotes.Replace(Argument, s => s.Value + s.Value).Replace("\"", "\\\"") + "\"" : Argument;
+            }
+            else
+            {
+                //in mono it was originally implemented using g_shell_parse_argv
+                //https://bugzilla.xamarin.com/show_bug.cgi?id=19296
+                //https://developer.gnome.org/glib/stable/glib-Shell-related-Utilities.html
+                //but upon testing it is found that backslash need to be double in single quotes
+                return rComplexChars.IsMatch(Argument) ? "'" + Argument.Replace("\\", "\\\\").Replace("'", "'\\''") + "'" : Argument;
+            }
+        }
+        private static Regex rCmdComplexChars = new Regex(@"[%^&<>|]", RegexOptions.ExplicitCapture);
+        public static String EscapeArgumentForShell(String Argument, BuildingOperatingSystemType OperatingSystem)
+        {
+            //\0 \r \n can not be escaped
+            if (Argument.Any(c => c == '\0' || c == '\r' || c == '\n')) { throw new ArgumentException("InvalidChar"); }
+            if (OperatingSystem == BuildingOperatingSystemType.Windows)
+            {
+                //CMD style(without EnableDelayedExpansion)
+                return rCmdComplexChars.Replace(EscapeArgument(Argument, OperatingSystem), s => "^" + s.Value);
+            }
+            else
+            {
+                //bash style
+                return rComplexChars.IsMatch(Argument) ? "'" + Argument.Replace("'", "'\\''") + "'" : Argument;
+            }
         }
 
         public class EnvironmentVariableMemory
