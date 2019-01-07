@@ -430,11 +430,11 @@ namespace TypeMake
         {
             return (v, ConfirmedLength, Cycle, CyclePrevious) =>
             {
-                if (!Cycle && (v == ""))
-                {
-                    return v;
-                }
                 var vConfirmed = v.Substring(0, ConfirmedLength);
+                if (!Cycle && (vConfirmed == ""))
+                {
+                    return vConfirmed;
+                }
                 if (DefaultValue.StartsWith(vConfirmed, StringComparison.OrdinalIgnoreCase))
                 {
                     return DefaultValue;
@@ -446,11 +446,11 @@ namespace TypeMake
         {
             return (v, ConfirmedLength, Cycle, CyclePrevious) =>
             {
-                if (!Cycle && (v == ""))
-                {
-                    return v;
-                }
                 var vConfirmed = v.Substring(0, ConfirmedLength);
+                if (!Cycle && (vConfirmed == ""))
+                {
+                    return vConfirmed;
+                }
                 String FirstMatched = null;
                 String PreviousMatched = null;
                 bool HasExactMatch = false;
@@ -491,15 +491,11 @@ namespace TypeMake
         {
             return (v, ConfirmedLength, Cycle, CyclePrevious) =>
             {
-                if (!Cycle && (v == ""))
-                {
-                    return v;
-                }
-                if (v == "")
-                {
-                    return DefaultValue ?? "";
-                }
                 var vConfirmed = v.Substring(0, ConfirmedLength);
+                if (!Cycle && (vConfirmed == ""))
+                {
+                    return vConfirmed;
+                }
                 if (vConfirmed == "")
                 {
                     return DefaultValue ?? "";
@@ -601,6 +597,18 @@ namespace TypeMake
                     var v = new String(Confirmed.Select(p => p.Key).Concat(Suggested.Select(p => p.Key)).ToArray());
                     var vSuggested = Suggester(v, Confirmed.Count, true, CyclePrevious).Substring(Confirmed.Count);
                     Suggested = new LinkedList<KeyValuePair<Char, KeyValuePair<int, int>>>(vSuggested.Select(c => new KeyValuePair<Char, KeyValuePair<int, int>>(c, new KeyValuePair<int, int>(SuggestedLastTop, SuggestedLastLeft))));
+                }
+                void MoveSuggestionToConfirmed()
+                {
+                    foreach (var n in Suggested.ToList())
+                    {
+                        Console.Write(n.Key);
+                        Confirmed.AddLast(n);
+                    }
+                    Suggested.Clear();
+                    ConfirmedLastTop = SuggestedLastTop;
+                    ConfirmedLastLeft = SuggestedLastLeft;
+                    RefreshCharsAfterCursor();
                 }
                 void RefreshCharsAfterCursor()
                 {
@@ -707,6 +715,8 @@ namespace TypeMake
                     {
                         if (CurrentCharNode == null)
                         {
+                            MoveSuggestionToConfirmed();
+                            MoveCursorToPosition(ConfirmedLastTop, ConfirmedLastLeft);
                             continue;
                         }
                         else
@@ -736,14 +746,9 @@ namespace TypeMake
                     }
                     else if (ki.Key == ConsoleKey.End)
                     {
-                        if (CurrentCharNode == null)
-                        {
-                            continue;
-                        }
-                        else
-                        {
-                            CurrentCharNode = null;
-                        }
+                        CurrentCharNode = null;
+                        MoveCursorToPosition(ConfirmedLastTop, ConfirmedLastLeft);
+                        MoveSuggestionToConfirmed();
                         MoveCursorToPosition(ConfirmedLastTop, ConfirmedLastLeft);
                     }
                     else if (ki.Key == ConsoleKey.Backspace)
