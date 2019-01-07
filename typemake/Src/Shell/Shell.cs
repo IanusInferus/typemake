@@ -479,15 +479,37 @@ namespace TypeMake
         {
             if (OperatingSystem == BuildingOperatingSystemType.Windows)
             {
-                var l = new LinkedList<KeyValuePair<Char, KeyValuePair<int, int>>>();
+                var Confirmed = new LinkedList<KeyValuePair<Char, KeyValuePair<int, int>>>();
+                var Suggested = new LinkedList<KeyValuePair<Char, KeyValuePair<int, int>>>();
                 LinkedListNode<KeyValuePair<Char, KeyValuePair<int, int>>> CurrentCharNode = null;
-                int LastTop = Console.CursorTop;
-                int LastLeft = Console.CursorLeft;
+                int ConfirmedLastTop = Console.CursorTop;
+                int ConfirmedLastLeft = Console.CursorLeft;
+                int SuggestedLastTop = Console.CursorTop;
+                int SuggestedLastLeft = Console.CursorLeft;
+                void RefreshSuggestion()
+                {
+                    if (Suggester == null) { return; }
+                    var v = new String(Confirmed.Select(p => p.Key).ToArray());
+                    if (v == "")
+                    {
+                        Suggested = new LinkedList<KeyValuePair<Char, KeyValuePair<int, int>>>();
+                        return;
+                    }
+                    var vSuggested = Suggester(v, Confirmed.Count).Substring(Confirmed.Count);
+                    Suggested = new LinkedList<KeyValuePair<Char, KeyValuePair<int, int>>>(vSuggested.Select(c => new KeyValuePair<Char, KeyValuePair<int, int>>(c, new KeyValuePair<int, int>(SuggestedLastTop, SuggestedLastLeft))));
+                }
+                void CycleSuggestion()
+                {
+                    if (Suggester == null) { return; }
+                    var v = new String(Confirmed.Select(p => p.Key).Concat(Suggested.Select(p => p.Key)).ToArray());
+                    var vSuggested = Suggester(v, Confirmed.Count).Substring(Confirmed.Count);
+                    Suggested = new LinkedList<KeyValuePair<Char, KeyValuePair<int, int>>>(vSuggested.Select(c => new KeyValuePair<Char, KeyValuePair<int, int>>(c, new KeyValuePair<int, int>(SuggestedLastTop, SuggestedLastLeft))));
+                }
                 void RefreshCharsAfterCursor()
                 {
                     var Top = Console.CursorTop;
                     var Left = Console.CursorLeft;
-                    MoveCursorToPosition(LastTop, LastLeft);
+                    MoveCursorToPosition(SuggestedLastTop, SuggestedLastLeft);
                     BackspaceCursorToPosition(Top, Left);
                     var Next = CurrentCharNode;
                     while (Next != null)
@@ -496,8 +518,20 @@ namespace TypeMake
                         Console.Write(Next.Value.Key);
                         Next = Next.Next;
                     }
-                    LastTop = Console.CursorTop;
-                    LastLeft = Console.CursorLeft;
+                    ConfirmedLastTop = Console.CursorTop;
+                    ConfirmedLastLeft = Console.CursorLeft;
+                    Next = Suggested.First;
+                    Console.BackgroundColor = ConsoleColor.Blue;
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    while (Next != null)
+                    {
+                        Next.Value = new KeyValuePair<Char, KeyValuePair<int, int>>(Next.Value.Key, new KeyValuePair<int, int>(Console.CursorTop, Console.CursorLeft));
+                        Console.Write(Next.Value.Key);
+                        Next = Next.Next;
+                    }
+                    Console.ResetColor();
+                    SuggestedLastTop = Console.CursorTop;
+                    SuggestedLastLeft = Console.CursorLeft;
                     MoveCursorToPosition(Top, Left);
                 }
                 while (true)
@@ -525,24 +559,24 @@ namespace TypeMake
                         Console.SetWindowSize(WindowWidth, WindowHeight);
                         Console.SetWindowPosition(WindowLeft, WindowTop);
                         Console.SetBufferSize(Width, Height);
-                        if ((LastTop > Top) || ((LastTop == Top) && (LastLeft > Left)))
+                        if ((SuggestedLastTop > Top) || ((SuggestedLastTop == Top) && (SuggestedLastLeft > Left)))
                         {
-                            MoveCursorToPosition(LastTop, LastLeft);
+                            MoveCursorToPosition(SuggestedLastTop, SuggestedLastLeft);
                         }
-                        CurrentCharNode = l.First;
+                        CurrentCharNode = Confirmed.First;
                         if (CurrentCharNode != null)
                         {
                             BackspaceCursorToPosition(CurrentCharNode.Value.Value.Key, CurrentCharNode.Value.Value.Value);
                         }
                         else
                         {
-                            BackspaceCursorToPosition(LastTop, LastLeft);
+                            BackspaceCursorToPosition(SuggestedLastTop, SuggestedLastLeft);
                         }
                         Console.SetWindowSize(BackupWindowWidth, BackupWindowHeight);
                         Console.SetWindowPosition(BackupWindowLeft, BackupWindowTop);
                         Console.SetBufferSize(BackupWidth, BackupHeight);
-                        LastTop = Console.CursorTop;
-                        LastLeft = Console.CursorLeft;
+                        SuggestedLastTop = Console.CursorTop;
+                        SuggestedLastLeft = Console.CursorLeft;
                         RefreshCharsAfterCursor();
                         CurrentCharNode = BackupCharNode;
                         MoveCursorToPosition(BackupTop, BackupLeft);
@@ -556,7 +590,7 @@ namespace TypeMake
                     {
                         if (CurrentCharNode == null)
                         {
-                            CurrentCharNode = l.Last;
+                            CurrentCharNode = Confirmed.Last;
                         }
                         else
                         {
@@ -565,7 +599,7 @@ namespace TypeMake
                         }
                         if (CurrentCharNode == null)
                         {
-                            MoveCursorToPosition(LastTop, LastLeft);
+                            MoveCursorToPosition(ConfirmedLastTop, ConfirmedLastLeft);
                         }
                         else
                         {
@@ -584,7 +618,7 @@ namespace TypeMake
                         }
                         if (CurrentCharNode == null)
                         {
-                            MoveCursorToPosition(LastTop, LastLeft);
+                            MoveCursorToPosition(ConfirmedLastTop, ConfirmedLastLeft);
                         }
                         else
                         {
@@ -593,10 +627,10 @@ namespace TypeMake
                     }
                     else if (ki.Key == ConsoleKey.Home)
                     {
-                        CurrentCharNode = l.First;
+                        CurrentCharNode = Confirmed.First;
                         if (CurrentCharNode == null)
                         {
-                            MoveCursorToPosition(LastTop, LastLeft);
+                            MoveCursorToPosition(ConfirmedLastTop, ConfirmedLastLeft);
                         }
                         else
                         {
@@ -613,7 +647,7 @@ namespace TypeMake
                         {
                             CurrentCharNode = null;
                         }
-                        MoveCursorToPosition(LastTop, LastLeft);
+                        MoveCursorToPosition(ConfirmedLastTop, ConfirmedLastLeft);
                     }
                     else if (ki.Key == ConsoleKey.Backspace)
                     {
@@ -622,16 +656,18 @@ namespace TypeMake
                             if (CurrentCharNode.Previous != null)
                             {
                                 MoveCursorToPosition(CurrentCharNode.Previous.Value.Value);
-                                l.Remove(CurrentCharNode.Previous);
+                                Confirmed.Remove(CurrentCharNode.Previous);
+                                RefreshSuggestion();
                                 RefreshCharsAfterCursor();
                             }
                         }
                         else
                         {
-                            if (l.Last != null)
+                            if (Confirmed.Last != null)
                             {
-                                MoveCursorToPosition(l.Last.Value.Value);
-                                l.RemoveLast();
+                                MoveCursorToPosition(Confirmed.Last.Value.Value);
+                                Confirmed.RemoveLast();
+                                RefreshSuggestion();
                                 RefreshCharsAfterCursor();
                             }
                         }
@@ -641,10 +677,16 @@ namespace TypeMake
                         if (CurrentCharNode != null)
                         {
                             var Next = CurrentCharNode.Next;
-                            l.Remove(CurrentCharNode);
+                            Confirmed.Remove(CurrentCharNode);
                             CurrentCharNode = Next;
+                            RefreshSuggestion();
                             RefreshCharsAfterCursor();
                         }
+                    }
+                    else if (ki.Key == ConsoleKey.Tab)
+                    {
+                        CycleSuggestion();
+                        RefreshCharsAfterCursor();
                     }
                     else
                     {
@@ -652,18 +694,19 @@ namespace TypeMake
                         if (Char.IsControl(c)) { continue; }
                         if (CurrentCharNode != null)
                         {
-                            l.AddBefore(CurrentCharNode, new KeyValuePair<Char, KeyValuePair<int, int>>(ki.KeyChar, new KeyValuePair<int, int>(Top, Left)));
+                            Confirmed.AddBefore(CurrentCharNode, new KeyValuePair<Char, KeyValuePair<int, int>>(ki.KeyChar, new KeyValuePair<int, int>(Top, Left)));
                         }
                         else
                         {
-                            l.AddLast(new KeyValuePair<Char, KeyValuePair<int, int>>(ki.KeyChar, new KeyValuePair<int, int>(Top, Left)));
+                            Confirmed.AddLast(new KeyValuePair<Char, KeyValuePair<int, int>>(ki.KeyChar, new KeyValuePair<int, int>(Top, Left)));
                             CurrentCharNode = null;
                         }
                         Console.Write(c);
+                        RefreshSuggestion();
                         RefreshCharsAfterCursor();
                     }
                 }
-                return new String(l.Select(p => p.Key).ToArray());
+                return new String(Confirmed.Select(p => p.Key).Concat(Suggested.Select(p => p.Key)).ToArray());
             }
             else
             {
