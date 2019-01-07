@@ -509,9 +509,9 @@ namespace TypeMake
                 {
                     return vConfirmed;
                 }
-                if (!Directory.Exists(Parent)) { return vConfirmed; }
-                var FileSelections = EnableFile ? Directory.EnumerateFiles(Parent, "*", SearchOption.TopDirectoryOnly).Select(f => Path.GetFileName(f)).ToList() : new List<string> { };
-                var DirectorySelections = EnableDirectory ? Directory.EnumerateDirectories(Parent, "*", SearchOption.TopDirectoryOnly).Select(d => Path.GetFileName(d)).ToList() : new List<string> { };
+                if ((Parent != "") && !Directory.Exists(Parent)) { return vConfirmed; }
+                var FileSelections = EnableFile ? Directory.EnumerateFiles(Parent == "" ? "." : Parent, "*", SearchOption.TopDirectoryOnly).Select(f => Path.GetFileName(f)).ToList() : new List<string> { };
+                var DirectorySelections = EnableDirectory ? Directory.EnumerateDirectories(Parent == "" ? "." : Parent, "*", SearchOption.TopDirectoryOnly).Select(d => Path.GetFileName(d)).ToList() : new List<string> { };
                 var Selections = FileSelections.Concat(DirectorySelections).Select(s => Path.Combine(Parent, s)).ToList();
                 String FirstMatched = null;
                 String PreviousMatched = null;
