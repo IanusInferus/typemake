@@ -126,19 +126,16 @@ namespace TypeMake
 
             var Memory = new Shell.EnvironmentVariableMemory();
 
-            bool BuildAfterGenerate;
-            Shell.RequireEnvironmentVariableBoolean(Memory, "BuildAfterGenerate", out BuildAfterGenerate, Quiet, true);
+            var BuildAfterGenerate = Shell.RequireEnvironmentVariableBoolean(Memory, "BuildAfterGenerate", Quiet, true);
 
-            String SourceDirectory;
+            var SourceDirectory = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "SourceDirectory", Quiet);
             String BuildDirectory;
-            Shell.RequireEnvironmentVariable(Memory, "SourceDirectory", out SourceDirectory, Quiet, p => Directory.Exists(p), p => Path.GetFullPath(p));
 
-            Cpp.OperatingSystemType TargetOperatingSystem;
-            Shell.RequireEnvironmentVariableEnum<Cpp.OperatingSystemType>(Memory, "TargetOperatingSystem", out TargetOperatingSystem, Quiet, BuildingOperatingSystem);
+            var TargetOperatingSystem = Shell.RequireEnvironmentVariableEnum<Cpp.OperatingSystemType>(Memory, "TargetOperatingSystem", Quiet, BuildingOperatingSystem);
 
             if (TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
             {
-                Shell.RequireEnvironmentVariable(Memory, "BuildDirectory", out BuildDirectory, Quiet, p => !File.Exists(p), p => Path.GetFullPath(p), "build/windows");
+                BuildDirectory = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "BuildDirectory", Quiet, "build/windows", p => !File.Exists(p));
                 var VSDir = "";
                 var TargetArchitecture = Cpp.ArchitectureType.x86_64;
                 var Configuration = Cpp.ConfigurationType.Debug;
@@ -158,9 +155,9 @@ namespace TypeMake
                             }
                         }
                     }
-                    Shell.RequireEnvironmentVariable(Memory, "VSDir", out VSDir, Quiet, p => Directory.Exists(p), p => Path.GetFullPath(p), DefaultVSDir);
-                    Shell.RequireEnvironmentVariableEnum(Memory, "TargetArchitecture", out TargetArchitecture, Quiet, new HashSet<Cpp.ArchitectureType> { Cpp.ArchitectureType.x86, Cpp.ArchitectureType.x86_64 }, Cpp.ArchitectureType.x86_64);
-                    Shell.RequireEnvironmentVariableEnum(Memory, "Configuration", out Configuration, Quiet, Cpp.ConfigurationType.Debug);
+                    VSDir = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "VSDir", Quiet, DefaultVSDir);
+                    TargetArchitecture = Shell.RequireEnvironmentVariableEnum(Memory, "TargetArchitecture", Quiet, new HashSet<Cpp.ArchitectureType> { Cpp.ArchitectureType.x86, Cpp.ArchitectureType.x86_64 }, Cpp.ArchitectureType.x86_64);
+                    Configuration = Shell.RequireEnvironmentVariableEnum(Memory, "Configuration", Quiet, Cpp.ConfigurationType.Debug);
                 }
                 var m = new Make(Cpp.ToolchainType.Windows_VisualC, Cpp.CompilerType.VisualC, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, SourceDirectory, BuildDirectory, null, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
                 var r = m.Execute();
@@ -180,17 +177,17 @@ namespace TypeMake
             else if (TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
             {
                 Cpp.ConfigurationType Configuration;
-                Shell.RequireEnvironmentVariableEnum(Memory, "Configuration", out Configuration, Quiet, Cpp.ConfigurationType.Debug);
-                Shell.RequireEnvironmentVariable(Memory, "BuildDirectory", out BuildDirectory, Quiet, p => !File.Exists(p), p => Path.GetFullPath(p), $"build/linux_{Configuration}");
+                Configuration = Shell.RequireEnvironmentVariableEnum(Memory, "Configuration", Quiet, Cpp.ConfigurationType.Debug);
+                BuildDirectory = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "BuildDirectory", Quiet, $"build/linux_{Configuration}", p => !File.Exists(p));
                 var CMake = "";
                 if (BuildingOperatingSystem == Cpp.OperatingSystemType.Linux)
                 {
-                    Shell.RequireEnvironmentVariable(Memory, "CMake", out CMake, Quiet, p => File.Exists(p), p => Path.GetFullPath(p), Shell.TryLocate("cmake") ?? "");
+                    CMake = Shell.RequireEnvironmentVariableFilePath(Memory, "CMake", Quiet, Shell.TryLocate("cmake") ?? "");
                 }
                 var Make = "";
                 if (BuildAfterGenerate && (BuildingOperatingSystem == Cpp.OperatingSystemType.Linux))
                 {
-                    Shell.RequireEnvironmentVariable(Memory, "Make", out Make, Quiet, p => File.Exists(p), p => Path.GetFullPath(p), Shell.TryLocate("make") ?? "");
+                    Make = Shell.RequireEnvironmentVariableFilePath(Memory, "Make", Quiet, Shell.TryLocate("make") ?? "");
                 }
                 var m = new Make(Cpp.ToolchainType.CMake, Cpp.CompilerType.gcc, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, SourceDirectory, BuildDirectory, null, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
                 m.Execute();
@@ -215,7 +212,7 @@ namespace TypeMake
             }
             else if (TargetOperatingSystem == Cpp.OperatingSystemType.Mac)
             {
-                Shell.RequireEnvironmentVariable(Memory, "BuildDirectory", out BuildDirectory, Quiet, p => !File.Exists(p), p => Path.GetFullPath(p), "build/mac");
+                BuildDirectory = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "BuildDirectory", Quiet, "build/mac", p => !File.Exists(p));
                 var m = new Make(Cpp.ToolchainType.Mac_XCode, Cpp.CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, SourceDirectory, BuildDirectory, null, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
                 var r = m.Execute();
                 GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, ForceRegenerate);
@@ -230,9 +227,8 @@ namespace TypeMake
             }
             else if (TargetOperatingSystem == Cpp.OperatingSystemType.iOS)
             {
-                Shell.RequireEnvironmentVariable(Memory, "BuildDirectory", out BuildDirectory, Quiet, p => !File.Exists(p), p => Path.GetFullPath(p), "build/ios");
-                String DevelopmentTeam;
-                Shell.RequireEnvironmentVariable(Memory, "DevelopmentTeam", out DevelopmentTeam, Quiet, null, v => v == "" ? null : v, null, "(optional, find by search an existing pbxproj file with DEVELOPMENT_TEAM)");
+                BuildDirectory = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "BuildDirectory", Quiet, "build/ios", p => !File.Exists(p));
+                var DevelopmentTeam = Shell.RequireEnvironmentVariable(Memory, "DevelopmentTeam", new Shell.EnvironmentVariableReadOptions { Quiet = Quiet, PostMapper = v => v == "" ? null : v, InputDisplay = "(optional, find by search an existing pbxproj file with DEVELOPMENT_TEAM)" });
                 var m = new Make(Cpp.ToolchainType.Mac_XCode, Cpp.CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, SourceDirectory, BuildDirectory, DevelopmentTeam, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
                 m.Execute();
                 var r = m.Execute();
@@ -248,17 +244,12 @@ namespace TypeMake
             }
             else if (TargetOperatingSystem == Cpp.OperatingSystemType.Android)
             {
-                String AndroidSdk;
-                Shell.RequireEnvironmentVariable(Memory, "AndroidSdk", out AndroidSdk, Quiet, p => Directory.Exists(Path.Combine(p, "platform-tools")), p => Path.GetFullPath(p), BuildingOperatingSystem == Cpp.OperatingSystemType.Windows ? Path.Combine(Environment.GetEnvironmentVariable("LocalAppData"), @"Android\sdk") : "");
-                String AndroidNdk;
-                Shell.RequireEnvironmentVariable(Memory, "AndroidNdk", out AndroidNdk, Quiet, p => Directory.Exists(Path.Combine(p, "build")), p => Path.GetFullPath(p), Path.Combine(AndroidSdk, "ndk-bundle"));
-                String CMake;
-                Shell.RequireEnvironmentVariable(Memory, "CMake", out CMake, Quiet, p => File.Exists(p), p => Path.GetFullPath(p), Shell.TryLocate("cmake") ?? (BuildingOperatingSystem == Cpp.OperatingSystemType.Windows ? Path.Combine(Environment.GetEnvironmentVariable("ProgramFiles"), @"CMake\bin\cmake.exe") : ""));
-                Cpp.ArchitectureType TargetArchitecture;
-                Shell.RequireEnvironmentVariableEnum(Memory, "TargetArchitecture", out TargetArchitecture, Quiet, Cpp.ArchitectureType.armeabi_v7a);
-                Cpp.ConfigurationType Configuration;
-                Shell.RequireEnvironmentVariableEnum(Memory, "Configuration", out Configuration, Quiet, Cpp.ConfigurationType.Debug);
-                Shell.RequireEnvironmentVariable(Memory, "BuildDirectory", out BuildDirectory, Quiet, p => !File.Exists(p), p => Path.GetFullPath(p), $"build/android_{TargetArchitecture}_{Configuration}");
+                var AndroidSdk = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "AndroidSdk", Quiet, BuildingOperatingSystem == Cpp.OperatingSystemType.Windows ? Path.Combine(Environment.GetEnvironmentVariable("LocalAppData"), @"Android\sdk") : "", p => Directory.Exists(Path.Combine(p, "platform-tools")));
+                var AndroidNdk = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "AndroidNdk", Quiet, Path.Combine(AndroidSdk, "ndk-bundle"), p => Directory.Exists(Path.Combine(p, "build")));
+                var CMake = Shell.RequireEnvironmentVariableFilePath(Memory, "CMake", Quiet, Shell.TryLocate("cmake") ?? (BuildingOperatingSystem == Cpp.OperatingSystemType.Windows ? Path.Combine(Environment.GetEnvironmentVariable("ProgramFiles"), @"CMake\bin\cmake.exe") : ""));
+                var TargetArchitecture = Shell.RequireEnvironmentVariableEnum(Memory, "TargetArchitecture", Quiet, Cpp.ArchitectureType.armeabi_v7a);
+                var Configuration = Shell.RequireEnvironmentVariableEnum(Memory, "Configuration", Quiet, Cpp.ConfigurationType.Debug);
+                BuildDirectory = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "BuildDirectory", Quiet, $"build/android_{TargetArchitecture}_{Configuration}", p => !File.Exists(p));
                 var m = new Make(Cpp.ToolchainType.Gradle_CMake, Cpp.CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture, SourceDirectory, BuildDirectory, null, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
                 m.Execute();
                 TextFile.WriteToFile(Path.Combine(BuildDirectory, Path.Combine("gradle", "local.properties")), $"sdk.dir={AndroidSdk.Replace("\\", "/")}", new System.Text.UTF8Encoding(false), !ForceRegenerate);

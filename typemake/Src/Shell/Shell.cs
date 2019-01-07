@@ -241,43 +241,54 @@ namespace TypeMake
             public Dictionary<String, String> Variables = new Dictionary<String, String>();
             public Dictionary<String, List<String>> VariableSelections = new Dictionary<String, List<String>>();
         }
-
-        public static void RequireEnvironmentVariable(EnvironmentVariableMemory Memory, String Name, out String Value, bool Quiet, Func<String, bool> Validator = null, Func<String, String> PostMapper = null, String DefaultValue = null, String InputDisplay = null, bool OutputVariable = true)
+        public class EnvironmentVariableReadOptions
         {
-            var d = InputDisplay ?? (!String.IsNullOrEmpty(DefaultValue) ? "[" + DefaultValue + "]" : "");
+            public bool Quiet { get; set; } = false;
+            public Func<String, bool> Validator { get; set; } = null;
+            public Func<String, String> PostMapper { get; set; } = null;
+            public String DefaultValue { get; set; } = null;
+            public String InputDisplay { get; set; } = null;
+            public bool IsPassword { get; set; } = false;
+        }
+        public static String RequireEnvironmentVariable(EnvironmentVariableMemory Memory, String Name)
+        {
+            return RequireEnvironmentVariable(Memory, Name, new EnvironmentVariableReadOptions());
+        }
+        public static String RequireEnvironmentVariable(EnvironmentVariableMemory Memory, String Name, EnvironmentVariableReadOptions Options)
+        {
+            var d = Options.InputDisplay ?? (!String.IsNullOrEmpty(Options.DefaultValue) ? "[" + Options.DefaultValue + "]" : "");
             var v = Environment.GetEnvironmentVariable(Name);
             if (v == null)
             {
-                if (Quiet) { throw new InvalidOperationException("Variable '" + Name + "' not exist."); }
+                if (Options.Quiet) { throw new InvalidOperationException("Variable '" + Name + "' not exist."); }
                 Console.Write("'" + Name + "' not exist, input" + (d == "" ? "" : " " + d) + ": ");
                 v = Console.ReadLine();
                 if (v == "")
                 {
-                    v = DefaultValue ?? "";
+                    v = Options.DefaultValue ?? "";
                 }
             }
-            while ((Validator != null) && !Validator(v))
+            while ((Options.Validator != null) && !Options.Validator(v))
             {
-                if (Quiet) { throw new InvalidOperationException("Variable '" + Name + "' invalid."); }
+                if (Options.Quiet) { throw new InvalidOperationException("Variable '" + Name + "' invalid."); }
                 Console.Write("'" + Name + "' invalid, input" + (d == "" ? "" : " " + d) + ": ");
                 v = Console.ReadLine();
                 if (v == "")
                 {
-                    v = DefaultValue ?? "";
+                    v = Options.DefaultValue ?? "";
                 }
             }
-            if (PostMapper != null)
+            if (Options.PostMapper != null)
             {
-                v = PostMapper(v);
+                v = Options.PostMapper(v);
             }
-            Value = v;
-            if (OutputVariable)
+            if (Options.IsPassword)
             {
-                Console.WriteLine(Name + "=" + v);
+                Console.WriteLine(Name + "=[***]");
             }
             else
             {
-                Console.WriteLine(Name + "=[***]");
+                Console.WriteLine(Name + "=" + v);
             }
             if (Memory.Variables.ContainsKey(Name))
             {
@@ -287,21 +298,27 @@ namespace TypeMake
             {
                 Memory.Variables.Add(Name, v);
             }
+            return v;
         }
-        public static void RequireEnvironmentVariableEnum<T>(EnvironmentVariableMemory Memory, String Name, out T Value, bool Quiet, HashSet<T> Selections, T DefaultValue = default(T), bool OutputVariable = true) where T : struct
+        public static T RequireEnvironmentVariableEnum<T>(EnvironmentVariableMemory Memory, String Name, bool Quiet, HashSet<T> Selections, T DefaultValue = default(T)) where T : struct
         {
             var InputDisplay = String.Join("|", Selections.Select(e => e.Equals(DefaultValue) ? "[" + e.ToString() + "]" : e.ToString()));
-            String s;
             T Output = default(T);
-            RequireEnvironmentVariable(Memory, Name, out s, Quiet, v =>
+            var s = RequireEnvironmentVariable(Memory, Name, new EnvironmentVariableReadOptions
             {
-                T o;
-                var b = Enum.TryParse<T>(v, true, out o);
-                if (!Selections.Contains(o)) { return false; }
-                Output = o;
-                return b;
-            }, v => Output.ToString(), DefaultValue.ToString(), InputDisplay, OutputVariable);
-            Value = Output;
+                Quiet = Quiet,
+                Validator = v =>
+                {
+                    T o;
+                    var b = Enum.TryParse<T>(v, true, out o);
+                    if (!Selections.Contains(o)) { return false; }
+                    Output = o;
+                    return b;
+                },
+                PostMapper = v => Output.ToString(),
+                DefaultValue = DefaultValue.ToString(),
+                InputDisplay = InputDisplay
+            });
             if (Memory.VariableSelections.ContainsKey(Name))
             {
                 Memory.VariableSelections[Name] = Selections.Select(v => v.ToString()).ToList();
@@ -310,17 +327,22 @@ namespace TypeMake
             {
                 Memory.VariableSelections.Add(Name, Selections.Select(v => v.ToString()).ToList());
             }
+            return Output;
         }
-        public static void RequireEnvironmentVariableEnum<T>(EnvironmentVariableMemory Memory, String Name, out T Value, bool Quiet, T DefaultValue = default(T), bool OutputVariable = true) where T : struct
+        public static T RequireEnvironmentVariableEnum<T>(EnvironmentVariableMemory Memory, String Name, bool Quiet, T DefaultValue = default(T)) where T : struct
         {
-            RequireEnvironmentVariableEnum<T>(Memory, Name, out Value, Quiet, new HashSet<T>(Enum.GetValues(typeof(T)).Cast<T>()), DefaultValue, OutputVariable);
+            return RequireEnvironmentVariableEnum<T>(Memory, Name, Quiet, new HashSet<T>(Enum.GetValues(typeof(T)).Cast<T>()), DefaultValue);
         }
-        public static void RequireEnvironmentVariableSelection(EnvironmentVariableMemory Memory, String Name, out String Value, bool Quiet, HashSet<String> Selections, String DefaultValue = "", bool OutputVariable = true)
+        public static String RequireEnvironmentVariableSelection(EnvironmentVariableMemory Memory, String Name, bool Quiet, HashSet<String> Selections, String DefaultValue = "")
         {
             var InputDisplay = String.Join("|", Selections.Select(c => c.Equals(DefaultValue) ? "[" + c.ToString() + "]" : c.ToString()));
-            String s;
-            RequireEnvironmentVariable(Memory, Name, out s, Quiet, v => Selections.Contains(v), null, DefaultValue.ToString(), InputDisplay, OutputVariable);
-            Value = s;
+            var s = RequireEnvironmentVariable(Memory, Name, new EnvironmentVariableReadOptions
+            {
+                Quiet = Quiet,
+                Validator = v => Selections.Contains(v),
+                DefaultValue = DefaultValue.ToString(),
+                InputDisplay = InputDisplay
+            });
             if (Memory.VariableSelections.ContainsKey(Name))
             {
                 Memory.VariableSelections[Name] = Selections.ToList();
@@ -329,31 +351,60 @@ namespace TypeMake
             {
                 Memory.VariableSelections.Add(Name, Selections.ToList());
             }
+            return s;
         }
-        public static void RequireEnvironmentVariableBoolean(EnvironmentVariableMemory Memory, String Name, out bool Value, bool Quiet, bool DefaultValue = false, bool OutputVariable = true)
+        public static bool RequireEnvironmentVariableBoolean(EnvironmentVariableMemory Memory, String Name, bool Quiet, bool DefaultValue = false)
         {
             var Selections = new List<bool> { false, true };
             var InputDisplay = String.Join("|", Selections.Select(c => c.Equals(DefaultValue) ? "[" + c.ToString() + "]" : c.ToString()));
-            String s;
             bool Output = false;
-            RequireEnvironmentVariable(Memory, Name, out s, Quiet, v =>
+            var s = RequireEnvironmentVariable(Memory, Name, new EnvironmentVariableReadOptions
             {
-                if (String.Equals(v, "False", StringComparison.OrdinalIgnoreCase))
+                Quiet = Quiet,
+                Validator = v =>
                 {
-                    Output = false;
-                    return true;
-                }
-                else if (String.Equals(v, "True", StringComparison.OrdinalIgnoreCase))
-                {
-                    Output = true;
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
-            }, v => Output.ToString(), DefaultValue.ToString(), InputDisplay, OutputVariable);
-            Value = Output;
+                    if (String.Equals(v, "False", StringComparison.OrdinalIgnoreCase))
+                    {
+                        Output = false;
+                        return true;
+                    }
+                    else if (String.Equals(v, "True", StringComparison.OrdinalIgnoreCase))
+                    {
+                        Output = true;
+                        return true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                },
+                PostMapper = v => Output.ToString(),
+                DefaultValue = DefaultValue.ToString(),
+                InputDisplay = InputDisplay
+            });
+            return Output;
+        }
+        public static String RequireEnvironmentVariableFilePath(EnvironmentVariableMemory Memory, String Name, bool Quiet, String DefaultValue = null, Func<String, bool> Validator = null)
+        {
+            var s = RequireEnvironmentVariable(Memory, Name, new EnvironmentVariableReadOptions
+            {
+                Quiet = Quiet,
+                Validator = Validator ?? (p => File.Exists(p)),
+                PostMapper = p => Path.GetFullPath(p),
+                DefaultValue = DefaultValue
+            });
+            return s;
+        }
+        public static String RequireEnvironmentVariableDirectoryPath(EnvironmentVariableMemory Memory, String Name, bool Quiet, String DefaultValue = null, Func<String, bool> Validator = null)
+        {
+            var s = RequireEnvironmentVariable(Memory, Name, new EnvironmentVariableReadOptions
+            {
+                Quiet = Quiet,
+                Validator = Validator ?? (p => Directory.Exists(p)),
+                PostMapper = p => Path.GetFullPath(p),
+                DefaultValue = DefaultValue
+            });
+            return s;
         }
     }
 }
