@@ -58,6 +58,7 @@
     <Compile Include="Base\XmlFile.cs" />
     <Compile Include="Make\Make.cs" />
     <Compile Include="Make\Program.cs" />
+    <Compile Include="Base\PathString.cs" />
     <Compile Include="Shell\Shell.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Schema\Common.cs" />
