@@ -244,6 +244,7 @@ namespace TypeMake
         public class EnvironmentVariableReadOptions
         {
             public bool Quiet { get; set; } = false;
+            public Func<String, int, String> Suggester { get; set; } = null;
             public Func<String, bool> Validator { get; set; } = null;
             public Func<String, String> PostMapper { get; set; } = null;
             public String DefaultValue { get; set; } = null;
@@ -256,27 +257,31 @@ namespace TypeMake
         }
         public static String RequireEnvironmentVariable(EnvironmentVariableMemory Memory, String Name, EnvironmentVariableReadOptions Options)
         {
+            var Top = Console.CursorTop;
+            var Left = Console.CursorLeft;
             var d = Options.InputDisplay ?? (!String.IsNullOrEmpty(Options.DefaultValue) ? "[" + Options.DefaultValue + "]" : "");
             var v = Environment.GetEnvironmentVariable(Name);
             if (v == null)
             {
                 if (Options.Quiet) { throw new InvalidOperationException("Variable '" + Name + "' not exist."); }
                 Console.Write("'" + Name + "' not exist, input" + (d == "" ? "" : " " + d) + ": ");
-                v = Console.ReadLine();
+                v = Options.IsPassword ? ReadLinePassword() : Options.Suggester != null ? ReadLineWithSuggestion(Options.Suggester) : Console.ReadLine();
                 if (v == "")
                 {
                     v = Options.DefaultValue ?? "";
                 }
+                BackspaceCursorToPosition(Top, Left);
             }
             while ((Options.Validator != null) && !Options.Validator(v))
             {
                 if (Options.Quiet) { throw new InvalidOperationException("Variable '" + Name + "' invalid."); }
                 Console.Write("'" + Name + "' invalid, input" + (d == "" ? "" : " " + d) + ": ");
-                v = Console.ReadLine();
+                v = Options.IsPassword ? ReadLinePassword() : Options.Suggester != null ? ReadLineWithSuggestion(Options.Suggester) : Console.ReadLine();
                 if (v == "")
                 {
                     v = Options.DefaultValue ?? "";
                 }
+                BackspaceCursorToPosition(Top, Left);
             }
             if (Options.PostMapper != null)
             {
@@ -307,6 +312,7 @@ namespace TypeMake
             var s = RequireEnvironmentVariable(Memory, Name, new EnvironmentVariableReadOptions
             {
                 Quiet = Quiet,
+                Suggester = GetCaseInsensitiveSuggester(Selections.Select(e => e.ToString())),
                 Validator = v =>
                 {
                     T o;
@@ -339,6 +345,7 @@ namespace TypeMake
             var s = RequireEnvironmentVariable(Memory, Name, new EnvironmentVariableReadOptions
             {
                 Quiet = Quiet,
+                Suggester = GetCaseInsensitiveSuggester(Selections),
                 Validator = v => Selections.Contains(v),
                 DefaultValue = DefaultValue.ToString(),
                 InputDisplay = InputDisplay
@@ -361,6 +368,7 @@ namespace TypeMake
             var s = RequireEnvironmentVariable(Memory, Name, new EnvironmentVariableReadOptions
             {
                 Quiet = Quiet,
+                Suggester = GetCaseInsensitiveSuggester(new List<String> { "False", "True" }),
                 Validator = v =>
                 {
                     if (String.Equals(v, "False", StringComparison.OrdinalIgnoreCase))
@@ -389,6 +397,7 @@ namespace TypeMake
             var s = RequireEnvironmentVariable(Memory, Name, new EnvironmentVariableReadOptions
             {
                 Quiet = Quiet,
+                //TODO
                 Validator = Validator ?? (p => File.Exists(p)),
                 PostMapper = p => Path.GetFullPath(p),
                 DefaultValue = DefaultValue
@@ -400,11 +409,253 @@ namespace TypeMake
             var s = RequireEnvironmentVariable(Memory, Name, new EnvironmentVariableReadOptions
             {
                 Quiet = Quiet,
+                //TODO
                 Validator = Validator ?? (p => Directory.Exists(p)),
                 PostMapper = p => Path.GetFullPath(p),
                 DefaultValue = DefaultValue
             });
             return s;
+        }
+        private static Func<String, int, String> GetCaseInsensitiveSuggester(IEnumerable<String> Selections)
+        {
+            return (v, ConfirmedLength) =>
+            {
+                var vConfirmed = v.Substring(0, ConfirmedLength);
+                String FirstMatched = null;
+                bool HasExactMatch = false;
+                //if there is an exact match, the next match is returned
+                //otherwise, the first match is returned
+                //if there is no match, the original input is returned
+                foreach (var s in Selections.Where(s => s.StartsWith(vConfirmed, StringComparison.OrdinalIgnoreCase)))
+                {
+                    if (v.Equals(s, StringComparison.OrdinalIgnoreCase))
+                    {
+                        HasExactMatch = true;
+                        continue;
+                    }
+                    if (FirstMatched == null)
+                    {
+                        FirstMatched = s;
+                    }
+                    if (HasExactMatch)
+                    {
+                        return s;
+                    }
+                }
+                return FirstMatched ?? v;
+            };
+        }
+        public static String ReadLinePassword()
+        {
+            var l = new LinkedList<Char>();
+            while (true)
+            {
+                var Top = Console.CursorTop;
+                var Left = Console.CursorLeft;
+                var ki = Console.ReadKey();
+                if (ki.Key == ConsoleKey.Enter)
+                {
+                    Console.WriteLine();
+                    break;
+                }
+                BackspaceCursorToPosition(Top, Left);
+                if (ki.Key == ConsoleKey.Backspace)
+                {
+                    l.RemoveLast();
+                }
+                else
+                {
+                    var c = ki.KeyChar;
+                    if (Char.IsControl(c)) { continue; }
+                    l.AddLast(ki.KeyChar);
+                }
+            }
+            return new String(l.ToArray());
+        }
+        public static String ReadLineWithSuggestion(Func<String, int, String> Suggester)
+        {
+            var l = new LinkedList<KeyValuePair<Char, KeyValuePair<int, int>>>();
+            LinkedListNode<KeyValuePair<Char, KeyValuePair<int, int>>> CurrentCharNode = null;
+            int LastTop = Console.CursorTop;
+            int LastLeft = Console.CursorLeft;
+            void GotoPreviousCursor()
+            {
+                if (CurrentCharNode != null)
+                {
+                    Console.SetCursorPosition(CurrentCharNode.Value.Value.Value, CurrentCharNode.Value.Value.Key);
+                    Console.Write(CurrentCharNode.Value.Key);
+                    Console.SetCursorPosition(CurrentCharNode.Value.Value.Value, CurrentCharNode.Value.Value.Key);
+                }
+                else
+                {
+                    Console.SetCursorPosition(LastLeft, LastTop);
+                    Console.Write(" ");
+                    Console.SetCursorPosition(LastLeft, LastTop);
+                }
+            }
+            void RefreshCharsAfterCursor()
+            {
+                var Top = Console.CursorTop;
+                var Left = Console.CursorLeft;
+                Console.SetCursorPosition(LastLeft, LastTop);
+                BackspaceCursorToPosition(Top, Left);
+                var Next = CurrentCharNode;
+                while (Next != null)
+                {
+                    Next.Value = new KeyValuePair<Char, KeyValuePair<int, int>>(Next.Value.Key, new KeyValuePair<int, int>(Console.CursorTop, Console.CursorLeft));
+                    Console.Write(Next.Value.Key);
+                    Next = Next.Next;
+                }
+                LastTop = Console.CursorTop;
+                LastLeft = Console.CursorLeft;
+                Console.SetCursorPosition(Left, Top);
+            }
+            while (true)
+            {
+                var Top = Console.CursorTop;
+                var Left = Console.CursorLeft;
+                var ki = Console.ReadKey();
+                if (ki.Key == ConsoleKey.Enter)
+                {
+                    Console.WriteLine();
+                    break;
+                }
+                if (ki.Key == ConsoleKey.LeftArrow)
+                {
+                    GotoPreviousCursor();
+                    if (CurrentCharNode == null)
+                    {
+                        CurrentCharNode = l.Last;
+                    }
+                    else
+                    {
+                        if (CurrentCharNode.Previous == null) { continue; }
+                        CurrentCharNode = CurrentCharNode.Previous;
+                    }
+                    if (CurrentCharNode == null)
+                    {
+                        Console.SetCursorPosition(LastLeft, LastTop);
+                    }
+                    else
+                    {
+                        Console.SetCursorPosition(CurrentCharNode.Value.Value.Value, CurrentCharNode.Value.Value.Key);
+                    }
+                }
+                else if (ki.Key == ConsoleKey.RightArrow)
+                {
+                    GotoPreviousCursor();
+                    if (CurrentCharNode == null)
+                    {
+                        continue;
+                    }
+                    else
+                    {
+                        CurrentCharNode = CurrentCharNode.Next;
+                    }
+                    if (CurrentCharNode == null)
+                    {
+                        Console.SetCursorPosition(LastLeft, LastTop);
+                    }
+                    else
+                    {
+                        Console.SetCursorPosition(CurrentCharNode.Value.Value.Value, CurrentCharNode.Value.Value.Key);
+                    }
+                }
+                else if (ki.Key == ConsoleKey.Home)
+                {
+                    GotoPreviousCursor();
+                    CurrentCharNode = l.First;
+                    if (CurrentCharNode == null)
+                    {
+                        Console.SetCursorPosition(LastLeft, LastTop);
+                    }
+                    else
+                    {
+                        Console.SetCursorPosition(CurrentCharNode.Value.Value.Value, CurrentCharNode.Value.Value.Key);
+                    }
+                }
+                else if (ki.Key == ConsoleKey.End)
+                {
+                    GotoPreviousCursor();
+                    if (CurrentCharNode == null)
+                    {
+                        continue;
+                    }
+                    else
+                    {
+                        CurrentCharNode = null;
+                    }
+                    Console.SetCursorPosition(LastLeft, LastTop);
+                }
+                else if (ki.Key == ConsoleKey.Backspace)
+                {
+                    GotoPreviousCursor();
+                    if (CurrentCharNode != null)
+                    {
+                        if (CurrentCharNode.Previous != null)
+                        {
+                            Console.SetCursorPosition(CurrentCharNode.Previous.Value.Value.Value, CurrentCharNode.Previous.Value.Value.Key);
+                            l.Remove(CurrentCharNode.Previous);
+                            RefreshCharsAfterCursor();
+                        }
+                    }
+                    else
+                    {
+                        if (l.Last != null)
+                        {
+                            Console.SetCursorPosition(l.Last.Value.Value.Value, l.Last.Value.Value.Key);
+                            l.RemoveLast();
+                            RefreshCharsAfterCursor();
+                        }
+                    }
+                }
+                else if (ki.Key == ConsoleKey.Delete)
+                {
+                    GotoPreviousCursor();
+                    if (CurrentCharNode != null)
+                    {
+                        var Next = CurrentCharNode.Next;
+                        l.Remove(CurrentCharNode);
+                        CurrentCharNode = Next;
+                        RefreshCharsAfterCursor();
+                    }
+                }
+                else
+                {
+                    var c = ki.KeyChar;
+                    if (Char.IsControl(c)) { continue; }
+                    if (CurrentCharNode != null)
+                    {
+                        l.AddBefore(CurrentCharNode, new KeyValuePair<Char, KeyValuePair<int, int>>(ki.KeyChar, new KeyValuePair<int, int>(Top, Left)));
+                    }
+                    else
+                    {
+                        l.AddLast(new KeyValuePair<Char, KeyValuePair<int, int>>(ki.KeyChar, new KeyValuePair<int, int>(Top, Left)));
+                        CurrentCharNode = null;
+                    }
+                    RefreshCharsAfterCursor();
+                }
+            }
+            return new String(l.Select(p => p.Key).ToArray());
+        }
+        private static void BackspaceCursorToPosition(int Top, int Left)
+        {
+            while (true)
+            {
+                if (Console.CursorTop < Top) { break; }
+                if (Console.CursorTop == Top)
+                {
+                    if (Console.CursorLeft <= Left) { break; }
+                }
+                if ((Console.CursorLeft == 0) && (Console.CursorTop > 0))
+                {
+                    Console.SetCursorPosition(Console.WindowWidth - 1, Console.CursorTop - 1);
+                }
+                Console.Write("\b");
+                Console.Write(" ");
+                Console.Write("\b");
+            }
+            Console.SetCursorPosition(Left, Top);
         }
     }
 }
