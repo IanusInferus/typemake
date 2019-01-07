@@ -649,11 +649,18 @@ namespace TypeMake
                 }
                 if ((Console.CursorLeft == 0) && (Console.CursorTop > 0))
                 {
-                    Console.SetCursorPosition(Console.WindowWidth - 1, Console.CursorTop - 1);
+                    var PrevLeft = Console.WindowWidth - 1;
+                    var PrevTop = Console.CursorTop - 1;
+                    Console.SetCursorPosition(Left, PrevTop);
+                    Console.Write(" ");
+                    Console.SetCursorPosition(Left, PrevTop);
                 }
-                Console.Write("\b");
-                Console.Write(" ");
-                Console.Write("\b");
+                else
+                {
+                    Console.Write("\b");
+                    Console.Write(" ");
+                    Console.Write("\b");
+                }
             }
             Console.SetCursorPosition(Left, Top);
         }
