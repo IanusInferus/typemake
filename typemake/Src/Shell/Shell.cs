@@ -244,12 +244,16 @@ namespace TypeMake
         public class EnvironmentVariableReadOptions
         {
             public bool Quiet { get; set; } = false;
-            public Func<String, int, String> Suggester { get; set; } = null;
+            public Func<String, int, bool, bool, String> Suggester { get; set; } = null;
             public Func<String, bool> Validator { get; set; } = null;
             public Func<String, String> PostMapper { get; set; } = null;
             public String DefaultValue { get; set; } = null;
             public String InputDisplay { get; set; } = null;
             public bool IsPassword { get; set; } = false;
+            public EnvironmentVariableReadOptions()
+            {
+                Suggester = (v, ConfirmedLength, Cycle, CyclePrevious) => String.IsNullOrEmpty(DefaultValue) ? v : GetCaseInsensitiveDefaultValueSuggester(DefaultValue)(v, ConfirmedLength, Cycle, CyclePrevious);
+            }
         }
         public static String RequireEnvironmentVariable(EnvironmentVariableMemory Memory, String Name)
         {
@@ -265,7 +269,7 @@ namespace TypeMake
             {
                 if (Options.Quiet) { throw new InvalidOperationException("Variable '" + Name + "' not exist."); }
                 Console.Write("'" + Name + "' not exist, input" + (d == "" ? "" : " " + d) + ": ");
-                v = Options.IsPassword ? ReadLinePassword() : Options.Suggester != null ? ReadLineWithSuggestion(Options.Suggester) : Console.ReadLine();
+                v = Options.IsPassword ? ReadLinePassword() : ReadLineWithSuggestion(Options.Suggester);
                 if (v == "")
                 {
                     v = Options.DefaultValue ?? "";
@@ -279,7 +283,7 @@ namespace TypeMake
             {
                 if (Options.Quiet) { throw new InvalidOperationException("Variable '" + Name + "' invalid."); }
                 Console.Write("'" + Name + "' invalid, input" + (d == "" ? "" : " " + d) + ": ");
-                v = Options.IsPassword ? ReadLinePassword() : Options.Suggester != null ? ReadLineWithSuggestion(Options.Suggester) : Console.ReadLine();
+                v = Options.IsPassword ? ReadLinePassword() : ReadLineWithSuggestion(Options.Suggester);
                 if (v == "")
                 {
                     v = Options.DefaultValue ?? "";
@@ -318,7 +322,7 @@ namespace TypeMake
             var s = RequireEnvironmentVariable(Memory, Name, new EnvironmentVariableReadOptions
             {
                 Quiet = Quiet,
-                Suggester = GetCaseInsensitiveSuggester(Selections.Select(e => e.ToString())),
+                Suggester = GetCaseInsensitiveSelectionSuggester(Selections.Select(e => e.ToString())),
                 Validator = v =>
                 {
                     T o;
@@ -351,7 +355,7 @@ namespace TypeMake
             var s = RequireEnvironmentVariable(Memory, Name, new EnvironmentVariableReadOptions
             {
                 Quiet = Quiet,
-                Suggester = GetCaseInsensitiveSuggester(Selections),
+                Suggester = GetCaseInsensitiveSelectionSuggester(Selections),
                 Validator = v => Selections.Contains(v),
                 DefaultValue = DefaultValue.ToString(),
                 InputDisplay = InputDisplay
@@ -374,7 +378,7 @@ namespace TypeMake
             var s = RequireEnvironmentVariable(Memory, Name, new EnvironmentVariableReadOptions
             {
                 Quiet = Quiet,
-                Suggester = GetCaseInsensitiveSuggester(new List<String> { "False", "True" }),
+                Suggester = GetCaseInsensitiveSelectionSuggester(new List<String> { "False", "True" }),
                 Validator = v =>
                 {
                     if (String.Equals(v, "False", StringComparison.OrdinalIgnoreCase))
@@ -403,7 +407,7 @@ namespace TypeMake
             var s = RequireEnvironmentVariable(Memory, Name, new EnvironmentVariableReadOptions
             {
                 Quiet = Quiet,
-                //TODO
+                Suggester = GetPathSuggester(true, false, DefaultValue),
                 Validator = Validator ?? (p => File.Exists(p)),
                 PostMapper = p => Path.GetFullPath(p),
                 DefaultValue = DefaultValue
@@ -415,27 +419,58 @@ namespace TypeMake
             var s = RequireEnvironmentVariable(Memory, Name, new EnvironmentVariableReadOptions
             {
                 Quiet = Quiet,
-                //TODO
+                Suggester = GetPathSuggester(false, true, DefaultValue),
                 Validator = Validator ?? (p => Directory.Exists(p)),
                 PostMapper = p => Path.GetFullPath(p),
                 DefaultValue = DefaultValue
             });
             return s;
         }
-        private static Func<String, int, String> GetCaseInsensitiveSuggester(IEnumerable<String> Selections)
+        private static Func<String, int, bool, bool, String> GetCaseInsensitiveDefaultValueSuggester(String DefaultValue)
         {
-            return (v, ConfirmedLength) =>
+            return (v, ConfirmedLength, Cycle, CyclePrevious) =>
             {
+                if (!Cycle && (v == ""))
+                {
+                    return v;
+                }
+                var vConfirmed = v.Substring(0, ConfirmedLength);
+                if (DefaultValue.StartsWith(vConfirmed, StringComparison.OrdinalIgnoreCase))
+                {
+                    return DefaultValue;
+                }
+                return v;
+            };
+        }
+        private static Func<String, int, bool, bool, String> GetCaseInsensitiveSelectionSuggester(IEnumerable<String> Selections)
+        {
+            return (v, ConfirmedLength, Cycle, CyclePrevious) =>
+            {
+                if (!Cycle && (v == ""))
+                {
+                    return v;
+                }
                 var vConfirmed = v.Substring(0, ConfirmedLength);
                 String FirstMatched = null;
+                String PreviousMatched = null;
                 bool HasExactMatch = false;
-                //if there is an exact match, the next match is returned
+                //if there is an exact match and in cycle mode, the next or previous match is returned
+                //if there is an exact match and not in cycle mode, the exact match is returned
                 //otherwise, the first match is returned
-                //if there is no match, the original input is returned
+                //if there is no match and in cycle mode, the original suggestion is returned
+                //if there is no match and not in cycle mode, the original input is returned
                 foreach (var s in Selections.Where(s => s.StartsWith(vConfirmed, StringComparison.OrdinalIgnoreCase)))
                 {
                     if (v.Equals(s, StringComparison.OrdinalIgnoreCase))
                     {
+                        if (!Cycle)
+                        {
+                            return s;
+                        }
+                        if (CyclePrevious)
+                        {
+                            return PreviousMatched ?? s;
+                        }
                         HasExactMatch = true;
                         continue;
                     }
@@ -443,12 +478,79 @@ namespace TypeMake
                     {
                         FirstMatched = s;
                     }
+                    PreviousMatched = s;
                     if (HasExactMatch)
                     {
                         return s;
                     }
                 }
-                return FirstMatched ?? v;
+                return FirstMatched ?? (Cycle ? v : vConfirmed);
+            };
+        }
+        private static Func<String, int, bool, bool, String> GetPathSuggester(bool EnableFile, bool EnableDirectory, String DefaultValue)
+        {
+            return (v, ConfirmedLength, Cycle, CyclePrevious) =>
+            {
+                if (!Cycle && (v == ""))
+                {
+                    return v;
+                }
+                if (v == "")
+                {
+                    return DefaultValue ?? "";
+                }
+                var vConfirmed = v.Substring(0, ConfirmedLength);
+                if (vConfirmed == "")
+                {
+                    return DefaultValue ?? "";
+                }
+                String Parent;
+                try
+                {
+                    Parent = Path.GetDirectoryName(vConfirmed);
+                }
+                catch (ArgumentException)
+                {
+                    return vConfirmed;
+                }
+                if (!Directory.Exists(Parent)) { return vConfirmed; }
+                var FileSelections = EnableFile ? Directory.EnumerateFiles(Parent, "*", SearchOption.TopDirectoryOnly).Select(f => Path.GetFileName(f)).ToList() : new List<string> { };
+                var DirectorySelections = EnableDirectory ? Directory.EnumerateDirectories(Parent, "*", SearchOption.TopDirectoryOnly).Select(d => Path.GetFileName(d)).ToList() : new List<string> { };
+                var Selections = FileSelections.Concat(DirectorySelections).Select(s => Path.Combine(Parent, s)).ToList();
+                String FirstMatched = null;
+                String PreviousMatched = null;
+                bool HasExactMatch = false;
+                //if there is an exact match and in cycle mode, the next or previous match is returned
+                //if there is an exact match and not in cycle mode, the exact match is returned
+                //otherwise, the first match is returned
+                //if there is no match and in cycle mode, the original suggestion is returned
+                //if there is no match and not in cycle mode, the original input is returned
+                foreach (var s in Selections.Where(s => s.StartsWith(vConfirmed, StringComparison.OrdinalIgnoreCase)))
+                {
+                    if (v.Equals(s, StringComparison.OrdinalIgnoreCase))
+                    {
+                        if (!Cycle)
+                        {
+                            return s;
+                        }
+                        if (CyclePrevious)
+                        {
+                            return PreviousMatched ?? s;
+                        }
+                        HasExactMatch = true;
+                        continue;
+                    }
+                    if (FirstMatched == null)
+                    {
+                        FirstMatched = s;
+                    }
+                    PreviousMatched = s;
+                    if (HasExactMatch)
+                    {
+                        return s;
+                    }
+                }
+                return FirstMatched ?? (Cycle ? v : vConfirmed);
             };
         }
         public static String ReadLinePassword()
@@ -475,7 +577,7 @@ namespace TypeMake
             }
             return new String(l.ToArray());
         }
-        public static String ReadLineWithSuggestion(Func<String, int, String> Suggester)
+        public static String ReadLineWithSuggestion(Func<String, int, bool, bool, String> Suggester)
         {
             if (OperatingSystem == BuildingOperatingSystemType.Windows)
             {
@@ -489,20 +591,15 @@ namespace TypeMake
                 void RefreshSuggestion()
                 {
                     if (Suggester == null) { return; }
-                    var v = new String(Confirmed.Select(p => p.Key).ToArray());
-                    if (v == "")
-                    {
-                        Suggested = new LinkedList<KeyValuePair<Char, KeyValuePair<int, int>>>();
-                        return;
-                    }
-                    var vSuggested = Suggester(v, Confirmed.Count).Substring(Confirmed.Count);
+                    var v = new String(Confirmed.Select(p => p.Key).Concat(Suggested.Select(p => p.Key)).ToArray());
+                    var vSuggested = Suggester(v, Confirmed.Count, false, false).Substring(Confirmed.Count);
                     Suggested = new LinkedList<KeyValuePair<Char, KeyValuePair<int, int>>>(vSuggested.Select(c => new KeyValuePair<Char, KeyValuePair<int, int>>(c, new KeyValuePair<int, int>(SuggestedLastTop, SuggestedLastLeft))));
                 }
-                void CycleSuggestion()
+                void CycleSuggestion(bool CyclePrevious)
                 {
                     if (Suggester == null) { return; }
                     var v = new String(Confirmed.Select(p => p.Key).Concat(Suggested.Select(p => p.Key)).ToArray());
-                    var vSuggested = Suggester(v, Confirmed.Count).Substring(Confirmed.Count);
+                    var vSuggested = Suggester(v, Confirmed.Count, true, CyclePrevious).Substring(Confirmed.Count);
                     Suggested = new LinkedList<KeyValuePair<Char, KeyValuePair<int, int>>>(vSuggested.Select(c => new KeyValuePair<Char, KeyValuePair<int, int>>(c, new KeyValuePair<int, int>(SuggestedLastTop, SuggestedLastLeft))));
                 }
                 void RefreshCharsAfterCursor()
@@ -685,8 +782,16 @@ namespace TypeMake
                     }
                     else if (ki.Key == ConsoleKey.Tab)
                     {
-                        CycleSuggestion();
-                        RefreshCharsAfterCursor();
+                        if (ki.Modifiers == ConsoleModifiers.Shift)
+                        {
+                            CycleSuggestion(true);
+                            RefreshCharsAfterCursor();
+                        }
+                        else
+                        {
+                            CycleSuggestion(false);
+                            RefreshCharsAfterCursor();
+                        }
                     }
                     else
                     {
