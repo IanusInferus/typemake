@@ -270,7 +270,10 @@ namespace TypeMake
                 {
                     v = Options.DefaultValue ?? "";
                 }
-                BackspaceCursorToPosition(Top, Left);
+                if (OperatingSystem == BuildingOperatingSystemType.Windows)
+                {
+                    BackspaceCursorToPosition(Top, Left);
+                }
             }
             while ((Options.Validator != null) && !Options.Validator(v))
             {
@@ -281,7 +284,10 @@ namespace TypeMake
                 {
                     v = Options.DefaultValue ?? "";
                 }
-                BackspaceCursorToPosition(Top, Left);
+                if (OperatingSystem == BuildingOperatingSystemType.Windows)
+                {
+                    BackspaceCursorToPosition(Top, Left);
+                }
             }
             if (Options.PostMapper != null)
             {
@@ -450,15 +456,12 @@ namespace TypeMake
             var l = new LinkedList<Char>();
             while (true)
             {
-                var Top = Console.CursorTop;
-                var Left = Console.CursorLeft;
-                var ki = Console.ReadKey();
+                var ki = Console.ReadKey(true);
                 if (ki.Key == ConsoleKey.Enter)
                 {
                     Console.WriteLine();
                     break;
                 }
-                BackspaceCursorToPosition(Top, Left);
                 if (ki.Key == ConsoleKey.Backspace)
                 {
                     l.RemoveLast();
@@ -474,169 +477,198 @@ namespace TypeMake
         }
         public static String ReadLineWithSuggestion(Func<String, int, String> Suggester)
         {
-            var l = new LinkedList<KeyValuePair<Char, KeyValuePair<int, int>>>();
-            LinkedListNode<KeyValuePair<Char, KeyValuePair<int, int>>> CurrentCharNode = null;
-            int LastTop = Console.CursorTop;
-            int LastLeft = Console.CursorLeft;
-            void GotoPreviousCursor()
+            if (OperatingSystem == BuildingOperatingSystemType.Windows)
             {
-                if (CurrentCharNode != null)
+                var l = new LinkedList<KeyValuePair<Char, KeyValuePair<int, int>>>();
+                LinkedListNode<KeyValuePair<Char, KeyValuePair<int, int>>> CurrentCharNode = null;
+                int LastTop = Console.CursorTop;
+                int LastLeft = Console.CursorLeft;
+                void RefreshCharsAfterCursor()
                 {
-                    Console.SetCursorPosition(CurrentCharNode.Value.Value.Value, CurrentCharNode.Value.Value.Key);
-                    Console.Write(CurrentCharNode.Value.Key);
-                    Console.SetCursorPosition(CurrentCharNode.Value.Value.Value, CurrentCharNode.Value.Value.Key);
+                    var Top = Console.CursorTop;
+                    var Left = Console.CursorLeft;
+                    MoveCursorToPosition(LastTop, LastLeft);
+                    BackspaceCursorToPosition(Top, Left);
+                    var Next = CurrentCharNode;
+                    while (Next != null)
+                    {
+                        Next.Value = new KeyValuePair<Char, KeyValuePair<int, int>>(Next.Value.Key, new KeyValuePair<int, int>(Console.CursorTop, Console.CursorLeft));
+                        Console.Write(Next.Value.Key);
+                        Next = Next.Next;
+                    }
+                    LastTop = Console.CursorTop;
+                    LastLeft = Console.CursorLeft;
+                    MoveCursorToPosition(Top, Left);
                 }
-                else
+                while (true)
                 {
-                    Console.SetCursorPosition(LastLeft, LastTop);
-                    Console.Write(" ");
-                    Console.SetCursorPosition(LastLeft, LastTop);
-                }
-            }
-            void RefreshCharsAfterCursor()
-            {
-                var Top = Console.CursorTop;
-                var Left = Console.CursorLeft;
-                Console.SetCursorPosition(LastLeft, LastTop);
-                BackspaceCursorToPosition(Top, Left);
-                var Next = CurrentCharNode;
-                while (Next != null)
-                {
-                    Next.Value = new KeyValuePair<Char, KeyValuePair<int, int>>(Next.Value.Key, new KeyValuePair<int, int>(Console.CursorTop, Console.CursorLeft));
-                    Console.Write(Next.Value.Key);
-                    Next = Next.Next;
-                }
-                LastTop = Console.CursorTop;
-                LastLeft = Console.CursorLeft;
-                Console.SetCursorPosition(Left, Top);
-            }
-            while (true)
-            {
-                var Top = Console.CursorTop;
-                var Left = Console.CursorLeft;
-                var ki = Console.ReadKey();
-                if (ki.Key == ConsoleKey.Enter)
-                {
-                    Console.WriteLine();
-                    break;
-                }
-                if (ki.Key == ConsoleKey.LeftArrow)
-                {
-                    GotoPreviousCursor();
-                    if (CurrentCharNode == null)
+                    var Top = Console.CursorTop;
+                    var Left = Console.CursorLeft;
+                    var Width = Console.BufferWidth;
+                    var Height = Console.BufferHeight;
+                    var WindowWidth = Console.WindowWidth;
+                    var WindowHeight = Console.WindowHeight;
+                    var WindowTop = Console.WindowTop;
+                    var WindowLeft = Console.WindowLeft;
+                    var ki = Console.ReadKey(true);
+                    if (Console.BufferWidth != Width)
                     {
-                        CurrentCharNode = l.Last;
-                    }
-                    else
-                    {
-                        if (CurrentCharNode.Previous == null) { continue; }
-                        CurrentCharNode = CurrentCharNode.Previous;
-                    }
-                    if (CurrentCharNode == null)
-                    {
-                        Console.SetCursorPosition(LastLeft, LastTop);
-                    }
-                    else
-                    {
-                        Console.SetCursorPosition(CurrentCharNode.Value.Value.Value, CurrentCharNode.Value.Value.Key);
-                    }
-                }
-                else if (ki.Key == ConsoleKey.RightArrow)
-                {
-                    GotoPreviousCursor();
-                    if (CurrentCharNode == null)
-                    {
-                        continue;
-                    }
-                    else
-                    {
-                        CurrentCharNode = CurrentCharNode.Next;
-                    }
-                    if (CurrentCharNode == null)
-                    {
-                        Console.SetCursorPosition(LastLeft, LastTop);
-                    }
-                    else
-                    {
-                        Console.SetCursorPosition(CurrentCharNode.Value.Value.Value, CurrentCharNode.Value.Value.Key);
-                    }
-                }
-                else if (ki.Key == ConsoleKey.Home)
-                {
-                    GotoPreviousCursor();
-                    CurrentCharNode = l.First;
-                    if (CurrentCharNode == null)
-                    {
-                        Console.SetCursorPosition(LastLeft, LastTop);
-                    }
-                    else
-                    {
-                        Console.SetCursorPosition(CurrentCharNode.Value.Value.Value, CurrentCharNode.Value.Value.Key);
-                    }
-                }
-                else if (ki.Key == ConsoleKey.End)
-                {
-                    GotoPreviousCursor();
-                    if (CurrentCharNode == null)
-                    {
-                        continue;
-                    }
-                    else
-                    {
-                        CurrentCharNode = null;
-                    }
-                    Console.SetCursorPosition(LastLeft, LastTop);
-                }
-                else if (ki.Key == ConsoleKey.Backspace)
-                {
-                    GotoPreviousCursor();
-                    if (CurrentCharNode != null)
-                    {
-                        if (CurrentCharNode.Previous != null)
+                        var BackupTop = Console.CursorTop;
+                        var BackupLeft = Console.CursorLeft;
+                        var BackupWidth = Console.BufferWidth;
+                        var BackupHeight = Console.BufferHeight;
+                        var BackupWindowWidth = Console.WindowWidth;
+                        var BackupWindowHeight = Console.WindowHeight;
+                        var BackupWindowTop = Console.WindowTop;
+                        var BackupWindowLeft = Console.WindowLeft;
+                        var BackupCharNode = CurrentCharNode;
+                        Console.SetWindowSize(WindowWidth, WindowHeight);
+                        Console.SetWindowPosition(WindowLeft, WindowTop);
+                        Console.SetBufferSize(Width, Height);
+                        if ((LastTop > Top) || ((LastTop == Top) && (LastLeft > Left)))
                         {
-                            Console.SetCursorPosition(CurrentCharNode.Previous.Value.Value.Value, CurrentCharNode.Previous.Value.Value.Key);
-                            l.Remove(CurrentCharNode.Previous);
+                            MoveCursorToPosition(LastTop, LastLeft);
+                        }
+                        CurrentCharNode = l.First;
+                        if (CurrentCharNode != null)
+                        {
+                            BackspaceCursorToPosition(CurrentCharNode.Value.Value.Key, CurrentCharNode.Value.Value.Value);
+                        }
+                        else
+                        {
+                            BackspaceCursorToPosition(LastTop, LastLeft);
+                        }
+                        Console.SetWindowSize(BackupWindowWidth, BackupWindowHeight);
+                        Console.SetWindowPosition(BackupWindowLeft, BackupWindowTop);
+                        Console.SetBufferSize(BackupWidth, BackupHeight);
+                        LastTop = Console.CursorTop;
+                        LastLeft = Console.CursorLeft;
+                        RefreshCharsAfterCursor();
+                        CurrentCharNode = BackupCharNode;
+                        MoveCursorToPosition(BackupTop, BackupLeft);
+                    }
+                    if (ki.Key == ConsoleKey.Enter)
+                    {
+                        Console.WriteLine();
+                        break;
+                    }
+                    if (ki.Key == ConsoleKey.LeftArrow)
+                    {
+                        if (CurrentCharNode == null)
+                        {
+                            CurrentCharNode = l.Last;
+                        }
+                        else
+                        {
+                            if (CurrentCharNode.Previous == null) { continue; }
+                            CurrentCharNode = CurrentCharNode.Previous;
+                        }
+                        if (CurrentCharNode == null)
+                        {
+                            MoveCursorToPosition(LastTop, LastLeft);
+                        }
+                        else
+                        {
+                            MoveCursorToPosition(CurrentCharNode.Value.Value);
+                        }
+                    }
+                    else if (ki.Key == ConsoleKey.RightArrow)
+                    {
+                        if (CurrentCharNode == null)
+                        {
+                            continue;
+                        }
+                        else
+                        {
+                            CurrentCharNode = CurrentCharNode.Next;
+                        }
+                        if (CurrentCharNode == null)
+                        {
+                            MoveCursorToPosition(LastTop, LastLeft);
+                        }
+                        else
+                        {
+                            MoveCursorToPosition(CurrentCharNode.Value.Value);
+                        }
+                    }
+                    else if (ki.Key == ConsoleKey.Home)
+                    {
+                        CurrentCharNode = l.First;
+                        if (CurrentCharNode == null)
+                        {
+                            MoveCursorToPosition(LastTop, LastLeft);
+                        }
+                        else
+                        {
+                            MoveCursorToPosition(CurrentCharNode.Value.Value);
+                        }
+                    }
+                    else if (ki.Key == ConsoleKey.End)
+                    {
+                        if (CurrentCharNode == null)
+                        {
+                            continue;
+                        }
+                        else
+                        {
+                            CurrentCharNode = null;
+                        }
+                        MoveCursorToPosition(LastTop, LastLeft);
+                    }
+                    else if (ki.Key == ConsoleKey.Backspace)
+                    {
+                        if (CurrentCharNode != null)
+                        {
+                            if (CurrentCharNode.Previous != null)
+                            {
+                                MoveCursorToPosition(CurrentCharNode.Previous.Value.Value);
+                                l.Remove(CurrentCharNode.Previous);
+                                RefreshCharsAfterCursor();
+                            }
+                        }
+                        else
+                        {
+                            if (l.Last != null)
+                            {
+                                MoveCursorToPosition(l.Last.Value.Value);
+                                l.RemoveLast();
+                                RefreshCharsAfterCursor();
+                            }
+                        }
+                    }
+                    else if (ki.Key == ConsoleKey.Delete)
+                    {
+                        if (CurrentCharNode != null)
+                        {
+                            var Next = CurrentCharNode.Next;
+                            l.Remove(CurrentCharNode);
+                            CurrentCharNode = Next;
                             RefreshCharsAfterCursor();
                         }
                     }
                     else
                     {
-                        if (l.Last != null)
+                        var c = ki.KeyChar;
+                        if (Char.IsControl(c)) { continue; }
+                        if (CurrentCharNode != null)
                         {
-                            Console.SetCursorPosition(l.Last.Value.Value.Value, l.Last.Value.Value.Key);
-                            l.RemoveLast();
-                            RefreshCharsAfterCursor();
+                            l.AddBefore(CurrentCharNode, new KeyValuePair<Char, KeyValuePair<int, int>>(ki.KeyChar, new KeyValuePair<int, int>(Top, Left)));
                         }
-                    }
-                }
-                else if (ki.Key == ConsoleKey.Delete)
-                {
-                    GotoPreviousCursor();
-                    if (CurrentCharNode != null)
-                    {
-                        var Next = CurrentCharNode.Next;
-                        l.Remove(CurrentCharNode);
-                        CurrentCharNode = Next;
+                        else
+                        {
+                            l.AddLast(new KeyValuePair<Char, KeyValuePair<int, int>>(ki.KeyChar, new KeyValuePair<int, int>(Top, Left)));
+                            CurrentCharNode = null;
+                        }
+                        Console.Write(c);
                         RefreshCharsAfterCursor();
                     }
                 }
-                else
-                {
-                    var c = ki.KeyChar;
-                    if (Char.IsControl(c)) { continue; }
-                    if (CurrentCharNode != null)
-                    {
-                        l.AddBefore(CurrentCharNode, new KeyValuePair<Char, KeyValuePair<int, int>>(ki.KeyChar, new KeyValuePair<int, int>(Top, Left)));
-                    }
-                    else
-                    {
-                        l.AddLast(new KeyValuePair<Char, KeyValuePair<int, int>>(ki.KeyChar, new KeyValuePair<int, int>(Top, Left)));
-                        CurrentCharNode = null;
-                    }
-                    RefreshCharsAfterCursor();
-                }
+                return new String(l.Select(p => p.Key).ToArray());
             }
-            return new String(l.Select(p => p.Key).ToArray());
+            else
+            {
+                return Console.ReadLine();
+            }
         }
         private static void BackspaceCursorToPosition(int Top, int Left)
         {
@@ -649,11 +681,11 @@ namespace TypeMake
                 }
                 if ((Console.CursorLeft == 0) && (Console.CursorTop > 0))
                 {
-                    var PrevLeft = Console.WindowWidth - 1;
+                    var PrevLeft = Console.BufferWidth - 1;
                     var PrevTop = Console.CursorTop - 1;
-                    Console.SetCursorPosition(Left, PrevTop);
+                    MoveCursorToPosition(PrevTop, PrevLeft);
                     Console.Write(" ");
-                    Console.SetCursorPosition(Left, PrevTop);
+                    MoveCursorToPosition(PrevTop, PrevLeft);
                 }
                 else
                 {
@@ -662,7 +694,15 @@ namespace TypeMake
                     Console.Write("\b");
                 }
             }
+            MoveCursorToPosition(Top, Left);
+        }
+        private static void MoveCursorToPosition(int Top, int Left)
+        {
             Console.SetCursorPosition(Left, Top);
+        }
+        private static void MoveCursorToPosition(KeyValuePair<int, int> Pair)
+        {
+            Console.SetCursorPosition(Pair.Value, Pair.Key);
         }
     }
 }
