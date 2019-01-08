@@ -263,6 +263,7 @@ namespace TypeMake
         {
             var Top = Console.CursorTop;
             var Left = Console.CursorLeft;
+            var cps = GetConsolePositionState();
             var d = Options.InputDisplay ?? (!String.IsNullOrEmpty(Options.DefaultValue) ? "[" + Options.DefaultValue + "]" : "");
             var v = Environment.GetEnvironmentVariable(Name);
             if (v == null)
@@ -276,7 +277,10 @@ namespace TypeMake
                 }
                 if (OperatingSystem == BuildingOperatingSystemType.Windows)
                 {
+                    var cpsNew = GetConsolePositionState();
+                    SetConsolePositionState(cps);
                     BackspaceCursorToPosition(Top, Left);
+                    SetConsolePositionState(cpsNew);
                 }
             }
             while ((Options.Validator != null) && !Options.Validator(v))
@@ -290,7 +294,10 @@ namespace TypeMake
                 }
                 if (OperatingSystem == BuildingOperatingSystemType.Windows)
                 {
+                    var cpsNew = GetConsolePositionState();
+                    SetConsolePositionState(cps);
                     BackspaceCursorToPosition(Top, Left);
+                    SetConsolePositionState(cpsNew);
                 }
             }
             if (Options.PostMapper != null)
@@ -643,27 +650,15 @@ namespace TypeMake
                 {
                     var Top = Console.CursorTop;
                     var Left = Console.CursorLeft;
-                    var Width = Console.BufferWidth;
-                    var Height = Console.BufferHeight;
-                    var WindowWidth = Console.WindowWidth;
-                    var WindowHeight = Console.WindowHeight;
-                    var WindowTop = Console.WindowTop;
-                    var WindowLeft = Console.WindowLeft;
+                    var cps = GetConsolePositionState();
                     var ki = Console.ReadKey(true);
-                    if (Console.BufferWidth != Width)
+                    if (Console.BufferWidth != cps.BufferWidth)
                     {
                         var BackupTop = Console.CursorTop;
                         var BackupLeft = Console.CursorLeft;
-                        var BackupWidth = Console.BufferWidth;
-                        var BackupHeight = Console.BufferHeight;
-                        var BackupWindowWidth = Console.WindowWidth;
-                        var BackupWindowHeight = Console.WindowHeight;
-                        var BackupWindowTop = Console.WindowTop;
-                        var BackupWindowLeft = Console.WindowLeft;
+                        var cpsBackup = GetConsolePositionState();
                         var BackupCharNode = CurrentCharNode;
-                        Console.SetWindowSize(WindowWidth, WindowHeight);
-                        Console.SetWindowPosition(WindowLeft, WindowTop);
-                        Console.SetBufferSize(Width, Height);
+                        SetConsolePositionState(cps);
                         if ((SuggestedLastTop > Top) || ((SuggestedLastTop == Top) && (SuggestedLastLeft > Left)))
                         {
                             MoveCursorToPosition(SuggestedLastTop, SuggestedLastLeft);
@@ -677,14 +672,14 @@ namespace TypeMake
                         {
                             BackspaceCursorToPosition(SuggestedLastTop, SuggestedLastLeft);
                         }
-                        Console.SetWindowSize(BackupWindowWidth, BackupWindowHeight);
-                        Console.SetWindowPosition(BackupWindowLeft, BackupWindowTop);
-                        Console.SetBufferSize(BackupWidth, BackupHeight);
+                        SetConsolePositionState(cpsBackup);
                         SuggestedLastTop = Console.CursorTop;
                         SuggestedLastLeft = Console.CursorLeft;
                         RefreshCharsAfterCursor();
                         CurrentCharNode = BackupCharNode;
                         MoveCursorToPosition(BackupTop, BackupLeft);
+                        Top = Console.CursorTop;
+                        Left = Console.CursorLeft;
                     }
                     if (ki.Key == ConsoleKey.Enter)
                     {
@@ -856,6 +851,33 @@ namespace TypeMake
         private static void MoveCursorToPosition(KeyValuePair<int, int> Pair)
         {
             Console.SetCursorPosition(Pair.Value, Pair.Key);
+        }
+        private class ConsolePositionState
+        {
+            public int BufferWidth = Console.BufferWidth;
+            public int BufferHeight = Console.BufferHeight;
+            public int WindowWidth = Console.WindowWidth;
+            public int WindowHeight = Console.WindowHeight;
+            public int WindowTop = Console.WindowTop;
+            public int WindowLeft = Console.WindowLeft;
+        }
+        private static ConsolePositionState GetConsolePositionState()
+        {
+            return new ConsolePositionState
+            {
+                BufferWidth = Console.BufferWidth,
+                BufferHeight = Console.BufferHeight,
+                WindowWidth = Console.WindowWidth,
+                WindowHeight = Console.WindowHeight,
+                WindowTop = Console.WindowTop,
+                WindowLeft = Console.WindowLeft
+            };
+        }
+        private static void SetConsolePositionState(ConsolePositionState s)
+        {
+            Console.SetWindowSize(s.WindowWidth, s.WindowHeight);
+            Console.SetWindowPosition(s.WindowLeft, s.WindowTop);
+            Console.SetBufferSize(s.BufferWidth, s.BufferHeight);
         }
     }
 }
