@@ -414,7 +414,7 @@ namespace TypeMake
             var s = RequireEnvironmentVariable(Memory, Name, new EnvironmentVariableReadOptions
             {
                 Quiet = Quiet,
-                Suggester = GetPathSuggester(true, false, DefaultValue),
+                Suggester = GetPathSuggester(true, true, DefaultValue),
                 Validator = Validator ?? (p => File.Exists(p)),
                 PostMapper = p => Path.GetFullPath(p),
                 DefaultValue = DefaultValue
