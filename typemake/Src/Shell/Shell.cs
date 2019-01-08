@@ -150,7 +150,7 @@ namespace TypeMake
         public static int Execute(String ProgramPath, params String[] Arguments)
         {
             var psi = CreateExecuteStartInfo(ProgramPath, Arguments);
-            var CommandLine = Arguments.Length == 0 ? EscapeArgumentForShell(ProgramPath, OperatingSystem) : EscapeArgumentForShell(ProgramPath, OperatingSystem) + " " + Arguments;
+            var CommandLine = Arguments.Length == 0 ? EscapeArgumentForShell(ProgramPath, OperatingSystem) : EscapeArgumentForShell(ProgramPath, OperatingSystem) + " " + String.Join(" ", Arguments.Select(a => EscapeArgumentForShell(a, OperatingSystem)));
             Console.WriteLine(CommandLine);
             var p = Process.Start(psi);
             p.WaitForExit();
