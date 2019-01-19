@@ -6,7 +6,7 @@ namespace TypeMake
 {
     public static class TextFile
     {
-        public static void WriteToFile(String FilePath, String Content, Encoding Encoding, bool WriteOnlyOnModified)
+        public static void WriteToFile(PathString FilePath, String Content, Encoding Encoding, bool WriteOnlyOnModified)
         {
             if (WriteOnlyOnModified)
             {
@@ -19,8 +19,8 @@ namespace TypeMake
                     }
                 }
             }
-            var Dir = Path.GetDirectoryName(FilePath);
-            if ((Dir != "") && !Directory.Exists(Dir))
+            var Dir = FilePath.Parent;
+            if (!Directory.Exists(Dir))
             {
                 Directory.CreateDirectory(Dir);
             }

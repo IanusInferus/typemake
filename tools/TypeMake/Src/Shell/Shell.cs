@@ -11,17 +11,17 @@ namespace TypeMake
     {
         private class PushDirectoryDisposee : IDisposable
         {
-            public String OriginalDir;
+            public PathString OriginalDir;
             public void Dispose()
             {
-                Environment.CurrentDirectory = Path.GetFullPath(OriginalDir);
+                Environment.CurrentDirectory = OriginalDir;
             }
         }
 
-        public static IDisposable PushDirectory(String Dir)
+        public static IDisposable PushDirectory(PathString Dir)
         {
             var d = new PushDirectoryDisposee { OriginalDir = Environment.CurrentDirectory };
-            Environment.CurrentDirectory = Path.GetFullPath(Dir);
+            Environment.CurrentDirectory = Dir.FullPath;
             return d;
         }
 
@@ -104,47 +104,59 @@ namespace TypeMake
             }
         }
 
-        public static String TryLocate(String ProgramName)
+        public static PathString TryLocate(String ProgramName)
         {
             foreach (var Dir in Environment.GetEnvironmentVariable("PATH").Split(Path.PathSeparator))
             {
-                var p = Path.Combine(Dir, ProgramName);
+                var p = Dir.AsPath() / ProgramName;
                 if (File.Exists(p))
                 {
-                    return GetCaseSensitivePath(Path.GetFullPath(p));
+                    return ResolvePathFromSystem(p.FullPath);
                 }
                 if (OperatingSystem == BuildingOperatingSystemType.Windows)
                 {
                     if (File.Exists(p + ".exe"))
                     {
-                        return GetCaseSensitivePath(Path.GetFullPath(p + ".exe"));
+                        return ResolvePathFromSystem((p + ".exe").FullPath);
                     }
                     else if (File.Exists(p + ".cmd"))
                     {
-                        return GetCaseSensitivePath(Path.GetFullPath(p + ".cmd"));
+                        return ResolvePathFromSystem((p + ".cmd").FullPath);
                     }
                     else if (File.Exists(p + ".bat"))
                     {
-                        return GetCaseSensitivePath(Path.GetFullPath(p + ".bat"));
+                        return ResolvePathFromSystem((p + ".bat").FullPath);
                     }
                 }
             }
             return null;
         }
-        private static string GetCaseSensitivePath(string path)
+        private static PathString ResolvePathFromSystem(PathString p)
         {
-            var root = Path.GetPathRoot(path);
-            foreach (var name in path.Substring(root.Length).Split(Path.DirectorySeparatorChar))
+            var Remaining = new LinkedList<String>(p.Parts);
+            if (Remaining.Count == 0) { return p; }
+            var CurrentPath = Remaining.First.Value.AsPath();
+            Remaining.RemoveFirst();
+            while (Remaining.Count > 0)
             {
-                var l = Directory.GetFileSystemEntries(root, name);
+                var l = Directory.GetFileSystemEntries(CurrentPath, Remaining.First.Value);
                 if (l.Length == 0)
                 {
                     break;
                 }
-                root = l.First();
+                CurrentPath = l.First();
+                Remaining.RemoveFirst();
             }
-            root += path.Substring(root.Length);
-            return root;
+            while (Remaining.Count > 0)
+            {
+                CurrentPath /= Remaining.First.Value;
+                Remaining.RemoveFirst();
+            }
+            if (!String.Equals(CurrentPath, p, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new ArgumentException();
+            }
+            return CurrentPath;
         }
 
         public static int Execute(String ProgramPath, params String[] Arguments)
@@ -409,26 +421,28 @@ namespace TypeMake
             });
             return Output;
         }
-        public static String RequireEnvironmentVariableFilePath(EnvironmentVariableMemory Memory, String Name, bool Quiet, String DefaultValue = null, Func<String, bool> Validator = null)
+        public static String RequireEnvironmentVariableFilePath(EnvironmentVariableMemory Memory, String Name, bool Quiet, PathString DefaultValue = null, Func<PathString, bool> Validator = null)
         {
+            Func<String, bool> ValidatorWrapper = p => Validator(p);
             var s = RequireEnvironmentVariable(Memory, Name, new EnvironmentVariableReadOptions
             {
                 Quiet = Quiet,
                 Suggester = GetPathSuggester(true, true, DefaultValue),
-                Validator = Validator ?? (p => File.Exists(p)),
-                PostMapper = p => Path.GetFullPath(p),
+                Validator = Validator != null ? ValidatorWrapper : (p => File.Exists(p)),
+                PostMapper = p => p.AsPath().FullPath,
                 DefaultValue = DefaultValue
             });
             return s;
         }
-        public static String RequireEnvironmentVariableDirectoryPath(EnvironmentVariableMemory Memory, String Name, bool Quiet, String DefaultValue = null, Func<String, bool> Validator = null)
+        public static PathString RequireEnvironmentVariableDirectoryPath(EnvironmentVariableMemory Memory, String Name, bool Quiet, PathString DefaultValue = null, Func<PathString, bool> Validator = null)
         {
+            Func<String, bool> ValidatorWrapper = p => Validator(p);
             var s = RequireEnvironmentVariable(Memory, Name, new EnvironmentVariableReadOptions
             {
                 Quiet = Quiet,
                 Suggester = GetPathSuggester(false, true, DefaultValue),
-                Validator = Validator ?? (p => Directory.Exists(p)),
-                PostMapper = p => Path.GetFullPath(p),
+                Validator = Validator != null ? ValidatorWrapper : (p => Directory.Exists(p)),
+                PostMapper = p => p.AsPath().FullPath,
                 DefaultValue = DefaultValue
             });
             return s;
@@ -494,7 +508,7 @@ namespace TypeMake
                 return FirstMatched ?? (Cycle ? v : vConfirmed);
             };
         }
-        private static Func<String, int, bool, bool, String> GetPathSuggester(bool EnableFile, bool EnableDirectory, String DefaultValue)
+        private static Func<String, int, bool, bool, String> GetPathSuggester(bool EnableFile, bool EnableDirectory, PathString DefaultValue)
         {
             return (v, ConfirmedLength, Cycle, CyclePrevious) =>
             {
@@ -507,19 +521,19 @@ namespace TypeMake
                 {
                     return DefaultValue ?? "";
                 }
-                String Parent;
+                PathString Parent;
                 try
                 {
-                    Parent = Path.GetDirectoryName(vConfirmed);
+                    Parent = vConfirmed.AsPath().Parent;
                 }
                 catch (ArgumentException)
                 {
                     return vConfirmed;
                 }
                 if ((Parent != "") && !Directory.Exists(Parent)) { return vConfirmed; }
-                var FileSelections = EnableFile ? Directory.EnumerateFiles(Parent == "" ? "." : Parent, "*", SearchOption.TopDirectoryOnly).Select(f => Path.GetFileName(f)).ToList() : new List<string> { };
-                var DirectorySelections = EnableDirectory ? Directory.EnumerateDirectories(Parent == "" ? "." : Parent, "*", SearchOption.TopDirectoryOnly).Select(d => Path.GetFileName(d)).ToList() : new List<string> { };
-                var Selections = FileSelections.Concat(DirectorySelections).Select(s => Path.Combine(Parent, s)).ToList();
+                var FileSelections = EnableFile ? Directory.EnumerateFiles(Parent, "*", SearchOption.TopDirectoryOnly).Select(f => f.AsPath().FileName).ToList() : new List<string> { };
+                var DirectorySelections = EnableDirectory ? Directory.EnumerateDirectories(Parent, "*", SearchOption.TopDirectoryOnly).Select(d => d.AsPath().FileName).ToList() : new List<string> { };
+                var Selections = FileSelections.Concat(DirectorySelections).Select(s => Parent / s).ToList();
                 String FirstMatched = null;
                 String PreviousMatched = null;
                 bool HasExactMatch = false;
@@ -528,7 +542,7 @@ namespace TypeMake
                 //otherwise, the first match is returned
                 //if there is no match and in cycle mode, the original suggestion is returned
                 //if there is no match and not in cycle mode, the original input is returned
-                foreach (var s in Selections.Where(s => s.StartsWith(vConfirmed, StringComparison.OrdinalIgnoreCase)))
+                foreach (var s in Selections.Where(s => s.ToString().StartsWith(vConfirmed, StringComparison.OrdinalIgnoreCase)))
                 {
                     if (v.Equals(s, StringComparison.OrdinalIgnoreCase))
                     {

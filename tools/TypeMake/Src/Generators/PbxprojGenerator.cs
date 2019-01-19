@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.IO;
 using System.Text;
 using static TypeMake.Plist;
 
@@ -11,20 +10,20 @@ namespace TypeMake.Cpp
     {
         private Project Project;
         private List<ProjectReference> ProjectReferences;
-        private String InputDirectory;
-        private String OutputDirectory;
+        private PathString InputDirectory;
+        private PathString OutputDirectory;
         private String PbxprojTemplateText;
         private OperatingSystemType BuildingOperatingSystem;
         private ArchitectureType BuildingOperatingSystemArchitecture;
         private OperatingSystemType TargetOperatingSystem;
         private String DevelopmentTeam;
 
-        public PbxprojGenerator(Project Project, List<ProjectReference> ProjectReferences, String InputDirectory, String OutputDirectory, String PbxprojTemplateText, OperatingSystemType BuildingOperatingSystem, ArchitectureType BuildingOperatingSystemArchitecture, OperatingSystemType TargetOperatingSystem, String DevelopmentTeam = null)
+        public PbxprojGenerator(Project Project, List<ProjectReference> ProjectReferences, PathString InputDirectory, PathString OutputDirectory, String PbxprojTemplateText, OperatingSystemType BuildingOperatingSystem, ArchitectureType BuildingOperatingSystemArchitecture, OperatingSystemType TargetOperatingSystem, String DevelopmentTeam = null)
         {
             this.Project = Project;
             this.ProjectReferences = ProjectReferences;
-            this.InputDirectory = Path.GetFullPath(InputDirectory);
-            this.OutputDirectory = Path.GetFullPath(OutputDirectory);
+            this.InputDirectory = InputDirectory.FullPath;
+            this.OutputDirectory = OutputDirectory.FullPath;
             this.PbxprojTemplateText = PbxprojTemplateText;
             this.BuildingOperatingSystem = BuildingOperatingSystem;
             this.BuildingOperatingSystemArchitecture = BuildingOperatingSystemArchitecture;
@@ -34,8 +33,8 @@ namespace TypeMake.Cpp
 
         public void Generate(bool ForceRegenerate)
         {
-            var PbxprojPath = Path.Combine(OutputDirectory, Path.Combine(Project.Name + ".xcodeproj", "project.pbxproj"));
-            var BaseDirPath = Path.GetDirectoryName(Path.GetDirectoryName(PbxprojPath));
+            var PbxprojPath = OutputDirectory / (Project.Name + ".xcodeproj") / "project.pbxproj";
+            var BaseDirPath = PbxprojPath.Parent.Parent;
 
             var ProductName = !String.IsNullOrEmpty(Project.TargetName) ? Project.TargetName : Project.Name;
 
@@ -88,11 +87,11 @@ namespace TypeMake.Cpp
             {
                 foreach (var f in conf.Files)
                 {
-                    var PathParts = GetPathParts(FileNameHandling.GetRelativePath(Path.GetFullPath(f.Path), InputDirectory).Replace('\\', '/'));
-                    PathParts[0] = Path.Combine(FileNameHandling.GetRelativePath(InputDirectory, OutputDirectory), PathParts[0]).Replace('\\', '/');
-                    var RelativePath = String.Join("/", PathParts);
+                    var PathParts = f.Path.RelativeTo(InputDirectory).Parts;
+                    PathParts[0] = (InputDirectory.RelativeTo(OutputDirectory) / PathParts[0]).ToString(PathStringStyle.Unix);
+                    var RelativePath = PathString.Join(PathParts).ToString(PathStringStyle.Unix);
                     if (RelativePathToObjects.ContainsKey(RelativePath)) { continue; }
-                    var Added = AddFile(Objects, RootObject["mainGroup"].String, new LinkedList<String>(), new LinkedList<String>(PathParts), f, BaseDirPath, RelativePathToObjects);
+                    var Added = AddFile(Objects, RootObject["mainGroup"].String, new LinkedList<String>(), new LinkedList<String>(PathParts.Where(pp => pp != ".")), f, BaseDirPath, RelativePathToObjects);
                     if (!Added)
                     {
                         throw new InvalidOperationException();
@@ -102,8 +101,8 @@ namespace TypeMake.Cpp
 
             foreach (var Project in ProjectReferences)
             {
-                var RelativePath = "Frameworks/" + Project.Name;
-                AddProjectReference(Objects, RootObject["mainGroup"].String, new LinkedList<String>(), new LinkedList<String>(GetPathParts(RelativePath)), Project, BaseDirPath, RelativePathToObjects);
+                var RelativePath = ("Frameworks/" + Project.Name).AsPath();
+                AddProjectReference(Objects, RootObject["mainGroup"].String, new LinkedList<String>(), new LinkedList<String>(RelativePath.Parts.Where(pp => pp != ".")), Project, BaseDirPath, RelativePathToObjects);
             }
 
             foreach (var TargetKey in Targets)
@@ -149,10 +148,10 @@ namespace TypeMake.Cpp
                         }
                         if ((conf.TargetType == TargetType.Executable) || (conf.TargetType == TargetType.DynamicLibrary))
                         {
-                            var InfoPlistPath = FileNameHandling.GetRelativePath(Path.Combine(InputDirectory, "Info.plist"), BaseDirPath);
+                            var InfoPlistPath = (InputDirectory / "Info.plist").RelativeTo(BaseDirPath);
                             if (System.IO.File.Exists(InfoPlistPath))
                             {
-                                BuildSettings.SetItem("INFOPLIST_FILE", Value.CreateString(InfoPlistPath.Replace('\\', '/')));
+                                BuildSettings.SetItem("INFOPLIST_FILE", Value.CreateString(InfoPlistPath.ToString(PathStringStyle.Unix)));
                             }
                             BuildSettings.SetItem("PRODUCT_BUNDLE_IDENTIFIER", Value.CreateString(conf.BundleIdentifier));
                             BuildSettings.SetItem("TARGETED_DEVICE_FAMILY", Value.CreateString("1,2"));
@@ -171,9 +170,9 @@ namespace TypeMake.Cpp
                         {
                             if ((f.Type == FileType.CSource) || (f.Type == FileType.CppSource) || (f.Type == FileType.ObjectiveCSource) || (f.Type == FileType.ObjectiveCppSource))
                             {
-                                var PathParts = GetPathParts(FileNameHandling.GetRelativePath(Path.GetFullPath(f.Path), InputDirectory).Replace('\\', '/'));
-                                PathParts[0] = Path.Combine(FileNameHandling.GetRelativePath(InputDirectory, OutputDirectory), PathParts[0]).Replace('\\', '/');
-                                var RelativePath = String.Join("/", PathParts);
+                                var PathParts = f.Path.FullPath.RelativeTo(InputDirectory).Parts;
+                                PathParts[0] = (InputDirectory.RelativeTo(OutputDirectory) / PathParts[0]).ToString(PathStringStyle.Unix);
+                                var RelativePath = PathString.Join(PathParts).ToString(PathStringStyle.Unix);
                                 var File = new Dictionary<String, Value>();
                                 File.Add("fileRef", Value.CreateString(RelativePathToObjects[RelativePath]));
                                 File.Add("isa", Value.CreateString("PBXBuildFile"));
@@ -247,7 +246,7 @@ namespace TypeMake.Cpp
 
                 var conf = ConfigurationUtils.GetMergedConfiguration(ToolchainType.Mac_XCode, CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, ConfigurationType, null, Project.Configurations);
 
-                var IncludeDirectories = conf.IncludeDirectories.Select(d => FileNameHandling.GetRelativePath(Path.GetFullPath(d), BaseDirPath).Replace('\\', '/')).ToList();
+                var IncludeDirectories = conf.IncludeDirectories.Select(d => d.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix)).ToList();
                 if (IncludeDirectories.Count != 0)
                 {
                     BuildSettings.SetItem("HEADER_SEARCH_PATHS", Value.CreateArray(IncludeDirectories.Concat(new List<String> { "$(inherited)" }).Select(d => Value.CreateString(d)).ToList()));
@@ -270,12 +269,12 @@ namespace TypeMake.Cpp
 
                 if ((conf.TargetType == TargetType.Executable) || (conf.TargetType == TargetType.DynamicLibrary))
                 {
-                    var LibDirectories = conf.LibDirectories.Select(d => FileNameHandling.GetRelativePath(Path.GetFullPath(d), BaseDirPath).Replace('\\', '/')).ToList();
+                    var LibDirectories = conf.LibDirectories.Select(d => d.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix)).ToList();
                     if (LibDirectories.Count != 0)
                     {
                         BuildSettings.SetItem("LIBRARY_SEARCH_PATHS", Value.CreateArray(LibDirectories.Concat(new List<String> { "$(inherited)" }).Select(d => Value.CreateString(d)).ToList()));
                     }
-                    var LinkerFlags = conf.Libs.Concat(conf.LinkerFlags).ToList();
+                    var LinkerFlags = conf.Libs.Select(lib => lib.ToString(PathStringStyle.Unix)).Concat(conf.LinkerFlags).ToList();
                     if (LinkerFlags.Count != 0)
                     {
                         BuildSettings.SetItem("OTHER_LDFLAGS", Value.CreateArray(CppFlags.Concat(new List<String> { "$(inherited)" }).Select(d => Value.CreateString(d)).ToList()));
@@ -306,7 +305,7 @@ namespace TypeMake.Cpp
             var Type = GroupOrFile["isa"].String;
             if (Type != "PBXGroup") { return false; }
             var Path = GroupOrFile.ContainsKey("path") ? GroupOrFile["path"].String : "";
-            var Parts = GetPathParts(Path).Where(p => p != "").ToArray();
+            var Parts = Path.AsPath().Parts.Where(p => p != ".").ToArray();
             if (Parts.Length > RelativePathStack.Count) { return false; }
             if (!Parts.SequenceEqual(RelativePathStack.Take(Parts.Length))) { return false; }
             foreach (var Part in Parts)
@@ -341,8 +340,8 @@ namespace TypeMake.Cpp
 
             String ChildHash;
             {
-                var RelativePath = String.Join("/", Stack.Concat(RelativePathStack).Where(p => p != ""));
-                var FileName = System.IO.Path.GetFileName(RelativePathStack.Last.Value);
+                var RelativePath = PathString.Join(Stack.Concat(RelativePathStack).Where(p => p != "")).ToString(PathStringStyle.Unix);
+                var FileName = RelativePathStack.Last.Value.AsPath().FileName;
                 var Hash = GetHashOfPath(RelativePath);
 
                 var FileObject = new Dictionary<string, Value>();
@@ -402,8 +401,8 @@ namespace TypeMake.Cpp
 
             for (int k = RelativePathStack.Count - 1; k >= Parts.Length + 1; k -= 1)
             {
-                var RelativePath = String.Join("/", Stack.Concat(RelativePathStack.Take(k)).Where(p => p != ""));
-                var DirName = System.IO.Path.GetFileName(RelativePath);
+                var RelativePath = PathString.Join(Stack.Concat(RelativePathStack.Take(k)).Where(p => p != "")).ToString(PathStringStyle.Unix);
+                var DirName = RelativePath.AsPath().FileName;
                 var Hash = GetHashOfPath(RelativePath);
 
                 var FileObject = new Dictionary<string, Value>();
@@ -435,7 +434,7 @@ namespace TypeMake.Cpp
             var Type = GroupOrFile["isa"].String;
             if (Type != "PBXGroup") { return false; }
             var Path = GroupOrFile.ContainsKey("path") ? GroupOrFile["path"].String : GroupOrFile.ContainsKey("name") ? GroupOrFile["name"].String : "";
-            var Parts = GetPathParts(Path).Where(p => p != "").ToArray();
+            var Parts = Path.AsPath().Parts.Where(p => p != ".").ToArray();
             if (Parts.Length > RelativePathStack.Count) { return false; }
             if (!Parts.SequenceEqual(RelativePathStack.Take(Parts.Length))) { return false; }
             foreach (var Part in Parts)
@@ -487,8 +486,8 @@ namespace TypeMake.Cpp
 
             for (int k = RelativePathStack.Count - 1; k >= Parts.Length + 1; k -= 1)
             {
-                var RelativePath = String.Join("/", Stack.Concat(RelativePathStack.Take(k)).Where(p => p != ""));
-                var DirName = System.IO.Path.GetFileName(RelativePath);
+                var RelativePath = PathString.Join(Stack.Concat(RelativePathStack.Take(k)).Where(p => p != "")).ToString(PathStringStyle.Unix);
+                var DirName = RelativePath.AsPath().FileName;
                 var Hash = GetHashOfPath(RelativePath);
 
                 var FileObject = new Dictionary<string, Value>();
@@ -529,11 +528,6 @@ namespace TypeMake.Cpp
                 if (GroupOrFile.ContainsKey("explicitFileType")) { return; }
                 Objects.Remove(GroupOrFileKey);
             }
-        }
-        private static String[] GetPathParts(String Path)
-        {
-            var Parts = Path.TrimEnd('/', '\\').Split('/', '\\');
-            return Parts;
         }
         private static String GetHashOfPath(String Path)
         {

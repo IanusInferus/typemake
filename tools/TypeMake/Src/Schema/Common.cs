@@ -7,7 +7,7 @@ namespace TypeMake
     {
         public String Id;
         public String Name;
-        public String VirtualDir;
-        public String FilePath;
+        public PathString VirtualDir;
+        public PathString FilePath;
     }
 }

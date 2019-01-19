@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -11,8 +10,8 @@ namespace TypeMake.Cpp
     {
         private Project Project;
         private List<ProjectReference> ProjectReferences;
-        private String InputDirectory;
-        private String OutputDirectory;
+        private PathString InputDirectory;
+        private PathString OutputDirectory;
         private ToolchainType Toolchain;
         private CompilerType Compiler;
         private OperatingSystemType BuildingOperatingSystem;
@@ -20,12 +19,12 @@ namespace TypeMake.Cpp
         private OperatingSystemType TargetOperatingSystem;
         private ArchitectureType? TargetArchitectureType;
 
-        public CMakeProjectGenerator(Project Project, List<ProjectReference> ProjectReferences, String InputDirectory, String OutputDirectory, ToolchainType Toolchain, CompilerType Compiler, OperatingSystemType BuildingOperatingSystem, ArchitectureType BuildingOperatingSystemArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType? TargetArchitectureType)
+        public CMakeProjectGenerator(Project Project, List<ProjectReference> ProjectReferences, PathString InputDirectory, PathString OutputDirectory, ToolchainType Toolchain, CompilerType Compiler, OperatingSystemType BuildingOperatingSystem, ArchitectureType BuildingOperatingSystemArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType? TargetArchitectureType)
         {
             this.Project = Project;
             this.ProjectReferences = ProjectReferences;
-            this.InputDirectory = Path.GetFullPath(InputDirectory);
-            this.OutputDirectory = Path.GetFullPath(OutputDirectory);
+            this.InputDirectory = InputDirectory.FullPath;
+            this.OutputDirectory = OutputDirectory.FullPath;
             this.Toolchain = Toolchain;
             this.Compiler = Compiler;
             this.BuildingOperatingSystem = BuildingOperatingSystem;
@@ -36,8 +35,8 @@ namespace TypeMake.Cpp
 
         public void Generate(bool ForceRegenerate)
         {
-            var CMakeListsPath = Path.Combine(OutputDirectory, Path.Combine(Project.Name, "CMakeLists.txt"));
-            var BaseDirPath = Path.GetDirectoryName(CMakeListsPath);
+            var CMakeListsPath = OutputDirectory / Project.Name / "CMakeLists.txt";
+            var BaseDirPath = CMakeListsPath.Parent;
 
             var Lines = GenerateLines(CMakeListsPath, BaseDirPath).ToList();
             TextFile.WriteToFile(CMakeListsPath, String.Join("\n", Lines), new UTF8Encoding(false), !ForceRegenerate);
@@ -52,7 +51,7 @@ namespace TypeMake.Cpp
 
             if ((conf.TargetType == TargetType.Executable) || (conf.TargetType == TargetType.DynamicLibrary) || (conf.TargetType == TargetType.GradleApplication) || (conf.TargetType == TargetType.GradleLibrary))
             {
-                var LibDirectories = conf.LibDirectories.Select(d => FileNameHandling.GetRelativePath(Path.GetFullPath(d), BaseDirPath).Replace('\\', '/')).ToList();
+                var LibDirectories = conf.LibDirectories.Select(d => d.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix)).ToList();
                 if (LibDirectories.Count != 0)
                 {
                     yield return @"link_directories(";
@@ -103,23 +102,23 @@ namespace TypeMake.Cpp
             {
                 if ((f.Type == FileType.CSource) || (f.Type == FileType.CppSource) || (f.Type == FileType.ObjectiveCSource) || (f.Type == FileType.ObjectiveCppSource))
                 {
-                    yield return "  " + FileNameHandling.GetRelativePath(Path.GetFullPath(f.Path), BaseDirPath).Replace('\\', '/');
+                    yield return "  " + f.Path.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix);
                 }
             }
             yield return @")";
 
-            foreach (var g in conf.Files.GroupBy(f => Path.GetDirectoryName(Path.GetFullPath(f.Path))))
+            foreach (var g in conf.Files.GroupBy(f => f.Path.FullPath.Parent))
             {
-                var Name = FileNameHandling.GetRelativePath(g.Key, InputDirectory);
-                yield return $@"source_group({Name.Replace('\\', '/').Replace("/", @"\\")} FILES";
+                var Name = g.Key.RelativeTo(InputDirectory).ToString(PathStringStyle.Windows).Replace(@"\", @"\\");
+                yield return $@"source_group({Name} FILES";
                 foreach (var f in g)
                 {
-                    yield return "  " + FileNameHandling.GetRelativePath(Path.GetFullPath(f.Path), BaseDirPath).Replace('\\', '/');
+                    yield return "  " + f.Path.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix);
                 }
                 yield return @")";
             }
 
-            var IncludeDirectories = conf.IncludeDirectories.Select(d => FileNameHandling.GetRelativePath(Path.GetFullPath(d), BaseDirPath).Replace('\\', '/')).ToList();
+            var IncludeDirectories = conf.IncludeDirectories.Select(d => d.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix)).ToList();
             if (IncludeDirectories.Count != 0)
             {
                 yield return @"target_include_directories(${PROJECT_NAME} PRIVATE";
@@ -166,7 +165,7 @@ namespace TypeMake.Cpp
                     }
                     foreach (var lib in conf.Libs)
                     {
-                        yield return "  " + lib;
+                        yield return "  " + lib.ToString(PathStringStyle.Unix);
                     }
                     yield return @")";
                 }

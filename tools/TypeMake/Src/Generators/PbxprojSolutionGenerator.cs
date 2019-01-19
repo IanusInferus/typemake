@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.IO;
 using System.Text;
 using static TypeMake.Plist;
 
@@ -11,21 +10,21 @@ namespace TypeMake
     {
         private String SolutionName;
         private List<ProjectReference> ProjectReferences;
-        private String OutputDirectory;
+        private PathString OutputDirectory;
         private String PbxprojTemplateText;
 
-        public PbxprojSolutionGenerator(String SolutionName, List<ProjectReference> ProjectReferences, String OutputDirectory, String PbxprojTemplateText)
+        public PbxprojSolutionGenerator(String SolutionName, List<ProjectReference> ProjectReferences, PathString OutputDirectory, String PbxprojTemplateText)
         {
             this.SolutionName = SolutionName;
             this.ProjectReferences = ProjectReferences;
-            this.OutputDirectory = Path.GetFullPath(OutputDirectory);
+            this.OutputDirectory = OutputDirectory.FullPath;
             this.PbxprojTemplateText = PbxprojTemplateText;
         }
 
         public void Generate(bool ForceRegenerate)
         {
-            var PbxprojPath = Path.Combine(OutputDirectory, Path.Combine(SolutionName + ".xcodeproj", "project.pbxproj"));
-            var BaseDirPath = Path.GetDirectoryName(Path.GetDirectoryName(PbxprojPath));
+            var PbxprojPath = OutputDirectory / (SolutionName + ".xcodeproj") / "project.pbxproj";
+            var BaseDirPath = PbxprojPath.Parent.Parent;
 
             var p = Plist.FromString(PbxprojTemplateText);
 
@@ -86,8 +85,8 @@ namespace TypeMake
             var RelativePathToObjects = new Dictionary<String, String>();
             foreach (var Project in ProjectReferences)
             {
-                var RelativePath = Path.Combine(Project.VirtualDir, Project.Name);
-                var Added = AddProject(Objects, RootObject["mainGroup"].String, new LinkedList<String>(), new LinkedList<String>(GetPathParts(RelativePath)), Project, BaseDirPath, RelativePathToObjects);
+                var RelativePath = Project.VirtualDir / Project.Name;
+                var Added = AddProject(Objects, RootObject["mainGroup"].String, new LinkedList<String>(), new LinkedList<String>(RelativePath.Parts.Where(pp => pp != ".")), Project, BaseDirPath, RelativePathToObjects);
                 if (!Added)
                 {
                     throw new InvalidOperationException();
@@ -104,7 +103,7 @@ namespace TypeMake
             var Type = GroupOrFile["isa"].String;
             if (Type != "PBXGroup") { return false; }
             var PathOrName = GroupOrFile.ContainsKey("path") ? GroupOrFile["path"].String : GroupOrFile.ContainsKey("name") ? GroupOrFile["name"].String : "";
-            var Parts = GetPathParts(PathOrName).Where(p => p != "").ToArray();
+            var Parts = PathOrName.AsPath().Parts.Where(p => p != ".").ToArray();
             if (Parts.Length > RelativePathStack.Count) { return false; }
             if (!Parts.SequenceEqual(RelativePathStack.Take(Parts.Length))) { return false; }
             foreach (var Part in Parts)
@@ -148,7 +147,7 @@ namespace TypeMake
                 FileObject.Add("isa", Value.CreateString("PBXFileReference"));
                 FileObject.Add("lastKnownFileType", Value.CreateString("wrapper.pb-project"));
                 FileObject.Add("name", Value.CreateString(FileName));
-                FileObject.Add("path", Value.CreateString(FileNameHandling.GetRelativePath(Path.GetFullPath(Project.FilePath), BaseDirPath).Replace('\\', '/')));
+                FileObject.Add("path", Value.CreateString(Project.FilePath.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix)));
                 FileObject.Add("sourceTree", Value.CreateString("<group>"));
                 Objects.Add(Hash, Value.CreateDict(FileObject));
                 RelativePathToFileObjectKey.Add(RelativePath, Hash);
@@ -158,8 +157,8 @@ namespace TypeMake
 
             for (int k = RelativePathStack.Count - 1; k >= Parts.Length + 1; k -= 1)
             {
-                var RelativePath = String.Join("/", Stack.Concat(RelativePathStack.Take(k)).Where(p => p != ""));
-                var DirName = System.IO.Path.GetFileName(RelativePath);
+                var RelativePath = PathString.Join(Stack.Concat(RelativePathStack.Take(k)).Where(p => p != "")).ToString(PathStringStyle.Unix);
+                var DirName = RelativePath.AsPath().FileName;
                 var Hash = GetHashOfPath(RelativePath);
 
                 var FileObject = new Dictionary<string, Value>();
@@ -199,11 +198,6 @@ namespace TypeMake
             {
                 Objects.Remove(GroupOrFileKey);
             }
-        }
-        private static String[] GetPathParts(String Path)
-        {
-            var Parts = Path.TrimEnd('/', '\\').Split('/', '\\');
-            return Parts;
         }
         private static String GetHashOfPath(String Path)
         {

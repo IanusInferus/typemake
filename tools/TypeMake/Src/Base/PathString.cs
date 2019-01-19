@@ -7,13 +7,24 @@ namespace TypeMake
 {
     public class PathString
     {
-        public readonly String Value;
+        private static readonly String Slash = Convert.ToString(Path.DirectorySeparatorChar);
+        private readonly String Value;
         public PathString(String Value)
         {
+            if (Value == null) { throw new ArgumentNullException(); }
+            if ((Value == "/") || (Value == "\\"))
+            {
+                this.Value = Slash;
+                return;
+            }
             var v = Value.TrimEnd('\\', '/').Replace('\\', '/').Replace('/', Path.DirectorySeparatorChar);
             if (v == "")
             {
                 v = ".";
+            }
+            if (v.EndsWith(":") && !v.Contains(Path.DirectorySeparatorChar))
+            {
+                v += Path.DirectorySeparatorChar;
             }
             this.Value = v;
         }
@@ -21,7 +32,7 @@ namespace TypeMake
         {
             get
             {
-                return new PathString(Path.GetFullPath(Value));
+                return Path.GetFullPath(Value).AsPath();
             }
         }
         public String FileName
@@ -38,23 +49,65 @@ namespace TypeMake
                 return Path.GetExtension(Value);
             }
         }
-        public PathString ChnageExtension(String Extension)
-        {
-            return new PathString(Path.ChangeExtension(Value, Extension));
-        }
-        public PathString Directory
+        public String FileNameWithoutExtension
         {
             get
             {
-                return new PathString(Path.GetDirectoryName(Value));
+                return Path.GetFileNameWithoutExtension(Value);
             }
+        }
+        public PathString ChnageExtension(String Extension)
+        {
+            return Path.ChangeExtension(Value, Extension).AsPath();
+        }
+        public PathString Parent
+        {
+            get
+            {
+                return Path.GetDirectoryName(Value).AsPath();
+            }
+        }
+        public List<String> Parts
+        {
+            get
+            {
+                var p = Value.TrimEnd(Path.DirectorySeparatorChar).Split(Path.DirectorySeparatorChar).ToList();
+                if (p.Count > 0)
+                {
+                    if (p[0] == "")
+                    {
+                        p[0] = Slash;
+                    }
+                    else if (p[0].EndsWith(":"))
+                    {
+                        p[0] += Slash;
+                    }
+                }
+                return p;
+            }
+        }
+        public static PathString Join(IEnumerable<String> Parts)
+        {
+            var s = (PathString)(null);
+            foreach (var p in Parts)
+            {
+                if (s == null)
+                {
+                    s = p;
+                }
+                else
+                {
+                    s /= p;
+                }
+            }
+            return s;
         }
         public PathString Reduced
         {
             get
             {
                 var s = new Stack<String>();
-                foreach (var d in Value.Split(Path.DirectorySeparatorChar))
+                foreach (var d in this.Parts)
                 {
                     if (d == ".") { continue; }
                     if (d == "..")
@@ -67,6 +120,10 @@ namespace TypeMake
                                 s.Push(Parent);
                                 s.Push(d);
                             }
+                            else if (Parent.EndsWith(Slash))
+                            {
+                                s.Push(Parent);
+                            }
                         }
                         else
                         {
@@ -74,13 +131,14 @@ namespace TypeMake
                         }
                         continue;
                     }
-                    if (d.EndsWith(":"))
+                    if (d.EndsWith(Slash))
                     {
                         s.Clear();
                     }
                     s.Push(d);
                 }
-                return new PathString(String.Join(Convert.ToString(Path.DirectorySeparatorChar), s.AsEnumerable().Reverse()));
+                if (s.Count == 0) { return ".".AsPath(); }
+                return Join(s.AsEnumerable().Reverse());
             }
         }
         public PathString RelativeTo(PathString BaseDirectory)
@@ -129,27 +187,59 @@ namespace TypeMake
         }
         public bool Equals(PathString Right, bool CaseSensitive = true)
         {
-            if (Value.Equals(Right.Value, CaseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase)) { return true; }
-            return Reduced.Value.Equals(Right.Reduced.Value, CaseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase);
+            var LeftParts = this.Reduced.Parts.Where(p => p != ".").ToList();
+            var RightParts = Right.Reduced.Parts.Where(p => p != ".").ToList();
+            return (LeftParts.Count == RightParts.Count) && LeftParts.Zip(RightParts, (a, b) => a.Equals(b, CaseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase)).All(b => b);
         }
         public bool In(PathString Right, bool CaseSensitive = true)
         {
-            var sLeft = Reduced.Value;
-            var sRight = Right.Reduced.Value;
-            if (sLeft.StartsWith(sRight + Path.DirectorySeparatorChar)) { return true; }
-            if ((sRight == ".") && !sLeft.StartsWith("..")) { return true; }
-            return false;
+            return !Equals(Right, CaseSensitive) && EqualsOrIn(Right, CaseSensitive);
         }
         public bool EqualsOrIn(PathString Right, bool CaseSensitive = true)
         {
-            return Equals(Right) || In(Right);
+            var LeftParts = this.Reduced.Parts.Where(p => p != ".").ToList();
+            var RightParts = Right.Reduced.Parts.Where(p => p != ".").ToList();
+            var MinCount = Math.Min(LeftParts.Count, RightParts.Count);
+            var NotSameIndex = MinCount;
+            for (int k = 0; k < MinCount; k += 1)
+            {
+                if (!LeftParts[k].Equals(RightParts[k], CaseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase))
+                {
+                    NotSameIndex = k;
+                    break;
+                }
+            }
+            if (RightParts.Skip(NotSameIndex).All(p => p == "..") && (LeftParts.Skip(NotSameIndex).Count(p => p == "..") <= RightParts.Count - NotSameIndex))
+            {
+                return true;
+            }
+            return false;
+        }
+        public override bool Equals(object obj)
+        {
+            if (obj is PathString ps)
+            {
+                return Equals(ps, true);
+            }
+            else if (obj is String s)
+            {
+                return Equals(s.AsPath(), true);
+            }
+            else
+            {
+                return false;
+            }
+        }
+        public override int GetHashCode()
+        {
+            return Reduced.Value.GetHashCode();
         }
 
         public static PathString operator /(PathString Left, PathString Right)
         {
             if (Left.Value == ".") { return Right; }
             if (Right.Value == ".") { return Left; }
-            if (Right.Value.StartsWith(Convert.ToString(Path.DirectorySeparatorChar))) { return Right; }
+            if (Right.Value.StartsWith(Slash)) { return Right; }
             var DirectorySeparatorStart = Right.Value.IndexOf(Path.DirectorySeparatorChar);
             if (DirectorySeparatorStart > 0)
             {
@@ -165,24 +255,52 @@ namespace TypeMake
         {
             return new PathString(Left) / Right.Value;
         }
+        public static PathString operator +(PathString Left, String Right)
+        {
+            if (Right.Contains('/') || Right.Contains('\\')) { throw new ArgumentException(); }
+            return new PathString(Left.Value + Right);
+        }
         public static implicit operator String(PathString p)
         {
-            return p.Value;
+            return p != null ? p.Value : null;
         }
         public static implicit operator PathString(String s)
         {
-            return new PathString(s);
+            return s != null ? new PathString(s) : null;
         }
 
         public override string ToString()
         {
             return Value;
         }
+
+
+        public string ToString(PathStringStyle Style)
+        {
+            if (Style == PathStringStyle.Windows)
+            {
+                return Value.Replace('/', '\\');
+            }
+            else if (Style == PathStringStyle.Unix)
+            {
+                return Value.Replace('\\', '/');
+            }
+            else
+            {
+                throw new InvalidOperationException();
+            }
+        }
+    }
+    public enum PathStringStyle
+    {
+        Windows,
+        Unix
     }
     public static class PathExt
     {
         public static PathString AsPath(this String s)
         {
+            if (s == null) { return null; }
             return new PathString(s);
         }
     }

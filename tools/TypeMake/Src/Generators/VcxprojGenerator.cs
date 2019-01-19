@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml;
@@ -14,21 +13,21 @@ namespace TypeMake.Cpp
         private Project Project;
         private String ProjectId;
         private List<ProjectReference> ProjectReferences;
-        private String InputDirectory;
-        private String OutputDirectory;
+        private PathString InputDirectory;
+        private PathString OutputDirectory;
         private String VcxprojTemplateText;
         private String VcxprojFilterTemplateText;
         private OperatingSystemType BuildingOperatingSystem;
         private ArchitectureType BuildingOperatingSystemArchitecture;
         private OperatingSystemType TargetOperatingSystem;
 
-        public VcxprojGenerator(Project Project, String ProjectId, List<ProjectReference> ProjectReferences, String InputDirectory, String OutputDirectory, String VcxprojTemplateText, String VcxprojFilterTemplateText, OperatingSystemType BuildingOperatingSystem, ArchitectureType BuildingOperatingSystemArchitecture, OperatingSystemType TargetOperatingSystem)
+        public VcxprojGenerator(Project Project, String ProjectId, List<ProjectReference> ProjectReferences, PathString InputDirectory, PathString OutputDirectory, String VcxprojTemplateText, String VcxprojFilterTemplateText, OperatingSystemType BuildingOperatingSystem, ArchitectureType BuildingOperatingSystemArchitecture, OperatingSystemType TargetOperatingSystem)
         {
             this.Project = Project;
             this.ProjectId = ProjectId;
             this.ProjectReferences = ProjectReferences;
-            this.InputDirectory = Path.GetFullPath(InputDirectory);
-            this.OutputDirectory = Path.GetFullPath(OutputDirectory);
+            this.InputDirectory = InputDirectory.FullPath;
+            this.OutputDirectory = OutputDirectory.FullPath;
             this.VcxprojTemplateText = VcxprojTemplateText;
             this.VcxprojFilterTemplateText = VcxprojFilterTemplateText;
             this.BuildingOperatingSystem = BuildingOperatingSystem;
@@ -44,8 +43,8 @@ namespace TypeMake.Cpp
 
         private void GenerateVcxproj(bool ForceRegenerate)
         {
-            var VcxprojPath = Path.Combine(OutputDirectory, Project.Name + ".vcxproj");
-            var BaseDirPath = Path.GetDirectoryName(Path.GetFullPath(VcxprojPath));
+            var VcxprojPath = OutputDirectory / (Project.Name + ".vcxproj");
+            var BaseDirPath = VcxprojPath.Parent;
 
             var xVcxproj = XmlFile.FromString(VcxprojTemplateText);
             Trim(xVcxproj);
@@ -153,7 +152,7 @@ namespace TypeMake.Cpp
                     ClCompile = new XElement(xn + "ClCompile");
                     ItemDefinitionGroup.Add(ClCompile);
                 }
-                var IncludeDirectories = conf.IncludeDirectories.Select(d => FileNameHandling.GetRelativePath(Path.GetFullPath(d), BaseDirPath)).ToList();
+                var IncludeDirectories = conf.IncludeDirectories.Select(d => d.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Windows)).ToList();
                 if (IncludeDirectories.Count != 0)
                 {
                     ClCompile.SetElementValue(xn + "AdditionalIncludeDirectories", String.Join(";", IncludeDirectories) + ";%(AdditionalIncludeDirectories)");
@@ -177,12 +176,12 @@ namespace TypeMake.Cpp
                         Link = new XElement(xn + "Link");
                         ItemDefinitionGroup.Add(ClCompile);
                     }
-                    var LibDirectories = conf.LibDirectories.Select(d => FileNameHandling.GetRelativePath(Path.GetFullPath(d), BaseDirPath)).ToList();
+                    var LibDirectories = conf.LibDirectories.Select(d => d.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Windows)).ToList();
                     if (LibDirectories.Count != 0)
                     {
                         Link.SetElementValue(xn + "AdditionalLibraryDirectories", String.Join(";", LibDirectories) + ";%(AdditionalLibraryDirectories)");
                     }
-                    var Libs = conf.Libs.Concat(ProjectReferences.Select(p => p.Name + ".lib")).ToList();
+                    var Libs = conf.Libs.Select(lib => lib.ToString(PathStringStyle.Windows)).Concat(ProjectReferences.Select(p => p.Name + ".lib")).ToList();
                     if (Libs.Count != 0)
                     {
                         Link.SetElementValue(xn + "AdditionalDependencies", String.Join(";", Libs) + ";%(AdditionalDependencies)");
@@ -227,7 +226,7 @@ namespace TypeMake.Cpp
                 }
                 foreach (var f in conf.Files)
                 {
-                    var RelativePath = FileNameHandling.GetRelativePath(Path.GetFullPath(f.Path), BaseDirPath);
+                    var RelativePath = f.Path.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Windows);
                     XElement x;
                     if (f.Type == FileType.Header)
                     {
@@ -265,7 +264,7 @@ namespace TypeMake.Cpp
             }
             foreach (var p in ProjectReferences)
             {
-                var RelativePath = FileNameHandling.GetRelativePath(Path.GetFullPath(p.FilePath), BaseDirPath);
+                var RelativePath = p.FilePath.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Windows);
                 var x = new XElement(xn + "ProjectReference", new XAttribute("Include", RelativePath));
                 x.Add(new XElement(xn + "Project", "{" + p.Id.ToUpper() + "}"));
                 x.Add(new XElement(xn + "Name", "{" + p.Name + "}"));
@@ -282,8 +281,8 @@ namespace TypeMake.Cpp
 
         private void GenerateVcxprojFilters(bool ForceRegenerate)
         {
-            var FilterPath = Path.Combine(OutputDirectory, Project.Name + ".vcxproj") + ".filters";
-            var BaseDirPath = Path.GetDirectoryName(FilterPath);
+            var FilterPath = OutputDirectory / (Project.Name + ".vcxproj.filters");
+            var BaseDirPath = FilterPath.Parent;
 
             var xFilter = XmlFile.FromString(VcxprojFilterTemplateText);
             Trim(xFilter);
@@ -334,19 +333,21 @@ namespace TypeMake.Cpp
                     if (Files.Contains(f.Path)) { continue; }
                     Files.Add(f.Path);
 
-                    var RelativePath = FileNameHandling.GetRelativePath(Path.GetFullPath(f.Path), BaseDirPath);
-                    var Dir = Path.GetDirectoryName(FileNameHandling.GetRelativePath(Path.GetFullPath(f.Path), InputDirectory)).Replace('/', '\\');
+                    var RelativePath = f.Path.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Windows);
+                    var Dir = f.Path.FullPath.RelativeTo(InputDirectory).Parent.ToString(PathStringStyle.Windows);
                     while (Dir.StartsWith(@"..\"))
                     {
                         Dir = Dir.Substring(3);
                     }
                     if (!Filters.Contains(Dir))
                     {
-                        var CurrentDir = Dir;
-                        while (!String.IsNullOrEmpty(CurrentDir) && !Filters.Contains(CurrentDir))
+                        var CurrentDir = Dir.AsPath();
+                        var CurrentDirFilter = CurrentDir.ToString(PathStringStyle.Windows);
+                        while ((CurrentDirFilter != ".") && !Filters.Contains(CurrentDirFilter))
                         {
-                            Filters.Add(CurrentDir);
-                            CurrentDir = Path.GetDirectoryName(CurrentDir);
+                            Filters.Add(CurrentDirFilter);
+                            CurrentDir = CurrentDir.Parent;
+                            CurrentDirFilter = CurrentDir.ToString(PathStringStyle.Windows);
                         }
                     }
 
@@ -367,17 +368,18 @@ namespace TypeMake.Cpp
                     {
                         x = new XElement(xn + "None", new XAttribute("Include", RelativePath));
                     }
-                    x.Add(new XElement(xn + "Filter", Dir));
+                    if (Dir != ".")
+                    {
+                        x.Add(new XElement(xn + "Filter", Dir));
+                    }
                     FileItemGroup.Add(x);
                 }
             }
 
             foreach (var f in Filters.OrderBy(ff => ff, StringComparer.OrdinalIgnoreCase))
             {
-                if (f == "") { continue; }
-
-                var g = "{" + Guid.NewGuid().ToString().ToUpper() + "}";
-                FilterItemGroup.Add(new XElement(xn + "Filter", new XAttribute("Include", f), new XElement(xn + "UniqueIdentifier", g)));
+                var g = Guid.ParseExact(Hash.GetHashForPath(f, 32), "N").ToString().ToUpper();
+                FilterItemGroup.Add(new XElement(xn + "Filter", new XAttribute("Include", f), new XElement(xn + "UniqueIdentifier", "{" + g + "}")));
             }
 
             if (!FilterItemGroup.HasElements)

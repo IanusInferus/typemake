@@ -12,22 +12,22 @@ namespace TypeMake
         private String SolutionName;
         private String SolutionId;
         private List<ProjectReference> ProjectReferences;
-        private String OutputDirectory;
+        private PathString OutputDirectory;
         private String SlnTemplateText;
 
-        public SlnGenerator(String SolutionName, String SolutionId, List<ProjectReference> ProjectReferences, String OutputDirectory, String SlnTemplateText)
+        public SlnGenerator(String SolutionName, String SolutionId, List<ProjectReference> ProjectReferences, PathString OutputDirectory, String SlnTemplateText)
         {
             this.SolutionName = SolutionName;
             this.SolutionId = SolutionId;
             this.ProjectReferences = ProjectReferences;
-            this.OutputDirectory = Path.GetFullPath(OutputDirectory);
+            this.OutputDirectory = OutputDirectory.FullPath;
             this.SlnTemplateText = SlnTemplateText;
         }
 
         public void Generate(bool ForceRegenerate)
         {
             var s = new SlnFile();
-            s.FullPath = Path.Combine(OutputDirectory, SolutionName + ".sln");
+            s.FullPath = OutputDirectory / (SolutionName + ".sln");
             using (var sr = new StringReader(SlnTemplateText))
             {
                 s.Read(sr);
@@ -54,18 +54,20 @@ namespace TypeMake
             var Filters = new Dictionary<String, String>(StringComparer.OrdinalIgnoreCase);
             foreach (var Project in ProjectReferences)
             {
-                var Dir = Project.VirtualDir.Replace('/', '\\');
+                var Dir = Project.VirtualDir.ToString(PathStringStyle.Windows);
                 if (!Filters.ContainsKey(Dir))
                 {
-                    var CurrentDir = Dir;
-                    while (!String.IsNullOrEmpty(CurrentDir) && !Filters.ContainsKey(CurrentDir))
+                    var CurrentDir = Dir.AsPath();
+                    var CurrentDirFilter = CurrentDir.ToString(PathStringStyle.Windows);
+                    while ((CurrentDirFilter != ".") && !Filters.ContainsKey(CurrentDirFilter))
                     {
-                        var g = Guid.ParseExact(Hash.GetHashForPath(CurrentDir, 32), "N").ToString().ToUpper();
-                        Filters.Add(CurrentDir, g);
-                        CurrentDir = Path.GetDirectoryName(CurrentDir);
-                        if (!String.IsNullOrEmpty(CurrentDir))
+                        var g = Guid.ParseExact(Hash.GetHashForPath(CurrentDirFilter, 32), "N").ToString().ToUpper();
+                        Filters.Add(CurrentDirFilter, g);
+                        CurrentDir = CurrentDir.Parent;
+                        CurrentDirFilter = CurrentDir.ToString(PathStringStyle.Windows);
+                        if (CurrentDirFilter != ".")
                         {
-                            var gUpper = Guid.ParseExact(Hash.GetHashForPath(CurrentDir, 32), "N").ToString().ToUpper();
+                            var gUpper = Guid.ParseExact(Hash.GetHashForPath(CurrentDirFilter, 32), "N").ToString().ToUpper();
                             NestedProjects.Properties.SetValue("{" + g + "}", "{" + gUpper + "}");
                         }
                     }
@@ -75,7 +77,7 @@ namespace TypeMake
                 {
                     TypeGuid = "{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}",
                     Name = Project.Name,
-                    FilePath = FileNameHandling.GetRelativePath(Path.GetFullPath(Project.FilePath), OutputDirectory),
+                    FilePath = Project.FilePath.FullPath.RelativeTo(OutputDirectory).ToString(PathStringStyle.Windows),
                     Id = "{" + Project.Id + "}"
                 });
 
@@ -96,8 +98,8 @@ namespace TypeMake
                 s.Projects.Add(new SlnProject
                 {
                     TypeGuid = "{2150E333-8FDC-42A3-9474-1A3956D46DE8}",
-                    Name = Path.GetFileName(f.Key),
-                    FilePath = Path.GetFileName(f.Key),
+                    Name = f.Key.AsPath().FileName,
+                    FilePath = f.Key.AsPath().FileName,
                     Id = "{" + f.Value + "}"
                 });
             }
