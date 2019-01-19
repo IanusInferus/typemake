@@ -38,6 +38,8 @@ namespace TypeMake
         }
         public static int MainInner(String[] args)
         {
+            var c = Shell.TryLocate("cmd");
+
             var BuildingOperatingSystem = Cpp.OperatingSystemType.Windows;
             if (Shell.OperatingSystem == Shell.BuildingOperatingSystemType.Windows)
             {
@@ -70,8 +72,10 @@ namespace TypeMake
             }
             //process architecture is supposed to be the same as the operating system architecture
 
-            var argv = args.Where(arg => !arg.StartsWith("--")).ToArray();
+            var argv = args.Where(arg => !arg.StartsWith("--") && !arg.Contains("=")).ToArray();
             var options = args.Where(arg => arg.StartsWith("--")).Select(arg => arg.Substring(2).Split(new Char[] { ':' }, 2)).GroupBy(p => p[0]).ToDictionary(g => g.Key, g => g.Last().Skip(1).SingleOrDefault(), StringComparer.OrdinalIgnoreCase);
+            var optionLists = args.Where(arg => arg.StartsWith("--")).Select(arg => arg.Substring(2).Split(new Char[] { ':' }, 2)).GroupBy(p => p[0]).ToDictionary(g => g.Key, g => g.Select(v => v.Skip(1).SingleOrDefault()).ToList(), StringComparer.OrdinalIgnoreCase);
+
             var Help = options.ContainsKey("help");
             if (Help)
             {
@@ -80,15 +84,15 @@ namespace TypeMake
             }
             if (argv.Length == 1)
             {
-                var RetypemakeScriptPath = argv[0];
+                var RetypemakeScriptPath = argv[0].AsPath();
                 String[] Lines;
                 Regex r;
-                if (RetypemakeScriptPath.EndsWith(".cmd"))
+                if (RetypemakeScriptPath.Extension.Equals(".cmd", StringComparison.OrdinalIgnoreCase))
                 {
                     Lines = File.ReadAllLines(RetypemakeScriptPath, System.Text.Encoding.Default);
                     r = new Regex(@"^set\s+(?<Key>[^=]+)=(?<Value>.*)\s*$");
                 }
-                else if (RetypemakeScriptPath.EndsWith(".sh"))
+                else if (RetypemakeScriptPath.Extension == ".sh")
                 {
                     Lines = File.ReadAllLines(RetypemakeScriptPath, new System.Text.UTF8Encoding(false));
                     r = new Regex(@"^export\s+(?<Key>[^=]+)=(?<Value>.*)\s*$");
@@ -106,7 +110,7 @@ namespace TypeMake
                         var Value = m.Result("${Value}");
                         if (Key == "BuildDirectory")
                         {
-                            Environment.SetEnvironmentVariable(Key, Path.GetDirectoryName(Path.GetFullPath(RetypemakeScriptPath)));
+                            Environment.SetEnvironmentVariable(Key, RetypemakeScriptPath.FullPath.Parent);
                         }
                         else
                         {
@@ -120,6 +124,12 @@ namespace TypeMake
                 DisplayInfo();
                 return 1;
             }
+
+            foreach (var p in args.Where(arg => arg.Contains("=")).Select(arg => arg.Split('=')))
+            {
+                Environment.SetEnvironmentVariable(p[0], p[1]);
+            }
+
             var ForceRegenerate = options.ContainsKey("regen");
             var EnableNonTargetingOperatingSystemDummy = options.ContainsKey("dummy");
             var Quiet = options.ContainsKey("quiet");
@@ -129,7 +139,7 @@ namespace TypeMake
             var BuildAfterGenerate = Shell.RequireEnvironmentVariableBoolean(Memory, "BuildAfterGenerate", Quiet, true);
 
             var SourceDirectory = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "SourceDirectory", Quiet);
-            String BuildDirectory;
+            PathString BuildDirectory;
 
             var TargetOperatingSystem = Shell.RequireEnvironmentVariableEnum<Cpp.OperatingSystemType>(Memory, "TargetOperatingSystem", Quiet, BuildingOperatingSystem);
 
@@ -147,7 +157,7 @@ namespace TypeMake
                     {
                         foreach (var d in new String[] { "Enterprise", "Professional", "Community", "BuildTools" })
                         {
-                            var p = Path.Combine(Path.Combine(ProgramFiles, @"Microsoft Visual Studio\2017"), d);
+                            var p = ProgramFiles.AsPath() / "Microsoft Visual Studio/2017" / d;
                             if (Directory.Exists(p))
                             {
                                 DefaultVSDir = p;
@@ -244,30 +254,30 @@ namespace TypeMake
             }
             else if (TargetOperatingSystem == Cpp.OperatingSystemType.Android)
             {
-                var AndroidSdk = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "AndroidSdk", Quiet, BuildingOperatingSystem == Cpp.OperatingSystemType.Windows ? Path.Combine(Environment.GetEnvironmentVariable("LocalAppData"), @"Android\sdk") : "", p => Directory.Exists(Path.Combine(p, "platform-tools")));
-                var AndroidNdk = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "AndroidNdk", Quiet, Path.Combine(AndroidSdk, "ndk-bundle"), p => Directory.Exists(Path.Combine(p, "build")));
-                var CMake = Shell.RequireEnvironmentVariableFilePath(Memory, "CMake", Quiet, Shell.TryLocate("cmake") ?? (BuildingOperatingSystem == Cpp.OperatingSystemType.Windows ? Path.Combine(Environment.GetEnvironmentVariable("ProgramFiles"), @"CMake\bin\cmake.exe") : ""));
+                var AndroidSdk = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "AndroidSdk", Quiet, BuildingOperatingSystem == Cpp.OperatingSystemType.Windows ? (Environment.GetEnvironmentVariable("LocalAppData").AsPath() / "Android/sdk").ToString() : "", p => Directory.Exists(p / "platform-tools"));
+                var AndroidNdk = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "AndroidNdk", Quiet, AndroidSdk / "ndk-bundle", p => Directory.Exists(p / "build"));
+                var CMake = Shell.RequireEnvironmentVariableFilePath(Memory, "CMake", Quiet, Shell.TryLocate("cmake") ?? (BuildingOperatingSystem == Cpp.OperatingSystemType.Windows ? (Environment.GetEnvironmentVariable("ProgramFiles").AsPath() / @"CMake\bin\cmake.exe") : "".AsPath()));
                 var TargetArchitecture = Shell.RequireEnvironmentVariableEnum(Memory, "TargetArchitecture", Quiet, Cpp.ArchitectureType.armeabi_v7a);
                 var Configuration = Shell.RequireEnvironmentVariableEnum(Memory, "Configuration", Quiet, Cpp.ConfigurationType.Debug);
                 BuildDirectory = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "BuildDirectory", Quiet, $"build/android_{TargetArchitecture}_{Configuration}".AsPath(), p => !File.Exists(p));
                 var m = new Make(Cpp.ToolchainType.Gradle_CMake, Cpp.CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture, SourceDirectory, BuildDirectory, null, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
                 m.Execute();
-                TextFile.WriteToFile(Path.Combine(BuildDirectory, Path.Combine("gradle", "local.properties")), $"sdk.dir={AndroidSdk.Replace("\\", "/")}", new System.Text.UTF8Encoding(false), !ForceRegenerate);
+                TextFile.WriteToFile(BuildDirectory / "gradle/local.properties", $"sdk.dir={AndroidSdk.ToString(PathStringStyle.Unix)}", new System.Text.UTF8Encoding(false), !ForceRegenerate);
                 GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, ForceRegenerate);
-                var Make = "";
+                var Make = "".AsPath();
                 if (BuildingOperatingSystemArchitecture == Cpp.ArchitectureType.x86_64)
                 {
                     if (BuildingOperatingSystem == Cpp.OperatingSystemType.Windows)
                     {
-                        Make = $@"{AndroidNdk}\prebuilt\windows-x86_64\bin\make.exe";
+                        Make = AndroidNdk / @"prebuilt\windows-x86_64\bin\make.exe";
                     }
                     else if (BuildingOperatingSystem == Cpp.OperatingSystemType.Linux)
                     {
-                        Make = $"{AndroidNdk}/prebuilt/linux-x86_64/bin/make";
+                        Make = AndroidNdk / "prebuilt/linux-x86_64/bin/make";
                     }
                     else if (BuildingOperatingSystem == Cpp.OperatingSystemType.Mac)
                     {
-                        Make = $"{AndroidNdk}/prebuilt/darwin-x86_64/bin/make";
+                        Make = AndroidNdk / "prebuilt/darwin-x86_64/bin/make";
                     }
                     else
                     {
@@ -283,13 +293,13 @@ namespace TypeMake
                 using (var d = Shell.PushDirectory(BuildDirectory))
                 {
                     var Arguments = new List<String>();
-                    Arguments.Add(BuildDirectory.Replace("\\", "/"));
+                    Arguments.Add(BuildDirectory.ToString(PathStringStyle.Unix));
                     Arguments.Add("-G");
                     Arguments.Add("Unix Makefiles");
                     Arguments.Add($"-DCMAKE_BUILD_TYPE={Configuration}");
-                    Arguments.Add($"-DCMAKE_MAKE_PROGRAM={Make.Replace("\\", "/")}");
-                    Arguments.Add($"-DANDROID_NDK={AndroidNdk.Replace("\\", "/")}");
-                    Arguments.Add($"-DCMAKE_TOOLCHAIN_FILE={AndroidNdk.Replace("\\", "/")}/build/cmake/android.toolchain.cmake");
+                    Arguments.Add($"-DCMAKE_MAKE_PROGRAM={Make.ToString(PathStringStyle.Unix)}");
+                    Arguments.Add($"-DANDROID_NDK={AndroidNdk.ToString(PathStringStyle.Unix)}");
+                    Arguments.Add($"-DCMAKE_TOOLCHAIN_FILE={(AndroidNdk / "build/cmake/android.toolchain.cmake").ToString(PathStringStyle.Unix)}");
                     Arguments.Add($"-DANDROID_STL=c++_static");
                     Arguments.Add($"-DANDROID_PLATFORM=android-17");
                     Arguments.Add($"-DANDROID_ABI={Cpp.GradleProjectGenerator.GetArchitectureString(TargetArchitecture)}");
@@ -323,7 +333,7 @@ namespace TypeMake
             return ExitCode;
         }
 
-        private static void GenerateRetypemakeScript(Cpp.OperatingSystemType BuildingOperatingSystem, String SourceDirectory, String BuildDirectory, Shell.EnvironmentVariableMemory Memory, bool ForceRegenerate)
+        private static void GenerateRetypemakeScript(Cpp.OperatingSystemType BuildingOperatingSystem, PathString SourceDirectory, PathString BuildDirectory, Shell.EnvironmentVariableMemory Memory, bool ForceRegenerate)
         {
             if (BuildingOperatingSystem == Cpp.OperatingSystemType.Windows)
             {
@@ -361,7 +371,7 @@ namespace TypeMake
                 Lines.Add("if not \"%NO_PAUSE_SYMBOL%\"==\"1\" pause");
                 Lines.Add("exit /b %EXIT_CODE%");
                 Lines.Add("");
-                var RetypemakePath = Path.Combine(BuildDirectory, "retypemake.cmd");
+                var RetypemakePath = BuildDirectory / "retypemake.cmd";
                 if (ForceRegenerate || !File.Exists(RetypemakePath))
                 {
                     TextFile.WriteToFile(RetypemakePath, String.Join("\r\n", Lines), System.Text.Encoding.Default, false);
@@ -393,7 +403,7 @@ namespace TypeMake
                 Lines.Add("./typemake.sh --quiet \"$@\"");
                 Lines.Add("popd");
                 Lines.Add("");
-                var RetypemakePath = Path.Combine(BuildDirectory, "retypemake.sh");
+                var RetypemakePath = BuildDirectory / "retypemake.sh";
                 if (ForceRegenerate || !File.Exists(RetypemakePath))
                 {
                     TextFile.WriteToFile(RetypemakePath, String.Join("\n", Lines), new System.Text.UTF8Encoding(false), false);
@@ -401,7 +411,7 @@ namespace TypeMake
                 }
             }
         }
-        private static void GenerateBuildScriptWindows(String BuildDirectory, String SolutionName, Cpp.ArchitectureType TargetArchitecture, Cpp.ConfigurationType Configuration, String VSDir, bool ForceRegenerate)
+        private static void GenerateBuildScriptWindows(PathString BuildDirectory, String SolutionName, Cpp.ArchitectureType TargetArchitecture, Cpp.ConfigurationType Configuration, String VSDir, bool ForceRegenerate)
         {
             var Lines = new List<String>();
             Lines.Add("@echo off");
@@ -416,10 +426,10 @@ namespace TypeMake
             Lines.Add("if not \"%NO_PAUSE_SYMBOL%\"==\"1\" pause");
             Lines.Add("exit /b %EXIT_CODE%");
             Lines.Add("");
-            var BuildPath = Path.Combine(BuildDirectory, $"build_{TargetArchitecture}_{Configuration}.cmd");
+            var BuildPath = BuildDirectory / $"build_{TargetArchitecture}_{Configuration}.cmd";
             TextFile.WriteToFile(BuildPath, String.Join("\r\n", Lines), System.Text.Encoding.Default, !ForceRegenerate);
         }
-        private static void GenerateBuildScriptXCode(Cpp.OperatingSystemType BuildingOperatingSystem, String BuildDirectory, Make.Result Result, bool ForceRegenerate)
+        private static void GenerateBuildScriptXCode(Cpp.OperatingSystemType BuildingOperatingSystem, PathString BuildDirectory, Make.Result Result, bool ForceRegenerate)
         {
             var Lines = new List<String>();
             foreach (var p in Result.SortedProjects)
@@ -427,14 +437,14 @@ namespace TypeMake
                 Lines.Add($"xcodebuild -project projects/{p.Name}.xcodeproj");
             }
             Lines.Add("");
-            var BuildPath = Path.Combine(BuildDirectory, "build.sh");
+            var BuildPath = BuildDirectory / "build.sh";
             TextFile.WriteToFile(BuildPath, String.Join("\n", Lines), new System.Text.UTF8Encoding(false), !ForceRegenerate);
             if (BuildingOperatingSystem != Cpp.OperatingSystemType.Windows)
             {
                 MergeExitCode(Shell.Execute("chmod", "+x", BuildPath));
             }
         }
-        private static void GenerateBuildScriptAndroid(Cpp.OperatingSystemType BuildingOperatingSystem, String BuildDirectory, String Make, bool ForceRegenerate)
+        private static void GenerateBuildScriptAndroid(Cpp.OperatingSystemType BuildingOperatingSystem, PathString BuildDirectory, String Make, bool ForceRegenerate)
         {
             if (BuildingOperatingSystem == Cpp.OperatingSystemType.Windows)
             {
@@ -454,7 +464,7 @@ namespace TypeMake
                 Lines.Add("if not \"%NO_PAUSE_SYMBOL%\"==\"1\" pause");
                 Lines.Add("exit /b %EXIT_CODE%");
                 Lines.Add("");
-                var BuildPath = Path.Combine(BuildDirectory, $"build.cmd");
+                var BuildPath = BuildDirectory / "build.cmd";
                 TextFile.WriteToFile(BuildPath, String.Join("\r\n", Lines), System.Text.Encoding.Default, !ForceRegenerate);
             }
             else
@@ -465,7 +475,7 @@ namespace TypeMake
                 Lines.Add(@"./gradlew build");
                 Lines.Add("popd");
                 Lines.Add("");
-                var BuildPath = Path.Combine(BuildDirectory, "build.sh");
+                var BuildPath = BuildDirectory / "build.sh";
                 TextFile.WriteToFile(BuildPath, String.Join("\n", Lines), new System.Text.UTF8Encoding(false), !ForceRegenerate);
                 MergeExitCode(Shell.Execute("chmod", "+x", BuildPath));
             }

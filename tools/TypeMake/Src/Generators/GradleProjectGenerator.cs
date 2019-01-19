@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.IO;
 using System.Text;
-using System.Text.RegularExpressions;
 
 namespace TypeMake.Cpp
 {
@@ -12,9 +10,9 @@ namespace TypeMake.Cpp
         private String SolutionName;
         private Project Project;
         private List<ProjectReference> ProjectReferences;
-        private String InputDirectory;
-        private String OutputDirectory;
-        private String SolutionOutputDirectory;
+        private PathString InputDirectory;
+        private PathString OutputDirectory;
+        private PathString SolutionOutputDirectory;
         private String BuildGradleTemplateText;
         private ToolchainType Toolchain;
         private CompilerType Compiler;
@@ -23,14 +21,14 @@ namespace TypeMake.Cpp
         private OperatingSystemType TargetOperatingSystem;
         private ArchitectureType? TargetArchitectureType;
 
-        public GradleProjectGenerator(String SolutionName, Project Project, List<ProjectReference> ProjectReferences, String InputDirectory, String OutputDirectory, String SolutionOutputDirectory, String BuildGradleTemplateText, ToolchainType Toolchain, CompilerType Compiler, OperatingSystemType BuildingOperatingSystem, ArchitectureType BuildingOperatingSystemArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType? TargetArchitectureType)
+        public GradleProjectGenerator(String SolutionName, Project Project, List<ProjectReference> ProjectReferences, PathString InputDirectory, PathString OutputDirectory, PathString SolutionOutputDirectory, String BuildGradleTemplateText, ToolchainType Toolchain, CompilerType Compiler, OperatingSystemType BuildingOperatingSystem, ArchitectureType BuildingOperatingSystemArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType? TargetArchitectureType)
         {
             this.SolutionName = SolutionName;
             this.Project = Project;
             this.ProjectReferences = ProjectReferences;
-            this.InputDirectory = Path.GetFullPath(InputDirectory);
-            this.OutputDirectory = Path.GetFullPath(OutputDirectory);
-            this.SolutionOutputDirectory = Path.GetFullPath(SolutionOutputDirectory);
+            this.InputDirectory = InputDirectory.FullPath;
+            this.OutputDirectory = OutputDirectory.FullPath;
+            this.SolutionOutputDirectory = SolutionOutputDirectory.FullPath;
             this.BuildGradleTemplateText = BuildGradleTemplateText;
             this.Toolchain = Toolchain;
             this.Compiler = Compiler;
@@ -42,8 +40,8 @@ namespace TypeMake.Cpp
 
         public void Generate(bool ForceRegenerate)
         {
-            var BuildGradlePath = Path.Combine(OutputDirectory, Path.Combine(Project.Name, "build.gradle"));
-            var BaseDirPath = Path.GetDirectoryName(BuildGradlePath);
+            var BuildGradlePath = OutputDirectory / Project.Name / "build.gradle";
+            var BaseDirPath = BuildGradlePath.Parent;
 
             var Lines = GenerateLines(BuildGradlePath, BaseDirPath).ToList();
             TextFile.WriteToFile(BuildGradlePath, String.Join("\n", Lines), new UTF8Encoding(false), !ForceRegenerate);
@@ -55,8 +53,8 @@ namespace TypeMake.Cpp
 
             var Results = BuildGradleTemplateText.Replace("\r\n", "\n").Split('\n').AsEnumerable();
             Results = Results.Select(Line => Line.Replace("${ApplicationId}", Project.ApplicationIdentifier ?? (SolutionName + "." + Project.TargetName ?? Project.Name).ToLower()));
-            Results = Results.Select(Line => Line.Replace("${ProjectSrcDir}", FileNameHandling.GetRelativePath(InputDirectory, BaseDirPath).Replace('\\', '/')));
-            Results = Results.Select(Line => Line.Replace("${SolutionOutputDir}", FileNameHandling.GetRelativePath(SolutionOutputDirectory, BaseDirPath).Replace('\\', '/').TrimEnd('/')));
+            Results = Results.Select(Line => Line.Replace("${ProjectSrcDir}", InputDirectory.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix)));
+            Results = Results.Select(Line => Line.Replace("${SolutionOutputDir}", SolutionOutputDirectory.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix)));
             if (!TargetArchitectureType.HasValue)
             {
                 throw new NotSupportedException("ArchitectureTypeIsNull");

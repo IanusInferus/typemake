@@ -42,7 +42,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Base\Configuration.cs" />
-    <Compile Include="Base\FileNameHandling.cs" />
     <Compile Include="Base\Hash.cs" />
     <Compile Include="Base\PlistFile.cs" />
     <Compile Include="Base\SlnFile.cs" />

@@ -32,15 +32,15 @@ namespace TypeMake
         private ArchitectureType BuildingOperatingSystemArchitecture;
         private OperatingSystemType TargetOperatingSystem;
         private ArchitectureType? TargetArchitecture;
-        private String SourceDirectory;
-        private String BuildDirectory;
+        private PathString SourceDirectory;
+        private PathString BuildDirectory;
         private String XCodeDevelopmentTeam;
         private bool ForceRegenerate;
         private bool EnableNonTargetingOperatingSystemDummy;
 
         private Dictionary<String, String> ProjectIds = new Dictionary<String, String>();
 
-        public Make(ToolchainType Toolchain, CompilerType Compiler, OperatingSystemType BuildingOperatingSystem, ArchitectureType BuildingOperatingSystemArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType? TargetArchitecture, String SourceDirectory, String BuildDirectory, String XCodeDevelopmentTeam, bool ForceRegenerate, bool EnableNonTargetingOperatingSystemDummy)
+        public Make(ToolchainType Toolchain, CompilerType Compiler, OperatingSystemType BuildingOperatingSystem, ArchitectureType BuildingOperatingSystemArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType? TargetArchitecture, PathString SourceDirectory, PathString BuildDirectory, String XCodeDevelopmentTeam, bool ForceRegenerate, bool EnableNonTargetingOperatingSystemDummy)
         {
             this.Toolchain = Toolchain;
             this.Compiler = Compiler;
@@ -48,8 +48,8 @@ namespace TypeMake
             this.BuildingOperatingSystemArchitecture = BuildingOperatingSystemArchitecture;
             this.TargetOperatingSystem = TargetOperatingSystem;
             this.TargetArchitecture = TargetArchitecture;
-            this.SourceDirectory = Path.GetFullPath(SourceDirectory);
-            this.BuildDirectory = Path.GetFullPath(BuildDirectory);
+            this.SourceDirectory = SourceDirectory.FullPath;
+            this.BuildDirectory = BuildDirectory.FullPath;
             this.XCodeDevelopmentTeam = XCodeDevelopmentTeam;
             this.ForceRegenerate = ForceRegenerate;
             this.EnableNonTargetingOperatingSystemDummy = EnableNonTargetingOperatingSystemDummy;
@@ -64,9 +64,9 @@ namespace TypeMake
         public Result Execute()
         {
             var Projects = new List<KeyValuePair<ProjectReference, List<ProjectReference>>>();
-            foreach (var ModulePath in Directory.EnumerateDirectories(Path.Combine(SourceDirectory, "modules"), "*", SearchOption.TopDirectoryOnly))
+            foreach (var ModulePath in Directory.EnumerateDirectories(SourceDirectory / "modules", "*", SearchOption.TopDirectoryOnly).Select(p => p.AsPath()))
             {
-                var ModuleName = Path.GetFileName(ModulePath);
+                var ModuleName = ModulePath.FileName;
                 var Extensions = ModuleName.Split('.').Skip(1).ToArray();
                 var IsTargetOperatingSystemMatched = IsOperatingSystemMatchExtensions(Extensions, TargetOperatingSystem);
                 if (IsTargetOperatingSystemMatched || EnableNonTargetingOperatingSystemDummy)
@@ -74,19 +74,19 @@ namespace TypeMake
                     Projects.Add(GenerateModuleProject(ModuleName, ModulePath, IsTargetOperatingSystemMatched));
                     if (!((TargetOperatingSystem == OperatingSystemType.Android) || (TargetOperatingSystem == OperatingSystemType.iOS)))
                     {
-                        foreach (var TestFile in GetFilesInDirectory(Path.Combine(ModulePath, "test"), TargetOperatingSystem, IsTargetOperatingSystemMatched))
+                        foreach (var TestFile in GetFilesInDirectory(ModulePath / "test", TargetOperatingSystem, IsTargetOperatingSystemMatched))
                         {
                             if (TestFile.Type != FileType.CppSource) { continue; }
-                            var TestName = ModuleName + "_" + Path.GetFileNameWithoutExtension(Regex.Replace(FileNameHandling.GetRelativePath(Path.GetFullPath(TestFile.Path), ModulePath), @"[\\/]", "_"));
+                            var TestName = ModuleName + "_" + Regex.Replace(TestFile.Path.FullPath.RelativeTo(ModulePath), @"[\\/]", "_").AsPath().FileNameWithoutExtension;
                             Projects.Add(GenerateTestProject(ModuleName, ModulePath, TestName, TestFile, IsTargetOperatingSystemMatched));
                         }
                     }
                 }
             }
             var GradleProjectNames = new List<String>();
-            foreach (var ProductPath in Directory.EnumerateDirectories(Path.Combine(SourceDirectory, "products"), "*", SearchOption.TopDirectoryOnly))
+            foreach (var ProductPath in Directory.EnumerateDirectories(SourceDirectory / "products", "*", SearchOption.TopDirectoryOnly))
             {
-                var ProductName = Path.GetFileName(ProductPath);
+                var ProductName = ProductPath.AsPath().FileName;
                 var Extensions = ProductName.Split('.').Skip(1).ToArray();
                 var ProductTargetType = TargetType.Executable;
                 if (Extensions.Contains("gradle", StringComparer.OrdinalIgnoreCase))
@@ -146,10 +146,10 @@ namespace TypeMake
             }
             else if (Toolchain == ToolchainType.Gradle_CMake)
             {
-                CopyDirectory(Path.Combine(Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location), "Templates"), "gradle"), Path.Combine(BuildDirectory, "gradle"));
+                CopyDirectory(System.Reflection.Assembly.GetEntryAssembly().Location.AsPath().Parent / "Templates/gradle", BuildDirectory / "gradle");
                 var g = new CMakeSolutionGenerator(SolutionName, SortedProjects, BuildDirectory);
                 g.Generate(ForceRegenerate);
-                TextFile.WriteToFile(Path.Combine(Path.Combine(BuildDirectory, "gradle"), "settings.gradle"), "include " + String.Join(", ", GradleProjectNames.Select(n => "':" + n + "'")), new UTF8Encoding(false), !ForceRegenerate);
+                TextFile.WriteToFile(BuildDirectory / "gradle/settings.gradle", "include " + String.Join(", ", GradleProjectNames.Select(n => "':" + n + "'")), new UTF8Encoding(false), !ForceRegenerate);
             }
             else
             {
@@ -158,11 +158,11 @@ namespace TypeMake
             return new Result { SolutionName = SolutionName, Projects = Projects, SortedProjects = SortedProjects };
         }
 
-        private KeyValuePair<ProjectReference, List<ProjectReference>> GenerateModuleProject(String ModuleName, String ModulePath, bool IsTargetOperatingSystemMatched)
+        private KeyValuePair<ProjectReference, List<ProjectReference>> GenerateModuleProject(String ModuleName, PathString ModulePath, bool IsTargetOperatingSystemMatched)
         {
-            var InlcudeDirectories = new List<String> { };
-            var SourceDirectories = new List<String> { Path.Combine(ModulePath, "include"), Path.Combine(ModulePath, "src") };
-            var Libs = new List<String> { };
+            var InlcudeDirectories = new List<PathString> { };
+            var SourceDirectories = new List<PathString> { ModulePath / "include", ModulePath / "src" };
+            var Libs = new List<PathString> { };
             var Files = SourceDirectories.SelectMany(d => GetFilesInDirectory(d, TargetOperatingSystem, IsTargetOperatingSystemMatched)).ToList();
             var ProjectReferences = new List<ProjectReference> { };
 
@@ -173,17 +173,17 @@ namespace TypeMake
             };
             foreach (var RelativeIncludeDirectory in RelativeIncludeDirectories)
             {
-                InlcudeDirectories.Add(Path.GetFullPath(Path.Combine(ModulePath, RelativeIncludeDirectory)));
+                InlcudeDirectories.Add((ModulePath / RelativeIncludeDirectory).FullPath);
             }
             foreach (var ReferenceModule in GetAllModuleDependencies(ModuleName, false))
             {
-                InlcudeDirectories.Add(Path.GetFullPath(Path.Combine(ModulePath, Path.Combine("..", Path.Combine(ReferenceModule, "include")))));
+                InlcudeDirectories.Add((ModulePath.Parent / ReferenceModule / "include").FullPath);
                 ProjectReferences.Add(new ProjectReference
                 {
                     Id = GetIdForProject(ReferenceModule),
                     Name = ReferenceModule,
                     VirtualDir = "modules/" + ReferenceModule,
-                    FilePath = Path.Combine(BuildDirectory, Path.Combine("projects", GetProjectFileName(ReferenceModule)))
+                    FilePath = BuildDirectory / "projects" / GetProjectFileName(ReferenceModule)
                 });
             }
 
@@ -205,23 +205,23 @@ namespace TypeMake
             {
                 var VcxprojTemplateText = Resource.GetResourceText(@"Templates\vc15\Default.vcxproj");
                 var VcxprojFilterTemplateText = Resource.GetResourceText(@"Templates\vc15\Default.vcxproj.filters");
-                var g = new VcxprojGenerator(p, GetIdForProject(ModuleName), ProjectReferences, ModulePath, Path.Combine(BuildDirectory, "projects"), VcxprojTemplateText, VcxprojFilterTemplateText, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem);
+                var g = new VcxprojGenerator(p, GetIdForProject(ModuleName), ProjectReferences, ModulePath, BuildDirectory / "projects", VcxprojTemplateText, VcxprojFilterTemplateText, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem);
                 g.Generate(ForceRegenerate);
             }
             else if (Toolchain == ToolchainType.Mac_XCode)
             {
                 var PbxprojTemplateText = Resource.GetResourceText(@"Templates\xcode9\Default.xcodeproj\project.pbxproj");
-                var g = new PbxprojGenerator(p, ProjectReferences, ModulePath, Path.Combine(BuildDirectory, "projects"), PbxprojTemplateText, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, XCodeDevelopmentTeam);
+                var g = new PbxprojGenerator(p, ProjectReferences, ModulePath, BuildDirectory / "projects", PbxprojTemplateText, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, XCodeDevelopmentTeam);
                 g.Generate(ForceRegenerate);
             }
             else if (Toolchain == ToolchainType.CMake)
             {
-                var g = new CMakeProjectGenerator(p, ProjectReferences, ModulePath, Path.Combine(BuildDirectory, "projects"), Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture);
+                var g = new CMakeProjectGenerator(p, ProjectReferences, ModulePath, BuildDirectory / "projects", Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture);
                 g.Generate(ForceRegenerate);
             }
             else if (Toolchain == ToolchainType.Gradle_CMake)
             {
-                var g = new CMakeProjectGenerator(p, ProjectReferences, ModulePath, Path.Combine(BuildDirectory, "projects"), Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture);
+                var g = new CMakeProjectGenerator(p, ProjectReferences, ModulePath, BuildDirectory / "projects", Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture);
                 g.Generate(ForceRegenerate);
             }
             else
@@ -233,14 +233,14 @@ namespace TypeMake
                 Id = GetIdForProject(ModuleName),
                 Name = ModuleName,
                 VirtualDir = "modules/" + ModuleName,
-                FilePath = Path.Combine(BuildDirectory, Path.Combine("projects", GetProjectFileName(ModuleName)))
+                FilePath = BuildDirectory / "projects" / GetProjectFileName(ModuleName)
             }, ProjectReferences);
         }
-        private KeyValuePair<ProjectReference, List<ProjectReference>> GenerateTestProject(String ModuleName, String ModulePath, String TestName, Cpp.File TestFile, bool IsTargetOperatingSystemMatched)
+        private KeyValuePair<ProjectReference, List<ProjectReference>> GenerateTestProject(String ModuleName, PathString ModulePath, String TestName, Cpp.File TestFile, bool IsTargetOperatingSystemMatched)
         {
-            var InlcudeDirectories = new List<String> { };
-            var SourceDirectories = new List<String> { Path.Combine(ModulePath, "include"), Path.Combine(ModulePath, "src") };
-            var Libs = new List<String> { };
+            var InlcudeDirectories = new List<PathString> { };
+            var SourceDirectories = new List<PathString> { ModulePath / "include", ModulePath / "src" };
+            var Libs = new List<PathString> { };
             var Files = new List<Cpp.File> { TestFile };
             var ProjectReferences = new List<ProjectReference> { };
 
@@ -251,17 +251,17 @@ namespace TypeMake
             };
             foreach (var RelativeIncludeDirectory in RelativeIncludeDirectories)
             {
-                InlcudeDirectories.Add(Path.GetFullPath(Path.Combine(ModulePath, RelativeIncludeDirectory)));
+                InlcudeDirectories.Add((ModulePath / RelativeIncludeDirectory).FullPath);
             }
             foreach (var ReferenceModule in GetAllModuleDependencies(ModuleName, true))
             {
-                InlcudeDirectories.Add(Path.GetFullPath(Path.Combine(ModulePath, Path.Combine("..", Path.Combine(ReferenceModule, "include")))));
+                InlcudeDirectories.Add((ModulePath.Parent / ReferenceModule / "include").FullPath);
                 ProjectReferences.Add(new ProjectReference
                 {
                     Id = GetIdForProject(ReferenceModule),
                     Name = ReferenceModule,
                     VirtualDir = "modules/" + ReferenceModule,
-                    FilePath = Path.Combine(BuildDirectory, Path.Combine("projects", GetProjectFileName(ReferenceModule)))
+                    FilePath = BuildDirectory / "projects" / GetProjectFileName(ReferenceModule)
                 });
             }
 
@@ -283,23 +283,23 @@ namespace TypeMake
             {
                 var VcxprojTemplateText = Resource.GetResourceText(@"Templates\vc15\Default.vcxproj");
                 var VcxprojFilterTemplateText = Resource.GetResourceText(@"Templates\vc15\Default.vcxproj.filters");
-                var g = new VcxprojGenerator(p, GetIdForProject(TestName), ProjectReferences, Path.GetDirectoryName(TestFile.Path), Path.Combine(BuildDirectory, "projects"), VcxprojTemplateText, VcxprojFilterTemplateText, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem);
+                var g = new VcxprojGenerator(p, GetIdForProject(TestName), ProjectReferences, TestFile.Path.Parent, BuildDirectory / "projects", VcxprojTemplateText, VcxprojFilterTemplateText, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem);
                 g.Generate(ForceRegenerate);
             }
             else if (Toolchain == ToolchainType.Mac_XCode)
             {
                 var PbxprojTemplateText = Resource.GetResourceText(@"Templates\xcode9\Default.xcodeproj\project.pbxproj");
-                var g = new PbxprojGenerator(p, ProjectReferences, Path.GetDirectoryName(TestFile.Path), Path.Combine(BuildDirectory, "projects"), PbxprojTemplateText, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, XCodeDevelopmentTeam);
+                var g = new PbxprojGenerator(p, ProjectReferences, TestFile.Path.Parent, BuildDirectory / "projects", PbxprojTemplateText, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, XCodeDevelopmentTeam);
                 g.Generate(ForceRegenerate);
             }
             else if (Toolchain == ToolchainType.CMake)
             {
-                var g = new CMakeProjectGenerator(p, ProjectReferences, Path.GetDirectoryName(TestFile.Path), Path.Combine(BuildDirectory, "projects"), Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture);
+                var g = new CMakeProjectGenerator(p, ProjectReferences, TestFile.Path.Parent, BuildDirectory / "projects", Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture);
                 g.Generate(ForceRegenerate);
             }
             else if (Toolchain == ToolchainType.Gradle_CMake)
             {
-                var g = new CMakeProjectGenerator(p, ProjectReferences, Path.GetDirectoryName(TestFile.Path), Path.Combine(BuildDirectory, "projects"), Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture);
+                var g = new CMakeProjectGenerator(p, ProjectReferences, TestFile.Path.Parent, BuildDirectory / "projects", Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture);
                 g.Generate(ForceRegenerate);
             }
             else
@@ -311,15 +311,15 @@ namespace TypeMake
                 Id = GetIdForProject(TestName),
                 Name = TestName,
                 VirtualDir = "modules/" + ModuleName,
-                FilePath = Path.Combine(BuildDirectory, Path.Combine("projects", GetProjectFileName(TestName)))
+                FilePath = BuildDirectory / "projects" / GetProjectFileName(TestName)
             }, ProjectReferences);
         }
-        private KeyValuePair<ProjectReference, List<ProjectReference>> GenerateProductProject(String ProductName, String ProductPath, TargetType ProductTargetType, bool IsTargetOperatingSystemMatched)
+        private KeyValuePair<ProjectReference, List<ProjectReference>> GenerateProductProject(String ProductName, PathString ProductPath, TargetType ProductTargetType, bool IsTargetOperatingSystemMatched)
         {
-            var InlcudeDirectories = new List<String> { ProductPath };
+            var InlcudeDirectories = new List<PathString> { ProductPath };
             var Defines = new List<KeyValuePair<String, String>> { };
-            var SourceDirectories = new List<String> { ProductPath };
-            var Libs = new List<String> { };
+            var SourceDirectories = new List<PathString> { ProductPath };
+            var Libs = new List<PathString> { };
             var Files = SourceDirectories.SelectMany(d => GetFilesInDirectory(d, TargetOperatingSystem, IsTargetOperatingSystemMatched)).ToList();
             var ProjectReferences = new List<ProjectReference> { };
 
@@ -330,17 +330,17 @@ namespace TypeMake
             };
             foreach (var RelativeIncludeDirectory in RelativeIncludeDirectories)
             {
-                InlcudeDirectories.Add(Path.GetFullPath(Path.Combine(ProductPath, RelativeIncludeDirectory)));
+                InlcudeDirectories.Add((ProductPath / RelativeIncludeDirectory).FullPath);
             }
             foreach (var ReferenceModule in GetAllModuleDependencies(ProductName, false))
             {
-                InlcudeDirectories.Add(Path.GetFullPath(Path.Combine(ProductPath, Path.Combine("..", Path.Combine("..", Path.Combine("modules", Path.Combine(ReferenceModule, "include")))))));
+                InlcudeDirectories.Add((ProductPath.Parent.Parent / "modules" / ReferenceModule / "include").FullPath);
                 ProjectReferences.Add(new ProjectReference
                 {
                     Id = GetIdForProject(ReferenceModule),
                     Name = ReferenceModule,
                     VirtualDir = "modules/" + ReferenceModule,
-                    FilePath = Path.Combine(BuildDirectory, Path.Combine("projects", GetProjectFileName(ReferenceModule)))
+                    FilePath = BuildDirectory / "projects" / GetProjectFileName(ReferenceModule)
                 });
             }
 
@@ -395,34 +395,34 @@ namespace TypeMake
             {
                 var VcxprojTemplateText = Resource.GetResourceText(@"Templates\vc15\Default.vcxproj");
                 var VcxprojFilterTemplateText = Resource.GetResourceText(@"Templates\vc15\Default.vcxproj.filters");
-                var g = new VcxprojGenerator(p, GetIdForProject(ProductName), ProjectReferences, ProductPath, Path.Combine(BuildDirectory, "projects"), VcxprojTemplateText, VcxprojFilterTemplateText, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem);
+                var g = new VcxprojGenerator(p, GetIdForProject(ProductName), ProjectReferences, ProductPath, BuildDirectory / "projects", VcxprojTemplateText, VcxprojFilterTemplateText, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem);
                 g.Generate(ForceRegenerate);
             }
             else if (Toolchain == ToolchainType.Mac_XCode)
             {
                 var PbxprojTemplateText = Resource.GetResourceText(@"Templates\xcode9\Default.xcodeproj\project.pbxproj");
-                var g = new PbxprojGenerator(p, ProjectReferences, ProductPath, Path.Combine(BuildDirectory, "projects"), PbxprojTemplateText, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, XCodeDevelopmentTeam);
+                var g = new PbxprojGenerator(p, ProjectReferences, ProductPath, BuildDirectory / "projects", PbxprojTemplateText, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, XCodeDevelopmentTeam);
                 g.Generate(ForceRegenerate);
             }
             else if (Toolchain == ToolchainType.CMake)
             {
-                var g = new CMakeProjectGenerator(p, ProjectReferences, ProductPath, Path.Combine(BuildDirectory, "projects"), Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture);
+                var g = new CMakeProjectGenerator(p, ProjectReferences, ProductPath, BuildDirectory / "projects", Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture);
                 g.Generate(ForceRegenerate);
             }
             else if (Toolchain == ToolchainType.Gradle_CMake)
             {
-                var g = new CMakeProjectGenerator(p, ProjectReferences, ProductPath, Path.Combine(BuildDirectory, "projects"), Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture);
+                var g = new CMakeProjectGenerator(p, ProjectReferences, ProductPath, BuildDirectory / "projects", Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture);
                 g.Generate(ForceRegenerate);
                 if (ProductTargetType == TargetType.GradleApplication)
                 {
                     var BuildGradleTemplateText = Resource.GetResourceText(@"Templates\gradle_application\build.gradle");
-                    var gGradle = new GradleProjectGenerator(SolutionName, p, ProjectReferences, ProductPath, Path.Combine(BuildDirectory, "gradle"), BuildDirectory, BuildGradleTemplateText, Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture);
+                    var gGradle = new GradleProjectGenerator(SolutionName, p, ProjectReferences, ProductPath, BuildDirectory / "gradle", BuildDirectory, BuildGradleTemplateText, Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture);
                     gGradle.Generate(ForceRegenerate);
                 }
                 else if (ProductTargetType == TargetType.GradleLibrary)
                 {
                     var BuildGradleTemplateText = Resource.GetResourceText(@"Templates\gradle_library\build.gradle");
-                    var gGradle = new GradleProjectGenerator(SolutionName, p, ProjectReferences, ProductPath, Path.Combine(BuildDirectory, "gradle"), BuildDirectory, BuildGradleTemplateText, Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture);
+                    var gGradle = new GradleProjectGenerator(SolutionName, p, ProjectReferences, ProductPath, BuildDirectory / "gradle", BuildDirectory, BuildGradleTemplateText, Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture);
                     gGradle.Generate(ForceRegenerate);
                 }
             }
@@ -435,7 +435,7 @@ namespace TypeMake
                 Id = GetIdForProject(ProductName),
                 Name = ProductName,
                 VirtualDir = "products",
-                FilePath = Path.Combine(BuildDirectory, Path.Combine("projects", GetProjectFileName(ProductName)))
+                FilePath = BuildDirectory / "projects" / GetProjectFileName(ProductName)
             }, ProjectReferences);
         }
 
@@ -446,7 +446,7 @@ namespace TypeMake
                 new Configuration
                 {
                     Compiler = CompilerType.VisualC,
-                    LibDirectories = new List<String> { Path.Combine(BuildDirectory, @"$(PlatformTarget)_$(Configuration)") },
+                    LibDirectories = new List<PathString> { BuildDirectory / @"$(PlatformTarget)_$(Configuration)" },
                     Defines = ParseDefines("_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS"),
                     CFlags = new List<String> { "/bigobj" }
                 },
@@ -478,15 +478,15 @@ namespace TypeMake
             };
         }
 
-        private static List<Cpp.File> GetFilesInDirectory(String d, OperatingSystemType TargetOperatingSystem, bool IsTargetOperatingSystemMatched)
+        private static List<Cpp.File> GetFilesInDirectory(PathString d, OperatingSystemType TargetOperatingSystem, bool IsTargetOperatingSystemMatched)
         {
             if (!Directory.Exists(d)) { return new List<Cpp.File> { }; }
             var l = new List<Cpp.File>();
             foreach (var FilePathRelative in Directory.EnumerateFiles(d, "*", SearchOption.AllDirectories))
             {
-                var FilePath = Path.GetFullPath(FilePathRelative);
-                var Ext = Path.GetExtension(FilePath).TrimStart('.').ToLowerInvariant();
-                var Extensions = Path.GetFileName(FilePath).Split('.', '_').Skip(1).ToList();
+                var FilePath = FilePathRelative.AsPath().FullPath;
+                var Ext = FilePath.Extension.TrimStart('.').ToLowerInvariant();
+                var Extensions = FilePath.FileName.Split('.', '_').Skip(1).ToList();
                 if (!IsTargetOperatingSystemMatched || !IsOperatingSystemMatchExtensions(Extensions, TargetOperatingSystem))
                 {
                     l.Add(new Cpp.File { Path = FilePath, Type = FileType.Unknown });
@@ -620,12 +620,13 @@ namespace TypeMake
         {
             foreach (var f in Directory.EnumerateFiles(SourceDirectory, "*", SearchOption.AllDirectories))
             {
-                var NewDir = Path.GetDirectoryName(Path.Combine(DestinationDirectory, FileNameHandling.GetRelativePath(f, SourceDirectory)));
+                var fNew = DestinationDirectory / f.AsPath().RelativeTo(SourceDirectory);
+                var NewDir = fNew.Parent;
                 if ((NewDir != "") && !Directory.Exists(NewDir))
                 {
                     Directory.CreateDirectory(NewDir);
                 }
-                System.IO.File.Copy(f, Path.Combine(NewDir, Path.GetFileName(f)), true);
+                System.IO.File.Copy(f, fNew, true);
             }
         }
     }

@@ -56,7 +56,7 @@ namespace TypeMake.Cpp
 
     public class File
     {
-        public String Path;
+        public PathString Path;
         public FileType Type;
     }
     public class Configuration
@@ -71,13 +71,13 @@ namespace TypeMake.Cpp
 
         public TargetType? TargetType = null;
 
-        public List<String> IncludeDirectories = new List<String> { };
+        public List<PathString> IncludeDirectories = new List<PathString> { };
         public List<KeyValuePair<String, String>> Defines = new List<KeyValuePair<String, String>> { };
         public List<String> CFlags = new List<String> { };
         public List<String> CppFlags = new List<String> { };
 
-        public List<String> LibDirectories = new List<String> { };
-        public List<String> Libs = new List<String> { };
+        public List<PathString> LibDirectories = new List<PathString> { };
+        public List<PathString> Libs = new List<PathString> { };
         public List<String> LinkerFlags = new List<String> { };
 
         public List<File> Files = new List<File> { };
