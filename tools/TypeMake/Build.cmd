@@ -14,7 +14,7 @@ set VSDir=%VSDir:"=%
 echo VSDir=%VSDir%
 
 set EXIT_CODE=0
-"%VSDir%\MSBuild\15.0\Bin\MSBuild.exe" Src\TypeMake.sln /t:Rebuild /p:Configuration=Release
+"%VSDir%\MSBuild\15.0\Bin\MSBuild.exe" TypeMake.sln /t:Rebuild /p:Configuration=Release
 set /A EXIT_CODE^|=%ERRORLEVEL%
 
 if not "%NO_PAUSE_SYMBOL%"=="1" pause

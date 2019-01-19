@@ -9,4 +9,4 @@ command -v xbuild >/dev/null 2>&1 || {
   echo MacOS: sudo brew install mono-xbuild
   exit 1
 }
-xbuild Src/TypeMake.sln
+xbuild TypeMake.sln
