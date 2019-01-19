@@ -1,7 +1,7 @@
 set -e
 
-[ -f typemake/Bin/TypeMake.exe ] || {
-  pushd typemake
+[ -f tools/TypeMake/Bin/TypeMake.exe ] || {
+  pushd tools/TypeMake
   ./build.sh
   popd
 }
@@ -16,4 +16,4 @@ command -v mono >/dev/null 2>&1 || {
 }
 
 export SourceDirectory=.
-mono typemake/Bin/TypeMake.exe "$@"
+mono tools/TypeMake/Bin/TypeMake.exe "$@"
