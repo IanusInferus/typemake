@@ -25,14 +25,14 @@ namespace TypeMake
             return d;
         }
 
-        public enum BuildingOperatingSystemType
+        public enum OperatingSystemType
         {
             Windows,
             Linux,
             Mac,
             Unknown
         }
-        public enum BuildingOperatingSystemArchitectureType
+        public enum OperatingSystemArchitectureType
         {
             x86,
             x86_64,
@@ -40,8 +40,8 @@ namespace TypeMake
         }
 
         private static Object OperatingSystemLockee = new Object();
-        private static BuildingOperatingSystemType? OperatingSystemValue = null;
-        public static BuildingOperatingSystemType OperatingSystem
+        private static OperatingSystemType? OperatingSystemValue = null;
+        public static OperatingSystemType OperatingSystem
         {
             get
             {
@@ -52,26 +52,26 @@ namespace TypeMake
                         var p = Environment.OSVersion.Platform;
                         if ((p == PlatformID.Win32NT) || (p == PlatformID.Xbox) || (p == PlatformID.WinCE) || (p == PlatformID.Win32Windows) || (p == PlatformID.Win32S))
                         {
-                            OperatingSystemValue = BuildingOperatingSystemType.Windows;
+                            OperatingSystemValue = OperatingSystemType.Windows;
                         }
                         else if (p == PlatformID.Unix)
                         {
                             if (File.Exists("/usr/lib/libc.dylib"))
                             {
-                                OperatingSystemValue = BuildingOperatingSystemType.Mac;
+                                OperatingSystemValue = OperatingSystemType.Mac;
                             }
                             else
                             {
-                                OperatingSystemValue = BuildingOperatingSystemType.Linux;
+                                OperatingSystemValue = OperatingSystemType.Linux;
                             }
                         }
                         else if (p == PlatformID.MacOSX)
                         {
-                            OperatingSystemValue = BuildingOperatingSystemType.Mac;
+                            OperatingSystemValue = OperatingSystemType.Mac;
                         }
                         else
                         {
-                            OperatingSystemValue = BuildingOperatingSystemType.Unknown;
+                            OperatingSystemValue = OperatingSystemType.Unknown;
                         }
                     }
                     return OperatingSystemValue.Value;
@@ -80,8 +80,8 @@ namespace TypeMake
         }
 
         private static Object OperatingSystemArchitectureLockee = new Object();
-        private static BuildingOperatingSystemArchitectureType? OperatingSystemArchitectureValue = null;
-        public static BuildingOperatingSystemArchitectureType OperatingSystemArchitecture
+        private static OperatingSystemArchitectureType? OperatingSystemArchitectureValue = null;
+        public static OperatingSystemArchitectureType OperatingSystemArchitecture
         {
             get
             {
@@ -91,11 +91,11 @@ namespace TypeMake
                     {
                         if (Environment.Is64BitOperatingSystem)
                         {
-                            OperatingSystemArchitectureValue = BuildingOperatingSystemArchitectureType.x86_64;
+                            OperatingSystemArchitectureValue = OperatingSystemArchitectureType.x86_64;
                         }
                         else
                         {
-                            OperatingSystemArchitectureValue = BuildingOperatingSystemArchitectureType.x86;
+                            OperatingSystemArchitectureValue = OperatingSystemArchitectureType.x86;
                         }
                         //other architecture not supported now
                     }
@@ -113,7 +113,7 @@ namespace TypeMake
                 {
                     return ResolvePathFromSystem(p.FullPath);
                 }
-                if (OperatingSystem == BuildingOperatingSystemType.Windows)
+                if (OperatingSystem == OperatingSystemType.Windows)
                 {
                     if (File.Exists(p + ".exe"))
                     {
@@ -162,7 +162,8 @@ namespace TypeMake
         public static int Execute(String ProgramPath, params String[] Arguments)
         {
             var psi = CreateExecuteStartInfo(ProgramPath, Arguments);
-            var CommandLine = Arguments.Length == 0 ? EscapeArgumentForShell(ProgramPath, OperatingSystem) : EscapeArgumentForShell(ProgramPath, OperatingSystem) + " " + String.Join(" ", Arguments.Select(a => EscapeArgumentForShell(a, OperatingSystem)));
+            var Style = OperatingSystem == OperatingSystemType.Windows ? ShellArgumentStyle.CMD : ShellArgumentStyle.Bash;
+            var CommandLine = Arguments.Length == 0 ? EscapeArgumentForShell(ProgramPath, Style) : EscapeArgumentForShell(ProgramPath, Style) + " " + String.Join(" ", Arguments.Select(a => EscapeArgumentForShell(a, Style)));
             Console.WriteLine(CommandLine);
             var p = Process.Start(psi);
             p.WaitForExit();
@@ -174,7 +175,7 @@ namespace TypeMake
         }
         public static ProcessStartInfo CreateExecuteLineStartInfo(String ProgramPath, String Arguments)
         {
-            if (OperatingSystem == BuildingOperatingSystemType.Windows)
+            if (OperatingSystem == OperatingSystemType.Windows)
             {
                 if (ProgramPath.EndsWith(".cmd", StringComparison.OrdinalIgnoreCase) || ProgramPath.EndsWith(".bat", StringComparison.OrdinalIgnoreCase))
                 {
@@ -207,22 +208,27 @@ namespace TypeMake
         }
         public static String EscapeArgument(String Argument)
         {
-            return EscapeArgument(Argument, OperatingSystem);
+            return EscapeArgument(Argument, OperatingSystem == OperatingSystemType.Windows ? ArgumentStyle.Windows : ArgumentStyle.Unix);
+        }
+        public enum ArgumentStyle
+        {
+            Windows,
+            Unix
         }
         private static Regex rBackslashBeforeDoubleQuotes = new Regex(@"\\+((?="")|$)", RegexOptions.ExplicitCapture);
         private static Regex rComplexChars = new Regex(@"[\s!""#$%&'()*+,/;<=>?@\[\\\]^`{|}~]", RegexOptions.ExplicitCapture);
-        public static String EscapeArgument(String Argument, BuildingOperatingSystemType OperatingSystem)
+        public static String EscapeArgument(String Argument, ArgumentStyle ArgumentStyle)
         {
             //\0 \r \n can not be escaped
             if (Argument.Any(c => c == '\0' || c == '\r' || c == '\n')) { throw new ArgumentException("InvalidChar"); }
-            if (OperatingSystem == BuildingOperatingSystemType.Windows)
+            if (ArgumentStyle == ArgumentStyle.Windows)
             {
                 //https://docs.microsoft.com/en-us/cpp/cpp/parsing-cpp-command-line-arguments?view=vs-2017
                 //http://csharptest.net/529/how-to-correctly-escape-command-line-arguments-in-c/index.html
                 //backslashes before double quotes must be doubled
                 return rComplexChars.IsMatch(Argument) ? "\"" + rBackslashBeforeDoubleQuotes.Replace(Argument, s => s.Value + s.Value).Replace("\"", "\\\"") + "\"" : Argument;
             }
-            else
+            else if (ArgumentStyle == ArgumentStyle.Unix)
             {
                 //in mono it was originally implemented using g_shell_parse_argv
                 //https://bugzilla.xamarin.com/show_bug.cgi?id=19296
@@ -230,21 +236,34 @@ namespace TypeMake
                 //but upon testing it is found that backslash need to be double in single quotes
                 return rComplexChars.IsMatch(Argument) ? "'" + Argument.Replace("\\", "\\\\").Replace("'", "'\\''") + "'" : Argument;
             }
+            else
+            {
+                throw new InvalidOperationException();
+            }
+        }
+        public enum ShellArgumentStyle
+        {
+            CMD,
+            Bash
         }
         private static Regex rCmdComplexChars = new Regex(@"[%^&<>|]", RegexOptions.ExplicitCapture);
-        public static String EscapeArgumentForShell(String Argument, BuildingOperatingSystemType OperatingSystem)
+        public static String EscapeArgumentForShell(String Argument, ShellArgumentStyle ShellArgumentStyle)
         {
             //\0 \r \n can not be escaped
             if (Argument.Any(c => c == '\0' || c == '\r' || c == '\n')) { throw new ArgumentException("InvalidChar"); }
-            if (OperatingSystem == BuildingOperatingSystemType.Windows)
+            if (ShellArgumentStyle == ShellArgumentStyle.CMD)
             {
                 //CMD style(without EnableDelayedExpansion)
-                return rCmdComplexChars.Replace(EscapeArgument(Argument, OperatingSystem), s => "^" + s.Value);
+                return rCmdComplexChars.Replace(EscapeArgument(Argument, ArgumentStyle.Windows), s => "^" + s.Value);
             }
-            else
+            else if (ShellArgumentStyle == ShellArgumentStyle.Bash)
             {
                 //bash style
                 return rComplexChars.IsMatch(Argument) ? "'" + Argument.Replace("'", "'\\''") + "'" : Argument;
+            }
+            else
+            {
+                throw new InvalidOperationException();
             }
         }
 
@@ -287,7 +306,7 @@ namespace TypeMake
                 {
                     v = Options.DefaultValue ?? "";
                 }
-                if (OperatingSystem == BuildingOperatingSystemType.Windows)
+                if (OperatingSystem == OperatingSystemType.Windows)
                 {
                     var cpsNew = GetConsolePositionState();
                     SetConsolePositionState(cps);
@@ -304,7 +323,7 @@ namespace TypeMake
                 {
                     v = Options.DefaultValue ?? "";
                 }
-                if (OperatingSystem == BuildingOperatingSystemType.Windows)
+                if (OperatingSystem == OperatingSystemType.Windows)
                 {
                     var cpsNew = GetConsolePositionState();
                     SetConsolePositionState(cps);
@@ -421,7 +440,7 @@ namespace TypeMake
             });
             return Output;
         }
-        public static String RequireEnvironmentVariableFilePath(EnvironmentVariableMemory Memory, String Name, bool Quiet, PathString DefaultValue = null, Func<PathString, bool> Validator = null)
+        public static PathString RequireEnvironmentVariableFilePath(EnvironmentVariableMemory Memory, String Name, bool Quiet, PathString DefaultValue = null, Func<PathString, bool> Validator = null)
         {
             Func<String, bool> ValidatorWrapper = p => Validator(p);
             var s = RequireEnvironmentVariable(Memory, Name, new EnvironmentVariableReadOptions
@@ -596,7 +615,7 @@ namespace TypeMake
         }
         public static String ReadLineWithSuggestion(Func<String, int, bool, bool, String> Suggester)
         {
-            if (OperatingSystem == BuildingOperatingSystemType.Windows)
+            if (OperatingSystem == OperatingSystemType.Windows)
             {
                 var Confirmed = new LinkedList<KeyValuePair<Char, KeyValuePair<int, int>>>();
                 var Suggested = new LinkedList<KeyValuePair<Char, KeyValuePair<int, int>>>();

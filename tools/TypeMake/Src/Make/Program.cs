@@ -38,18 +38,16 @@ namespace TypeMake
         }
         public static int MainInner(String[] args)
         {
-            var c = Shell.TryLocate("cmd");
-
             var BuildingOperatingSystem = Cpp.OperatingSystemType.Windows;
-            if (Shell.OperatingSystem == Shell.BuildingOperatingSystemType.Windows)
+            if (Shell.OperatingSystem == Shell.OperatingSystemType.Windows)
             {
                 BuildingOperatingSystem = Cpp.OperatingSystemType.Windows;
             }
-            else if (Shell.OperatingSystem == Shell.BuildingOperatingSystemType.Linux)
+            else if (Shell.OperatingSystem == Shell.OperatingSystemType.Linux)
             {
                 BuildingOperatingSystem = Cpp.OperatingSystemType.Linux;
             }
-            else if (Shell.OperatingSystem == Shell.BuildingOperatingSystemType.Mac)
+            else if (Shell.OperatingSystem == Shell.OperatingSystemType.Mac)
             {
                 BuildingOperatingSystem = Cpp.OperatingSystemType.Mac;
             }
@@ -58,11 +56,11 @@ namespace TypeMake
                 throw new InvalidOperationException("UnknownBuildingOperatingSystem");
             }
             var BuildingOperatingSystemArchitecture = Cpp.ArchitectureType.x86_64;
-            if (Shell.OperatingSystemArchitecture == Shell.BuildingOperatingSystemArchitectureType.x86_64)
+            if (Shell.OperatingSystemArchitecture == Shell.OperatingSystemArchitectureType.x86_64)
             {
                 BuildingOperatingSystemArchitecture = Cpp.ArchitectureType.x86_64;
             }
-            else if (Shell.OperatingSystemArchitecture == Shell.BuildingOperatingSystemArchitectureType.x86)
+            else if (Shell.OperatingSystemArchitecture == Shell.OperatingSystemArchitectureType.x86)
             {
                 BuildingOperatingSystemArchitecture = Cpp.ArchitectureType.x86;
             }
@@ -172,15 +170,22 @@ namespace TypeMake
                 var m = new Make(Cpp.ToolchainType.Windows_VisualC, Cpp.CompilerType.VisualC, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, SourceDirectory, BuildDirectory, null, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
                 var r = m.Execute();
                 GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, ForceRegenerate);
-                if (BuildAfterGenerate && (BuildingOperatingSystem == Cpp.OperatingSystemType.Windows))
+                if (BuildAfterGenerate)
                 {
-                    GenerateBuildScriptWindows(BuildDirectory, r.SolutionName, Cpp.ArchitectureType.x86, Cpp.ConfigurationType.Debug, VSDir, ForceRegenerate);
-                    GenerateBuildScriptWindows(BuildDirectory, r.SolutionName, Cpp.ArchitectureType.x86, Cpp.ConfigurationType.Release, VSDir, ForceRegenerate);
-                    GenerateBuildScriptWindows(BuildDirectory, r.SolutionName, Cpp.ArchitectureType.x86_64, Cpp.ConfigurationType.Debug, VSDir, ForceRegenerate);
-                    GenerateBuildScriptWindows(BuildDirectory, r.SolutionName, Cpp.ArchitectureType.x86_64, Cpp.ConfigurationType.Release, VSDir, ForceRegenerate);
-                    using (var d = Shell.PushDirectory(BuildDirectory))
+                    if (BuildingOperatingSystem == Cpp.OperatingSystemType.Windows)
                     {
-                        MergeExitCode(Shell.Execute($"build_{TargetArchitecture}_{Configuration}.cmd"));
+                        GenerateBuildScriptWindows(BuildDirectory, r.SolutionName, Cpp.ArchitectureType.x86, Cpp.ConfigurationType.Debug, VSDir, ForceRegenerate);
+                        GenerateBuildScriptWindows(BuildDirectory, r.SolutionName, Cpp.ArchitectureType.x86, Cpp.ConfigurationType.Release, VSDir, ForceRegenerate);
+                        GenerateBuildScriptWindows(BuildDirectory, r.SolutionName, Cpp.ArchitectureType.x86_64, Cpp.ConfigurationType.Debug, VSDir, ForceRegenerate);
+                        GenerateBuildScriptWindows(BuildDirectory, r.SolutionName, Cpp.ArchitectureType.x86_64, Cpp.ConfigurationType.Release, VSDir, ForceRegenerate);
+                        using (var d = Shell.PushDirectory(BuildDirectory))
+                        {
+                            MergeExitCode(Shell.Execute($"build_{TargetArchitecture}_{Configuration}.cmd"));
+                        }
+                    }
+                    else
+                    {
+                        Console.Error.WriteLine("Cross compiling to Windows is not supported.");
                     }
                 }
             }
@@ -189,34 +194,38 @@ namespace TypeMake
                 Cpp.ConfigurationType Configuration;
                 Configuration = Shell.RequireEnvironmentVariableEnum(Memory, "Configuration", Quiet, Cpp.ConfigurationType.Debug);
                 BuildDirectory = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "BuildDirectory", Quiet, $"build/linux_{Configuration}".AsPath(), p => !File.Exists(p));
-                var CMake = "";
-                if (BuildingOperatingSystem == Cpp.OperatingSystemType.Linux)
+                var CMake = "".AsPath();
+                var Make = "".AsPath();
+                if (BuildingOperatingSystem == Cpp.OperatingSystemType.Windows)
+                {
+                    CMake = Shell.RequireEnvironmentVariable(Memory, "CMake", new Shell.EnvironmentVariableReadOptions { Quiet = Quiet, DefaultValue = "cmake" });
+                    Make = Shell.RequireEnvironmentVariable(Memory, "Make", new Shell.EnvironmentVariableReadOptions { Quiet = Quiet, DefaultValue = "make" });
+                }
+                else if (BuildingOperatingSystem == Cpp.OperatingSystemType.Linux)
                 {
                     CMake = Shell.RequireEnvironmentVariableFilePath(Memory, "CMake", Quiet, Shell.TryLocate("cmake") ?? "");
-                }
-                var Make = "";
-                if (BuildAfterGenerate && (BuildingOperatingSystem == Cpp.OperatingSystemType.Linux))
-                {
                     Make = Shell.RequireEnvironmentVariableFilePath(Memory, "Make", Quiet, Shell.TryLocate("make") ?? "");
                 }
                 var m = new Make(Cpp.ToolchainType.CMake, Cpp.CompilerType.gcc, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, SourceDirectory, BuildDirectory, null, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
                 m.Execute();
-                if (BuildingOperatingSystem == Cpp.OperatingSystemType.Linux)
-                {
-                    using (var d = Shell.PushDirectory(BuildDirectory))
-                    {
-                        var Arguments = new List<String>();
-                        Arguments.Add(BuildDirectory);
-                        Arguments.Add($"-DCMAKE_BUILD_TYPE={Configuration}");
-                        MergeExitCode(Shell.Execute(CMake, Arguments.ToArray()));
-                    }
-                }
                 GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, ForceRegenerate);
-                if (BuildAfterGenerate && (BuildingOperatingSystem == Cpp.OperatingSystemType.Linux))
+                GenerateBuildScriptLinux(BuildingOperatingSystem, BuildDirectory, Configuration, CMake, Make, ForceRegenerate);
+                if (BuildAfterGenerate)
                 {
                     using (var d = Shell.PushDirectory(BuildDirectory))
                     {
-                        MergeExitCode(Shell.Execute(Make));
+                        if (BuildingOperatingSystem == Cpp.OperatingSystemType.Windows)
+                        {
+                            MergeExitCode(Shell.Execute(@".\build.cmd"));
+                        }
+                        else if (BuildingOperatingSystem == Cpp.OperatingSystemType.Linux)
+                        {
+                            MergeExitCode(Shell.Execute("./build.sh"));
+                        }
+                        else
+                        {
+                            Console.Error.WriteLine("Cross compiling to Linux is not supported.");
+                        }
                     }
                 }
             }
@@ -227,11 +236,18 @@ namespace TypeMake
                 var r = m.Execute();
                 GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, ForceRegenerate);
                 GenerateBuildScriptXCode(BuildingOperatingSystem, BuildDirectory, r, ForceRegenerate);
-                if (BuildAfterGenerate && (BuildingOperatingSystem == Cpp.OperatingSystemType.Mac))
+                if (BuildAfterGenerate)
                 {
                     using (var d = Shell.PushDirectory(BuildDirectory))
                     {
-                        MergeExitCode(Shell.Execute("./build.sh"));
+                        if (BuildingOperatingSystem == Cpp.OperatingSystemType.Mac)
+                        {
+                            MergeExitCode(Shell.Execute("./build.sh"));
+                        }
+                        else
+                        {
+                            Console.Error.WriteLine("Cross compiling to Mac is not supported.");
+                        }
                     }
                 }
             }
@@ -244,11 +260,18 @@ namespace TypeMake
                 var r = m.Execute();
                 GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, ForceRegenerate);
                 GenerateBuildScriptXCode(BuildingOperatingSystem, BuildDirectory, r, ForceRegenerate);
-                if (BuildAfterGenerate && (BuildingOperatingSystem == Cpp.OperatingSystemType.Mac))
+                if (BuildAfterGenerate)
                 {
                     using (var d = Shell.PushDirectory(BuildDirectory))
                     {
-                        MergeExitCode(Shell.Execute("./build.sh"));
+                        if (BuildingOperatingSystem == Cpp.OperatingSystemType.Mac)
+                        {
+                            MergeExitCode(Shell.Execute("./build.sh"));
+                        }
+                        else
+                        {
+                            Console.Error.WriteLine("Cross compiling to iOS is not supported.");
+                        }
                     }
                 }
             }
@@ -289,26 +312,7 @@ namespace TypeMake
                     Console.WriteLine("UnsupportedBuildingOperatingSystemArchitecture: " + Shell.OperatingSystemArchitecture.ToString());
                     return 1;
                 }
-                GenerateBuildScriptAndroid(BuildingOperatingSystem, BuildDirectory, Make, ForceRegenerate);
-                using (var d = Shell.PushDirectory(BuildDirectory))
-                {
-                    var Arguments = new List<String>();
-                    Arguments.Add(BuildDirectory.ToString(PathStringStyle.Unix));
-                    Arguments.Add("-G");
-                    Arguments.Add("Unix Makefiles");
-                    Arguments.Add($"-DCMAKE_BUILD_TYPE={Configuration}");
-                    Arguments.Add($"-DCMAKE_MAKE_PROGRAM={Make.ToString(PathStringStyle.Unix)}");
-                    Arguments.Add($"-DANDROID_NDK={AndroidNdk.ToString(PathStringStyle.Unix)}");
-                    Arguments.Add($"-DCMAKE_TOOLCHAIN_FILE={(AndroidNdk / "build/cmake/android.toolchain.cmake").ToString(PathStringStyle.Unix)}");
-                    Arguments.Add($"-DANDROID_STL=c++_static");
-                    Arguments.Add($"-DANDROID_PLATFORM=android-17");
-                    Arguments.Add($"-DANDROID_ABI={Cpp.GradleProjectGenerator.GetArchitectureString(TargetArchitecture)}");
-                    if (TargetArchitecture == Cpp.ArchitectureType.armeabi_v7a)
-                    {
-                        Arguments.Add($"-DANDROID_ARM_NEON=ON");
-                    }
-                    MergeExitCode(Shell.Execute(CMake, Arguments.ToArray()));
-                }
+                GenerateBuildScriptAndroid(BuildingOperatingSystem, BuildDirectory, TargetArchitecture, Configuration, AndroidNdk, CMake, Make, ForceRegenerate);
                 if (BuildAfterGenerate)
                 {
                     using (var d = Shell.PushDirectory(BuildDirectory))
@@ -317,9 +321,13 @@ namespace TypeMake
                         {
                             MergeExitCode(Shell.Execute(@".\build.cmd"));
                         }
-                        else
+                        else if ((BuildingOperatingSystem == Cpp.OperatingSystemType.Linux) || (BuildingOperatingSystem == Cpp.OperatingSystemType.Mac))
                         {
                             MergeExitCode(Shell.Execute("./build.sh"));
+                        }
+                        else
+                        {
+                            Console.Error.WriteLine("Cross compiling to Android is not supported.");
                         }
                     }
                 }
@@ -411,7 +419,7 @@ namespace TypeMake
                 }
             }
         }
-        private static void GenerateBuildScriptWindows(PathString BuildDirectory, String SolutionName, Cpp.ArchitectureType TargetArchitecture, Cpp.ConfigurationType Configuration, String VSDir, bool ForceRegenerate)
+        private static void GenerateBuildScriptWindows(PathString BuildDirectory, String SolutionName, Cpp.ArchitectureType TargetArchitecture, Cpp.ConfigurationType Configuration, PathString VSDir, bool ForceRegenerate)
         {
             var Lines = new List<String>();
             Lines.Add("@echo off");
@@ -421,13 +429,49 @@ namespace TypeMake
             Lines.Add("if /I \"%COMSPEC%\" == %CMDCMDLINE% set NO_PAUSE_SYMBOL=1");
             Lines.Add("set SUB_NO_PAUSE_SYMBOL=1");
             Lines.Add("");
-            Lines.Add($@"""{VSDir}\MSBuild\15.0\Bin\MSBuild.exe"" {SolutionName}.sln /p:Configuration={Configuration} /p:Platform={SlnGenerator.GetArchitectureString(TargetArchitecture)}");
+            Lines.Add($@"""{VSDir.ToString(PathStringStyle.Windows)}\MSBuild\15.0\Bin\MSBuild.exe"" {SolutionName}.sln /p:Configuration={Configuration} /p:Platform={SlnGenerator.GetArchitectureString(TargetArchitecture)}");
             Lines.Add("");
             Lines.Add("if not \"%NO_PAUSE_SYMBOL%\"==\"1\" pause");
             Lines.Add("exit /b %EXIT_CODE%");
             Lines.Add("");
             var BuildPath = BuildDirectory / $"build_{TargetArchitecture}_{Configuration}.cmd";
             TextFile.WriteToFile(BuildPath, String.Join("\r\n", Lines), System.Text.Encoding.Default, !ForceRegenerate);
+        }
+        private static void GenerateBuildScriptLinux(Cpp.OperatingSystemType BuildingOperatingSystem, PathString BuildDirectory, Cpp.ConfigurationType Configuration, PathString CMake, PathString Make, bool ForceRegenerate)
+        {
+            var CMakeArguments = new List<String>();
+            CMakeArguments.Add(".");
+            CMakeArguments.Add($"-DCMAKE_BUILD_TYPE={Configuration}");
+
+            if (BuildingOperatingSystem == Cpp.OperatingSystemType.Windows)
+            {
+                var Lines = new List<String>();
+                Lines.Add("@echo off");
+                Lines.Add("");
+                Lines.Add("setlocal");
+                Lines.Add("if \"%SUB_NO_PAUSE_SYMBOL%\"==\"1\" set NO_PAUSE_SYMBOL=1");
+                Lines.Add("if /I \"%COMSPEC%\" == %CMDCMDLINE% set NO_PAUSE_SYMBOL=1");
+                Lines.Add("set SUB_NO_PAUSE_SYMBOL=1");
+                Lines.Add("");
+                Lines.Add("wsl " + Shell.EscapeArgumentForShell(CMake, Shell.ShellArgumentStyle.CMD) + " " + String.Join(" ", CMakeArguments.Select(a => Shell.EscapeArgumentForShell(a, Shell.ShellArgumentStyle.CMD))));
+                Lines.Add("wsl " + Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.CMD));
+                Lines.Add("");
+                Lines.Add("if not \"%NO_PAUSE_SYMBOL%\"==\"1\" pause");
+                Lines.Add("exit /b %EXIT_CODE%");
+                Lines.Add("");
+                var BuildPath = BuildDirectory / "build.cmd";
+                TextFile.WriteToFile(BuildPath, String.Join("\r\n", Lines), System.Text.Encoding.Default, !ForceRegenerate);
+            }
+            else
+            {
+                var Lines = new List<String>();
+                Lines.Add(Shell.EscapeArgumentForShell(CMake, Shell.ShellArgumentStyle.Bash) + " " + String.Join(" ", CMakeArguments.Select(a => Shell.EscapeArgumentForShell(a, Shell.ShellArgumentStyle.Bash))));
+                Lines.Add(Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.Bash));
+                Lines.Add("");
+                var BuildPath = BuildDirectory / "build.sh";
+                TextFile.WriteToFile(BuildPath, String.Join("\n", Lines), new System.Text.UTF8Encoding(false), !ForceRegenerate);
+                MergeExitCode(Shell.Execute("chmod", "+x", BuildPath));
+            }
         }
         private static void GenerateBuildScriptXCode(Cpp.OperatingSystemType BuildingOperatingSystem, PathString BuildDirectory, Make.Result Result, bool ForceRegenerate)
         {
@@ -444,8 +488,24 @@ namespace TypeMake
                 MergeExitCode(Shell.Execute("chmod", "+x", BuildPath));
             }
         }
-        private static void GenerateBuildScriptAndroid(Cpp.OperatingSystemType BuildingOperatingSystem, PathString BuildDirectory, String Make, bool ForceRegenerate)
+        private static void GenerateBuildScriptAndroid(Cpp.OperatingSystemType BuildingOperatingSystem, PathString BuildDirectory, Cpp.ArchitectureType TargetArchitecture, Cpp.ConfigurationType Configuration, PathString AndroidNdk, PathString CMake, PathString Make, bool ForceRegenerate)
         {
+            var CMakeArguments = new List<String>();
+            CMakeArguments.Add(".");
+            CMakeArguments.Add("-G");
+            CMakeArguments.Add("Unix Makefiles");
+            CMakeArguments.Add($"-DCMAKE_BUILD_TYPE={Configuration}");
+            CMakeArguments.Add($"-DCMAKE_MAKE_PROGRAM={Make.ToString(PathStringStyle.Unix)}");
+            CMakeArguments.Add($"-DANDROID_NDK={AndroidNdk.ToString(PathStringStyle.Unix)}");
+            CMakeArguments.Add($"-DCMAKE_TOOLCHAIN_FILE={(AndroidNdk / "build/cmake/android.toolchain.cmake").ToString(PathStringStyle.Unix)}");
+            CMakeArguments.Add($"-DANDROID_STL=c++_static");
+            CMakeArguments.Add($"-DANDROID_PLATFORM=android-17");
+            CMakeArguments.Add($"-DANDROID_ABI={Cpp.GradleProjectGenerator.GetArchitectureString(TargetArchitecture)}");
+            if (TargetArchitecture == Cpp.ArchitectureType.armeabi_v7a)
+            {
+                CMakeArguments.Add($"-DANDROID_ARM_NEON=ON");
+            }
+
             if (BuildingOperatingSystem == Cpp.OperatingSystemType.Windows)
             {
                 var Lines = new List<String>();
@@ -456,7 +516,8 @@ namespace TypeMake
                 Lines.Add("if /I \"%COMSPEC%\" == %CMDCMDLINE% set NO_PAUSE_SYMBOL=1");
                 Lines.Add("set SUB_NO_PAUSE_SYMBOL=1");
                 Lines.Add("");
-                Lines.Add($@"""{Make}""");
+                Lines.Add(Shell.EscapeArgumentForShell(CMake, Shell.ShellArgumentStyle.CMD) + " " + String.Join(" ", CMakeArguments.Select(a => Shell.EscapeArgumentForShell(a, Shell.ShellArgumentStyle.CMD))));
+                Lines.Add(Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.CMD));
                 Lines.Add("pushd gradle");
                 Lines.Add(@"call .\gradlew.bat build");
                 Lines.Add("popd");
@@ -470,7 +531,8 @@ namespace TypeMake
             else
             {
                 var Lines = new List<String>();
-                Lines.Add($@"""{Make}""");
+                Lines.Add(Shell.EscapeArgumentForShell(CMake, Shell.ShellArgumentStyle.Bash) + " " + String.Join(" ", CMakeArguments.Select(a => Shell.EscapeArgumentForShell(a, Shell.ShellArgumentStyle.Bash))));
+                Lines.Add(Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.Bash));
                 Lines.Add("pushd gradle");
                 Lines.Add(@"./gradlew build");
                 Lines.Add("popd");
@@ -485,8 +547,9 @@ namespace TypeMake
         {
             Console.WriteLine(@"TypeMake");
             Console.WriteLine(@"Usage:");
-            Console.WriteLine(@"TypeMake [<RetypemakeScript>] [--regen] [--dummy] [--quiet] [--help]");
+            Console.WriteLine(@"TypeMake [<RetypemakeScript>] <Variable>* [--regen] [--dummy] [--quiet] [--help]");
             Console.WriteLine(@"RetypemakeScript batch or bash file to get environment variables for diagnostics");
+            Console.WriteLine(@"Variable <Key>=<Value> additional environment variables that only take effect in the call");
             Console.WriteLine(@"--regen forcely regenerate project files");
             Console.WriteLine(@"--dummy generate dummy projects for non-targeting operating systems");
             Console.WriteLine(@"--quiet no interactive variable input, all variables must be input from environment variables");
