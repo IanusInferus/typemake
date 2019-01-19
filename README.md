@@ -27,3 +27,7 @@ Target Operating System vs Building Operating System
 You need to set a key to build Android release APK and iOS applications/dynamic libraries.
 
 You need to set Configuration - Debugger - Debug type to Native/Dual to debug C++ code in Android Studio.
+
+To use this repo in a project, just copy 'tools' directory to the project repo, and copy 'LICENSE' and 'README.md' into 'tools/TypeMake'.
+
+You may need to customize some code to cope with your project, mainly in directory 'Make' and 'Templates'.
