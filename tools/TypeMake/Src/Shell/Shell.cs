@@ -271,12 +271,13 @@ namespace TypeMake
         {
             public Dictionary<String, String> Variables = new Dictionary<String, String>();
             public Dictionary<String, List<String>> VariableSelections = new Dictionary<String, List<String>>();
+            public Dictionary<String, List<String>> VariableMultipleSelections = new Dictionary<String, List<String>>();
         }
         public class EnvironmentVariableReadOptions
         {
             public bool Quiet { get; set; } = false;
             public Func<String, int, bool, bool, String> Suggester { get; set; } = null;
-            public Func<String, bool> Validator { get; set; } = null;
+            public Func<String, KeyValuePair<bool, String>> Validator { get; set; } = null;
             public Func<String, String> PostMapper { get; set; } = null;
             public String DefaultValue { get; set; } = null;
             public String InputDisplay { get; set; } = null;
@@ -300,7 +301,7 @@ namespace TypeMake
             if (v == null)
             {
                 if (Options.Quiet) { throw new InvalidOperationException("Variable '" + Name + "' not exist."); }
-                Console.Write("'" + Name + "' not exist, input" + (d == "" ? "" : " " + d) + ": ");
+                Console.Write("'" + Name + "' not exist. Input" + (d == "" ? "" : " " + d) + ": ");
                 v = Options.IsPassword ? ReadLinePassword() : ReadLineWithSuggestion(Options.Suggester);
                 if (v == "")
                 {
@@ -314,10 +315,14 @@ namespace TypeMake
                     SetConsolePositionState(cpsNew);
                 }
             }
-            while ((Options.Validator != null) && !Options.Validator(v))
+            while (true)
             {
-                if (Options.Quiet) { throw new InvalidOperationException("Variable '" + Name + "' invalid."); }
-                Console.Write("'" + Name + "' invalid, input" + (d == "" ? "" : " " + d) + ": ");
+                if (Options.Validator == null) { break; }
+                var ValidationResult = Options.Validator(v);
+                if (ValidationResult.Key) { break; }
+                var ValidationMessage = ValidationResult.Value == "" ? "Variable '" + Name + "' invalid." : "Variable '" + Name + "' invalid. " + ValidationResult.Value;
+                if (Options.Quiet) { throw new InvalidOperationException(ValidationMessage); }
+                Console.Write(ValidationMessage + " Input" + (d == "" ? "" : " " + d) + ": ");
                 v = Options.IsPassword ? ReadLinePassword() : ReadLineWithSuggestion(Options.Suggester);
                 if (v == "")
                 {
@@ -365,9 +370,9 @@ namespace TypeMake
                 {
                     T o;
                     var b = Enum.TryParse<T>(v, true, out o);
-                    if (!Selections.Contains(o)) { return false; }
+                    if (!Selections.Contains(o)) { return new KeyValuePair<bool, String>(false, ""); }
                     Output = o;
-                    return b;
+                    return new KeyValuePair<bool, String>(b, "");
                 },
                 PostMapper = v => Output.ToString(),
                 DefaultValue = DefaultValue.ToString(),
@@ -389,12 +394,12 @@ namespace TypeMake
         }
         public static String RequireEnvironmentVariableSelection(EnvironmentVariableMemory Memory, String Name, bool Quiet, HashSet<String> Selections, String DefaultValue = "")
         {
-            var InputDisplay = String.Join("|", Selections.Select(c => c.Equals(DefaultValue) ? "[" + c.ToString() + "]" : c.ToString()));
+            var InputDisplay = String.Join("|", Selections.Select(c => c.Equals(DefaultValue) ? "[" + c + "]" : c));
             var s = RequireEnvironmentVariable(Memory, Name, new EnvironmentVariableReadOptions
             {
                 Quiet = Quiet,
                 Suggester = GetCaseInsensitiveSelectionSuggester(Selections),
-                Validator = v => Selections.Contains(v),
+                Validator = v => new KeyValuePair<bool, String>(Selections.Contains(v), ""),
                 DefaultValue = DefaultValue.ToString(),
                 InputDisplay = InputDisplay
             });
@@ -407,6 +412,36 @@ namespace TypeMake
                 Memory.VariableSelections.Add(Name, Selections.ToList());
             }
             return s;
+        }
+        public static List<String> RequireEnvironmentVariableMultipleSelection(EnvironmentVariableMemory Memory, String Name, bool Quiet, HashSet<String> Selections, Func<List<String>, KeyValuePair<bool, String>> Validator = null)
+        {
+            var InputDisplay = String.Join(" ", Selections);
+            var s = RequireEnvironmentVariable(Memory, Name, new EnvironmentVariableReadOptions
+            {
+                Quiet = Quiet,
+                Suggester = GetCaseInsensitiveMultipleSelectionSuggester(Selections),
+                Validator = v =>
+                {
+                    var Parts = v.Split(' ').Where(Part => Part != "").ToList();
+                    var UnknownSelections = Parts.Where(Part => !Selections.Contains(Part)).ToList();
+                    if (UnknownSelections.Count > 0) { return new KeyValuePair<bool, String>(false, $"Unknown selection: {String.Join(" ", UnknownSelections)}."); }
+                    var DuplicateSelections = Parts.GroupBy(Part => Part).Where(g => g.Count() > 1).Select(g => g.Key).ToList();
+                    if (DuplicateSelections.Count > 0) { return new KeyValuePair<bool, String>(false, $"Duplicate selection: {String.Join(" ", DuplicateSelections)}."); }
+                    if (Validator != null) { return Validator(Parts); }
+                    return new KeyValuePair<bool, String>(true, "");
+                },
+                DefaultValue = null,
+                InputDisplay = InputDisplay
+            });
+            if (Memory.VariableMultipleSelections.ContainsKey(Name))
+            {
+                Memory.VariableMultipleSelections[Name] = Selections.ToList();
+            }
+            else
+            {
+                Memory.VariableMultipleSelections.Add(Name, Selections.ToList());
+            }
+            return s.Split(' ').Where(Part => Part != "").ToList();
         }
         public static bool RequireEnvironmentVariableBoolean(EnvironmentVariableMemory Memory, String Name, bool Quiet, bool DefaultValue = false)
         {
@@ -422,16 +457,16 @@ namespace TypeMake
                     if (String.Equals(v, "False", StringComparison.OrdinalIgnoreCase))
                     {
                         Output = false;
-                        return true;
+                        return new KeyValuePair<bool, String>(true, "");
                     }
                     else if (String.Equals(v, "True", StringComparison.OrdinalIgnoreCase))
                     {
                         Output = true;
-                        return true;
+                        return new KeyValuePair<bool, String>(true, "");
                     }
                     else
                     {
-                        return false;
+                        return new KeyValuePair<bool, String>(false, "");
                     }
                 },
                 PostMapper = v => Output.ToString(),
@@ -440,27 +475,27 @@ namespace TypeMake
             });
             return Output;
         }
-        public static PathString RequireEnvironmentVariableFilePath(EnvironmentVariableMemory Memory, String Name, bool Quiet, PathString DefaultValue = null, Func<PathString, bool> Validator = null)
+        public static PathString RequireEnvironmentVariableFilePath(EnvironmentVariableMemory Memory, String Name, bool Quiet, PathString DefaultValue = null, Func<PathString, KeyValuePair<bool, String>> Validator = null)
         {
-            Func<String, bool> ValidatorWrapper = p => Validator(p);
+            Func<String, KeyValuePair<bool, String>> ValidatorWrapper = p => Validator(p);
             var s = RequireEnvironmentVariable(Memory, Name, new EnvironmentVariableReadOptions
             {
                 Quiet = Quiet,
                 Suggester = GetPathSuggester(true, true, DefaultValue),
-                Validator = Validator != null ? ValidatorWrapper : (p => File.Exists(p)),
+                Validator = Validator != null ? ValidatorWrapper : (p => File.Exists(p) ? new KeyValuePair<bool, String>(true, "") : new KeyValuePair<bool, String>(false, "File not found.")),
                 PostMapper = p => p.AsPath().FullPath,
                 DefaultValue = DefaultValue
             });
             return s;
         }
-        public static PathString RequireEnvironmentVariableDirectoryPath(EnvironmentVariableMemory Memory, String Name, bool Quiet, PathString DefaultValue = null, Func<PathString, bool> Validator = null)
+        public static PathString RequireEnvironmentVariableDirectoryPath(EnvironmentVariableMemory Memory, String Name, bool Quiet, PathString DefaultValue = null, Func<PathString, KeyValuePair<bool, String>> Validator = null)
         {
-            Func<String, bool> ValidatorWrapper = p => Validator(p);
+            Func<String, KeyValuePair<bool, String>> ValidatorWrapper = p => Validator(p);
             var s = RequireEnvironmentVariable(Memory, Name, new EnvironmentVariableReadOptions
             {
                 Quiet = Quiet,
                 Suggester = GetPathSuggester(false, true, DefaultValue),
-                Validator = Validator != null ? ValidatorWrapper : (p => Directory.Exists(p)),
+                Validator = Validator != null ? ValidatorWrapper : (p => Directory.Exists(p) ? new KeyValuePair<bool, String>(true, "") : new KeyValuePair<bool, String>(false, "Directory not found.")),
                 PostMapper = p => p.AsPath().FullPath,
                 DefaultValue = DefaultValue
             });
@@ -525,6 +560,24 @@ namespace TypeMake
                     }
                 }
                 return FirstMatched ?? (Cycle ? v : vConfirmed);
+            };
+        }
+        private static Func<String, int, bool, bool, String> GetCaseInsensitiveMultipleSelectionSuggester(IEnumerable<String> Selections)
+        {
+            var Inner = GetCaseInsensitiveSelectionSuggester(Selections);
+            return (v, ConfirmedLength, Cycle, CyclePrevious) =>
+            {
+                var StartOfLastSelection = 0;
+                if (ConfirmedLength > 0)
+                {
+                    var StartOfLastSpace = v.LastIndexOf(' ', ConfirmedLength - 1);
+                    if (StartOfLastSpace >= 0)
+                    {
+                        StartOfLastSelection = StartOfLastSpace + 1;
+                    }
+                }
+                var vLast = v.Substring(StartOfLastSelection);
+                return v.Substring(0, StartOfLastSelection) + Inner(vLast, ConfirmedLength - StartOfLastSelection, Cycle, CyclePrevious);
             };
         }
         private static Func<String, int, bool, bool, String> GetPathSuggester(bool EnableFile, bool EnableDirectory, PathString DefaultValue)

@@ -12,20 +12,6 @@ namespace TypeMake
     {
         private const String SolutionName = "TypeMakeSample";
 
-        private Dictionary<String, List<String>> ModuleDependencies =
-            new Dictionary<String, List<String>>
-            {
-                //Modules
-                { "math", new List<String> { "core" } },
-
-                //products
-                { "basic.static", new List<String> { "math" } },
-                { "standard.dynamic", new List<String> { "math" } },
-                { "hello.executable", new List<String> { "math" } },
-                { "hello.executable.ios", new List<String> { "math" } },
-                { "hello.gradle.android", new List<String> { "math" } },
-            };
-
         private ToolchainType Toolchain;
         private CompilerType Compiler;
         private OperatingSystemType BuildingOperatingSystem;
@@ -55,15 +41,51 @@ namespace TypeMake
             this.EnableNonTargetingOperatingSystemDummy = EnableNonTargetingOperatingSystemDummy;
         }
 
-        public class Result
+        public class TargetDefinition
         {
-            public String SolutionName;
-            public List<KeyValuePair<ProjectReference, List<ProjectReference>>> Projects;
-            public List<ProjectReference> SortedProjects;
+            public String ProjectId;
+            public String Name;
+            public PathString PhysicalPath;
+            public PathString VirtualDir;
+            public PathString ProjectFilePath;
+            public List<PathString> ExposedIncludeDirectories;
+            public Dictionary<String, bool> DependentTargetToRequirement;
+            public bool IsModule;
+            public bool IsTargetOperatingSystemMatched;
+            public TargetType Type;
         }
-        public Result Execute()
+        public Dictionary<String, TargetDefinition> GetAvailableTargets()
         {
-            var Projects = new List<KeyValuePair<ProjectReference, List<ProjectReference>>>();
+            var TargetDependencies = new Dictionary<String, Dictionary<String, bool>>();
+
+            void Add(String Depender, String Dependee, bool IsRequired = true)
+            {
+                if (TargetDependencies.ContainsKey(Depender))
+                {
+                    var d = TargetDependencies[Depender];
+                    if (d.ContainsKey(Dependee))
+                    {
+                        throw new ArgumentException();
+                    }
+                    d.Add(Dependee, IsRequired);
+                }
+                else
+                {
+                    TargetDependencies.Add(Depender, new Dictionary<String, bool> { [Dependee] = IsRequired });
+                }
+            }
+
+            //modules
+            Add("math", "core");
+
+            //products
+            Add("basic.static", "math");
+            Add("standard.dynamic", "math");
+            Add("hello.executable", "math");
+            Add("hello.executable.ios", "math");
+            Add("hello.gradle.android", "math");
+
+            var Targets = new List<TargetDefinition>();
             foreach (var ModulePath in Directory.EnumerateDirectories(SourceDirectory / "modules", "*", SearchOption.TopDirectoryOnly).Select(p => p.AsPath()))
             {
                 var ModuleName = ModulePath.FileName;
@@ -71,19 +93,23 @@ namespace TypeMake
                 var IsTargetOperatingSystemMatched = IsOperatingSystemMatchExtensions(Extensions, TargetOperatingSystem);
                 if (IsTargetOperatingSystemMatched || EnableNonTargetingOperatingSystemDummy)
                 {
-                    Projects.Add(GenerateModuleProject(ModuleName, ModulePath, IsTargetOperatingSystemMatched));
-                    if (!((TargetOperatingSystem == OperatingSystemType.Android) || (TargetOperatingSystem == OperatingSystemType.iOS)))
+                    var DependentModuleToRequirement = TargetDependencies.ContainsKey(ModuleName) ? TargetDependencies[ModuleName] : new Dictionary<String, bool>();
+                    Targets.Add(new TargetDefinition
                     {
-                        foreach (var TestFile in GetFilesInDirectory(ModulePath / "test", TargetOperatingSystem, IsTargetOperatingSystemMatched))
-                        {
-                            if (TestFile.Type != FileType.CppSource) { continue; }
-                            var TestName = ModuleName + "_" + Regex.Replace(TestFile.Path.FullPath.RelativeTo(ModulePath), @"[\\/]", "_").AsPath().FileNameWithoutExtension;
-                            Projects.Add(GenerateTestProject(ModuleName, ModulePath, TestName, TestFile, IsTargetOperatingSystemMatched));
-                        }
-                    }
+                        ProjectId = GetIdForProject(ModuleName),
+                        Name = ModuleName,
+                        PhysicalPath = ModulePath,
+                        VirtualDir = "modules",
+                        ProjectFilePath = BuildDirectory / "projects" / GetProjectFileName(ModuleName),
+                        ExposedIncludeDirectories = new List<PathString> { (ModulePath / "include").FullPath },
+                        DependentTargetToRequirement = DependentModuleToRequirement,
+                        IsModule = true,
+                        IsTargetOperatingSystemMatched = IsTargetOperatingSystemMatched,
+                        Type = TargetType.StaticLibrary
+                    });
                 }
             }
-            var GradleProjectNames = new List<String>();
+
             foreach (var ProductPath in Directory.EnumerateDirectories(SourceDirectory / "products", "*", SearchOption.TopDirectoryOnly))
             {
                 var ProductName = ProductPath.AsPath().FileName;
@@ -94,12 +120,10 @@ namespace TypeMake
                     if (Extensions.Contains("dynamic", StringComparer.OrdinalIgnoreCase))
                     {
                         ProductTargetType = TargetType.GradleLibrary;
-                        GradleProjectNames.Add(ProductName);
                     }
                     else
                     {
                         ProductTargetType = TargetType.GradleApplication;
-                        GradleProjectNames.Add(ProductName);
                     }
                 }
                 else if (Extensions.Contains("dynamic", StringComparer.OrdinalIgnoreCase))
@@ -121,9 +145,101 @@ namespace TypeMake
                 }
                 if (IsTargetOperatingSystemMatched || EnableNonTargetingOperatingSystemDummy)
                 {
-                    Projects.Add(GenerateProductProject(ProductName, ProductPath, ProductTargetType, IsTargetOperatingSystemMatched));
+                    var DependentModuleToRequirement = TargetDependencies.ContainsKey(ProductName) ? TargetDependencies[ProductName] : new Dictionary<String, bool>();
+                    Targets.Add(new TargetDefinition
+                    {
+                        ProjectId = GetIdForProject(ProductName),
+                        Name = ProductName,
+                        PhysicalPath = ProductPath,
+                        VirtualDir = "products",
+                        ProjectFilePath = BuildDirectory / "projects" / GetProjectFileName(ProductName),
+                        ExposedIncludeDirectories = new List<PathString> { },
+                        DependentTargetToRequirement = DependentModuleToRequirement,
+                        IsModule = false,
+                        IsTargetOperatingSystemMatched = IsTargetOperatingSystemMatched,
+                        Type = ProductTargetType
+                    });
                 }
             }
+
+            var DuplicateTargetNames = Targets.GroupBy(Target => Target.Name, StringComparer.OrdinalIgnoreCase).Where(g => g.Count() > 1).Select(g => g.Key).ToList();
+            if (DuplicateTargetNames.Count > 0)
+            {
+                throw new InvalidOperationException("DuplicateTargetNames: " + String.Join(" ", DuplicateTargetNames));
+            }
+            return Targets.ToDictionary(Target => Target.Name);
+        }
+
+        public Dictionary<String, List<String>> CheckUnresolvedDependencies(Dictionary<String, TargetDefinition> SelectedTargets)
+        {
+            var UnresolvedDependencies = new Dictionary<String, List<String>>();
+            var TargetDependencies = SelectedTargets.Values.ToDictionary(Target => Target.Name, Target => Target.DependentTargetToRequirement);
+            foreach (var Target in SelectedTargets.Values)
+            {
+                var FullDependentTargetToRequirement = GetFullTargetDependencies(Target.Name, TargetDependencies, out var Unresovled);
+                if (Unresovled.Count > 0)
+                {
+                    UnresolvedDependencies.Add(Target.Name, Unresovled);
+                }
+            }
+            return UnresolvedDependencies;
+        }
+
+        public class Result
+        {
+            public String SolutionName;
+            public List<KeyValuePair<ProjectReference, List<ProjectReference>>> Projects;
+            public List<ProjectReference> SortedProjects;
+        }
+        public Result Execute(Dictionary<String, TargetDefinition> SelectedTargets)
+        {
+            var TargetDependencies = SelectedTargets.Values.ToDictionary(Target => Target.Name, Target => Target.DependentTargetToRequirement);
+            var TargetProjectReferences = SelectedTargets.Values.Select(Target => new ProjectReference { Id = Target.ProjectId, Name = Target.Name, VirtualDir = Target.VirtualDir, FilePath = Target.ProjectFilePath }).ToDictionary(p => p.Name);
+            var Projects = new List<KeyValuePair<ProjectReference, List<ProjectReference>>>();
+            foreach (var Target in SelectedTargets.Values)
+            {
+                var FullDependentTargetToRequirement = GetFullTargetDependencies(Target.Name, TargetDependencies, out var Unresovled);
+                if (Unresovled.Count > 0)
+                {
+                    throw new InvalidOperationException($"UnresolvedDependencies: {Target.Name} -> {String.Join(" ", Unresovled)}");
+                }
+                var ProjectRefence = TargetProjectReferences[Target.Name];
+                var DependentProjectReferences = FullDependentTargetToRequirement.Select(d => TargetProjectReferences[d]).ToList();
+                var DependentProjectIncludeDirectories = FullDependentTargetToRequirement.SelectMany(d => SelectedTargets[d].ExposedIncludeDirectories).ToList();
+                if (Target.IsModule)
+                {
+                    var p = CreateModuleProject(ProjectRefence, DependentProjectIncludeDirectories, Target.PhysicalPath, Target.IsTargetOperatingSystemMatched);
+                    GenerateProject(p, ProjectRefence, DependentProjectReferences, Target.PhysicalPath, Target.ProjectFilePath.Parent, Target.Type);
+                    Projects.Add(new KeyValuePair<ProjectReference, List<ProjectReference>>(ProjectRefence, DependentProjectReferences));
+                    if (!((TargetOperatingSystem == OperatingSystemType.Android) || (TargetOperatingSystem == OperatingSystemType.iOS)))
+                    {
+                        foreach (var TestFile in GetFilesInDirectory(Target.PhysicalPath / "test", TargetOperatingSystem, Target.IsTargetOperatingSystemMatched))
+                        {
+                            if (TestFile.Type != FileType.CppSource) { continue; }
+                            var TestName = Target.Name + "_" + Regex.Replace(TestFile.Path.FullPath.RelativeTo(Target.PhysicalPath), @"[\\/]", "_").AsPath().FileNameWithoutExtension;
+                            var TestProjectReference = new ProjectReference
+                            {
+                                Id = GetIdForProject(TestName),
+                                Name = TestName,
+                                VirtualDir = "modules",
+                                FilePath = BuildDirectory / "projects" / GetProjectFileName(TestName)
+                            };
+                            var TestDependentProjectReferences = DependentProjectReferences.Concat(new List<ProjectReference> { ProjectRefence }).ToList();
+                            var TestDependentProjectIncludeDirectories = DependentProjectIncludeDirectories.Concat(Target.ExposedIncludeDirectories).ToList();
+                            var tp = CreateTestProject(TestProjectReference, DependentProjectIncludeDirectories, Target.PhysicalPath, TestFile, Target.IsTargetOperatingSystemMatched);
+                            GenerateProject(tp, TestProjectReference, TestDependentProjectReferences, Target.PhysicalPath, Target.ProjectFilePath.Parent, Target.Type);
+                            Projects.Add(new KeyValuePair<ProjectReference, List<ProjectReference>>(TestProjectReference, TestDependentProjectReferences));
+                        }
+                    }
+                }
+                else
+                {
+                    var p = CreateProductProject(ProjectRefence, DependentProjectIncludeDirectories, Target.PhysicalPath, Target.Type, Target.IsTargetOperatingSystemMatched);
+                    GenerateProject(p, ProjectRefence, DependentProjectReferences, Target.PhysicalPath, Target.ProjectFilePath.Parent, Target.Type);
+                    Projects.Add(new KeyValuePair<ProjectReference, List<ProjectReference>>(ProjectRefence, DependentProjectReferences));
+                }
+            }
+            var GradleProjectNames = SelectedTargets.Values.Where(Target => (Target.Type == TargetType.GradleLibrary) || (Target.Type == TargetType.GradleApplication)).Select(Target => Target.Name).ToList();
             var ProjectDict = Projects.ToDictionary(p => p.Key.Name, p => p.Key);
             var ProjectDependencies = Projects.ToDictionary(p => ProjectDict[p.Key.Name], p => p.Value.Select(n => ProjectDict[n.Name]).ToList());
             var SortedProjects = Projects.Select(p => p.Key).PartialOrderBy(p => ProjectDependencies.ContainsKey(p) ? ProjectDependencies[p] : null).ToList();
@@ -158,13 +274,12 @@ namespace TypeMake
             return new Result { SolutionName = SolutionName, Projects = Projects, SortedProjects = SortedProjects };
         }
 
-        private KeyValuePair<ProjectReference, List<ProjectReference>> GenerateModuleProject(String ModuleName, PathString ModulePath, bool IsTargetOperatingSystemMatched)
+        private Project CreateModuleProject(ProjectReference ProjectRefence, List<PathString> DependentProjectIncludeDirectories, PathString InputDirectory, bool IsTargetOperatingSystemMatched)
         {
             var InlcudeDirectories = new List<PathString> { };
-            var SourceDirectories = new List<PathString> { ModulePath / "include", ModulePath / "src" };
+            var SourceDirectories = new List<PathString> { InputDirectory / "include", InputDirectory / "src" };
             var Libs = new List<PathString> { };
             var Files = SourceDirectories.SelectMany(d => GetFilesInDirectory(d, TargetOperatingSystem, IsTargetOperatingSystemMatched)).ToList();
-            var ProjectReferences = new List<ProjectReference> { };
 
             var RelativeIncludeDirectories = new List<String>
             {
@@ -173,23 +288,13 @@ namespace TypeMake
             };
             foreach (var RelativeIncludeDirectory in RelativeIncludeDirectories)
             {
-                InlcudeDirectories.Add((ModulePath / RelativeIncludeDirectory).FullPath);
+                InlcudeDirectories.Add((InputDirectory / RelativeIncludeDirectory).FullPath);
             }
-            foreach (var ReferenceModule in GetAllModuleDependencies(ModuleName, false))
-            {
-                InlcudeDirectories.Add((ModulePath.Parent / ReferenceModule / "include").FullPath);
-                ProjectReferences.Add(new ProjectReference
-                {
-                    Id = GetIdForProject(ReferenceModule),
-                    Name = ReferenceModule,
-                    VirtualDir = "modules/" + ReferenceModule,
-                    FilePath = BuildDirectory / "projects" / GetProjectFileName(ReferenceModule)
-                });
-            }
+            InlcudeDirectories.AddRange(DependentProjectIncludeDirectories);
 
-            var p = new Project
+            return new Project
             {
-                Name = ModuleName,
+                Name = ProjectRefence.Name,
                 Configurations = (new List<Configuration>
                 {
                     new Configuration
@@ -201,48 +306,12 @@ namespace TypeMake
                     }
                 }).Concat(GetCommonConfigurations()).ToList()
             };
-            if (Toolchain == ToolchainType.Windows_VisualC)
-            {
-                var VcxprojTemplateText = Resource.GetResourceText(@"Templates\vc15\Default.vcxproj");
-                var VcxprojFilterTemplateText = Resource.GetResourceText(@"Templates\vc15\Default.vcxproj.filters");
-                var g = new VcxprojGenerator(p, GetIdForProject(ModuleName), ProjectReferences, ModulePath, BuildDirectory / "projects", VcxprojTemplateText, VcxprojFilterTemplateText, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem);
-                g.Generate(ForceRegenerate);
-            }
-            else if (Toolchain == ToolchainType.Mac_XCode)
-            {
-                var PbxprojTemplateText = Resource.GetResourceText(@"Templates\xcode9\Default.xcodeproj\project.pbxproj");
-                var g = new PbxprojGenerator(p, ProjectReferences, ModulePath, BuildDirectory / "projects", PbxprojTemplateText, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, XCodeDevelopmentTeam);
-                g.Generate(ForceRegenerate);
-            }
-            else if (Toolchain == ToolchainType.CMake)
-            {
-                var g = new CMakeProjectGenerator(p, ProjectReferences, ModulePath, BuildDirectory / "projects", Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture);
-                g.Generate(ForceRegenerate);
-            }
-            else if (Toolchain == ToolchainType.Gradle_CMake)
-            {
-                var g = new CMakeProjectGenerator(p, ProjectReferences, ModulePath, BuildDirectory / "projects", Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture);
-                g.Generate(ForceRegenerate);
-            }
-            else
-            {
-                throw new NotSupportedException();
-            }
-            return new KeyValuePair<ProjectReference, List<ProjectReference>>(new ProjectReference
-            {
-                Id = GetIdForProject(ModuleName),
-                Name = ModuleName,
-                VirtualDir = "modules/" + ModuleName,
-                FilePath = BuildDirectory / "projects" / GetProjectFileName(ModuleName)
-            }, ProjectReferences);
         }
-        private KeyValuePair<ProjectReference, List<ProjectReference>> GenerateTestProject(String ModuleName, PathString ModulePath, String TestName, Cpp.File TestFile, bool IsTargetOperatingSystemMatched)
+        private Project CreateTestProject(ProjectReference ProjectRefence, List<PathString> DependentProjectIncludeDirectories, PathString InputDirectory, Cpp.File TestFile, bool IsTargetOperatingSystemMatched)
         {
             var InlcudeDirectories = new List<PathString> { };
-            var SourceDirectories = new List<PathString> { ModulePath / "include", ModulePath / "src" };
             var Libs = new List<PathString> { };
             var Files = new List<Cpp.File> { TestFile };
-            var ProjectReferences = new List<ProjectReference> { };
 
             var RelativeIncludeDirectories = new List<String>
             {
@@ -251,23 +320,13 @@ namespace TypeMake
             };
             foreach (var RelativeIncludeDirectory in RelativeIncludeDirectories)
             {
-                InlcudeDirectories.Add((ModulePath / RelativeIncludeDirectory).FullPath);
+                InlcudeDirectories.Add((InputDirectory / RelativeIncludeDirectory).FullPath);
             }
-            foreach (var ReferenceModule in GetAllModuleDependencies(ModuleName, true))
-            {
-                InlcudeDirectories.Add((ModulePath.Parent / ReferenceModule / "include").FullPath);
-                ProjectReferences.Add(new ProjectReference
-                {
-                    Id = GetIdForProject(ReferenceModule),
-                    Name = ReferenceModule,
-                    VirtualDir = "modules/" + ReferenceModule,
-                    FilePath = BuildDirectory / "projects" / GetProjectFileName(ReferenceModule)
-                });
-            }
+            InlcudeDirectories.AddRange(DependentProjectIncludeDirectories);
 
-            var p = new Project
+            return new Project
             {
-                Name = TestName,
+                Name = ProjectRefence.Name,
                 Configurations = (new List<Configuration>
                 {
                     new Configuration
@@ -279,46 +338,12 @@ namespace TypeMake
                     },
                 }).Concat(GetCommonConfigurations()).ToList()
             };
-            if (Toolchain == ToolchainType.Windows_VisualC)
-            {
-                var VcxprojTemplateText = Resource.GetResourceText(@"Templates\vc15\Default.vcxproj");
-                var VcxprojFilterTemplateText = Resource.GetResourceText(@"Templates\vc15\Default.vcxproj.filters");
-                var g = new VcxprojGenerator(p, GetIdForProject(TestName), ProjectReferences, TestFile.Path.Parent, BuildDirectory / "projects", VcxprojTemplateText, VcxprojFilterTemplateText, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem);
-                g.Generate(ForceRegenerate);
-            }
-            else if (Toolchain == ToolchainType.Mac_XCode)
-            {
-                var PbxprojTemplateText = Resource.GetResourceText(@"Templates\xcode9\Default.xcodeproj\project.pbxproj");
-                var g = new PbxprojGenerator(p, ProjectReferences, TestFile.Path.Parent, BuildDirectory / "projects", PbxprojTemplateText, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, XCodeDevelopmentTeam);
-                g.Generate(ForceRegenerate);
-            }
-            else if (Toolchain == ToolchainType.CMake)
-            {
-                var g = new CMakeProjectGenerator(p, ProjectReferences, TestFile.Path.Parent, BuildDirectory / "projects", Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture);
-                g.Generate(ForceRegenerate);
-            }
-            else if (Toolchain == ToolchainType.Gradle_CMake)
-            {
-                var g = new CMakeProjectGenerator(p, ProjectReferences, TestFile.Path.Parent, BuildDirectory / "projects", Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture);
-                g.Generate(ForceRegenerate);
-            }
-            else
-            {
-                throw new NotSupportedException();
-            }
-            return new KeyValuePair<ProjectReference, List<ProjectReference>>(new ProjectReference
-            {
-                Id = GetIdForProject(TestName),
-                Name = TestName,
-                VirtualDir = "modules/" + ModuleName,
-                FilePath = BuildDirectory / "projects" / GetProjectFileName(TestName)
-            }, ProjectReferences);
         }
-        private KeyValuePair<ProjectReference, List<ProjectReference>> GenerateProductProject(String ProductName, PathString ProductPath, TargetType ProductTargetType, bool IsTargetOperatingSystemMatched)
+        private Project CreateProductProject(ProjectReference ProjectRefence, List<PathString> DependentProjectIncludeDirectories, PathString InputDirectory, TargetType ProductTargetType, bool IsTargetOperatingSystemMatched)
         {
-            var InlcudeDirectories = new List<PathString> { ProductPath };
+            var InlcudeDirectories = new List<PathString> { InputDirectory };
             var Defines = new List<KeyValuePair<String, String>> { };
-            var SourceDirectories = new List<PathString> { ProductPath };
+            var SourceDirectories = new List<PathString> { InputDirectory };
             var Libs = new List<PathString> { };
             var Files = SourceDirectories.SelectMany(d => GetFilesInDirectory(d, TargetOperatingSystem, IsTargetOperatingSystemMatched)).ToList();
             var ProjectReferences = new List<ProjectReference> { };
@@ -330,19 +355,13 @@ namespace TypeMake
             };
             foreach (var RelativeIncludeDirectory in RelativeIncludeDirectories)
             {
-                InlcudeDirectories.Add((ProductPath / RelativeIncludeDirectory).FullPath);
+                InlcudeDirectories.Add((InputDirectory / RelativeIncludeDirectory).FullPath);
             }
-            foreach (var ReferenceModule in GetAllModuleDependencies(ProductName, false))
+            foreach (var RelativeIncludeDirectory in RelativeIncludeDirectories)
             {
-                InlcudeDirectories.Add((ProductPath.Parent.Parent / "modules" / ReferenceModule / "include").FullPath);
-                ProjectReferences.Add(new ProjectReference
-                {
-                    Id = GetIdForProject(ReferenceModule),
-                    Name = ReferenceModule,
-                    VirtualDir = "modules/" + ReferenceModule,
-                    FilePath = BuildDirectory / "projects" / GetProjectFileName(ReferenceModule)
-                });
+                InlcudeDirectories.Add((InputDirectory / RelativeIncludeDirectory).FullPath);
             }
+            InlcudeDirectories.AddRange(DependentProjectIncludeDirectories);
 
             if (ProductTargetType == TargetType.Executable)
             {
@@ -369,10 +388,10 @@ namespace TypeMake
             {
                 throw new InvalidOperationException();
             }
-            var TargetName = ProductName.Split('.').Take(1).Single();
-            var p = new Project
+            var TargetName = ProjectRefence.Name.Split('.').Take(1).Single();
+            return new Project
             {
-                Name = ProductName,
+                Name = ProjectRefence.Name,
                 TargetName = TargetName,
                 Configurations = (new List<Configuration>
                 {
@@ -391,38 +410,42 @@ namespace TypeMake
                     }
                 }).Concat(GetCommonConfigurations()).ToList()
             };
+        }
+
+        private void GenerateProject(Project p, ProjectReference ProjectRefence, List<ProjectReference> ProjectReferences, PathString InputDirectory, PathString OutputDirectory, TargetType ProjectTargetType)
+        {
             if (Toolchain == ToolchainType.Windows_VisualC)
             {
                 var VcxprojTemplateText = Resource.GetResourceText(@"Templates\vc15\Default.vcxproj");
                 var VcxprojFilterTemplateText = Resource.GetResourceText(@"Templates\vc15\Default.vcxproj.filters");
-                var g = new VcxprojGenerator(p, GetIdForProject(ProductName), ProjectReferences, ProductPath, BuildDirectory / "projects", VcxprojTemplateText, VcxprojFilterTemplateText, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem);
+                var g = new VcxprojGenerator(p, ProjectRefence.Id, ProjectReferences, InputDirectory, OutputDirectory, VcxprojTemplateText, VcxprojFilterTemplateText, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem);
                 g.Generate(ForceRegenerate);
             }
             else if (Toolchain == ToolchainType.Mac_XCode)
             {
                 var PbxprojTemplateText = Resource.GetResourceText(@"Templates\xcode9\Default.xcodeproj\project.pbxproj");
-                var g = new PbxprojGenerator(p, ProjectReferences, ProductPath, BuildDirectory / "projects", PbxprojTemplateText, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, XCodeDevelopmentTeam);
+                var g = new PbxprojGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, PbxprojTemplateText, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, XCodeDevelopmentTeam);
                 g.Generate(ForceRegenerate);
             }
             else if (Toolchain == ToolchainType.CMake)
             {
-                var g = new CMakeProjectGenerator(p, ProjectReferences, ProductPath, BuildDirectory / "projects", Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture);
+                var g = new CMakeProjectGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture);
                 g.Generate(ForceRegenerate);
             }
             else if (Toolchain == ToolchainType.Gradle_CMake)
             {
-                var g = new CMakeProjectGenerator(p, ProjectReferences, ProductPath, BuildDirectory / "projects", Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture);
+                var g = new CMakeProjectGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture);
                 g.Generate(ForceRegenerate);
-                if (ProductTargetType == TargetType.GradleApplication)
+                if (ProjectTargetType == TargetType.GradleApplication)
                 {
                     var BuildGradleTemplateText = Resource.GetResourceText(@"Templates\gradle_application\build.gradle");
-                    var gGradle = new GradleProjectGenerator(SolutionName, p, ProjectReferences, ProductPath, BuildDirectory / "gradle", BuildDirectory, BuildGradleTemplateText, Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture);
+                    var gGradle = new GradleProjectGenerator(SolutionName, p, ProjectReferences, InputDirectory, OutputDirectory, BuildDirectory, BuildGradleTemplateText, Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture);
                     gGradle.Generate(ForceRegenerate);
                 }
-                else if (ProductTargetType == TargetType.GradleLibrary)
+                else if (ProjectTargetType == TargetType.GradleLibrary)
                 {
                     var BuildGradleTemplateText = Resource.GetResourceText(@"Templates\gradle_library\build.gradle");
-                    var gGradle = new GradleProjectGenerator(SolutionName, p, ProjectReferences, ProductPath, BuildDirectory / "gradle", BuildDirectory, BuildGradleTemplateText, Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture);
+                    var gGradle = new GradleProjectGenerator(SolutionName, p, ProjectReferences, InputDirectory, OutputDirectory, BuildDirectory, BuildGradleTemplateText, Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture);
                     gGradle.Generate(ForceRegenerate);
                 }
             }
@@ -430,13 +453,6 @@ namespace TypeMake
             {
                 throw new NotSupportedException();
             }
-            return new KeyValuePair<ProjectReference, List<ProjectReference>>(new ProjectReference
-            {
-                Id = GetIdForProject(ProductName),
-                Name = ProductName,
-                VirtualDir = "products",
-                FilePath = BuildDirectory / "projects" / GetProjectFileName(ProductName)
-            }, ProjectReferences);
         }
 
         private List<Configuration> GetCommonConfigurations()
@@ -550,30 +566,38 @@ namespace TypeMake
                 throw new NotSupportedException();
             }
         }
-        private List<String> GetAllModuleDependencies(String ModuleName, bool ContainSelf)
+        private static List<String> GetFullTargetDependencies(String TargetName, Dictionary<String, Dictionary<String, bool>> TargetDependencies, out List<String> UnresovledDependencies)
         {
-            var l = new List<String>();
+            var Full = new List<String>();
+            var Unresovled = new List<String>();
             var Added = new HashSet<String>();
-            var Queue = new Queue<String>();
-            Queue.Enqueue(ModuleName);
+            var Queue = new Queue<KeyValuePair<String, bool>>();
+            Queue.Enqueue(new KeyValuePair<String, bool>(TargetName, true));
             while (Queue.Count > 0)
             {
                 var m = Queue.Dequeue();
-                if (Added.Contains(m)) { continue; }
-                if (!((Added.Count == 0) && !ContainSelf))
+                if (Added.Contains(m.Key)) { continue; }
+                if (!m.Value)
                 {
-                    l.Add(m);
+                    if (!TargetDependencies.ContainsKey(m.Key)) { continue; }
                 }
-                Added.Add(m);
-                if (ModuleDependencies.ContainsKey(m))
+                if (!TargetDependencies.ContainsKey(m.Key))
                 {
-                    foreach (var d in ModuleDependencies[m])
-                    {
-                        Queue.Enqueue(d);
-                    }
+                    Unresovled.Add(m.Key);
+                    continue;
+                }
+                if (Added.Count != 0)
+                {
+                    Full.Add(m.Key);
+                }
+                Added.Add(m.Key);
+                foreach (var d in TargetDependencies[m.Key])
+                {
+                    Queue.Enqueue(d);
                 }
             }
-            return l;
+            UnresovledDependencies = Unresovled;
+            return Full;
         }
         private String GetProjectFileName(String ProjectName)
         {

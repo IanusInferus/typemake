@@ -143,7 +143,7 @@ namespace TypeMake
 
             if (TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
             {
-                BuildDirectory = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "BuildDirectory", Quiet, "build/windows".AsPath(), p => !File.Exists(p));
+                BuildDirectory = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "BuildDirectory", Quiet, "build/windows".AsPath(), p => !File.Exists(p) ? new KeyValuePair<bool, String>(true, "") : new KeyValuePair<bool, String>(false, "Exist as a file."));
                 var VSDir = "";
                 var TargetArchitecture = Cpp.ArchitectureType.x86_64;
                 var Configuration = Cpp.ConfigurationType.Debug;
@@ -168,7 +168,9 @@ namespace TypeMake
                     Configuration = Shell.RequireEnvironmentVariableEnum(Memory, "Configuration", Quiet, Cpp.ConfigurationType.Debug);
                 }
                 var m = new Make(Cpp.ToolchainType.Windows_VisualC, Cpp.CompilerType.VisualC, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, SourceDirectory, BuildDirectory, null, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
-                var r = m.Execute();
+                var Targets = m.GetAvailableTargets();
+                var SelectedTargets = GetSelectedTargets(Memory, Quiet, Targets, m.CheckUnresolvedDependencies);
+                var r = m.Execute(SelectedTargets);
                 GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, ForceRegenerate);
                 if (BuildAfterGenerate)
                 {
@@ -185,7 +187,7 @@ namespace TypeMake
                     }
                     else
                     {
-                        Console.Error.WriteLine("Cross compiling to Windows is not supported.");
+                        WriteLineError("Cross compiling to Windows is not supported.");
                     }
                 }
             }
@@ -193,7 +195,7 @@ namespace TypeMake
             {
                 Cpp.ConfigurationType Configuration;
                 Configuration = Shell.RequireEnvironmentVariableEnum(Memory, "Configuration", Quiet, Cpp.ConfigurationType.Debug);
-                BuildDirectory = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "BuildDirectory", Quiet, $"build/linux_{Configuration}".AsPath(), p => !File.Exists(p));
+                BuildDirectory = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "BuildDirectory", Quiet, $"build/linux_{Configuration}".AsPath(), p => !File.Exists(p) ? new KeyValuePair<bool, String>(true, "") : new KeyValuePair<bool, String>(false, "Exist as a file."));
                 var CMake = "".AsPath();
                 var Make = "".AsPath();
                 if (BuildingOperatingSystem == Cpp.OperatingSystemType.Windows)
@@ -207,7 +209,9 @@ namespace TypeMake
                     Make = Shell.RequireEnvironmentVariableFilePath(Memory, "Make", Quiet, Shell.TryLocate("make") ?? "");
                 }
                 var m = new Make(Cpp.ToolchainType.CMake, Cpp.CompilerType.gcc, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, SourceDirectory, BuildDirectory, null, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
-                m.Execute();
+                var Targets = m.GetAvailableTargets();
+                var SelectedTargets = GetSelectedTargets(Memory, Quiet, Targets, m.CheckUnresolvedDependencies);
+                m.Execute(SelectedTargets);
                 GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, ForceRegenerate);
                 GenerateBuildScriptLinux(BuildingOperatingSystem, BuildDirectory, Configuration, CMake, Make, ForceRegenerate);
                 if (BuildAfterGenerate)
@@ -224,16 +228,18 @@ namespace TypeMake
                         }
                         else
                         {
-                            Console.Error.WriteLine("Cross compiling to Linux is not supported.");
+                            WriteLineError("Cross compiling to Linux is not supported.");
                         }
                     }
                 }
             }
             else if (TargetOperatingSystem == Cpp.OperatingSystemType.Mac)
             {
-                BuildDirectory = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "BuildDirectory", Quiet, "build/mac".AsPath(), p => !File.Exists(p));
+                BuildDirectory = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "BuildDirectory", Quiet, "build/mac".AsPath(), p => !File.Exists(p) ? new KeyValuePair<bool, String>(true, "") : new KeyValuePair<bool, String>(false, "Exist as a file."));
                 var m = new Make(Cpp.ToolchainType.Mac_XCode, Cpp.CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, SourceDirectory, BuildDirectory, null, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
-                var r = m.Execute();
+                var Targets = m.GetAvailableTargets();
+                var SelectedTargets = GetSelectedTargets(Memory, Quiet, Targets, m.CheckUnresolvedDependencies);
+                var r = m.Execute(SelectedTargets);
                 GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, ForceRegenerate);
                 GenerateBuildScriptXCode(BuildingOperatingSystem, BuildDirectory, r, ForceRegenerate);
                 if (BuildAfterGenerate)
@@ -246,18 +252,19 @@ namespace TypeMake
                         }
                         else
                         {
-                            Console.Error.WriteLine("Cross compiling to Mac is not supported.");
+                            WriteLineError("Cross compiling to Mac is not supported.");
                         }
                     }
                 }
             }
             else if (TargetOperatingSystem == Cpp.OperatingSystemType.iOS)
             {
-                BuildDirectory = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "BuildDirectory", Quiet, "build/ios".AsPath(), p => !File.Exists(p));
+                BuildDirectory = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "BuildDirectory", Quiet, "build/ios".AsPath(), p => !File.Exists(p) ? new KeyValuePair<bool, String>(true, "") : new KeyValuePair<bool, String>(false, "Exist as a file."));
                 var DevelopmentTeam = Shell.RequireEnvironmentVariable(Memory, "DevelopmentTeam", new Shell.EnvironmentVariableReadOptions { Quiet = Quiet, PostMapper = v => v == "" ? null : v, InputDisplay = "(optional, find by search an existing pbxproj file with DEVELOPMENT_TEAM)" });
                 var m = new Make(Cpp.ToolchainType.Mac_XCode, Cpp.CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, SourceDirectory, BuildDirectory, DevelopmentTeam, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
-                m.Execute();
-                var r = m.Execute();
+                var Targets = m.GetAvailableTargets();
+                var SelectedTargets = GetSelectedTargets(Memory, Quiet, Targets, m.CheckUnresolvedDependencies);
+                var r = m.Execute(SelectedTargets);
                 GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, ForceRegenerate);
                 GenerateBuildScriptXCode(BuildingOperatingSystem, BuildDirectory, r, ForceRegenerate);
                 if (BuildAfterGenerate)
@@ -270,21 +277,23 @@ namespace TypeMake
                         }
                         else
                         {
-                            Console.Error.WriteLine("Cross compiling to iOS is not supported.");
+                            WriteLineError("Cross compiling to iOS is not supported.");
                         }
                     }
                 }
             }
             else if (TargetOperatingSystem == Cpp.OperatingSystemType.Android)
             {
-                var AndroidSdk = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "AndroidSdk", Quiet, BuildingOperatingSystem == Cpp.OperatingSystemType.Windows ? (Environment.GetEnvironmentVariable("LocalAppData").AsPath() / "Android/sdk").ToString() : "", p => Directory.Exists(p / "platform-tools"));
-                var AndroidNdk = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "AndroidNdk", Quiet, AndroidSdk / "ndk-bundle", p => Directory.Exists(p / "build"));
+                var AndroidSdk = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "AndroidSdk", Quiet, BuildingOperatingSystem == Cpp.OperatingSystemType.Windows ? (Environment.GetEnvironmentVariable("LocalAppData").AsPath() / "Android/sdk").ToString() : "", p => Directory.Exists(p / "platform-tools") ? new KeyValuePair<bool, String>(true, "") : new KeyValuePair<bool, String>(false, "No platform-tools directory inside."));
+                var AndroidNdk = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "AndroidNdk", Quiet, AndroidSdk / "ndk-bundle", p => Directory.Exists(p / "build") ? new KeyValuePair<bool, String>(true, "") : new KeyValuePair<bool, String>(false, "No build directory inside."));
                 var CMake = Shell.RequireEnvironmentVariableFilePath(Memory, "CMake", Quiet, Shell.TryLocate("cmake") ?? (BuildingOperatingSystem == Cpp.OperatingSystemType.Windows ? (Environment.GetEnvironmentVariable("ProgramFiles").AsPath() / @"CMake\bin\cmake.exe") : "".AsPath()));
                 var TargetArchitecture = Shell.RequireEnvironmentVariableEnum(Memory, "TargetArchitecture", Quiet, Cpp.ArchitectureType.armeabi_v7a);
                 var Configuration = Shell.RequireEnvironmentVariableEnum(Memory, "Configuration", Quiet, Cpp.ConfigurationType.Debug);
-                BuildDirectory = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "BuildDirectory", Quiet, $"build/android_{TargetArchitecture}_{Configuration}".AsPath(), p => !File.Exists(p));
+                BuildDirectory = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "BuildDirectory", Quiet, $"build/android_{TargetArchitecture}_{Configuration}".AsPath(), p => !File.Exists(p) ? new KeyValuePair<bool, String>(true, "") : new KeyValuePair<bool, String>(false, "Exist as a file."));
                 var m = new Make(Cpp.ToolchainType.Gradle_CMake, Cpp.CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture, SourceDirectory, BuildDirectory, null, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
-                m.Execute();
+                var Targets = m.GetAvailableTargets();
+                var SelectedTargets = GetSelectedTargets(Memory, Quiet, Targets, m.CheckUnresolvedDependencies);
+                m.Execute(SelectedTargets);
                 TextFile.WriteToFile(BuildDirectory / "gradle/local.properties", $"sdk.dir={AndroidSdk.ToString(PathStringStyle.Unix)}", new System.Text.UTF8Encoding(false), !ForceRegenerate);
                 GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, ForceRegenerate);
                 var Make = "".AsPath();
@@ -327,7 +336,7 @@ namespace TypeMake
                         }
                         else
                         {
-                            Console.Error.WriteLine("Cross compiling to Android is not supported.");
+                            WriteLineError("Cross compiling to Android is not supported.");
                         }
                     }
                 }
@@ -339,6 +348,25 @@ namespace TypeMake
             }
             Console.WriteLine("TypeMake successful.");
             return ExitCode;
+        }
+
+        private static Dictionary<String, Make.TargetDefinition> GetSelectedTargets(Shell.EnvironmentVariableMemory Memory, bool Quiet, Dictionary<String, Make.TargetDefinition> Targets, Func<Dictionary<String, Make.TargetDefinition>, Dictionary<String, List<String>>> CheckUnresolvedDependencies)
+        {
+            var EnableAllTargets = Shell.RequireEnvironmentVariableBoolean(Memory, "EnableAllTargets", Quiet, true);
+            if (EnableAllTargets) { return Targets; }
+            var SelectedTargetNames = Shell.RequireEnvironmentVariableMultipleSelection(Memory, "SelectedTargets", Quiet, new HashSet<String>(Targets.Values.Select(t => t.Name)), Parts =>
+            {
+                var Unresolved = CheckUnresolvedDependencies(Parts.ToDictionary(Name => Name, Name => Targets[Name]));
+                if (Unresolved.Count > 0)
+                {
+                    return new KeyValuePair<bool, String>(false, "Unresolved dependencies: " + String.Join("; ", Unresolved.Select(p => p.Key + " -> " + String.Join(" ", p.Value))) + ".");
+                }
+                else
+                {
+                    return new KeyValuePair<bool, String>(true, "");
+                }
+            });
+            return SelectedTargetNames.ToDictionary(Name => Name, Name => Targets[Name]);
         }
 
         private static void GenerateRetypemakeScript(Cpp.OperatingSystemType BuildingOperatingSystem, PathString SourceDirectory, PathString BuildDirectory, Shell.EnvironmentVariableMemory Memory, bool ForceRegenerate)
@@ -369,6 +397,10 @@ namespace TypeMake
                         {
                             Lines.Add($":: {String.Join("|", Memory.VariableSelections[p.Key])}");
                         }
+                        if (Memory.VariableMultipleSelections.ContainsKey(p.Key))
+                        {
+                            Lines.Add($":: {String.Join(" ", Memory.VariableMultipleSelections[p.Key])}");
+                        }
                         Lines.Add($"set {p.Key}={p.Value}");
                     }
                 }
@@ -383,6 +415,10 @@ namespace TypeMake
                 if (ForceRegenerate || !File.Exists(RetypemakePath))
                 {
                     TextFile.WriteToFile(RetypemakePath, String.Join("\r\n", Lines), System.Text.Encoding.Default, false);
+                }
+                else
+                {
+                    WriteLineError("Retypemake script exists, script generation skipped.");
                 }
             }
             else
@@ -404,6 +440,10 @@ namespace TypeMake
                         {
                             Lines.Add($"# {String.Join("|", Memory.VariableSelections[p.Key])}");
                         }
+                        if (Memory.VariableMultipleSelections.ContainsKey(p.Key))
+                        {
+                            Lines.Add($"# {String.Join(" ", Memory.VariableMultipleSelections[p.Key])}");
+                        }
                         Lines.Add($"export {p.Key}={p.Value}");
                     }
                 }
@@ -416,6 +456,10 @@ namespace TypeMake
                 {
                     TextFile.WriteToFile(RetypemakePath, String.Join("\n", Lines), new System.Text.UTF8Encoding(false), false);
                     MergeExitCode(Shell.Execute("chmod", "+x", RetypemakePath));
+                }
+                else
+                {
+                    WriteLineError("Retypemake script exists, script generation skipped.");
                 }
             }
         }
@@ -541,6 +585,13 @@ namespace TypeMake
                 TextFile.WriteToFile(BuildPath, String.Join("\n", Lines), new System.Text.UTF8Encoding(false), !ForceRegenerate);
                 MergeExitCode(Shell.Execute("chmod", "+x", BuildPath));
             }
+        }
+
+        public static void WriteLineError(String Line)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.Error.WriteLine(Line);
+            Console.ResetColor();
         }
 
         public static void DisplayInfo()
