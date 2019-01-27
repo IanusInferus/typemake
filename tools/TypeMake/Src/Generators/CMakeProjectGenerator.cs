@@ -136,14 +136,14 @@ namespace TypeMake.Cpp
                 yield return @"target_compile_definitions(${PROJECT_NAME} PRIVATE";
                 foreach (var d in Defines)
                 {
-                    yield return @"  -D" + d.Key + (d.Value == null ? "" : "=" + (Regex.IsMatch(d.Value, @"["" ^|]") ? "\"" + d.Value.Replace("\"", "\"\"") + "\"" : d.Value));
+                    yield return @"  -D" + d.Key + (d.Value == null ? "" : "=" + (Regex.IsMatch(d.Value, @"["" ^|]") ? "\"" + d.Value.Replace("\"", "") + "\"" : d.Value));
                 }
                 yield return @")";
             }
             var CFlags = conf.CFlags;
             var CppFlags = conf.CppFlags;
-            var CFlagStr = String.Join(" ", CFlags.Select(f => (f == null ? "" : Regex.IsMatch(f, @"[ ""^|]") ? "\"" + f.Replace("\"", "\"\"") + "\"" : f)));
-            var CppFlagStr = String.Join(" ", CppFlags.Select(f => (f == null ? "" : Regex.IsMatch(f, @"[ ""^|]") ? "\"" + f.Replace("\"", "\"\"") + "\"" : f)));
+            var CFlagStr = String.Join(" ", CFlags.Select(f => (f == null ? "" : Regex.IsMatch(f, @"[ ""^|]") ? "\"" + f.Replace("\"", "\\\"") + "\"" : f)));
+            var CppFlagStr = String.Join(" ", CppFlags.Select(f => (f == null ? "" : Regex.IsMatch(f, @"[ ""^|]") ? "\"" + f.Replace("\"", "\\\"") + "\"" : f)));
             if (CFlags.Count + CppFlags.Count != 0)
             {
                 yield return @"target_compile_options(${PROJECT_NAME} PRIVATE " + CFlagStr + ((CFlags.Count > 0) && (CppFlags.Count > 0) ? " " : "") + (CppFlags.Count > 0 ? "$<$<COMPILE_LANGUAGE:CXX>:" + CppFlagStr + ">" : "") + ")";
