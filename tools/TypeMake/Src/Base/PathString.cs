@@ -234,6 +234,18 @@ namespace TypeMake
         {
             return Reduced.Value.GetHashCode();
         }
+        public static bool operator ==(PathString Left, PathString Right)
+        {
+            if ((Left is null) && (Right is null)) { return true; }
+            if ((Left is null) || (Right is null)) { return false; }
+            return Left.Equals(Right, true);
+        }
+        public static bool operator !=(PathString Left, PathString Right)
+        {
+            if ((Left is null) && (Right is null)) { return false; }
+            if ((Left is null) || (Right is null)) { return true; }
+            return !Left.Equals(Right, true);
+        }
 
         public static PathString operator /(PathString Left, PathString Right)
         {

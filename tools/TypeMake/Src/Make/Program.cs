@@ -128,22 +128,19 @@ namespace TypeMake
                 Environment.SetEnvironmentVariable(p[0], p[1]);
             }
 
-            var ForceRegenerate = options.ContainsKey("regen");
-            var EnableNonTargetingOperatingSystemDummy = options.ContainsKey("dummy");
             var Quiet = options.ContainsKey("quiet");
 
             var Memory = new Shell.EnvironmentVariableMemory();
 
+            var ForceRegenerate = Shell.RequireEnvironmentVariableBoolean(Memory, "ForceRegenerate", Quiet, false);
+            var EnableNonTargetingOperatingSystemDummy = Shell.RequireEnvironmentVariableBoolean(Memory, "EnableNonTargetingOperatingSystemDummy", Quiet, false);
             var BuildAfterGenerate = Shell.RequireEnvironmentVariableBoolean(Memory, "BuildAfterGenerate", Quiet, true);
 
             var SourceDirectory = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "SourceDirectory", Quiet);
-            PathString BuildDirectory;
-
             var TargetOperatingSystem = Shell.RequireEnvironmentVariableEnum<Cpp.OperatingSystemType>(Memory, "TargetOperatingSystem", Quiet, BuildingOperatingSystem);
 
             if (TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
             {
-                BuildDirectory = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "BuildDirectory", Quiet, "build/windows".AsPath(), p => !File.Exists(p) ? new KeyValuePair<bool, String>(true, "") : new KeyValuePair<bool, String>(false, "Exist as a file."));
                 var VSDir = "";
                 var TargetArchitecture = Cpp.ArchitectureType.x86_64;
                 var Configuration = Cpp.ConfigurationType.Debug;
@@ -167,10 +164,11 @@ namespace TypeMake
                     TargetArchitecture = Shell.RequireEnvironmentVariableEnum(Memory, "TargetArchitecture", Quiet, new HashSet<Cpp.ArchitectureType> { Cpp.ArchitectureType.x86, Cpp.ArchitectureType.x86_64 }, Cpp.ArchitectureType.x86_64);
                     Configuration = Shell.RequireEnvironmentVariableEnum(Memory, "Configuration", Quiet, Cpp.ConfigurationType.Debug);
                 }
+                var BuildDirectory = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "BuildDirectory", Quiet, "build/windows".AsPath(), p => !File.Exists(p) ? new KeyValuePair<bool, String>(true, "") : new KeyValuePair<bool, String>(false, "Exist as a file."));
                 var m = new Make(Cpp.ToolchainType.Windows_VisualC, Cpp.CompilerType.VisualC, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, SourceDirectory, BuildDirectory, null, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
-                var Targets = m.GetAvailableTargets();
-                var SelectedTargets = GetSelectedTargets(Memory, Quiet, Targets, m.CheckUnresolvedDependencies);
-                var r = m.Execute(SelectedTargets);
+                var Projects = m.GetAvailableProjects();
+                var SelectedProjects = GetSelectedProjects(Memory, Quiet, Projects, m.CheckUnresolvedDependencies);
+                var r = m.Execute(SelectedProjects);
                 GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, ForceRegenerate);
                 if (BuildAfterGenerate)
                 {
@@ -195,7 +193,6 @@ namespace TypeMake
             {
                 Cpp.ConfigurationType Configuration;
                 Configuration = Shell.RequireEnvironmentVariableEnum(Memory, "Configuration", Quiet, Cpp.ConfigurationType.Debug);
-                BuildDirectory = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "BuildDirectory", Quiet, $"build/linux_{Configuration}".AsPath(), p => !File.Exists(p) ? new KeyValuePair<bool, String>(true, "") : new KeyValuePair<bool, String>(false, "Exist as a file."));
                 var CMake = "".AsPath();
                 var Make = "".AsPath();
                 if (BuildingOperatingSystem == Cpp.OperatingSystemType.Windows)
@@ -208,10 +205,11 @@ namespace TypeMake
                     CMake = Shell.RequireEnvironmentVariableFilePath(Memory, "CMake", Quiet, Shell.TryLocate("cmake") ?? "");
                     Make = Shell.RequireEnvironmentVariableFilePath(Memory, "Make", Quiet, Shell.TryLocate("make") ?? "");
                 }
+                var BuildDirectory = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "BuildDirectory", Quiet, $"build/linux_{Configuration}".AsPath(), p => !File.Exists(p) ? new KeyValuePair<bool, String>(true, "") : new KeyValuePair<bool, String>(false, "Exist as a file."));
                 var m = new Make(Cpp.ToolchainType.CMake, Cpp.CompilerType.gcc, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, SourceDirectory, BuildDirectory, null, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
-                var Targets = m.GetAvailableTargets();
-                var SelectedTargets = GetSelectedTargets(Memory, Quiet, Targets, m.CheckUnresolvedDependencies);
-                m.Execute(SelectedTargets);
+                var Projects = m.GetAvailableProjects();
+                var SelectedProjects = GetSelectedProjects(Memory, Quiet, Projects, m.CheckUnresolvedDependencies);
+                m.Execute(SelectedProjects);
                 GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, ForceRegenerate);
                 GenerateBuildScriptLinux(BuildingOperatingSystem, BuildDirectory, Configuration, CMake, Make, ForceRegenerate);
                 if (BuildAfterGenerate)
@@ -235,11 +233,11 @@ namespace TypeMake
             }
             else if (TargetOperatingSystem == Cpp.OperatingSystemType.Mac)
             {
-                BuildDirectory = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "BuildDirectory", Quiet, "build/mac".AsPath(), p => !File.Exists(p) ? new KeyValuePair<bool, String>(true, "") : new KeyValuePair<bool, String>(false, "Exist as a file."));
+                var BuildDirectory = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "BuildDirectory", Quiet, "build/mac".AsPath(), p => !File.Exists(p) ? new KeyValuePair<bool, String>(true, "") : new KeyValuePair<bool, String>(false, "Exist as a file."));
                 var m = new Make(Cpp.ToolchainType.Mac_XCode, Cpp.CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, SourceDirectory, BuildDirectory, null, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
-                var Targets = m.GetAvailableTargets();
-                var SelectedTargets = GetSelectedTargets(Memory, Quiet, Targets, m.CheckUnresolvedDependencies);
-                var r = m.Execute(SelectedTargets);
+                var Projects = m.GetAvailableProjects();
+                var SelectedProjects = GetSelectedProjects(Memory, Quiet, Projects, m.CheckUnresolvedDependencies);
+                var r = m.Execute(SelectedProjects);
                 GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, ForceRegenerate);
                 GenerateBuildScriptXCode(BuildingOperatingSystem, BuildDirectory, r, ForceRegenerate);
                 if (BuildAfterGenerate)
@@ -259,12 +257,12 @@ namespace TypeMake
             }
             else if (TargetOperatingSystem == Cpp.OperatingSystemType.iOS)
             {
-                BuildDirectory = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "BuildDirectory", Quiet, "build/ios".AsPath(), p => !File.Exists(p) ? new KeyValuePair<bool, String>(true, "") : new KeyValuePair<bool, String>(false, "Exist as a file."));
+                var BuildDirectory = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "BuildDirectory", Quiet, "build/ios".AsPath(), p => !File.Exists(p) ? new KeyValuePair<bool, String>(true, "") : new KeyValuePair<bool, String>(false, "Exist as a file."));
                 var DevelopmentTeam = Shell.RequireEnvironmentVariable(Memory, "DevelopmentTeam", new Shell.EnvironmentVariableReadOptions { Quiet = Quiet, PostMapper = v => v == "" ? null : v, InputDisplay = "(optional, find by search an existing pbxproj file with DEVELOPMENT_TEAM)" });
                 var m = new Make(Cpp.ToolchainType.Mac_XCode, Cpp.CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, SourceDirectory, BuildDirectory, DevelopmentTeam, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
-                var Targets = m.GetAvailableTargets();
-                var SelectedTargets = GetSelectedTargets(Memory, Quiet, Targets, m.CheckUnresolvedDependencies);
-                var r = m.Execute(SelectedTargets);
+                var Projects = m.GetAvailableProjects();
+                var SelectedProjects = GetSelectedProjects(Memory, Quiet, Projects, m.CheckUnresolvedDependencies);
+                var r = m.Execute(SelectedProjects);
                 GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, ForceRegenerate);
                 GenerateBuildScriptXCode(BuildingOperatingSystem, BuildDirectory, r, ForceRegenerate);
                 if (BuildAfterGenerate)
@@ -289,11 +287,11 @@ namespace TypeMake
                 var CMake = Shell.RequireEnvironmentVariableFilePath(Memory, "CMake", Quiet, Shell.TryLocate("cmake") ?? (BuildingOperatingSystem == Cpp.OperatingSystemType.Windows ? (Environment.GetEnvironmentVariable("ProgramFiles").AsPath() / @"CMake\bin\cmake.exe") : "".AsPath()));
                 var TargetArchitecture = Shell.RequireEnvironmentVariableEnum(Memory, "TargetArchitecture", Quiet, Cpp.ArchitectureType.armeabi_v7a);
                 var Configuration = Shell.RequireEnvironmentVariableEnum(Memory, "Configuration", Quiet, Cpp.ConfigurationType.Debug);
-                BuildDirectory = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "BuildDirectory", Quiet, $"build/android_{TargetArchitecture}_{Configuration}".AsPath(), p => !File.Exists(p) ? new KeyValuePair<bool, String>(true, "") : new KeyValuePair<bool, String>(false, "Exist as a file."));
+                var BuildDirectory = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "BuildDirectory", Quiet, $"build/android_{TargetArchitecture}_{Configuration}".AsPath(), p => !File.Exists(p) ? new KeyValuePair<bool, String>(true, "") : new KeyValuePair<bool, String>(false, "Exist as a file."));
                 var m = new Make(Cpp.ToolchainType.Gradle_CMake, Cpp.CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture, SourceDirectory, BuildDirectory, null, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
-                var Targets = m.GetAvailableTargets();
-                var SelectedTargets = GetSelectedTargets(Memory, Quiet, Targets, m.CheckUnresolvedDependencies);
-                m.Execute(SelectedTargets);
+                var Projects = m.GetAvailableProjects();
+                var SelectedProjects = GetSelectedProjects(Memory, Quiet, Projects, m.CheckUnresolvedDependencies);
+                m.Execute(SelectedProjects);
                 TextFile.WriteToFile(BuildDirectory / "gradle/local.properties", $"sdk.dir={AndroidSdk.ToString(PathStringStyle.Unix)}", new System.Text.UTF8Encoding(false), !ForceRegenerate);
                 GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, ForceRegenerate);
                 var Make = "".AsPath();
@@ -350,13 +348,13 @@ namespace TypeMake
             return ExitCode;
         }
 
-        private static Dictionary<String, Make.TargetDefinition> GetSelectedTargets(Shell.EnvironmentVariableMemory Memory, bool Quiet, Dictionary<String, Make.TargetDefinition> Targets, Func<Dictionary<String, Make.TargetDefinition>, Dictionary<String, List<String>>> CheckUnresolvedDependencies)
+        private static Dictionary<String, Make.ProjectDescription> GetSelectedProjects(Shell.EnvironmentVariableMemory Memory, bool Quiet, Dictionary<String, Make.ProjectDescription> Projects, Func<Dictionary<String, Make.ProjectDescription>, Dictionary<String, List<String>>> CheckUnresolvedDependencies)
         {
-            var EnableAllTargets = Shell.RequireEnvironmentVariableBoolean(Memory, "EnableAllTargets", Quiet, true);
-            if (EnableAllTargets) { return Targets; }
-            var SelectedTargetNames = Shell.RequireEnvironmentVariableMultipleSelection(Memory, "SelectedTargets", Quiet, new HashSet<String>(Targets.Values.Select(t => t.Name)), Parts =>
+            var EnableAllProjects = Shell.RequireEnvironmentVariableBoolean(Memory, "EnableAllProjects", Quiet, true);
+            if (EnableAllProjects) { return Projects; }
+            var SelectedProjectNames = Shell.RequireEnvironmentVariableMultipleSelection(Memory, "SelectedProjects", Quiet, new HashSet<String>(Projects.Values.Select(t => t.Definition.Name)), Parts =>
             {
-                var Unresolved = CheckUnresolvedDependencies(Parts.ToDictionary(Name => Name, Name => Targets[Name]));
+                var Unresolved = CheckUnresolvedDependencies(Parts.ToDictionary(Name => Name, Name => Projects[Name]));
                 if (Unresolved.Count > 0)
                 {
                     return new KeyValuePair<bool, String>(false, "Unresolved dependencies: " + String.Join("; ", Unresolved.Select(p => p.Key + " -> " + String.Join(" ", p.Value))) + ".");
@@ -366,7 +364,7 @@ namespace TypeMake
                     return new KeyValuePair<bool, String>(true, "");
                 }
             });
-            return SelectedTargetNames.ToDictionary(Name => Name, Name => Targets[Name]);
+            return SelectedProjectNames.ToDictionary(Name => Name, Name => Projects[Name]);
         }
 
         private static void GenerateRetypemakeScript(Cpp.OperatingSystemType BuildingOperatingSystem, PathString SourceDirectory, PathString BuildDirectory, Shell.EnvironmentVariableMemory Memory, bool ForceRegenerate)
@@ -598,11 +596,9 @@ namespace TypeMake
         {
             Console.WriteLine(@"TypeMake");
             Console.WriteLine(@"Usage:");
-            Console.WriteLine(@"TypeMake [<RetypemakeScript>] <Variable>* [--regen] [--dummy] [--quiet] [--help]");
+            Console.WriteLine(@"TypeMake [<RetypemakeScript>] <Variable>* [--quiet] [--help]");
             Console.WriteLine(@"RetypemakeScript batch or bash file to get environment variables for diagnostics");
             Console.WriteLine(@"Variable <Key>=<Value> additional environment variables that only take effect in the call");
-            Console.WriteLine(@"--regen forcely regenerate project files");
-            Console.WriteLine(@"--dummy generate dummy projects for non-targeting operating systems");
             Console.WriteLine(@"--quiet no interactive variable input, all variables must be input from environment variables");
         }
     }

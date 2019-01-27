@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace TypeMake.Cpp
 {
@@ -54,6 +55,7 @@ namespace TypeMake.Cpp
         ObjectiveCppSource
     }
 
+    [DebuggerDisplay("Path = {Path}, Type = {Type}")]
     public class File
     {
         public PathString Path;
@@ -84,6 +86,8 @@ namespace TypeMake.Cpp
 
         public String BundleIdentifier = null;
     }
+
+    [DebuggerDisplay("Name = {Name}, TargetName = {TargetName}, ApplicationIdentifier = {ApplicationIdentifier}, Configurations = ...")]
     public class Project
     {
         public String Name;
