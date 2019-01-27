@@ -6,7 +6,19 @@ namespace TypeMake.Cpp
 {
     public static class ConfigurationUtils
     {
-        public static Configuration GetMergedConfiguration(ToolchainType? Toolchain, CompilerType? Compiler, OperatingSystemType? BuildingOperatingSystem, ArchitectureType? BuildingOperatingSystemArchitecture, OperatingSystemType? TargetOperatingSystem, ConfigurationType? ConfigurationType, ArchitectureType? TargetArchitecture, List<Configuration> Configurations)
+        public static IEnumerable<Configuration> Matches(this IEnumerable<Configuration> Configurations, ToolchainType? Toolchain, CompilerType? Compiler, OperatingSystemType? BuildingOperatingSystem, ArchitectureType? BuildingOperatingSystemArchitecture, OperatingSystemType? TargetOperatingSystem, ConfigurationType? ConfigurationType, ArchitectureType? TargetArchitecture)
+        {
+            Func<Configuration, bool> Filter = (Configuration c) =>
+                ((c.Toolchain == null) || (c.Toolchain == Toolchain))
+                && ((c.Compiler == null) || (c.Compiler == Compiler))
+                && ((c.BuildingOperatingSystem == null) || (c.BuildingOperatingSystem == BuildingOperatingSystem))
+                && ((c.BuildingOperatingSystemArchitecture == null) || (c.BuildingOperatingSystemArchitecture == BuildingOperatingSystemArchitecture))
+                && ((c.TargetOperatingSystem == null) || (c.TargetOperatingSystem == TargetOperatingSystem))
+                && ((c.TargetArchitecture == null) || (c.TargetArchitecture == TargetArchitecture))
+                && ((c.ConfigurationType == null) || (c.ConfigurationType == ConfigurationType));
+            return Configurations.Where(Filter);
+        }
+        public static Configuration Merged(this IEnumerable<Configuration> Configurations, ToolchainType? Toolchain, CompilerType? Compiler, OperatingSystemType? BuildingOperatingSystem, ArchitectureType? BuildingOperatingSystemArchitecture, OperatingSystemType? TargetOperatingSystem, ConfigurationType? ConfigurationType, ArchitectureType? TargetArchitecture)
         {
             Func<Configuration, bool> Filter = (Configuration c) =>
                 ((c.Toolchain == null) || (c.Toolchain == Toolchain))

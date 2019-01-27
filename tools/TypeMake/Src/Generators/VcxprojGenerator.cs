@@ -111,7 +111,7 @@ namespace TypeMake.Cpp
                 var Architecture = Pair.Key.Value;
                 var Name = Pair.Value;
 
-                var conf = ConfigurationUtils.GetMergedConfiguration(ToolchainType.Windows_VisualC, CompilerType.VisualC, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, ConfigurationType, Architecture, Project.Configurations);
+                var conf = Project.Configurations.Merged(ToolchainType.Windows_VisualC, CompilerType.VisualC, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, ConfigurationType, Architecture);
 
                 var PropertyGroup = xVcxproj.Elements(xn + "PropertyGroup").Where(e => (e.Attribute("Condition") != null) && (e.Attribute("Condition").Value == "'$(Configuration)|$(Platform)'=='" + Name + "'")).LastOrDefault();
                 if (PropertyGroup == null)
@@ -196,7 +196,7 @@ namespace TypeMake.Cpp
 
             var Import = xVcxproj.Elements(xn + "Import").LastOrDefault();
 
-            foreach (var conf in Project.Configurations)
+            foreach (var conf in Project.Configurations.Matches(ToolchainType.Windows_VisualC, CompilerType.VisualC, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, null))
             {
                 var FileItemGroup = new XElement(xn + "ItemGroup");
                 if (Import != null)
@@ -326,7 +326,7 @@ namespace TypeMake.Cpp
 
             var Files = new HashSet<String>(StringComparer.OrdinalIgnoreCase);
             var Filters = new HashSet<String>(StringComparer.OrdinalIgnoreCase);
-            foreach (var conf in Project.Configurations)
+            foreach (var conf in Project.Configurations.Matches(ToolchainType.Windows_VisualC, CompilerType.VisualC, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, null))
             {
                 foreach (var f in conf.Files)
                 {

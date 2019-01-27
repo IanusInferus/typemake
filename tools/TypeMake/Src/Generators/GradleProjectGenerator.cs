@@ -49,7 +49,7 @@ namespace TypeMake.Cpp
 
         private IEnumerable<String> GenerateLines(String BuildGradlePath, String BaseDirPath)
         {
-            var conf = ConfigurationUtils.GetMergedConfiguration(Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, null, Project.Configurations);
+            var conf = Project.Configurations.Merged(Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, null);
 
             var Results = BuildGradleTemplateText.Replace("\r\n", "\n").Split('\n').AsEnumerable();
             Results = Results.Select(Line => Line.Replace("${ApplicationId}", Project.ApplicationIdentifier ?? (SolutionName + "." + Project.TargetName ?? Project.Name).ToLower()));
