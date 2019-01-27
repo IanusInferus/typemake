@@ -264,7 +264,7 @@ namespace TypeMake
                                 },
                                 new Configuration
                                 {
-                                    TargetOperatingSystem = OperatingSystemType.iOS,
+                                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.iOS },
                                     BundleIdentifier = SolutionName + "." + TargetName
                                 }
                             }).Concat(GetCommonConfigurations()).ToList()
@@ -420,34 +420,34 @@ namespace TypeMake
             {
                 new Configuration
                 {
-                    Compiler = CompilerType.VisualC,
+                    MatchingCompilers = new List<CompilerType> { CompilerType.VisualC },
                     LibDirectories = new List<PathString> { BuildDirectory / @"$(PlatformTarget)_$(Configuration)" },
                     Defines = ParseDefines("_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS"),
                     CFlags = new List<String> { "/bigobj" }
                 },
                 new Configuration
                 {
-                    TargetOperatingSystem = OperatingSystemType.Windows,
+                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Windows },
                     Defines = ParseDefines("WIN32;_WINDOWS")
                 },
                 new Configuration
                 {
-                    TargetOperatingSystem = OperatingSystemType.Linux,
+                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Linux },
                     CFlags = new List<String> { "-fPIC" }
                 },
                 new Configuration
                 {
-                    ConfigurationType = ConfigurationType.Debug,
+                    MatchingConfigurationTypes = new List<ConfigurationType> { ConfigurationType.Debug },
                     Defines = ParseDefines("_DEBUG;DEBUG=1")
                 },
                 new Configuration
                 {
-                    Compiler = CompilerType.gcc,
+                    MatchingCompilers = new List<CompilerType> { CompilerType.gcc },
                     CppFlags = new List<String>{ "-std=c++14" }
                 },
                 new Configuration
                 {
-                    Compiler = CompilerType.clang,
+                    MatchingCompilers = new List<CompilerType> { CompilerType.clang },
                     CppFlags = new List<String>{ "-std=c++14", "-stdlib=libc++" }
                 }
             };

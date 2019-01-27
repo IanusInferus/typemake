@@ -9,34 +9,34 @@ namespace TypeMake.Cpp
         public static IEnumerable<Configuration> Matches(this IEnumerable<Configuration> Configurations, ToolchainType? Toolchain, CompilerType? Compiler, OperatingSystemType? BuildingOperatingSystem, ArchitectureType? BuildingOperatingSystemArchitecture, OperatingSystemType? TargetOperatingSystem, ConfigurationType? ConfigurationType, ArchitectureType? TargetArchitecture)
         {
             Func<Configuration, bool> Filter = (Configuration c) =>
-                ((c.Toolchain == null) || (c.Toolchain == Toolchain))
-                && ((c.Compiler == null) || (c.Compiler == Compiler))
-                && ((c.BuildingOperatingSystem == null) || (c.BuildingOperatingSystem == BuildingOperatingSystem))
-                && ((c.BuildingOperatingSystemArchitecture == null) || (c.BuildingOperatingSystemArchitecture == BuildingOperatingSystemArchitecture))
-                && ((c.TargetOperatingSystem == null) || (c.TargetOperatingSystem == TargetOperatingSystem))
-                && ((c.TargetArchitecture == null) || (c.TargetArchitecture == TargetArchitecture))
-                && ((c.ConfigurationType == null) || (c.ConfigurationType == ConfigurationType));
+                ((Toolchain == null) || (c.MatchingToolchains == null) || (c.MatchingToolchains.Contains(Toolchain.Value)))
+                && ((Compiler == null) || (c.MatchingCompilers == null) || (c.MatchingCompilers.Contains(Compiler.Value)))
+                && ((BuildingOperatingSystem == null) || (c.MatchingBuildingOperatingSystems == null) || (c.MatchingBuildingOperatingSystems.Contains(BuildingOperatingSystem.Value)))
+                && ((BuildingOperatingSystemArchitecture == null) || (c.MatchingBuildingOperatingSystemArchitectures == null) || (c.MatchingBuildingOperatingSystemArchitectures.Contains(BuildingOperatingSystemArchitecture.Value)))
+                && ((TargetOperatingSystem == null) || (c.MatchingTargetOperatingSystems == null) || (c.MatchingTargetOperatingSystems.Contains(TargetOperatingSystem.Value)))
+                && ((TargetArchitecture == null) || (c.MatchingTargetArchitectures == null) || (c.MatchingTargetArchitectures.Contains(TargetArchitecture.Value)))
+                && ((ConfigurationType == null) || (c.MatchingConfigurationTypes == null) || (c.MatchingConfigurationTypes.Contains(ConfigurationType.Value)));
             return Configurations.Where(Filter);
         }
         public static Configuration Merged(this IEnumerable<Configuration> Configurations, ToolchainType? Toolchain, CompilerType? Compiler, OperatingSystemType? BuildingOperatingSystem, ArchitectureType? BuildingOperatingSystemArchitecture, OperatingSystemType? TargetOperatingSystem, ConfigurationType? ConfigurationType, ArchitectureType? TargetArchitecture)
         {
             Func<Configuration, bool> Filter = (Configuration c) =>
-                ((c.Toolchain == null) || (c.Toolchain == Toolchain))
-                && ((c.Compiler == null) || (c.Compiler == Compiler))
-                && ((c.BuildingOperatingSystem == null) || (c.BuildingOperatingSystem == BuildingOperatingSystem))
-                && ((c.BuildingOperatingSystemArchitecture == null) || (c.BuildingOperatingSystemArchitecture == BuildingOperatingSystemArchitecture))
-                && ((c.TargetOperatingSystem == null) || (c.TargetOperatingSystem == TargetOperatingSystem))
-                && ((c.TargetArchitecture == null) || (c.TargetArchitecture == TargetArchitecture))
-                && ((c.ConfigurationType == null) || (c.ConfigurationType == ConfigurationType));
+                ((Toolchain == null) || (c.MatchingToolchains == null) || (c.MatchingToolchains.Contains(Toolchain.Value)))
+                && ((Compiler == null) || (c.MatchingCompilers == null) || (c.MatchingCompilers.Contains(Compiler.Value)))
+                && ((BuildingOperatingSystem == null) || (c.MatchingBuildingOperatingSystems == null) || (c.MatchingBuildingOperatingSystems.Contains(BuildingOperatingSystem.Value)))
+                && ((BuildingOperatingSystemArchitecture == null) || (c.MatchingBuildingOperatingSystemArchitectures == null) || (c.MatchingBuildingOperatingSystemArchitectures.Contains(BuildingOperatingSystemArchitecture.Value)))
+                && ((TargetOperatingSystem == null) || (c.MatchingTargetOperatingSystems == null) || (c.MatchingTargetOperatingSystems.Contains(TargetOperatingSystem.Value)))
+                && ((TargetArchitecture == null) || (c.MatchingTargetArchitectures == null) || (c.MatchingTargetArchitectures.Contains(TargetArchitecture.Value)))
+                && ((ConfigurationType == null) || (c.MatchingConfigurationTypes == null) || (c.MatchingConfigurationTypes.Contains(ConfigurationType.Value)));
             var conf = new Configuration
             {
-                Toolchain = Toolchain,
-                Compiler = Compiler,
-                BuildingOperatingSystem = BuildingOperatingSystem,
-                BuildingOperatingSystemArchitecture = BuildingOperatingSystemArchitecture,
-                TargetOperatingSystem = TargetOperatingSystem,
-                TargetArchitecture = TargetArchitecture,
-                ConfigurationType = ConfigurationType,
+                MatchingToolchains = Toolchain == null ? null : new List<ToolchainType> { Toolchain.Value },
+                MatchingCompilers = Compiler == null ? null : new List<CompilerType> { Compiler.Value },
+                MatchingBuildingOperatingSystems = BuildingOperatingSystem == null ? null : new List<OperatingSystemType> { BuildingOperatingSystem.Value },
+                MatchingBuildingOperatingSystemArchitectures = BuildingOperatingSystemArchitecture == null ? null : new List<ArchitectureType> { BuildingOperatingSystemArchitecture.Value },
+                MatchingTargetOperatingSystems = TargetOperatingSystem == null ? null : new List<OperatingSystemType> { TargetOperatingSystem.Value },
+                MatchingTargetArchitectures = TargetArchitecture == null ? null : new List<ArchitectureType> { TargetArchitecture.Value },
+                MatchingConfigurationTypes = ConfigurationType == null ? null : new List<ConfigurationType> { ConfigurationType.Value },
                 TargetType = Configurations.Where(Filter).Select(c => c.TargetType).Where(t => t != null).LastOrDefault(),
                 IncludeDirectories = Configurations.Where(Filter).SelectMany(c => c.IncludeDirectories).ToList(),
                 Defines = Configurations.Where(Filter).SelectMany(c => c.Defines).ToList(),
