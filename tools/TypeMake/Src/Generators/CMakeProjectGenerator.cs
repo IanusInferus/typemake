@@ -18,8 +18,9 @@ namespace TypeMake.Cpp
         private ArchitectureType BuildingOperatingSystemArchitecture;
         private OperatingSystemType TargetOperatingSystem;
         private ArchitectureType? TargetArchitectureType;
+        private ConfigurationType? ConfigurationType;
 
-        public CMakeProjectGenerator(Project Project, List<ProjectReference> ProjectReferences, PathString InputDirectory, PathString OutputDirectory, ToolchainType Toolchain, CompilerType Compiler, OperatingSystemType BuildingOperatingSystem, ArchitectureType BuildingOperatingSystemArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType? TargetArchitectureType)
+        public CMakeProjectGenerator(Project Project, List<ProjectReference> ProjectReferences, PathString InputDirectory, PathString OutputDirectory, ToolchainType Toolchain, CompilerType Compiler, OperatingSystemType BuildingOperatingSystem, ArchitectureType BuildingOperatingSystemArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType? TargetArchitectureType, ConfigurationType? ConfigurationType)
         {
             this.Project = Project;
             this.ProjectReferences = ProjectReferences;
@@ -31,6 +32,7 @@ namespace TypeMake.Cpp
             this.BuildingOperatingSystemArchitecture = BuildingOperatingSystemArchitecture;
             this.TargetOperatingSystem = TargetOperatingSystem;
             this.TargetArchitectureType = TargetArchitectureType;
+            this.ConfigurationType = ConfigurationType;
         }
 
         public void Generate(bool ForceRegenerate)
@@ -44,7 +46,7 @@ namespace TypeMake.Cpp
 
         private IEnumerable<String> GenerateLines(String CMakeListsPath, String BaseDirPath)
         {
-            var conf = Project.Configurations.Merged(Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, null);
+            var conf = Project.Configurations.Merged(Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitectureType, ConfigurationType);
 
             yield return @"cmake_minimum_required(VERSION 3.0.2)";
             yield return $@"project({Project.Name})";
