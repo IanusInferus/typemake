@@ -63,13 +63,13 @@ namespace TypeMake.Cpp
     }
     public class Configuration
     {
-        public ToolchainType? Toolchain = null;
-        public CompilerType? Compiler = null;
-        public OperatingSystemType? BuildingOperatingSystem = null;
-        public ArchitectureType? BuildingOperatingSystemArchitecture = null;
-        public OperatingSystemType? TargetOperatingSystem = null;
-        public ArchitectureType? TargetArchitecture = null;
-        public ConfigurationType? ConfigurationType = null;
+        public List<ToolchainType> MatchingToolchains = null;
+        public List<CompilerType> MatchingCompilers = null;
+        public List<OperatingSystemType> MatchingBuildingOperatingSystems = null;
+        public List<ArchitectureType> MatchingBuildingOperatingSystemArchitectures = null;
+        public List<OperatingSystemType> MatchingTargetOperatingSystems = null;
+        public List<ArchitectureType> MatchingTargetArchitectures = null;
+        public List<ConfigurationType> MatchingConfigurationTypes = null;
 
         public TargetType? TargetType = null;
 

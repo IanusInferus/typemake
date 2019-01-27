@@ -198,58 +198,70 @@ namespace TypeMake.Cpp
 
             foreach (var conf in Project.Configurations.Matches(ToolchainType.Windows_VisualC, CompilerType.VisualC, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, null))
             {
-                var FileItemGroup = new XElement(xn + "ItemGroup");
-                if (Import != null)
+                var Conditions = new List<String>();
+                if ((conf.MatchingConfigurationTypes != null) || (conf.MatchingTargetArchitectures != null))
                 {
-                    Import.AddBeforeSelf(FileItemGroup);
+                    var Keys = "";
+                    var Values = new List<String> { "" };
+                    if (conf.MatchingConfigurationTypes != null)
+                    {
+                        Keys = (Keys != "" ? Keys + "|" : "") +  "$(Configuration)";
+                        Values = conf.MatchingConfigurationTypes.SelectMany(t => Values.Select(v => (v != "" ? v + "|" : "") + t.ToString())).ToList();
+                    }
+                    if (conf.MatchingTargetArchitectures != null)
+                    {
+                        Keys = (Keys != "" ? Keys + "|" : "") + "$(Platform)";
+                        Values = conf.MatchingTargetArchitectures.SelectMany(a => Values.Select(v => (v != "" ? v + "|" : "") + GetArchitectureString(a))).ToList();
+                    }
+                    Conditions = Values.Select(v => "'" + Keys + "' == '" + v + "'").ToList();
                 }
                 else
                 {
-                    xVcxproj.Add(FileItemGroup);
+                    Conditions = new List<string> { null };
                 }
-                if ((conf.ConfigurationType != null) || (conf.TargetArchitecture != null))
+
+                foreach (var Condition in Conditions)
                 {
-                    var Keys = new List<String> { };
-                    var Values = new List<String> { };
-                    if (conf.ConfigurationType != null)
+                    var FileItemGroup = new XElement(xn + "ItemGroup");
+                    if (Import != null)
                     {
-                        Keys.Add("$(Configuration)");
-                        Values.Add(conf.ConfigurationType.ToString());
-                    }
-                    if (conf.TargetArchitecture != null)
-                    {
-                        Keys.Add("$(Platform)");
-                        Values.Add(GetArchitectureString(conf.TargetArchitecture.Value));
-                    }
-                    var Condition = "'" + String.Join("|", Keys) + "' == '" + String.Join("|", Values) + "'";
-                    FileItemGroup.Add(new XAttribute("Condition", Condition));
-                }
-                foreach (var f in conf.Files)
-                {
-                    var RelativePath = f.Path.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Windows);
-                    XElement x;
-                    if (f.Type == FileType.Header)
-                    {
-                        x = new XElement(xn + "ClInclude", new XAttribute("Include", RelativePath));
-                    }
-                    else if (f.Type == FileType.CSource)
-                    {
-                        x = new XElement(xn + "ClCompile", new XAttribute("Include", RelativePath));
-                    }
-                    else if (f.Type == FileType.CppSource)
-                    {
-                        x = new XElement(xn + "ClCompile", new XAttribute("Include", RelativePath));
-                        x.Add(new XElement(xn + "ObjectFileName", "$(IntDir)" + RelativePath.Replace("..", "__") + ".obj"));
+                        Import.AddBeforeSelf(FileItemGroup);
                     }
                     else
                     {
-                        x = new XElement(xn + "None", new XAttribute("Include", RelativePath));
+                        xVcxproj.Add(FileItemGroup);
                     }
-                    FileItemGroup.Add(x);
-                }
-                if (!FileItemGroup.HasElements)
-                {
-                    FileItemGroup.Remove();
+                    if (Condition != null)
+                    {
+                        FileItemGroup.Add(new XAttribute("Condition", Condition));
+                    }
+                    foreach (var f in conf.Files)
+                    {
+                        var RelativePath = f.Path.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Windows);
+                        XElement x;
+                        if (f.Type == FileType.Header)
+                        {
+                            x = new XElement(xn + "ClInclude", new XAttribute("Include", RelativePath));
+                        }
+                        else if (f.Type == FileType.CSource)
+                        {
+                            x = new XElement(xn + "ClCompile", new XAttribute("Include", RelativePath));
+                        }
+                        else if (f.Type == FileType.CppSource)
+                        {
+                            x = new XElement(xn + "ClCompile", new XAttribute("Include", RelativePath));
+                            x.Add(new XElement(xn + "ObjectFileName", "$(IntDir)" + RelativePath.Replace("..", "__") + ".obj"));
+                        }
+                        else
+                        {
+                            x = new XElement(xn + "None", new XAttribute("Include", RelativePath));
+                        }
+                        FileItemGroup.Add(x);
+                    }
+                    if (!FileItemGroup.HasElements)
+                    {
+                        FileItemGroup.Remove();
+                    }
                 }
             }
 
