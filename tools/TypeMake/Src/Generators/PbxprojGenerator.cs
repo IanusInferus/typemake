@@ -29,7 +29,7 @@ namespace TypeMake.Cpp
             this.BuildingOperatingSystem = BuildingOperatingSystem;
             this.BuildingOperatingSystemArchitecture = BuildingOperatingSystemArchitecture;
             this.TargetOperatingSystem = TargetOperatingSystem;
-            this.TargetArchitectureType = TargetOperatingSystem == OperatingSystemType.iOS ? ArchitectureType.arm64_v8a : ArchitectureType.x86_64; //TODO: need better handling (ex. not works for iOS simulator)
+            this.TargetArchitectureType = TargetOperatingSystem == OperatingSystemType.iOS ? ArchitectureType.arm64_v8a : ArchitectureType.x86_64; //TODO: need better handling
             this.DevelopmentTeam = DevelopmentTeam;
         }
 
@@ -279,7 +279,7 @@ namespace TypeMake.Cpp
                     var LinkerFlags = conf.Libs.Select(lib => lib.ToString(PathStringStyle.Unix)).Concat(conf.LinkerFlags).ToList();
                     if (LinkerFlags.Count != 0)
                     {
-                        BuildSettings.SetItem("OTHER_LDFLAGS", Value.CreateArray(CppFlags.Concat(new List<String> { "$(inherited)" }).Select(d => Value.CreateString(d)).ToList()));
+                        BuildSettings.SetItem("OTHER_LDFLAGS", Value.CreateArray(LinkerFlags.Concat(new List<String> { "$(inherited)" }).Select(d => Value.CreateString(d)).ToList()));
                     }
                 }
 
