@@ -390,7 +390,7 @@ namespace TypeMake.Cpp
 
             foreach (var f in Filters.OrderBy(ff => ff, StringComparer.OrdinalIgnoreCase))
             {
-                var g = Guid.ParseExact(Hash.GetHashForPath(f, 32), "N").ToString().ToUpper();
+                var g = Guid.ParseExact(Hash.GetHashForPath(Project.Name + "/" + f, 32), "N").ToString().ToUpper();
                 FilterItemGroup.Add(new XElement(xn + "Filter", new XAttribute("Include", f), new XElement(xn + "UniqueIdentifier", "{" + g + "}")));
             }
 

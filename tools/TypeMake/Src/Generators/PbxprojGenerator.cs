@@ -301,7 +301,7 @@ namespace TypeMake.Cpp
             TextFile.WriteToFile(PbxprojPath, Plist.ToString(p), new UTF8Encoding(false), !ForceRegenerate);
         }
 
-        private static bool AddFile(Dictionary<String, Value> Objects, String GroupOrFileKey, LinkedList<String> Stack, LinkedList<String> RelativePathStack, File File, String BaseDirPath, Dictionary<String, String> RelativePathToFileObjectKey, bool Top = true)
+        private bool AddFile(Dictionary<String, Value> Objects, String GroupOrFileKey, LinkedList<String> Stack, LinkedList<String> RelativePathStack, File File, String BaseDirPath, Dictionary<String, String> RelativePathToFileObjectKey, bool Top = true)
         {
             var GroupOrFile = Objects[GroupOrFileKey].Dict;
             var Type = GroupOrFile["isa"].String;
@@ -430,7 +430,7 @@ namespace TypeMake.Cpp
             return true;
         }
 
-        private static bool AddProjectReference(Dictionary<String, Value> Objects, String GroupOrFileKey, LinkedList<String> Stack, LinkedList<String> RelativePathStack, ProjectReference Project, String BaseDirPath, Dictionary<String, String> RelativePathToFileObjectKey, bool Top = true)
+        private bool AddProjectReference(Dictionary<String, Value> Objects, String GroupOrFileKey, LinkedList<String> Stack, LinkedList<String> RelativePathStack, ProjectReference Project, String BaseDirPath, Dictionary<String, String> RelativePathToFileObjectKey, bool Top = true)
         {
             var GroupOrFile = Objects[GroupOrFileKey].Dict;
             var Type = GroupOrFile["isa"].String;
@@ -531,9 +531,9 @@ namespace TypeMake.Cpp
                 Objects.Remove(GroupOrFileKey);
             }
         }
-        private static String GetHashOfPath(String Path)
+        private String GetHashOfPath(String Path)
         {
-            return Hash.GetHashForPath(Path, 24);
+            return Hash.GetHashForPath(Project.Name + "/" + Path, 24);
         }
     }
 }
