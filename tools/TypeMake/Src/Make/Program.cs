@@ -132,6 +132,7 @@ namespace TypeMake
 
             var Memory = new Shell.EnvironmentVariableMemory();
 
+            var OverwriteRetypemakeScript = Shell.RequireEnvironmentVariableBoolean(Memory, "OverwriteRetypemakeScript", Quiet, true);
             var ForceRegenerate = Shell.RequireEnvironmentVariableBoolean(Memory, "ForceRegenerate", Quiet, false);
             var EnableNonTargetingOperatingSystemDummy = Shell.RequireEnvironmentVariableBoolean(Memory, "EnableNonTargetingOperatingSystemDummy", Quiet, false);
             var BuildAfterGenerate = Shell.RequireEnvironmentVariableBoolean(Memory, "BuildAfterGenerate", Quiet, true);
@@ -169,7 +170,7 @@ namespace TypeMake
                 var Projects = m.GetAvailableProjects();
                 var SelectedProjects = GetSelectedProjects(Memory, Quiet, Projects, m.CheckUnresolvedDependencies);
                 var r = m.Execute(SelectedProjects);
-                GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, Quiet);
+                GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, OverwriteRetypemakeScript);
                 if (BuildAfterGenerate)
                 {
                     if (BuildingOperatingSystem == Cpp.OperatingSystemType.Windows)
@@ -210,7 +211,7 @@ namespace TypeMake
                 var Projects = m.GetAvailableProjects();
                 var SelectedProjects = GetSelectedProjects(Memory, Quiet, Projects, m.CheckUnresolvedDependencies);
                 m.Execute(SelectedProjects);
-                GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, Quiet);
+                GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, OverwriteRetypemakeScript);
                 GenerateBuildScriptLinux(BuildingOperatingSystem, BuildDirectory, Configuration, CMake, Make, ForceRegenerate);
                 if (BuildAfterGenerate)
                 {
@@ -238,7 +239,7 @@ namespace TypeMake
                 var Projects = m.GetAvailableProjects();
                 var SelectedProjects = GetSelectedProjects(Memory, Quiet, Projects, m.CheckUnresolvedDependencies);
                 var r = m.Execute(SelectedProjects);
-                GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, Quiet);
+                GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, OverwriteRetypemakeScript);
                 GenerateBuildScriptXCode(BuildingOperatingSystem, BuildDirectory, r, ForceRegenerate);
                 if (BuildAfterGenerate)
                 {
@@ -263,7 +264,7 @@ namespace TypeMake
                 var Projects = m.GetAvailableProjects();
                 var SelectedProjects = GetSelectedProjects(Memory, Quiet, Projects, m.CheckUnresolvedDependencies);
                 var r = m.Execute(SelectedProjects);
-                GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, Quiet);
+                GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, OverwriteRetypemakeScript);
                 GenerateBuildScriptXCode(BuildingOperatingSystem, BuildDirectory, r, ForceRegenerate);
                 if (BuildAfterGenerate)
                 {
@@ -293,7 +294,7 @@ namespace TypeMake
                 var SelectedProjects = GetSelectedProjects(Memory, Quiet, Projects, m.CheckUnresolvedDependencies);
                 m.Execute(SelectedProjects);
                 TextFile.WriteToFile(BuildDirectory / "gradle/local.properties", $"sdk.dir={AndroidSdk.ToString(PathStringStyle.Unix)}", new System.Text.UTF8Encoding(false), !ForceRegenerate);
-                GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, Quiet);
+                GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, OverwriteRetypemakeScript);
                 var Make = "".AsPath();
                 if (BuildingOperatingSystemArchitecture == Cpp.ArchitectureType.x86_64)
                 {
@@ -367,7 +368,7 @@ namespace TypeMake
             return SelectedProjectNames.ToDictionary(Name => Name, Name => Projects[Name]);
         }
 
-        private static void GenerateRetypemakeScript(Cpp.OperatingSystemType BuildingOperatingSystem, PathString SourceDirectory, PathString BuildDirectory, Shell.EnvironmentVariableMemory Memory, bool Quiet)
+        private static void GenerateRetypemakeScript(Cpp.OperatingSystemType BuildingOperatingSystem, PathString SourceDirectory, PathString BuildDirectory, Shell.EnvironmentVariableMemory Memory, bool OverwriteRetypemakeScript)
         {
             if (BuildingOperatingSystem == Cpp.OperatingSystemType.Windows)
             {
@@ -403,18 +404,13 @@ namespace TypeMake
                     }
                 }
                 Lines.Add("pushd \"%SourceDirectory%\"");
-                Lines.Add(@"call .\typemake.cmd --quiet %*");
+                Lines.Add(@"call .\typemake.cmd %*");
                 Lines.Add("popd");
                 Lines.Add("");
                 Lines.Add("if not \"%NO_PAUSE_SYMBOL%\"==\"1\" pause");
                 Lines.Add("exit /b %EXIT_CODE%");
                 Lines.Add("");
                 var RetypemakePath = BuildDirectory / "retypemake.cmd";
-                var OverwriteRetypemakeScript = false;
-                if (File.Exists(RetypemakePath))
-                {
-                    OverwriteRetypemakeScript = Shell.RequireEnvironmentVariableBoolean(Memory, "OverwriteRetypemakeScript", Quiet, false);
-                }
                 if (OverwriteRetypemakeScript || !File.Exists(RetypemakePath))
                 {
                     TextFile.WriteToFile(RetypemakePath, String.Join("\r\n", Lines), System.Text.Encoding.Default, false);
@@ -451,15 +447,10 @@ namespace TypeMake
                     }
                 }
                 Lines.Add("pushd \"${SourceDirectory}\"");
-                Lines.Add("./typemake.sh --quiet \"$@\"");
+                Lines.Add("./typemake.sh \"$@\"");
                 Lines.Add("popd");
                 Lines.Add("");
                 var RetypemakePath = BuildDirectory / "retypemake.sh";
-                var OverwriteRetypemakeScript = false;
-                if (File.Exists(RetypemakePath))
-                {
-                    OverwriteRetypemakeScript = Shell.RequireEnvironmentVariableBoolean(Memory, "OverwriteRetypemakeScript", Quiet, false);
-                }
                 if (OverwriteRetypemakeScript || !File.Exists(RetypemakePath))
                 {
                     TextFile.WriteToFile(RetypemakePath, String.Join("\n", Lines), new System.Text.UTF8Encoding(false), false);
