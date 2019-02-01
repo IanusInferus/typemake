@@ -90,6 +90,7 @@ namespace TypeMake.Cpp
             var g = "{" + ProjectId.ToUpper() + "}";
             GlobalsPropertyGroup.SetElementValue(xn + "ProjectGuid", g);
             GlobalsPropertyGroup.SetElementValue(xn + "RootNamespace", Project.Name);
+            GlobalsPropertyGroup.SetElementValue(xn + "WindowsTargetPlatformVersion", GetWindowsTargetPlatformVersion());
 
             var ExistingConfigurationTypeAndArchitectures = new Dictionary<KeyValuePair<ConfigurationType, ArchitectureType>, String>();
             var ProjectConfigurations = xVcxproj.Elements(xn + "ItemGroup").Where(e => (e.Attribute("Label") != null) && (e.Attribute("Label").Value == "ProjectConfigurations")).SelectMany(e => e.Elements(xn + "ProjectConfiguration")).Select(e => e.Element(xn + "Configuration").Value + "|" + e.Element(xn + "Platform").Value).ToDictionary(s => s);
@@ -205,7 +206,7 @@ namespace TypeMake.Cpp
                     var Values = new List<String> { "" };
                     if (conf.MatchingConfigurationTypes != null)
                     {
-                        Keys = (Keys != "" ? Keys + "|" : "") +  "$(Configuration)";
+                        Keys = (Keys != "" ? Keys + "|" : "") + "$(Configuration)";
                         Values = conf.MatchingConfigurationTypes.SelectMany(t => Values.Select(v => (v != "" ? v + "|" : "") + t.ToString())).ToList();
                     }
                     if (conf.MatchingTargetArchitectures != null)
@@ -444,6 +445,47 @@ namespace TypeMake.Cpp
             else
             {
                 throw new NotSupportedException("NotSupportedArchitecture: " + Architecture.ToString());
+            }
+        }
+
+        private static Object WindowsTargetPlatformVersionLock = new Object();
+        private static String WindowsTargetPlatformVersion = null;
+        private String GetWindowsTargetPlatformVersion()
+        {
+            if (BuildingOperatingSystem == OperatingSystemType.Windows)
+            {
+                lock (WindowsTargetPlatformVersionLock)
+                {
+                    if (WindowsTargetPlatformVersion == null)
+                    {
+                        String Value;
+                        using (var LocalMachineKey = Microsoft.Win32.RegistryKey.OpenBaseKey(Microsoft.Win32.RegistryHive.LocalMachine, Microsoft.Win32.RegistryView.Registry32))
+                        using (var Key = LocalMachineKey.OpenSubKey(@"SOFTWARE\Microsoft\Microsoft SDKs\Windows\v10.0", false))
+                        {
+                            Value = Key.GetValue("ProductVersion") as String;
+                        }
+                        if (Value == null)
+                        {
+                            WindowsTargetPlatformVersion = "10.0.10240.0";
+                        }
+                        else
+                        {
+                            if (Value.Split('.').Length == 3)
+                            {
+                                WindowsTargetPlatformVersion = Value + ".0";
+                            }
+                            else
+                            {
+                                WindowsTargetPlatformVersion = Value;
+                            }
+                        }
+                    }
+                    return WindowsTargetPlatformVersion;
+                }
+            }
+            else
+            {
+                return "10.0.10240.0";
             }
         }
     }
