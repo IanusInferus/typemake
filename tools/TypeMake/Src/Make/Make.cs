@@ -418,12 +418,11 @@ namespace TypeMake
 
         private List<Configuration> GetCommonConfigurations()
         {
-            return new List<Configuration>
+            var Configurations = new List<Configuration>
             {
                 new Configuration
                 {
                     MatchingCompilers = new List<CompilerType> { CompilerType.VisualC },
-                    LibDirectories = new List<PathString> { BuildDirectory / @"$(PlatformTarget)_$(Configuration)" },
                     Defines = ParseDefines("_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS"),
                     CFlags = new List<String> { "/bigobj" }
                 },
@@ -453,6 +452,21 @@ namespace TypeMake
                     CppFlags = new List<String>{ "-std=c++14", "-stdlib=libc++" }
                 }
             };
+            foreach (var Architecture in Enum.GetValues(typeof(ArchitectureType)).Cast<ArchitectureType>())
+            {
+                foreach (var ConfigurationType in Enum.GetValues(typeof(ConfigurationType)).Cast<ConfigurationType>())
+                {
+
+                    Configurations.Add(new Configuration
+                    {
+                        MatchingCompilers = new List<CompilerType> { CompilerType.VisualC },
+                        MatchingTargetArchitectures = new List<ArchitectureType> { Architecture },
+                        MatchingConfigurationTypes = new List<ConfigurationType> { ConfigurationType },
+                        LibDirectories = new List<PathString> { BuildDirectory / $"{Architecture}_{ConfigurationType}" }
+                    });
+                }
+            }
+            return Configurations;
         }
 
         private static List<Cpp.File> GetFilesInDirectory(PathString d, OperatingSystemType TargetOperatingSystem, bool IsTargetOperatingSystemMatched, bool TopOnly = false)

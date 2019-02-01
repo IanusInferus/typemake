@@ -144,6 +144,22 @@ namespace TypeMake.Cpp
                 {
                     PropertyGroup.SetElementValue(xn + "CharacterSet", conf.Options["CharacterSet"]);
                 }
+                if (conf.Options.ContainsKey("OutDir"))
+                {
+                    PropertyGroup.SetElementValue(xn + "OutDir", conf.Options["OutDir"]);
+                }
+                else
+                {
+                    PropertyGroup.SetElementValue(xn + "OutDir", $"$(SolutionDir){Architecture}_{ConfigurationType}\\");
+                }
+                if (conf.Options.ContainsKey("IntDir"))
+                {
+                    PropertyGroup.SetElementValue(xn + "IntDir", conf.Options["IntDir"]);
+                }
+                else
+                {
+                    PropertyGroup.SetElementValue(xn + "IntDir", $"$(SolutionDir){Architecture}_{ConfigurationType}\\$(ProjectName)\\");
+                }
 
                 var ItemDefinitionGroup = xVcxproj.Elements(xn + "ItemDefinitionGroup").Where(e => (e.Attribute("Condition") != null) && (e.Attribute("Condition").Value == "'$(Configuration)|$(Platform)'=='" + Name + "'")).LastOrDefault();
                 if (ItemDefinitionGroup == null)
