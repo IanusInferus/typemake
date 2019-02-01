@@ -140,6 +140,10 @@ namespace TypeMake.Cpp
                 {
                     throw new NotSupportedException("NotSupportedTargetType: " + conf.TargetType.ToString());
                 }
+                if (conf.Options.ContainsKey("CharacterSet"))
+                {
+                    PropertyGroup.SetElementValue(xn + "CharacterSet", conf.Options["CharacterSet"]);
+                }
 
                 var ItemDefinitionGroup = xVcxproj.Elements(xn + "ItemDefinitionGroup").Where(e => (e.Attribute("Condition") != null) && (e.Attribute("Condition").Value == "'$(Configuration)|$(Platform)'=='" + Name + "'")).LastOrDefault();
                 if (ItemDefinitionGroup == null)

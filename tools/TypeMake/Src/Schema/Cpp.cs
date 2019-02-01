@@ -77,6 +77,7 @@ namespace TypeMake.Cpp
         public List<KeyValuePair<String, String>> Defines = new List<KeyValuePair<String, String>> { };
         public List<String> CFlags = new List<String> { };
         public List<String> CppFlags = new List<String> { };
+        public Dictionary<String, String> Options = new Dictionary<String, String> { };
 
         public List<PathString> LibDirectories = new List<PathString> { };
         public List<PathString> Libs = new List<PathString> { };

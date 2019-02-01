@@ -35,6 +35,7 @@ namespace TypeMake.Cpp
                 Defines = Matched.SelectMany(c => c.Defines).ToList(),
                 CFlags = Matched.SelectMany(c => c.CFlags).ToList(),
                 CppFlags = Matched.SelectMany(c => c.CppFlags).ToList(),
+                Options = Matched.SelectMany(c => c.Options).ToDictionary(p => p.Key, p => p.Value),
                 LibDirectories = Matched.SelectMany(c => c.LibDirectories).ToList(),
                 Libs = Matched.SelectMany(c => c.Libs).ToList(),
                 LinkerFlags = Matched.SelectMany(c => c.LinkerFlags).ToList(),
