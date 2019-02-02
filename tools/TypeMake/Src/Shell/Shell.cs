@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace TypeMake
@@ -173,30 +174,26 @@ namespace TypeMake
         {
             var psi = CreateExecuteStartInfo(ProgramPath, Arguments);
             psi.RedirectStandardOutput = true;
-            psi.RedirectStandardError = true;
             var Style = OperatingSystem == OperatingSystemType.Windows ? ShellArgumentStyle.CMD : ShellArgumentStyle.Bash;
             var CommandLine = Arguments.Length == 0 ? EscapeArgumentForShell(ProgramPath, Style) : EscapeArgumentForShell(ProgramPath, Style) + " " + String.Join(" ", Arguments.Select(a => EscapeArgumentForShell(a, Style)));
             Console.WriteLine(CommandLine);
             var p = Process.Start(psi);
-            var Lines = new List<String>();
-            p.OutputDataReceived += (s, e) =>
+            using (var Reader = p.StandardOutput)
             {
-                lock (Lines)
+                var sb = new StringBuilder();
+                var Buffer = new Char[256];
+                while (true)
                 {
-                    Lines.Add(e.Data);
+                    var Count = Reader.Read(Buffer, 0, Buffer.Length);
+                    if (Count == 0)
+                    {
+                        break;
+                    }
+                    sb.Append(Buffer, 0, Count);
                 }
-            };
-            p.ErrorDataReceived += (s, e) =>
-            {
-                lock (Lines)
-                {
-                    Lines.Add(e.Data);
-                }
-            };
-            p.BeginOutputReadLine();
-            p.BeginErrorReadLine();
-            p.WaitForExit();
-            return new KeyValuePair<int, String>(p.ExitCode, String.Join(Environment.NewLine, Lines));
+                p.WaitForExit();
+                return new KeyValuePair<int, String>(p.ExitCode, sb.ToString());
+            }
         }
         public static ProcessStartInfo CreateExecuteStartInfo(String ProgramPath, params String[] Arguments)
         {
