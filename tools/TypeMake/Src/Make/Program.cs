@@ -162,7 +162,7 @@ namespace TypeMake
                         }
                     }
                     VSDir = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "VSDir", Quiet, DefaultVSDir);
-                    TargetArchitecture = Shell.RequireEnvironmentVariableEnum(Memory, "TargetArchitecture", Quiet, new HashSet<Cpp.ArchitectureType> { Cpp.ArchitectureType.x86, Cpp.ArchitectureType.x86_64 }, Cpp.ArchitectureType.x86_64);
+                    TargetArchitecture = Shell.RequireEnvironmentVariableEnum(Memory, "TargetArchitecture", Quiet, new HashSet<Cpp.ArchitectureType> { Cpp.ArchitectureType.x86, Cpp.ArchitectureType.x86_64, Cpp.ArchitectureType.armeabi_v7a, Cpp.ArchitectureType.arm64_v8a }, Cpp.ArchitectureType.x86_64);
                     Configuration = Shell.RequireEnvironmentVariableEnum(Memory, "Configuration", Quiet, Cpp.ConfigurationType.Debug);
                 }
                 var BuildDirectory = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "BuildDirectory", Quiet, "build/windows".AsPath(), p => !File.Exists(p) ? new KeyValuePair<bool, String>(true, "") : new KeyValuePair<bool, String>(false, "Exist as a file."));
@@ -179,6 +179,10 @@ namespace TypeMake
                         GenerateBuildScriptWindows(BuildDirectory, r.SolutionName, Cpp.ArchitectureType.x86, Cpp.ConfigurationType.Release, VSDir, ForceRegenerate);
                         GenerateBuildScriptWindows(BuildDirectory, r.SolutionName, Cpp.ArchitectureType.x86_64, Cpp.ConfigurationType.Debug, VSDir, ForceRegenerate);
                         GenerateBuildScriptWindows(BuildDirectory, r.SolutionName, Cpp.ArchitectureType.x86_64, Cpp.ConfigurationType.Release, VSDir, ForceRegenerate);
+                        GenerateBuildScriptWindows(BuildDirectory, r.SolutionName, Cpp.ArchitectureType.armeabi_v7a, Cpp.ConfigurationType.Debug, VSDir, ForceRegenerate);
+                        GenerateBuildScriptWindows(BuildDirectory, r.SolutionName, Cpp.ArchitectureType.armeabi_v7a, Cpp.ConfigurationType.Release, VSDir, ForceRegenerate);
+                        GenerateBuildScriptWindows(BuildDirectory, r.SolutionName, Cpp.ArchitectureType.arm64_v8a, Cpp.ConfigurationType.Debug, VSDir, ForceRegenerate);
+                        GenerateBuildScriptWindows(BuildDirectory, r.SolutionName, Cpp.ArchitectureType.arm64_v8a, Cpp.ConfigurationType.Release, VSDir, ForceRegenerate);
                         using (var d = Shell.PushDirectory(BuildDirectory))
                         {
                             MergeExitCode(Shell.Execute($"build_{TargetArchitecture}_{Configuration}.cmd"));

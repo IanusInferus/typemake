@@ -16,11 +16,11 @@ Target Operating System vs Building Operating System
 
 |                                         |   Windows 10 x64   |      Linux x64     |      MacOS x64     |
 | :-------------------------------------: | :----------------: | :----------------: | :----------------: |
-|             Windows x86/x64             |       VS2017       |                    |                    |
+|  Windows x86/x64/armeabi-v7a/arm64-v8a  |       VS2017       |                    |                    |
 |                Linux x64                |      WSL+cmake     |        cmake       |                    |
 |                MacOS x64                |                    |                    |        XCode       |
 |  Android x86/x64/armeabi-v7a/arm64-v8a  |  NDK+cmake+gradle  |  NDK+cmake+gradle  |  NDK+cmake+gradle  |
-|                   iOS                   |                    |                    |        XCode       |
+|        iOS armeabi-v7a/arm64-v8a        |                    |                    |        XCode       |
 
 ## Notice
 
