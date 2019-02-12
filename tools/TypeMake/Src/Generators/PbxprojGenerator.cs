@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using static TypeMake.Plist;
 
 namespace TypeMake.Cpp
@@ -256,7 +257,7 @@ namespace TypeMake.Cpp
                 var Defines = conf.Defines;
                 if (Defines.Count != 0)
                 {
-                    BuildSettings.SetItem("GCC_PREPROCESSOR_DEFINITIONS", Value.CreateArray(Defines.Select(d => d.Key + (d.Value == null ? "" : "=" + d.Value)).Concat(new List<String> { "$(inherited)" }).Select(d => Value.CreateString(d)).ToList()));
+                    BuildSettings.SetItem("GCC_PREPROCESSOR_DEFINITIONS", Value.CreateArray(Defines.Select(d => d.Key + (d.Value == null ? "" : "=" + (Regex.IsMatch(d.Value, @"^[0-9]+$") ? d.Value : "\"" + d.Value.Replace("\"", "") + "\""))).Concat(new List<String> { "$(inherited)" }).Select(d => Value.CreateString(d)).ToList()));
                 }
                 var CFlags = conf.CFlags;
                 if (CFlags.Count != 0)

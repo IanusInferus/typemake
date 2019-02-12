@@ -40,7 +40,8 @@ namespace TypeMake.Cpp
                 Libs = Matched.SelectMany(c => c.Libs).ToList(),
                 LinkerFlags = Matched.SelectMany(c => c.LinkerFlags).ToList(),
                 Files = Matched.SelectMany(c => c.Files).ToList(),
-                BundleIdentifier = Matched.Select(c => c.BundleIdentifier).Where(v => v != null).LastOrDefault()
+                BundleIdentifier = Matched.Select(c => c.BundleIdentifier).Where(v => v != null).LastOrDefault(),
+                OutputDirectory = Matched.Select(c => c.OutputDirectory).Where(v => v != null).LastOrDefault()
             };
             return conf;
         }

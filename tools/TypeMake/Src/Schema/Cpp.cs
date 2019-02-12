@@ -86,6 +86,7 @@ namespace TypeMake.Cpp
         public List<File> Files = new List<File> { };
 
         public String BundleIdentifier = null;
+        public PathString OutputDirectory = null;
     }
 
     [DebuggerDisplay("Name = {Name}, TargetName = {TargetName}, ApplicationIdentifier = {ApplicationIdentifier}, Configurations = ...")]

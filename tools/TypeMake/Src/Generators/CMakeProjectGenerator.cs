@@ -85,7 +85,14 @@ namespace TypeMake.Cpp
             {
                 yield return $@"set_property(TARGET ${{PROJECT_NAME}} PROPERTY OUTPUT_NAME {Project.TargetName})";
             }
-            if (TargetArchitectureType.HasValue)
+            if (conf.OutputDirectory != null)
+            {
+                var OutDir = conf.OutputDirectory.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix);
+                yield return $@"set_property(TARGET ${{PROJECT_NAME}} PROPERTY ARCHIVE_OUTPUT_DIRECTORY {OutDir})";
+                yield return $@"set_property(TARGET ${{PROJECT_NAME}} PROPERTY LIBRARY_OUTPUT_DIRECTORY {OutDir})";
+                yield return $@"set_property(TARGET ${{PROJECT_NAME}} PROPERTY RUNTIME_OUTPUT_DIRECTORY {OutDir})";
+            }
+            else if (TargetArchitectureType.HasValue)
             {
                 var Architecture = TargetArchitectureType.Value;
                 yield return $@"set_property(TARGET ${{PROJECT_NAME}} PROPERTY ARCHIVE_OUTPUT_DIRECTORY ${{CMAKE_CURRENT_BINARY_DIR}}/../../{Architecture}_${{CMAKE_BUILD_TYPE}})";
@@ -136,7 +143,7 @@ namespace TypeMake.Cpp
                 yield return @"target_compile_definitions(${PROJECT_NAME} PRIVATE";
                 foreach (var d in Defines)
                 {
-                    yield return @"  -D" + d.Key + (d.Value == null ? "" : "=" + (Regex.IsMatch(d.Value, @"["" ^|]") ? "\"" + d.Value.Replace("\"", "") + "\"" : d.Value));
+                    yield return @"  -D" + d.Key + (d.Value == null ? "" : "=" + (Regex.IsMatch(d.Value, @"^[0-9]+$") ? d.Value : "\"" + d.Value.Replace("\"", "") + "\""));
                 }
                 yield return @")";
             }
@@ -161,6 +168,10 @@ namespace TypeMake.Cpp
                 if (ProjectReferences.Count + conf.Libs.Count > 0)
                 {
                     yield return @"target_link_libraries(${PROJECT_NAME} PRIVATE";
+                    if ((Compiler == CompilerType.gcc) || (Compiler == CompilerType.clang))
+                    {
+                        yield return @"  -Wl,--start-group";
+                    }
                     foreach (var p in ProjectReferences)
                     {
                         yield return "  " + p.Name;
@@ -168,6 +179,10 @@ namespace TypeMake.Cpp
                     foreach (var lib in conf.Libs)
                     {
                         yield return "  " + lib.ToString(PathStringStyle.Unix);
+                    }
+                    if ((Compiler == CompilerType.gcc) || (Compiler == CompilerType.clang))
+                    {
+                        yield return @"  -Wl,--end-group";
                     }
                     yield return @")";
                 }
