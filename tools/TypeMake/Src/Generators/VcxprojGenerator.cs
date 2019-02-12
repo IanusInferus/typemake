@@ -144,9 +144,11 @@ namespace TypeMake.Cpp
                 {
                     PropertyGroup.SetElementValue(xn + "CharacterSet", conf.Options["CharacterSet"]);
                 }
-                if (conf.Options.ContainsKey("OutDir"))
+                if (conf.OutputDirectory != null)
                 {
-                    PropertyGroup.SetElementValue(xn + "OutDir", conf.Options["OutDir"]);
+                    var OutDir = conf.OutputDirectory.RelativeTo(BaseDirPath).ToString(PathStringStyle.Windows);
+                    if (!OutDir.EndsWith("\\")) { OutDir += "\\"; }
+                    PropertyGroup.SetElementValue(xn + "OutDir", OutDir);
                 }
                 else
                 {
