@@ -355,9 +355,8 @@ namespace TypeMake
 
         private static Dictionary<String, Make.ProjectDescription> GetSelectedProjects(Shell.EnvironmentVariableMemory Memory, bool Quiet, Dictionary<String, Make.ProjectDescription> Projects, Func<Dictionary<String, Make.ProjectDescription>, Dictionary<String, List<String>>> CheckUnresolvedDependencies)
         {
-            var EnableAllProjects = Shell.RequireEnvironmentVariableBoolean(Memory, "EnableAllProjects", Quiet, true);
-            if (EnableAllProjects) { return Projects; }
-            var SelectedProjectNames = Shell.RequireEnvironmentVariableMultipleSelection(Memory, "SelectedProjects", Quiet, new HashSet<String>(Projects.Values.Select(t => t.Definition.Name)), Parts =>
+            var ProjectSet = new HashSet<String>(Projects.Values.Select(t => t.Definition.Name));
+            var SelectedProjectNames = Shell.RequireEnvironmentVariableMultipleSelection(Memory, "SelectedProjects", Quiet, ProjectSet, ProjectSet, Parts =>
             {
                 var Unresolved = CheckUnresolvedDependencies(Parts.ToDictionary(Name => Name, Name => Projects[Name]));
                 if (Unresolved.Count > 0)

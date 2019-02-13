@@ -439,9 +439,9 @@ namespace TypeMake
             }
             return s;
         }
-        public static List<String> RequireEnvironmentVariableMultipleSelection(EnvironmentVariableMemory Memory, String Name, bool Quiet, HashSet<String> Selections, Func<List<String>, KeyValuePair<bool, String>> Validator = null)
+        public static List<String> RequireEnvironmentVariableMultipleSelection(EnvironmentVariableMemory Memory, String Name, bool Quiet, HashSet<String> Selections, HashSet<String> DefaultSelections = null, Func<List<String>, KeyValuePair<bool, String>> Validator = null)
         {
-            var InputDisplay = String.Join(" ", Selections);
+            var InputDisplay = String.Join(" ", Selections.Select(v => (DefaultSelections != null) && DefaultSelections.Contains(v) ? "[" + v + "]" : v));
             var s = RequireEnvironmentVariable(Memory, Name, new EnvironmentVariableReadOptions
             {
                 Quiet = Quiet,
@@ -456,7 +456,7 @@ namespace TypeMake
                     if (Validator != null) { return Validator(Parts); }
                     return new KeyValuePair<bool, String>(true, "");
                 },
-                DefaultValue = null,
+                DefaultValue = String.Join(" ", Selections.Intersect(DefaultSelections)),
                 InputDisplay = InputDisplay
             });
             if (Memory.VariableMultipleSelections.ContainsKey(Name))
