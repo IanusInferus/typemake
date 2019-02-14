@@ -169,8 +169,8 @@ namespace TypeMake
                 var m = new Make(Cpp.ToolchainType.Windows_VisualC, Cpp.CompilerType.VisualC, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, null, SourceDirectory, BuildDirectory, null, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
                 var Projects = m.GetAvailableProjects();
                 var SelectedProjects = GetSelectedProjects(Memory, Quiet, Projects, m.CheckUnresolvedDependencies);
-                var r = m.Execute(SelectedProjects);
                 GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, OverwriteRetypemakeScript);
+                var r = m.Execute(SelectedProjects);
                 if (BuildAfterGenerate)
                 {
                     if (BuildingOperatingSystem == Cpp.OperatingSystemType.Windows)
@@ -214,8 +214,8 @@ namespace TypeMake
                 var m = new Make(Cpp.ToolchainType.CMake, Cpp.CompilerType.gcc, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture, Configuration, SourceDirectory, BuildDirectory, null, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
                 var Projects = m.GetAvailableProjects();
                 var SelectedProjects = GetSelectedProjects(Memory, Quiet, Projects, m.CheckUnresolvedDependencies);
-                m.Execute(SelectedProjects);
                 GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, OverwriteRetypemakeScript);
+                m.Execute(SelectedProjects);
                 GenerateBuildScriptLinux(BuildingOperatingSystem, BuildDirectory, Configuration, CMake, Make, ForceRegenerate);
                 if (BuildAfterGenerate)
                 {
@@ -242,8 +242,8 @@ namespace TypeMake
                 var m = new Make(Cpp.ToolchainType.Mac_XCode, Cpp.CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, null, SourceDirectory, BuildDirectory, null, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
                 var Projects = m.GetAvailableProjects();
                 var SelectedProjects = GetSelectedProjects(Memory, Quiet, Projects, m.CheckUnresolvedDependencies);
-                var r = m.Execute(SelectedProjects);
                 GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, OverwriteRetypemakeScript);
+                var r = m.Execute(SelectedProjects);
                 GenerateBuildScriptXCode(BuildingOperatingSystem, BuildDirectory, r, ForceRegenerate);
                 if (BuildAfterGenerate)
                 {
@@ -267,8 +267,8 @@ namespace TypeMake
                 var m = new Make(Cpp.ToolchainType.Mac_XCode, Cpp.CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, null, SourceDirectory, BuildDirectory, DevelopmentTeam, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
                 var Projects = m.GetAvailableProjects();
                 var SelectedProjects = GetSelectedProjects(Memory, Quiet, Projects, m.CheckUnresolvedDependencies);
-                var r = m.Execute(SelectedProjects);
                 GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, OverwriteRetypemakeScript);
+                var r = m.Execute(SelectedProjects);
                 GenerateBuildScriptXCode(BuildingOperatingSystem, BuildDirectory, r, ForceRegenerate);
                 if (BuildAfterGenerate)
                 {
@@ -296,9 +296,9 @@ namespace TypeMake
                 var m = new Make(Cpp.ToolchainType.Gradle_CMake, Cpp.CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture, Configuration, SourceDirectory, BuildDirectory, null, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
                 var Projects = m.GetAvailableProjects();
                 var SelectedProjects = GetSelectedProjects(Memory, Quiet, Projects, m.CheckUnresolvedDependencies);
+                GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, OverwriteRetypemakeScript);
                 m.Execute(SelectedProjects);
                 TextFile.WriteToFile(BuildDirectory / "gradle/local.properties", $"sdk.dir={AndroidSdk.ToString(PathStringStyle.Unix)}", new System.Text.UTF8Encoding(false), !ForceRegenerate);
-                GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, OverwriteRetypemakeScript);
                 var Make = "".AsPath();
                 if (BuildingOperatingSystemArchitecture == Cpp.ArchitectureType.x86_64)
                 {
