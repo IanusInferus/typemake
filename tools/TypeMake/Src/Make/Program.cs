@@ -88,12 +88,12 @@ namespace TypeMake
                 if (RetypemakeScriptPath.Extension.Equals(".cmd", StringComparison.OrdinalIgnoreCase))
                 {
                     Lines = File.ReadAllLines(RetypemakeScriptPath, System.Text.Encoding.Default);
-                    r = new Regex(@"^set\s+(?<Key>[^=]+)=(?<Value>.*)\s*$");
+                    r = new Regex(@"^set\s+(""(?<Key>[^=]+)=(?<Value>.*)""|(?<Key>[^=]+)=(?<Value>.*))\s*$");
                 }
                 else if (RetypemakeScriptPath.Extension == ".sh")
                 {
                     Lines = File.ReadAllLines(RetypemakeScriptPath, new System.Text.UTF8Encoding(false));
-                    r = new Regex(@"^export\s+(?<Key>[^=]+)=(?<Value>.*)\s*$");
+                    r = new Regex(@"^export\s+(?<Key>[^=]+)=('(?<Value>.*)'|(?<Value>.*))\s*$");
                 }
                 else
                 {
@@ -403,7 +403,7 @@ namespace TypeMake
                         {
                             Lines.Add($":: {String.Join(" ", Memory.VariableMultipleSelections[p.Key])}");
                         }
-                        Lines.Add($"set {p.Key}={p.Value}");
+                        Lines.Add($"set " + Shell.EscapeArgumentForShell(p.Key + "=" + p.Value, Shell.ShellArgumentStyle.CMD));
                     }
                 }
                 Lines.Add("pushd \"%SourceDirectory%\"");
@@ -446,7 +446,7 @@ namespace TypeMake
                         {
                             Lines.Add($"# {String.Join(" ", Memory.VariableMultipleSelections[p.Key])}");
                         }
-                        Lines.Add($"export {p.Key}={p.Value}");
+                        Lines.Add($"export {p.Key}={Shell.EscapeArgumentForShell(p.Value, Shell.ShellArgumentStyle.Bash)}");
                     }
                 }
                 Lines.Add("pushd \"${SourceDirectory}\"");
