@@ -90,11 +90,10 @@ namespace TypeMake.Cpp
             {
                 foreach (var f in conf.Files)
                 {
-                    var PathParts = f.Path.RelativeTo(InputDirectory).Parts;
-                    PathParts[0] = (InputDirectory.RelativeTo(OutputDirectory) / PathParts[0]).ToString(PathStringStyle.Unix);
-                    var RelativePath = PathString.Join(PathParts).ToString(PathStringStyle.Unix);
-                    if (RelativePathToObjects.ContainsKey(RelativePath)) { continue; }
-                    var Added = AddFile(Objects, RootObject["mainGroup"].String, new LinkedList<String>(), new LinkedList<String>(PathParts.Where(pp => pp != ".")), f, BaseDirPath, RelativePathToObjects);
+                    var VirtualPath = PathString.Join(f.Path.RelativeTo(InputDirectory).Parts.Where(v => v != ".."));
+                    var PhysicalPath = f.Path.RelativeTo(OutputDirectory);
+                    if (RelativePathToObjects.ContainsKey(PhysicalPath.ToString(PathStringStyle.Unix))) { continue; }
+                    var Added = AddFile(Objects, RootObject["mainGroup"].String, "", "", VirtualPath, PhysicalPath, f, RelativePathToObjects);
                     if (!Added)
                     {
                         throw new InvalidOperationException();
@@ -104,8 +103,8 @@ namespace TypeMake.Cpp
 
             foreach (var Project in ProjectReferences)
             {
-                var RelativePath = ("Frameworks/" + Project.Name).AsPath();
-                AddProjectReference(Objects, RootObject["mainGroup"].String, new LinkedList<String>(), new LinkedList<String>(RelativePath.Parts.Where(pp => pp != ".")), Project, BaseDirPath, RelativePathToObjects);
+                var VirtualPath = ("Frameworks/" + Project.Name).AsPath();
+                AddProjectReference(Objects, RootObject["mainGroup"].String, "", VirtualPath, Project, RelativePathToObjects);
             }
 
             foreach (var TargetKey in Targets)
@@ -173,9 +172,7 @@ namespace TypeMake.Cpp
                         {
                             if ((f.Type == FileType.CSource) || (f.Type == FileType.CppSource) || (f.Type == FileType.ObjectiveCSource) || (f.Type == FileType.ObjectiveCppSource))
                             {
-                                var PathParts = f.Path.FullPath.RelativeTo(InputDirectory).Parts;
-                                PathParts[0] = (InputDirectory.RelativeTo(OutputDirectory) / PathParts[0]).ToString(PathStringStyle.Unix);
-                                var RelativePath = PathString.Join(PathParts).ToString(PathStringStyle.Unix);
+                                var RelativePath = f.Path.FullPath.RelativeTo(OutputDirectory).ToString(PathStringStyle.Unix);
                                 var File = new Dictionary<String, Value>();
                                 File.Add("fileRef", Value.CreateString(RelativePathToObjects[RelativePath]));
                                 File.Add("isa", Value.CreateString("PBXBuildFile"));
@@ -302,52 +299,40 @@ namespace TypeMake.Cpp
             TextFile.WriteToFile(PbxprojPath, Plist.ToString(p), new UTF8Encoding(false), !ForceRegenerate);
         }
 
-        private bool AddFile(Dictionary<String, Value> Objects, String GroupOrFileKey, LinkedList<String> Stack, LinkedList<String> RelativePathStack, File File, String BaseDirPath, Dictionary<String, String> RelativePathToFileObjectKey, bool Top = true)
+        private bool AddFile(Dictionary<String, Value> Objects, String GroupKey, PathString ParentGroupVirtualPath, PathString ParentGroupPhysicalPath, PathString FileVirtualPath, PathString FilePhysicalPath, File File, Dictionary<String, String> RelativePathToFileObjectKey, bool Top = true)
         {
-            var GroupOrFile = Objects[GroupOrFileKey].Dict;
+            var GroupOrFile = Objects[GroupKey].Dict;
             var Type = GroupOrFile["isa"].String;
             if (Type != "PBXGroup") { return false; }
-            var Path = GroupOrFile.ContainsKey("path") ? GroupOrFile["path"].String : "";
-            var Parts = Path.AsPath().Parts.Where(p => p != ".").ToArray();
-            if (Parts.Length > RelativePathStack.Count) { return false; }
-            if (!Parts.SequenceEqual(RelativePathStack.Take(Parts.Length))) { return false; }
-            foreach (var Part in Parts)
-            {
-                Stack.AddLast(Part);
-            }
-            for (int k = 0; k < Parts.Length; k += 1)
-            {
-                RelativePathStack.RemoveFirst();
-            }
+            var GroupVirtualPath = ParentGroupVirtualPath / (GroupOrFile.ContainsKey("name") ? GroupOrFile["name"].String : GroupOrFile.ContainsKey("path") ? GroupOrFile["path"].String : "");
+            var GroupPhysicalPath = ParentGroupPhysicalPath / (GroupOrFile.ContainsKey("path") ? GroupOrFile["path"].String : "");
             var Children = GroupOrFile["children"];
+            if (!FileVirtualPath.In(GroupVirtualPath)) { return false; }
             var Added = false;
             foreach (var Child in Children.Array)
             {
-                Added = AddFile(Objects, Child.String, Stack, RelativePathStack, File, BaseDirPath, RelativePathToFileObjectKey, false);
+                Added = AddFile(Objects, Child.String, GroupVirtualPath, GroupPhysicalPath, FileVirtualPath, FilePhysicalPath, File, RelativePathToFileObjectKey, false);
                 if (Added)
                 {
                     break;
                 }
             }
-            foreach (var Part in Parts.Reverse())
-            {
-                RelativePathStack.AddFirst(Part);
-            }
-            for (int k = 0; k < Parts.Length; k += 1)
-            {
-                Stack.RemoveLast();
-            }
             if (Added) { return true; }
+            if (!Top && (GroupVirtualPath == ParentGroupVirtualPath)) { return false; }
 
-            if (!Top && (Parts.Length == 0)) { return false; }
+            var RelativePath = FileVirtualPath.RelativeTo(GroupVirtualPath);
+            var RelativePathParts = RelativePath.Parts;
 
-            String ChildHash;
+            if (RelativePathParts.Count == 0)
             {
-                var RelativePath = PathString.Join(Stack.Concat(RelativePathStack).Where(p => p != "")).ToString(PathStringStyle.Unix);
-                var FileName = RelativePathStack.Last.Value.AsPath().FileName;
-                var Hash = GetHashOfPath(RelativePath);
+                throw new InvalidOperationException();
+            }
+            else if (RelativePathParts.Count == 1)
+            {
+                var FileName = FileVirtualPath.FileName;
+                var Hash = GetHashOfPath(FilePhysicalPath.ToString(PathStringStyle.Unix));
 
-                var FileObject = new Dictionary<string, Value>();
+                var FileObject = new Dictionary<String, Value>();
                 FileObject.Add("fileEncoding", Value.CreateInteger(4));
                 FileObject.Add("isa", Value.CreateString("PBXFileReference"));
                 string LastKnownFileType = "";
@@ -386,10 +371,10 @@ namespace TypeMake.Cpp
                 {
                     FileObject.Add("lastKnownFileType", Value.CreateString(LastKnownFileType));
                 }
-                if (RelativePathStack.Count - 1 < Parts.Length + 1)
+                if (FilePhysicalPath != GroupPhysicalPath / FileName)
                 {
                     FileObject.Add("name", Value.CreateString(FileName));
-                    FileObject.Add("path", Value.CreateString(RelativePath));
+                    FileObject.Add("path", Value.CreateString(FilePhysicalPath.RelativeTo(GroupPhysicalPath).ToString(PathStringStyle.Unix)));
                 }
                 else
                 {
@@ -397,84 +382,71 @@ namespace TypeMake.Cpp
                 }
                 FileObject.Add("sourceTree", Value.CreateString("<group>"));
                 Objects.Add(Hash, Value.CreateDict(FileObject));
-                RelativePathToFileObjectKey.Add(RelativePath, Hash);
+                RelativePathToFileObjectKey.Add(FilePhysicalPath.ToString(PathStringStyle.Unix), Hash);
 
-                ChildHash = Hash;
+                Children.Array.Add(Value.CreateString(Hash));
+
+                return true;
             }
-
-            for (int k = RelativePathStack.Count - 1; k >= Parts.Length + 1; k -= 1)
+            else
             {
-                var RelativePath = PathString.Join(Stack.Concat(RelativePathStack.Take(k)).Where(p => p != "")).ToString(PathStringStyle.Unix);
-                var DirName = RelativePath.AsPath().FileName;
-                var Hash = GetHashOfPath(RelativePath);
+                var pp = FilePhysicalPath.GetAccestor(RelativePathParts.Count - 1);
+                var VirtualDirName = RelativePathParts[0];
+                var PhysicalDirName = pp.FileName;
+                var Hash = GetHashOfPath(pp.ToString(PathStringStyle.Unix));
 
-                var FileObject = new Dictionary<string, Value>();
-                FileObject.Add("children", Value.CreateArray(new List<Value> { Value.CreateString(ChildHash) }));
-                FileObject.Add("isa", Value.CreateString("PBXGroup"));
-                if (k == Parts.Length + 1)
+                var GroupObject = new Dictionary<String, Value>();
+                GroupObject.Add("children", Value.CreateArray(new List<Value> { }));
+                GroupObject.Add("isa", Value.CreateString("PBXGroup"));
+                if (pp != GroupPhysicalPath / VirtualDirName)
                 {
-                    FileObject.Add("name", Value.CreateString(DirName));
-                    FileObject.Add("path", Value.CreateString(RelativePath));
+                    GroupObject.Add("name", Value.CreateString(VirtualDirName));
+                    GroupObject.Add("path", Value.CreateString(pp.RelativeTo(GroupPhysicalPath).ToString(PathStringStyle.Unix)));
                 }
                 else
                 {
-                    FileObject.Add("path", Value.CreateString(DirName));
+                    GroupObject.Add("path", Value.CreateString(VirtualDirName));
                 }
-                FileObject.Add("sourceTree", Value.CreateString("<group>"));
-                Objects.Add(Hash, Value.CreateDict(FileObject));
+                GroupObject.Add("sourceTree", Value.CreateString("<group>"));
+                Objects.Add(Hash, Value.CreateDict(GroupObject));
 
-                ChildHash = Hash;
+                Children.Array.Add(Value.CreateString(Hash));
+
+                return AddFile(Objects, Hash, GroupVirtualPath, GroupPhysicalPath, FileVirtualPath, FilePhysicalPath, File, RelativePathToFileObjectKey, false);
             }
-
-            Children.Array.Add(Value.CreateString(ChildHash));
-
-            return true;
         }
 
-        private bool AddProjectReference(Dictionary<String, Value> Objects, String GroupOrFileKey, LinkedList<String> Stack, LinkedList<String> RelativePathStack, ProjectReference Project, String BaseDirPath, Dictionary<String, String> RelativePathToFileObjectKey, bool Top = true)
+        private bool AddProjectReference(Dictionary<String, Value> Objects, String GroupKey, PathString ParentGroupVirtualPath, PathString ProjectVirtualPath, ProjectReference Project, Dictionary<String, String> RelativePathToFileObjectKey, bool Top = true)
         {
-            var GroupOrFile = Objects[GroupOrFileKey].Dict;
+            var GroupOrFile = Objects[GroupKey].Dict;
             var Type = GroupOrFile["isa"].String;
             if (Type != "PBXGroup") { return false; }
-            var Path = GroupOrFile.ContainsKey("path") ? GroupOrFile["path"].String : GroupOrFile.ContainsKey("name") ? GroupOrFile["name"].String : "";
-            var Parts = Path.AsPath().Parts.Where(p => p != ".").ToArray();
-            if (Parts.Length > RelativePathStack.Count) { return false; }
-            if (!Parts.SequenceEqual(RelativePathStack.Take(Parts.Length))) { return false; }
-            foreach (var Part in Parts)
-            {
-                Stack.AddLast(Part);
-            }
-            for (int k = 0; k < Parts.Length; k += 1)
-            {
-                RelativePathStack.RemoveFirst();
-            }
+            var GroupVirtualPath = ParentGroupVirtualPath / (GroupOrFile.ContainsKey("name") ? GroupOrFile["name"].String : GroupOrFile.ContainsKey("path") ? GroupOrFile["path"].String : "");
             var Children = GroupOrFile["children"];
+            if (!ProjectVirtualPath.In(GroupVirtualPath)) { return false; }
             var Added = false;
             foreach (var Child in Children.Array)
             {
-                Added = AddProjectReference(Objects, Child.String, Stack, RelativePathStack, Project, BaseDirPath, RelativePathToFileObjectKey, false);
+                Added = AddProjectReference(Objects, Child.String, GroupVirtualPath, ProjectVirtualPath, Project, RelativePathToFileObjectKey, false);
                 if (Added)
                 {
                     break;
                 }
             }
-            foreach (var Part in Parts.Reverse())
-            {
-                RelativePathStack.AddFirst(Part);
-            }
-            for (int k = 0; k < Parts.Length; k += 1)
-            {
-                Stack.RemoveLast();
-            }
             if (Added) { return true; }
+            if (!Top && (GroupVirtualPath == ParentGroupVirtualPath)) { return false; }
 
-            if (!Top && (Parts.Length == 0)) { return false; }
+            var RelativePath = ProjectVirtualPath.RelativeTo(GroupVirtualPath);
+            var RelativePathParts = RelativePath.Parts;
 
-            String ChildHash;
+            if (RelativePathParts.Count == 0)
             {
-                var RelativePath = String.Join("/", Stack.Concat(RelativePathStack).Where(p => p != ""));
-                var FileName = RelativePathStack.Last.Value;
-                var Hash = GetHashOfPath(RelativePath);
+                throw new InvalidOperationException();
+            }
+            else if (RelativePathParts.Count == 1)
+            {
+                var FileName = ProjectVirtualPath.FileName;
+                var Hash = GetHashOfPath(ProjectVirtualPath.ToString(PathStringStyle.Unix));
 
                 var FileObject = new Dictionary<string, Value>();
                 FileObject.Add("isa", Value.CreateString("PBXFileReference"));
@@ -482,30 +454,29 @@ namespace TypeMake.Cpp
                 FileObject.Add("path", Value.CreateString("lib" + Project.Name + ".a"));
                 FileObject.Add("sourceTree", Value.CreateString("BUILT_PRODUCTS_DIR"));
                 Objects.Add(Hash, Value.CreateDict(FileObject));
-                RelativePathToFileObjectKey.Add(RelativePath, Hash);
+                RelativePathToFileObjectKey.Add(ProjectVirtualPath.ToString(PathStringStyle.Unix), Hash);
 
-                ChildHash = Hash;
+                Children.Array.Add(Value.CreateString(Hash));
+
+                return true;
             }
-
-            for (int k = RelativePathStack.Count - 1; k >= Parts.Length + 1; k -= 1)
+            else
             {
-                var RelativePath = PathString.Join(Stack.Concat(RelativePathStack.Take(k)).Where(p => p != "")).ToString(PathStringStyle.Unix);
-                var DirName = RelativePath.AsPath().FileName;
-                var Hash = GetHashOfPath(RelativePath);
+                var VirtualDirName = RelativePathParts[0];
+                var vp = GroupVirtualPath / VirtualDirName;
+                var Hash = GetHashOfPath(vp.ToString(PathStringStyle.Unix));
 
-                var FileObject = new Dictionary<string, Value>();
-                FileObject.Add("children", Value.CreateArray(new List<Value> { Value.CreateString(ChildHash) }));
-                FileObject.Add("isa", Value.CreateString("PBXGroup"));
-                FileObject.Add("name", Value.CreateString(DirName));
-                FileObject.Add("sourceTree", Value.CreateString("<group>"));
-                Objects.Add(Hash, Value.CreateDict(FileObject));
+                var GroupObject = new Dictionary<String, Value>();
+                GroupObject.Add("children", Value.CreateArray(new List<Value> { }));
+                GroupObject.Add("isa", Value.CreateString("PBXGroup"));
+                GroupObject.Add("name", Value.CreateString(VirtualDirName));
+                GroupObject.Add("sourceTree", Value.CreateString("<group>"));
+                Objects.Add(Hash, Value.CreateDict(GroupObject));
 
-                ChildHash = Hash;
+                Children.Array.Add(Value.CreateString(Hash));
+
+                return AddProjectReference(Objects, Hash, GroupVirtualPath, ProjectVirtualPath, Project, RelativePathToFileObjectKey, false);
             }
-
-            Children.Array.Add(Value.CreateString(ChildHash));
-
-            return true;
         }
 
         private static void RemoveFiles(Dictionary<String, Value> Objects, String GroupOrFileKey, bool Top = true)
