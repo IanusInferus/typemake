@@ -34,8 +34,21 @@ namespace TypeMakeTest
             Assert.AreEqual(@"C:\Windows\".AsPath().Parent.ToString(PathStringStyle.Windows), @"C:\");
             Assert.AreEqual("/dev/".AsPath().Parent.ToString(PathStringStyle.Unix), "/");
 
-            Assert.AreEqual(@"C:".AsPath().Parent, null);
-            Assert.AreEqual("/".AsPath().Parent, null);
+            Assert.AreEqual(@"C:".AsPath().Parent, "C:");
+            Assert.AreEqual("/".AsPath().Parent, "/");
+
+            Assert.AreEqual(".".AsPath().Parent, "..");
+            Assert.AreEqual("..".AsPath().Parent, "../..");
+            Assert.AreEqual("../..".AsPath().Parent, "../../..");
+
+            Assert.AreEqual(@"C:\Windows\notepad.exe".AsPath().GetAccestor(0).ToString(PathStringStyle.Windows), @"C:\Windows\notepad.exe");
+            Assert.AreEqual("/dev/null".AsPath().GetAccestor(0).ToString(PathStringStyle.Unix), "/dev/null");
+            Assert.AreEqual(@"C:\Windows\notepad.exe".AsPath().GetAccestor(1).ToString(PathStringStyle.Windows), @"C:\Windows");
+            Assert.AreEqual("/dev/null".AsPath().GetAccestor(1).ToString(PathStringStyle.Unix), "/dev");
+            Assert.AreEqual(@"C:\Windows\notepad.exe".AsPath().GetAccestor(2).ToString(PathStringStyle.Windows), @"C:\");
+            Assert.AreEqual("/dev/null".AsPath().GetAccestor(2).ToString(PathStringStyle.Unix), "/");
+            Assert.AreEqual(@"C:\Windows\notepad.exe".AsPath().GetAccestor(3).ToString(PathStringStyle.Windows), @"C:\");
+            Assert.AreEqual("/dev/null".AsPath().GetAccestor(3).ToString(PathStringStyle.Unix), "/");
         }
 
         [TestMethod]
