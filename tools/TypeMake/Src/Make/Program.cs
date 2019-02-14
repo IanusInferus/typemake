@@ -407,11 +407,7 @@ namespace TypeMake
                     }
                 }
                 Lines.Add("pushd \"%SourceDirectory%\"");
-                Lines.Add(@"call .\typemake.cmd %*");
-                Lines.Add("popd");
-                Lines.Add("");
-                Lines.Add("if not \"%NO_PAUSE_SYMBOL%\"==\"1\" pause");
-                Lines.Add("exit /b %EXIT_CODE%");
+                Lines.Add("call .\\typemake.cmd %* & popd & if not \"%NO_PAUSE_SYMBOL%\"==\"1\" pause & exit /b %EXIT_CODE%"); //all commands after typemake need to be in one line; or it may cause trouble when the file is changed by typemake
                 Lines.Add("");
                 var RetypemakePath = BuildDirectory / "retypemake.cmd";
                 if (OverwriteRetypemakeScript || !File.Exists(RetypemakePath))
@@ -450,8 +446,7 @@ namespace TypeMake
                     }
                 }
                 Lines.Add("pushd \"${SourceDirectory}\"");
-                Lines.Add("./typemake.sh \"$@\"");
-                Lines.Add("popd");
+                Lines.Add("./typemake.sh \"$@\"; popd; exit"); //all commands after typemake need to be in one line; or it may cause trouble when the file is changed by typemake
                 Lines.Add("");
                 var RetypemakePath = BuildDirectory / "retypemake.sh";
                 if (OverwriteRetypemakeScript || !File.Exists(RetypemakePath))
