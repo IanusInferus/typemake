@@ -64,8 +64,18 @@ namespace TypeMake
         {
             get
             {
-                return Path.GetDirectoryName(Value).AsPath();
+                return (this / "..").Reduced;
             }
+        }
+        public PathString GetAccestor(int n)
+        {
+            if (n < 0) { throw new InvalidOperationException(); }
+            var p = this;
+            for (int k = 0; k < n; k += 1)
+            {
+                p = p.Parent;
+            }
+            return p;
         }
         public List<String> Parts
         {
