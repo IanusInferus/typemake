@@ -112,7 +112,7 @@ namespace TypeMake.Cpp
                 var Architecture = Pair.Key.Value;
                 var Name = Pair.Value;
 
-                var conf = Project.Configurations.Merged(ToolchainType.Windows_VisualC, CompilerType.VisualC, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, Architecture, ConfigurationType);
+                var conf = Project.Configurations.Merged(Project.TargetType, ToolchainType.Windows_VisualC, CompilerType.VisualC, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, Architecture, ConfigurationType);
 
                 var PropertyGroup = xVcxproj.Elements(xn + "PropertyGroup").Where(e => (e.Attribute("Condition") != null) && (e.Attribute("Condition").Value == "'$(Configuration)|$(Platform)'=='" + Name + "'")).LastOrDefault();
                 if (PropertyGroup == null)
@@ -124,21 +124,21 @@ namespace TypeMake.Cpp
                 {
                     PropertyGroup.SetElementValue(xn + "TargetName", Project.TargetName);
                 }
-                if (conf.TargetType == TargetType.Executable)
+                if (Project.TargetType == TargetType.Executable)
                 {
                     PropertyGroup.SetElementValue(xn + "ConfigurationType", "Application");
                 }
-                else if (conf.TargetType == TargetType.StaticLibrary)
+                else if (Project.TargetType == TargetType.StaticLibrary)
                 {
                     PropertyGroup.SetElementValue(xn + "ConfigurationType", "StaticLibrary");
                 }
-                else if (conf.TargetType == TargetType.DynamicLibrary)
+                else if (Project.TargetType == TargetType.DynamicLibrary)
                 {
                     PropertyGroup.SetElementValue(xn + "ConfigurationType", "DynamicLibrary");
                 }
                 else
                 {
-                    throw new NotSupportedException("NotSupportedTargetType: " + conf.TargetType.ToString());
+                    throw new NotSupportedException("NotSupportedTargetType: " + Project.TargetType.ToString());
                 }
                 if (conf.OutputDirectory != null)
                 {
@@ -189,7 +189,7 @@ namespace TypeMake.Cpp
                     ClCompile.SetElementValue(xn + "AdditionalOptions", "%(AdditionalOptions) " + String.Join(" ", CompilerFlags.Select(f => (f == null ? "" : Regex.IsMatch(f, @"^[0-9]+$") ? f : "\"" + f.Replace("\"", "\"\"\"") + "\""))));
                 }
 
-                if ((conf.TargetType == TargetType.Executable) || (conf.TargetType == TargetType.DynamicLibrary))
+                if ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary))
                 {
                     var Link = ItemDefinitionGroup.Element(xn + "Link");
                     if (Link == null)
@@ -217,7 +217,7 @@ namespace TypeMake.Cpp
 
             var Import = xVcxproj.Elements(xn + "Import").LastOrDefault();
 
-            foreach (var conf in Project.Configurations.Matches(ToolchainType.Windows_VisualC, CompilerType.VisualC, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, null))
+            foreach (var conf in Project.Configurations.Matches(Project.TargetType, ToolchainType.Windows_VisualC, CompilerType.VisualC, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, null))
             {
                 var Conditions = new List<String>();
                 if ((conf.MatchingConfigurationTypes != null) || (conf.MatchingTargetArchitectures != null))
@@ -359,7 +359,7 @@ namespace TypeMake.Cpp
 
             var Files = new HashSet<String>(StringComparer.OrdinalIgnoreCase);
             var Filters = new HashSet<String>(StringComparer.OrdinalIgnoreCase);
-            foreach (var conf in Project.Configurations.Matches(ToolchainType.Windows_VisualC, CompilerType.VisualC, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, null))
+            foreach (var conf in Project.Configurations.Matches(Project.TargetType, ToolchainType.Windows_VisualC, CompilerType.VisualC, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, null))
             {
                 foreach (var f in conf.Files)
                 {

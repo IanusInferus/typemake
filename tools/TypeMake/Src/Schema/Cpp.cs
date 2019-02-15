@@ -63,6 +63,7 @@ namespace TypeMake.Cpp
     }
     public class Configuration
     {
+        public List<TargetType> MatchingTargetTypes = null;
         public List<ToolchainType> MatchingToolchains = null;
         public List<CompilerType> MatchingCompilers = null;
         public List<OperatingSystemType> MatchingBuildingOperatingSystems = null;
@@ -70,8 +71,6 @@ namespace TypeMake.Cpp
         public List<OperatingSystemType> MatchingTargetOperatingSystems = null;
         public List<ArchitectureType> MatchingTargetArchitectures = null;
         public List<ConfigurationType> MatchingConfigurationTypes = null;
-
-        public TargetType? TargetType = null;
 
         public List<PathString> IncludeDirectories = new List<PathString> { };
         public List<KeyValuePair<String, String>> Defines = new List<KeyValuePair<String, String>> { };
@@ -85,16 +84,15 @@ namespace TypeMake.Cpp
 
         public List<File> Files = new List<File> { };
 
-        public String BundleIdentifier = null;
         public PathString OutputDirectory = null;
     }
 
-    [DebuggerDisplay("Name = {Name}, TargetName = {TargetName}, ApplicationIdentifier = {ApplicationIdentifier}, Configurations = ...")]
+    [DebuggerDisplay("Name = {Name}, TargetName = {TargetName}, TargetType = {TargetType}, Configurations = ...")]
     public class Project
     {
         public String Name;
         public String TargetName;
-        public String ApplicationIdentifier;
+        public TargetType TargetType;
         public List<Configuration> Configurations;
     }
 }

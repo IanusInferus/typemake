@@ -46,12 +46,12 @@ namespace TypeMake.Cpp
 
         private IEnumerable<String> GenerateLines(String CMakeListsPath, String BaseDirPath)
         {
-            var conf = Project.Configurations.Merged(Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitectureType, ConfigurationType);
+            var conf = Project.Configurations.Merged(Project.TargetType, Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitectureType, ConfigurationType);
 
             yield return @"cmake_minimum_required(VERSION 3.0.2)";
             yield return $@"project({Project.Name})";
 
-            if ((conf.TargetType == TargetType.Executable) || (conf.TargetType == TargetType.DynamicLibrary) || (conf.TargetType == TargetType.GradleApplication) || (conf.TargetType == TargetType.GradleLibrary))
+            if ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary) || (Project.TargetType == TargetType.GradleApplication) || (Project.TargetType == TargetType.GradleLibrary))
             {
                 var LibDirectories = conf.LibDirectories.Select(d => d.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix)).ToList();
                 if (LibDirectories.Count != 0)
@@ -65,21 +65,21 @@ namespace TypeMake.Cpp
                 }
             }
 
-            if (conf.TargetType == TargetType.Executable)
+            if (Project.TargetType == TargetType.Executable)
             {
                 yield return @"add_executable(${PROJECT_NAME} """")";
             }
-            else if (conf.TargetType == TargetType.StaticLibrary)
+            else if (Project.TargetType == TargetType.StaticLibrary)
             {
                 yield return @"add_library(${PROJECT_NAME} STATIC """")";
             }
-            else if ((conf.TargetType == TargetType.DynamicLibrary) || (conf.TargetType == TargetType.GradleApplication) || (conf.TargetType == TargetType.GradleLibrary))
+            else if ((Project.TargetType == TargetType.DynamicLibrary) || (Project.TargetType == TargetType.GradleApplication) || (Project.TargetType == TargetType.GradleLibrary))
             {
                 yield return @"add_library(${PROJECT_NAME} SHARED """")";
             }
             else
             {
-                throw new NotSupportedException("NotSupportedTargetType: " + conf.TargetType.ToString());
+                throw new NotSupportedException("NotSupportedTargetType: " + Project.TargetType.ToString());
             }
             if (!String.IsNullOrEmpty(Project.TargetName) && (Project.TargetName != Project.Name))
             {
@@ -156,7 +156,7 @@ namespace TypeMake.Cpp
                 yield return @"target_compile_options(${PROJECT_NAME} PRIVATE " + CFlagStr + ((CFlags.Count > 0) && (CppFlags.Count > 0) ? " " : "") + (CppFlags.Count > 0 ? "$<$<COMPILE_LANGUAGE:CXX>:" + CppFlagStr + ">" : "") + ")";
             }
 
-            if ((conf.TargetType == TargetType.Executable) || (conf.TargetType == TargetType.DynamicLibrary) || (conf.TargetType == TargetType.GradleApplication) || (conf.TargetType == TargetType.GradleLibrary))
+            if ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary) || (Project.TargetType == TargetType.GradleApplication) || (Project.TargetType == TargetType.GradleLibrary))
             {
                 var LinkerFlags = conf.LinkerFlags;
                 if (LinkerFlags.Count != 0)
