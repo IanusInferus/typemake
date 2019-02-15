@@ -125,8 +125,8 @@ namespace TypeMake.Cpp
                         if (Project.TargetType == TargetType.DynamicLibrary)
                         {
                             BuildSettings["EXECUTABLE_PREFIX"] = Value.CreateString("lib");
-                            BuildSettings.SetItem("DYLIB_INSTALL_NAME_BASE", Value.CreateString("@rpath"));
-                            BuildSettings.SetItem("SKIP_INSTALL", Value.CreateString("YES"));
+                            BuildSettings["DYLIB_INSTALL_NAME_BASE"] = Value.CreateString("@rpath");
+                            BuildSettings["SKIP_INSTALL"] = Value.CreateString("YES");
                         }
                     }
                     else if (TargetOperatingSystem == OperatingSystemType.iOS)
@@ -142,21 +142,21 @@ namespace TypeMake.Cpp
                         }
                         if (Project.TargetType == TargetType.DynamicLibrary)
                         {
-                            BuildSettings.SetItem("DYLIB_COMPATIBILITY_VERSION", Value.CreateString("1"));
-                            BuildSettings.SetItem("DYLIB_CURRENT_VERSION", Value.CreateString("1"));
-                            BuildSettings.SetItem("DYLIB_INSTALL_NAME_BASE", Value.CreateString("@rpath"));
-                            BuildSettings.SetItem("INSTALL_PATH", Value.CreateString("$(LOCAL_LIBRARY_DIR)/Frameworks"));
-                            BuildSettings.SetItem("LD_RUNPATH_SEARCH_PATHS", Value.CreateString("$(inherited) @executable_path/Frameworks @loader_path/Frameworks"));
-                            BuildSettings.SetItem("SKIP_INSTALL", Value.CreateString("YES"));
+                            BuildSettings["DYLIB_COMPATIBILITY_VERSION"] = Value.CreateString("1");
+                            BuildSettings["DYLIB_CURRENT_VERSION"] = Value.CreateString("1");
+                            BuildSettings["DYLIB_INSTALL_NAME_BASE"] = Value.CreateString("@rpath");
+                            BuildSettings["INSTALL_PATH"] = Value.CreateString("$(LOCAL_LIBRARY_DIR)/Frameworks");
+                            BuildSettings["LD_RUNPATH_SEARCH_PATHS"] = Value.CreateString("$(inherited) @executable_path/Frameworks @loader_path/Frameworks");
+                            BuildSettings["SKIP_INSTALL"] = Value.CreateString("YES");
                         }
                         if ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary))
                         {
                             var InfoPlistPath = (InputDirectory / "Info.plist").RelativeTo(BaseDirPath);
                             if (System.IO.File.Exists(InfoPlistPath))
                             {
-                                BuildSettings.SetItem("INFOPLIST_FILE", Value.CreateString(InfoPlistPath.ToString(PathStringStyle.Unix)));
+                                BuildSettings["INFOPLIST_FILE"] = Value.CreateString(InfoPlistPath.ToString(PathStringStyle.Unix));
                             }
-                            BuildSettings.SetItem("TARGETED_DEVICE_FAMILY", Value.CreateString("1,2"));
+                            BuildSettings["TARGETED_DEVICE_FAMILY"] = Value.CreateString("1,2");
                         }
                     }
 
@@ -165,7 +165,7 @@ namespace TypeMake.Cpp
                         var Prefix = "xcode.target.";
                         if (o.Key.StartsWith(Prefix))
                         {
-                            BuildSettings.SetItem(o.Key.Substring(Prefix.Length), Value.CreateString(o.Value));
+                            BuildSettings[o.Key.Substring(Prefix.Length)] = Value.CreateString(o.Value);
                         }
                     }
                 }
@@ -261,22 +261,22 @@ namespace TypeMake.Cpp
                 var IncludeDirectories = conf.IncludeDirectories.Select(d => d.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix)).ToList();
                 if (IncludeDirectories.Count != 0)
                 {
-                    BuildSettings.SetItem("HEADER_SEARCH_PATHS", Value.CreateArray(IncludeDirectories.Concat(new List<String> { "$(inherited)" }).Select(d => Value.CreateString(d)).ToList()));
+                    BuildSettings["HEADER_SEARCH_PATHS"] = Value.CreateArray(IncludeDirectories.Concat(new List<String> { "$(inherited)" }).Select(d => Value.CreateString(d)).ToList());
                 }
                 var Defines = conf.Defines;
                 if (Defines.Count != 0)
                 {
-                    BuildSettings.SetItem("GCC_PREPROCESSOR_DEFINITIONS", Value.CreateArray(Defines.Select(d => d.Value == null ? d.Key : Regex.IsMatch(d.Value, @"^[0-9]+$") ? d.Key + "=" + d.Value : "'" + d.Key + "=" + "\"" + d.Value.Replace("\"", "") + "\"'").Concat(new List<String> { "$(inherited)" }).Select(d => Value.CreateString(d)).ToList()));
+                    BuildSettings["GCC_PREPROCESSOR_DEFINITIONS"] = Value.CreateArray(Defines.Select(d => d.Value == null ? d.Key : Regex.IsMatch(d.Value, @"^[0-9]+$") ? d.Key + "=" + d.Value : "'" + d.Key + "=" + "\"" + d.Value.Replace("\"", "") + "\"'").Concat(new List<String> { "$(inherited)" }).Select(d => Value.CreateString(d)).ToList());
                 }
                 var CFlags = conf.CFlags;
                 if (CFlags.Count != 0)
                 {
-                    BuildSettings.SetItem("OTHER_CFLAGS", Value.CreateArray(CFlags.Concat(new List<String> { "$(inherited)" }).Select(d => Value.CreateString(d)).ToList()));
+                    BuildSettings["OTHER_CFLAGS"] = Value.CreateArray(CFlags.Concat(new List<String> { "$(inherited)" }).Select(d => Value.CreateString(d)).ToList());
                 }
                 var CppFlags = conf.CFlags.Concat(conf.CppFlags).ToList();
                 if (CppFlags.Count != 0)
                 {
-                    BuildSettings.SetItem("OTHER_CPLUSPLUSFLAGS", Value.CreateArray(CppFlags.Concat(new List<String> { "$(inherited)" }).Select(d => Value.CreateString(d)).ToList()));
+                    BuildSettings["OTHER_CPLUSPLUSFLAGS"] = Value.CreateArray(CppFlags.Concat(new List<String> { "$(inherited)" }).Select(d => Value.CreateString(d)).ToList());
                 }
 
                 if ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary))
@@ -284,22 +284,22 @@ namespace TypeMake.Cpp
                     var LibDirectories = conf.LibDirectories.Select(d => d.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix)).ToList();
                     if (LibDirectories.Count != 0)
                     {
-                        BuildSettings.SetItem("LIBRARY_SEARCH_PATHS", Value.CreateArray(LibDirectories.Concat(new List<String> { "$(inherited)" }).Select(d => Value.CreateString(d)).ToList()));
+                        BuildSettings["LIBRARY_SEARCH_PATHS"] = Value.CreateArray(LibDirectories.Concat(new List<String> { "$(inherited)" }).Select(d => Value.CreateString(d)).ToList());
                     }
                     var LinkerFlags = conf.Libs.Select(lib => lib.ToString(PathStringStyle.Unix)).Concat(conf.LinkerFlags).ToList();
                     if (LinkerFlags.Count != 0)
                     {
-                        BuildSettings.SetItem("OTHER_LDFLAGS", Value.CreateArray(LinkerFlags.Concat(new List<String> { "$(inherited)" }).Select(d => Value.CreateString(d)).ToList()));
+                        BuildSettings["OTHER_LDFLAGS"] = Value.CreateArray(LinkerFlags.Concat(new List<String> { "$(inherited)" }).Select(d => Value.CreateString(d)).ToList());
                     }
                 }
 
                 if (TargetOperatingSystem == OperatingSystemType.Mac)
                 {
-                    BuildSettings.SetItem("SDKROOT", Value.CreateString("macosx"));
+                    BuildSettings["SDKROOT"] = Value.CreateString("macosx");
                 }
                 else if (TargetOperatingSystem == OperatingSystemType.iOS)
                 {
-                    BuildSettings.SetItem("SDKROOT", Value.CreateString("iphoneos"));
+                    BuildSettings["SDKROOT"] = Value.CreateString("iphoneos");
                 }
                 else
                 {
@@ -311,7 +311,7 @@ namespace TypeMake.Cpp
                     var Prefix = "xcode.project.";
                     if (o.Key.StartsWith(Prefix))
                     {
-                        BuildSettings.SetItem(o.Key.Substring(Prefix.Length), Value.CreateString(o.Value));
+                        BuildSettings[o.Key.Substring(Prefix.Length)] = Value.CreateString(o.Value);
                     }
                 }
             }
