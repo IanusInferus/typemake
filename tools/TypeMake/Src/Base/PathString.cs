@@ -186,8 +186,11 @@ namespace TypeMake
                     b = d.AsPath() / b;
                     if (a == ".") { a = ""; }
                     if (b == ".") { b = ""; }
-                    while (PopFirstDir(ref b) != "")
+                    while (true)
                     {
+                        var v = PopFirstDir(ref b);
+                        if (v == "..") { throw new InvalidOperationException(); }
+                        if (v == "") { break; }
                         a = "..".AsPath() / a;
                     }
                     return a;
