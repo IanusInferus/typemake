@@ -91,9 +91,8 @@ namespace TypeMake.Cpp
                 foreach (var f in conf.Files)
                 {
                     var VirtualPath = PathString.Join(f.Path.RelativeTo(InputDirectory).Parts.Where(v => v != ".."));
-                    var PhysicalPath = f.Path.RelativeTo(OutputDirectory);
-                    if (RelativePathToObjects.ContainsKey(PhysicalPath.ToString(PathStringStyle.Unix))) { continue; }
-                    var Added = AddFile(Objects, RootObject["mainGroup"].String, "", "", VirtualPath, PhysicalPath, f, RelativePathToObjects);
+                    if (RelativePathToObjects.ContainsKey(f.Path.RelativeTo(OutputDirectory).ToString(PathStringStyle.Unix))) { continue; }
+                    var Added = AddFile(Objects, RootObject["mainGroup"].String, "", OutputDirectory, OutputDirectory, VirtualPath, f.Path, f, RelativePathToObjects);
                     if (!Added)
                     {
                         throw new InvalidOperationException();
@@ -157,6 +156,15 @@ namespace TypeMake.Cpp
                             }
                             BuildSettings.SetItem("PRODUCT_BUNDLE_IDENTIFIER", Value.CreateString(conf.BundleIdentifier));
                             BuildSettings.SetItem("TARGETED_DEVICE_FAMILY", Value.CreateString("1,2"));
+                        }
+                    }
+
+                    foreach (var o in conf.Options)
+                    {
+                        var Prefix = "xcode.target.";
+                        if (o.Key.StartsWith(Prefix))
+                        {
+                            BuildSettings.SetItem(o.Key.Substring(Prefix.Length), Value.CreateString(o.Value));
                         }
                     }
                 }
@@ -254,7 +262,7 @@ namespace TypeMake.Cpp
                 var Defines = conf.Defines;
                 if (Defines.Count != 0)
                 {
-                    BuildSettings.SetItem("GCC_PREPROCESSOR_DEFINITIONS", Value.CreateArray(Defines.Select(d => d.Key + (d.Value == null ? "" : "=" + (Regex.IsMatch(d.Value, @"^[0-9]+$") ? d.Value : "\"" + d.Value.Replace("\"", "") + "\""))).Concat(new List<String> { "$(inherited)" }).Select(d => Value.CreateString(d)).ToList()));
+                    BuildSettings.SetItem("GCC_PREPROCESSOR_DEFINITIONS", Value.CreateArray(Defines.Select(d => d.Value == null ? d.Key : Regex.IsMatch(d.Value, @"^[0-9]+$") ? d.Key + "=" + d.Value : "'" + d.Key + "=" + "\"" + d.Value.Replace("\"", "") + "\"'").Concat(new List<String> { "$(inherited)" }).Select(d => Value.CreateString(d)).ToList()));
                 }
                 var CFlags = conf.CFlags;
                 if (CFlags.Count != 0)
@@ -293,13 +301,22 @@ namespace TypeMake.Cpp
                 {
                     throw new NotSupportedException("NotSupportedTargetOperatingSystem: " + TargetOperatingSystem.ToString());
                 }
+
+                foreach (var o in conf.Options)
+                {
+                    var Prefix = "xcode.project.";
+                    if (o.Key.StartsWith(Prefix))
+                    {
+                        BuildSettings.SetItem(o.Key.Substring(Prefix.Length), Value.CreateString(o.Value));
+                    }
+                }
             }
 
             ObjectReferenceValidityTest(Objects, RootObjectKey);
             TextFile.WriteToFile(PbxprojPath, Plist.ToString(p), new UTF8Encoding(false), !ForceRegenerate);
         }
 
-        private bool AddFile(Dictionary<String, Value> Objects, String GroupKey, PathString ParentGroupVirtualPath, PathString ParentGroupPhysicalPath, PathString FileVirtualPath, PathString FilePhysicalPath, File File, Dictionary<String, String> RelativePathToFileObjectKey, bool Top = true)
+        private bool AddFile(Dictionary<String, Value> Objects, String GroupKey, PathString ParentGroupVirtualPath, PathString ParentGroupPhysicalPath, PathString RootGroupPhysicalPath, PathString FileVirtualPath, PathString FilePhysicalPath, File File, Dictionary<String, String> RelativePathToFileObjectKey, bool Top = true)
         {
             var GroupOrFile = Objects[GroupKey].Dict;
             var Type = GroupOrFile["isa"].String;
@@ -311,7 +328,7 @@ namespace TypeMake.Cpp
             var Added = false;
             foreach (var Child in Children.Array)
             {
-                Added = AddFile(Objects, Child.String, GroupVirtualPath, GroupPhysicalPath, FileVirtualPath, FilePhysicalPath, File, RelativePathToFileObjectKey, false);
+                Added = AddFile(Objects, Child.String, GroupVirtualPath, GroupPhysicalPath, RootGroupPhysicalPath, FileVirtualPath, FilePhysicalPath, File, RelativePathToFileObjectKey, false);
                 if (Added)
                 {
                     break;
@@ -330,7 +347,7 @@ namespace TypeMake.Cpp
             else if (RelativePathParts.Count == 1)
             {
                 var FileName = FileVirtualPath.FileName;
-                var Hash = GetHashOfPath(FilePhysicalPath.ToString(PathStringStyle.Unix));
+                var Hash = GetHashOfPath(FilePhysicalPath.RelativeTo(RootGroupPhysicalPath).ToString(PathStringStyle.Unix));
 
                 var FileObject = new Dictionary<String, Value>();
                 FileObject.Add("fileEncoding", Value.CreateInteger(4));
@@ -382,7 +399,7 @@ namespace TypeMake.Cpp
                 }
                 FileObject.Add("sourceTree", Value.CreateString("<group>"));
                 Objects.Add(Hash, Value.CreateDict(FileObject));
-                RelativePathToFileObjectKey.Add(FilePhysicalPath.ToString(PathStringStyle.Unix), Hash);
+                RelativePathToFileObjectKey.Add(FilePhysicalPath.RelativeTo(RootGroupPhysicalPath).ToString(PathStringStyle.Unix), Hash);
 
                 Children.Array.Add(Value.CreateString(Hash));
 
@@ -393,7 +410,7 @@ namespace TypeMake.Cpp
                 var pp = FilePhysicalPath.GetAccestor(RelativePathParts.Count - 1);
                 var VirtualDirName = RelativePathParts[0];
                 var PhysicalDirName = pp.FileName;
-                var Hash = GetHashOfPath(pp.ToString(PathStringStyle.Unix));
+                var Hash = GetHashOfPath(pp.RelativeTo(RootGroupPhysicalPath).ToString(PathStringStyle.Unix));
 
                 var GroupObject = new Dictionary<String, Value>();
                 GroupObject.Add("children", Value.CreateArray(new List<Value> { }));
@@ -412,7 +429,7 @@ namespace TypeMake.Cpp
 
                 Children.Array.Add(Value.CreateString(Hash));
 
-                return AddFile(Objects, Hash, GroupVirtualPath, GroupPhysicalPath, FileVirtualPath, FilePhysicalPath, File, RelativePathToFileObjectKey, false);
+                return AddFile(Objects, Hash, GroupVirtualPath, GroupPhysicalPath, RootGroupPhysicalPath, FileVirtualPath, FilePhysicalPath, File, RelativePathToFileObjectKey, false);
             }
         }
 

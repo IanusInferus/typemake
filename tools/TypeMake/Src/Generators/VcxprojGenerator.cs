@@ -140,10 +140,6 @@ namespace TypeMake.Cpp
                 {
                     throw new NotSupportedException("NotSupportedTargetType: " + conf.TargetType.ToString());
                 }
-                if (conf.Options.ContainsKey("CharacterSet"))
-                {
-                    PropertyGroup.SetElementValue(xn + "CharacterSet", conf.Options["CharacterSet"]);
-                }
                 if (conf.OutputDirectory != null)
                 {
                     var OutDir = conf.OutputDirectory.RelativeTo(BaseDirPath).ToString(PathStringStyle.Windows);
@@ -154,13 +150,15 @@ namespace TypeMake.Cpp
                 {
                     PropertyGroup.SetElementValue(xn + "OutDir", $"$(SolutionDir){Architecture}_{ConfigurationType}\\");
                 }
-                if (conf.Options.ContainsKey("IntDir"))
+                PropertyGroup.SetElementValue(xn + "IntDir", $"$(SolutionDir){Architecture}_{ConfigurationType}\\$(ProjectName)\\");
+
+                foreach (var o in conf.Options)
                 {
-                    PropertyGroup.SetElementValue(xn + "IntDir", conf.Options["IntDir"]);
-                }
-                else
-                {
-                    PropertyGroup.SetElementValue(xn + "IntDir", $"$(SolutionDir){Architecture}_{ConfigurationType}\\$(ProjectName)\\");
+                    var Prefix = "vc.";
+                    if (o.Key.StartsWith(Prefix))
+                    {
+                        PropertyGroup.SetElementValue(xn + o.Key.Substring(Prefix.Length), o.Value);
+                    }
                 }
 
                 var ItemDefinitionGroup = xVcxproj.Elements(xn + "ItemDefinitionGroup").Where(e => (e.Attribute("Condition") != null) && (e.Attribute("Condition").Value == "'$(Configuration)|$(Platform)'=='" + Name + "'")).LastOrDefault();
