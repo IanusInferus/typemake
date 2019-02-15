@@ -100,16 +100,8 @@ namespace TypeMake.Cpp
                 }
             }
 
-            foreach (var Project in ProjectReferences)
-            {
-                var VirtualPath = ("Frameworks/" + Project.Name).AsPath();
-                AddProjectReference(Objects, RootObject["mainGroup"].String, "", VirtualPath, Project, RelativePathToObjects);
-            }
-
             foreach (var TargetKey in Targets)
             {
-                var conf = Project.Configurations.Merged(Project.TargetType, ToolchainType.Mac_XCode, CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitectureType, null);
-
                 var Target = Objects[TargetKey.String].Dict;
                 var TargetName = Target["name"].String;
 
@@ -118,6 +110,7 @@ namespace TypeMake.Cpp
                     var BuildConfiguration = Objects[BuildConfigurationKey.String].Dict;
                     var ConfigurationType = (ConfigurationType)(Enum.Parse(typeof(ConfigurationType), BuildConfiguration["name"].String));
                     var BuildSettings = BuildConfiguration["buildSettings"].Dict;
+                    var conf = Project.Configurations.Merged(Project.TargetType, ToolchainType.Mac_XCode, CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitectureType, ConfigurationType);
 
                     BuildSettings["PRODUCT_NAME"] = Value.CreateString(ProductName);
                     if (TargetOperatingSystem == OperatingSystemType.Mac)
@@ -160,6 +153,16 @@ namespace TypeMake.Cpp
                         }
                     }
 
+                    BuildSettings["CONFIGURATION_TEMP_DIR"] = Value.CreateString($"$(SRCROOT)/../{ConfigurationType}$(EFFECTIVE_PLATFORM_NAME)/$(PROJECT_NAME)");
+                    if (conf.OutputDirectory != null)
+                    {
+                        BuildSettings["CONFIGURATION_BUILD_DIR"] = Value.CreateString(("$(SRCROOT)".AsPath() / conf.OutputDirectory.RelativeTo(BaseDirPath)).ToString(PathStringStyle.Unix));
+                    }
+                    else
+                    {
+                        BuildSettings["CONFIGURATION_BUILD_DIR"] = Value.CreateString($"$(SRCROOT)/../{ConfigurationType}$(EFFECTIVE_PLATFORM_NAME)");
+                    }
+
                     foreach (var o in conf.Options)
                     {
                         var Prefix = "xcode.target.";
@@ -170,6 +173,7 @@ namespace TypeMake.Cpp
                     }
                 }
 
+                var confF = Project.Configurations.Merged(Project.TargetType, ToolchainType.Mac_XCode, CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitectureType, null);
                 foreach (var PhaseKey in Target["buildPhases"].Array)
                 {
                     var Phase = Objects[PhaseKey.String].Dict;
@@ -177,28 +181,11 @@ namespace TypeMake.Cpp
                     if (Type == "PBXSourcesBuildPhase")
                     {
                         var Files = Phase["files"];
-                        foreach (var f in conf.Files)
+                        foreach (var f in confF.Files)
                         {
                             if ((f.Type == FileType.CSource) || (f.Type == FileType.CppSource) || (f.Type == FileType.ObjectiveCSource) || (f.Type == FileType.ObjectiveCppSource))
                             {
                                 var RelativePath = f.Path.FullPath.RelativeTo(OutputDirectory).ToString(PathStringStyle.Unix);
-                                var File = new Dictionary<String, Value>();
-                                File.Add("fileRef", Value.CreateString(RelativePathToObjects[RelativePath]));
-                                File.Add("isa", Value.CreateString("PBXBuildFile"));
-                                var Hash = GetHashOfPath(TargetName + ":" + RelativePath);
-                                Objects.Add(Hash, Value.CreateDict(File));
-                                Files.Array.Add(Value.CreateString(Hash));
-                            }
-                        }
-                    }
-                    else if (Type == "PBXFrameworksBuildPhase")
-                    {
-                        if ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary))
-                        {
-                            var Files = Phase["files"];
-                            foreach (var Project in ProjectReferences)
-                            {
-                                var RelativePath = "Frameworks/" + Project.Name;
                                 var File = new Dictionary<String, Value>();
                                 File.Add("fileRef", Value.CreateString(RelativePathToObjects[RelativePath]));
                                 File.Add("isa", Value.CreateString("PBXBuildFile"));
@@ -286,7 +273,8 @@ namespace TypeMake.Cpp
                     {
                         BuildSettings["LIBRARY_SEARCH_PATHS"] = Value.CreateArray(LibDirectories.Concat(new List<String> { "$(inherited)" }).Select(d => Value.CreateString(d)).ToList());
                     }
-                    var LinkerFlags = conf.Libs.Select(lib => lib.ToString(PathStringStyle.Unix)).Concat(conf.LinkerFlags).ToList();
+
+                    var LinkerFlags = conf.Libs.Select(lib => lib.ToString(PathStringStyle.Unix)).Concat(ProjectReferences.Select(r => ($"../{ConfigurationType}$(EFFECTIVE_PLATFORM_NAME)".AsPath() / ("lib" + r.Name + ".a")).ToString(PathStringStyle.Unix))).Concat(conf.LinkerFlags).ToList();
                     if (LinkerFlags.Count != 0)
                     {
                         BuildSettings["OTHER_LDFLAGS"] = Value.CreateArray(LinkerFlags.Concat(new List<String> { "$(inherited)" }).Select(d => Value.CreateString(d)).ToList());
@@ -434,69 +422,6 @@ namespace TypeMake.Cpp
                 Children.Array.Add(Value.CreateString(Hash));
 
                 return AddFile(Objects, Hash, GroupVirtualPath, GroupPhysicalPath, RootGroupPhysicalPath, FileVirtualPath, FilePhysicalPath, File, RelativePathToFileObjectKey, false);
-            }
-        }
-
-        private bool AddProjectReference(Dictionary<String, Value> Objects, String GroupKey, PathString ParentGroupVirtualPath, PathString ProjectVirtualPath, ProjectReference Project, Dictionary<String, String> RelativePathToFileObjectKey, bool Top = true)
-        {
-            var GroupOrFile = Objects[GroupKey].Dict;
-            var Type = GroupOrFile["isa"].String;
-            if (Type != "PBXGroup") { return false; }
-            var GroupVirtualPath = ParentGroupVirtualPath / (GroupOrFile.ContainsKey("name") ? GroupOrFile["name"].String : GroupOrFile.ContainsKey("path") ? GroupOrFile["path"].String : "");
-            var Children = GroupOrFile["children"];
-            if (!ProjectVirtualPath.In(GroupVirtualPath)) { return false; }
-            var Added = false;
-            foreach (var Child in Children.Array)
-            {
-                Added = AddProjectReference(Objects, Child.String, GroupVirtualPath, ProjectVirtualPath, Project, RelativePathToFileObjectKey, false);
-                if (Added)
-                {
-                    break;
-                }
-            }
-            if (Added) { return true; }
-            if (!Top && (GroupVirtualPath == ParentGroupVirtualPath)) { return false; }
-
-            var RelativePath = ProjectVirtualPath.RelativeTo(GroupVirtualPath);
-            var RelativePathParts = RelativePath.Parts;
-
-            if (RelativePathParts.Count == 0)
-            {
-                throw new InvalidOperationException();
-            }
-            else if (RelativePathParts.Count == 1)
-            {
-                var FileName = ProjectVirtualPath.FileName;
-                var Hash = GetHashOfPath(ProjectVirtualPath.ToString(PathStringStyle.Unix));
-
-                var FileObject = new Dictionary<string, Value>();
-                FileObject.Add("isa", Value.CreateString("PBXFileReference"));
-                FileObject.Add("explicitFileType", Value.CreateString("archive.ar"));
-                FileObject.Add("path", Value.CreateString("lib" + Project.Name + ".a"));
-                FileObject.Add("sourceTree", Value.CreateString("BUILT_PRODUCTS_DIR"));
-                Objects.Add(Hash, Value.CreateDict(FileObject));
-                RelativePathToFileObjectKey.Add(ProjectVirtualPath.ToString(PathStringStyle.Unix), Hash);
-
-                Children.Array.Add(Value.CreateString(Hash));
-
-                return true;
-            }
-            else
-            {
-                var VirtualDirName = RelativePathParts[0];
-                var vp = GroupVirtualPath / VirtualDirName;
-                var Hash = GetHashOfPath(vp.ToString(PathStringStyle.Unix));
-
-                var GroupObject = new Dictionary<String, Value>();
-                GroupObject.Add("children", Value.CreateArray(new List<Value> { }));
-                GroupObject.Add("isa", Value.CreateString("PBXGroup"));
-                GroupObject.Add("name", Value.CreateString(VirtualDirName));
-                GroupObject.Add("sourceTree", Value.CreateString("<group>"));
-                Objects.Add(Hash, Value.CreateDict(GroupObject));
-
-                Children.Array.Add(Value.CreateString(Hash));
-
-                return AddProjectReference(Objects, Hash, GroupVirtualPath, ProjectVirtualPath, Project, RelativePathToFileObjectKey, false);
             }
         }
 
