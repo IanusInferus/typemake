@@ -125,6 +125,8 @@ namespace TypeMake.Cpp
                         if (Project.TargetType == TargetType.DynamicLibrary)
                         {
                             BuildSettings["EXECUTABLE_PREFIX"] = Value.CreateString("lib");
+                            BuildSettings.SetItem("DYLIB_INSTALL_NAME_BASE", Value.CreateString("@rpath"));
+                            BuildSettings.SetItem("SKIP_INSTALL", Value.CreateString("YES"));
                         }
                     }
                     else if (TargetOperatingSystem == OperatingSystemType.iOS)
