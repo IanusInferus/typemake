@@ -51,7 +51,6 @@ namespace TypeMake
 
             public PathString PhysicalPath;
             public Dictionary<String, bool> DependentProjectToRequirement;
-            public TargetType Type;
         }
         public Dictionary<String, ProjectDescription> GetAvailableProjects()
         {
@@ -119,11 +118,11 @@ namespace TypeMake
                         Definition = new Project
                         {
                             Name = ModuleName,
+                            TargetType = TargetType.StaticLibrary,
                             Configurations = (new List<Configuration>
                             {
                                 new Configuration
                                 {
-                                    TargetType = TargetType.StaticLibrary,
                                     IncludeDirectories = new List<PathString> { InputDirectory / "include", InputDirectory / "src" },
                                     Files = new List<PathString> { InputDirectory / "include", InputDirectory / "src" }.SelectMany(d => GetFilesInDirectory(d, TargetOperatingSystem, IsTargetOperatingSystemMatched)).ToList()
                                 }
@@ -144,8 +143,7 @@ namespace TypeMake
                             FilePath = BuildDirectory / "projects" / GetProjectFileName(ModuleName)
                         },
                         PhysicalPath = InputDirectory,
-                        DependentProjectToRequirement = DependentModuleToRequirement,
-                        Type = TargetType.StaticLibrary
+                        DependentProjectToRequirement = DependentModuleToRequirement
                     });
                     if (!((TargetOperatingSystem == OperatingSystemType.Android) || (TargetOperatingSystem == OperatingSystemType.iOS)))
                     {
@@ -160,11 +158,11 @@ namespace TypeMake
                                 Definition = new Project
                                 {
                                     Name = TestName,
+                                    TargetType = TargetType.Executable,
                                     Configurations = (new List<Configuration>
                                     {
                                         new Configuration
                                         {
-                                            TargetType = TargetType.Executable,
                                             IncludeDirectories = new List<PathString> { InputDirectory / "include", InputDirectory / "src" },
                                             Files = new List<Cpp.File> { TestFile }
                                         }
@@ -179,8 +177,7 @@ namespace TypeMake
                                     FilePath = BuildDirectory / "projects" / GetProjectFileName(TestName)
                                 },
                                 PhysicalPath = InputDirectory,
-                                DependentProjectToRequirement = TestDependentModuleToRequirement,
-                                Type = TargetType.Executable
+                                DependentProjectToRequirement = TestDependentModuleToRequirement
                             });
                         }
                     }
@@ -255,11 +252,11 @@ namespace TypeMake
                         Definition = new Project
                         {
                             Name = ProductName,
+                            TargetType = IsTargetOperatingSystemMatched ? ProductTargetType : TargetType.StaticLibrary,
                             Configurations = (new List<Configuration>
                             {
                                 new Configuration
                                 {
-                                    TargetType = IsTargetOperatingSystemMatched ? ProductTargetType : TargetType.StaticLibrary,
                                     IncludeDirectories = new List<PathString> { InputDirectory / "include", InputDirectory / "src", InputDirectory },
                                     Defines = Defines,
                                     Files = new List<PathString> { InputDirectory }.SelectMany(d => GetFilesInDirectory(d, TargetOperatingSystem, IsTargetOperatingSystemMatched)).ToList()
@@ -267,7 +264,10 @@ namespace TypeMake
                                 new Configuration
                                 {
                                     MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.iOS },
-                                    BundleIdentifier = SolutionName + "." + TargetName
+                                    Options = new Dictionary<String, String>
+                                    {
+                                        ["xcode.target.PRODUCT_BUNDLE_IDENTIFIER"] = SolutionName + "." + TargetName
+                                    }
                                 }
                             }).Concat(GetCommonConfigurations()).ToList()
                         },
@@ -280,8 +280,7 @@ namespace TypeMake
                             FilePath = BuildDirectory / "projects" / GetProjectFileName(ProductName)
                         },
                         PhysicalPath = InputDirectory,
-                        DependentProjectToRequirement = DependentModuleToRequirement,
-                        Type = ProductTargetType
+                        DependentProjectToRequirement = DependentModuleToRequirement
                     });
                 }
             }
@@ -334,12 +333,12 @@ namespace TypeMake
                 {
                     Name = Project.Definition.Name,
                     TargetName = Project.Definition.TargetName,
-                    ApplicationIdentifier = Project.Definition.ApplicationIdentifier,
+                    TargetType = Project.Definition.TargetType,
                     Configurations = DependentProjectExportConfigurations.Concat(Project.Definition.Configurations).ToList()
                 };
                 var InputDirectory = Project.PhysicalPath;
                 var OutputDirectory = Project.Reference.FilePath.Parent;
-                var ProjectTargetType = Project.Type;
+                var ProjectTargetType = Project.Definition.TargetType;
                 if (Toolchain == ToolchainType.Windows_VisualC)
                 {
                     var VcxprojTemplateText = Resource.GetResourceText(@"Templates\vc15\Default.vcxproj");
@@ -381,7 +380,7 @@ namespace TypeMake
                 }
                 Projects.Add(new KeyValuePair<ProjectReference, List<ProjectReference>>(ProjectReference, ProjectReferences));
             }
-            var GradleProjectNames = SelectedProjects.Values.Where(Project => (Project.Type == TargetType.GradleLibrary) || (Project.Type == TargetType.GradleApplication)).Select(Project => Project.Definition.Name).ToList();
+            var GradleProjectNames = SelectedProjects.Values.Where(Project => (Project.Definition.TargetType == TargetType.GradleLibrary) || (Project.Definition.TargetType == TargetType.GradleApplication)).Select(Project => Project.Definition.Name).ToList();
             var ProjectDict = Projects.ToDictionary(p => p.Key.Name, p => p.Key);
             var ProjectDependencies = Projects.ToDictionary(p => ProjectDict[p.Key.Name], p => p.Value.Select(n => ProjectDict[n.Name]).ToList());
             var SortedProjects = Projects.Select(p => p.Key).PartialOrderBy(p => ProjectDependencies.ContainsKey(p) ? ProjectDependencies[p] : null).ToList();
