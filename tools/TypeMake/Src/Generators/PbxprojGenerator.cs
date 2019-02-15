@@ -192,16 +192,19 @@ namespace TypeMake.Cpp
                     }
                     else if (Type == "PBXFrameworksBuildPhase")
                     {
-                        var Files = Phase["files"];
-                        foreach (var Project in ProjectReferences)
+                        if ((conf.TargetType == TargetType.Executable) || (conf.TargetType == TargetType.DynamicLibrary))
                         {
-                            var RelativePath = "Frameworks/" + Project.Name;
-                            var File = new Dictionary<String, Value>();
-                            File.Add("fileRef", Value.CreateString(RelativePathToObjects[RelativePath]));
-                            File.Add("isa", Value.CreateString("PBXBuildFile"));
-                            var Hash = GetHashOfPath(TargetName + ":" + RelativePath);
-                            Objects.Add(Hash, Value.CreateDict(File));
-                            Files.Array.Add(Value.CreateString(Hash));
+                            var Files = Phase["files"];
+                            foreach (var Project in ProjectReferences)
+                            {
+                                var RelativePath = "Frameworks/" + Project.Name;
+                                var File = new Dictionary<String, Value>();
+                                File.Add("fileRef", Value.CreateString(RelativePathToObjects[RelativePath]));
+                                File.Add("isa", Value.CreateString("PBXBuildFile"));
+                                var Hash = GetHashOfPath(TargetName + ":" + RelativePath);
+                                Objects.Add(Hash, Value.CreateDict(File));
+                                Files.Array.Add(Value.CreateString(Hash));
+                            }
                         }
                     }
                 }
