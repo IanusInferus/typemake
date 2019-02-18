@@ -59,7 +59,7 @@ namespace TypeMake.Cpp
 
             var Results = BuildGradleTemplateText.Replace("\r\n", "\n").Split('\n').AsEnumerable();
             var ApplicationId = conf.Options.ContainsKey("gradle.applicationId") ? conf.Options["gradle.applicationId"] : null;
-            Results = Results.Select(Line => Line.Replace("${ApplicationId}", ApplicationId ?? (SolutionName + "." + Project.TargetName ?? Project.Name).ToLower()));
+            Results = Results.Select(Line => Line.Replace("${ApplicationId}", ApplicationId ?? (SolutionName + "." + (Project.TargetName ?? Project.Name)).ToLower()));
             Results = Results.Select(Line => Line.Replace("${ProjectSrcDir}", InputDirectory.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix)));
             Results = Results.Select(Line => Line.Replace("${SolutionOutputDir}", SolutionOutputDirectory.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix)));
             Results = Results.Select(Line => Line.Replace("${ArchitectureType}", TargetArchitectureType.Value.ToString()));
