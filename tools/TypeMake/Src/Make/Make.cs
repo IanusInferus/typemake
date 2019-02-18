@@ -364,13 +364,13 @@ namespace TypeMake
                     if (ProjectTargetType == TargetType.GradleApplication)
                     {
                         var BuildGradleTemplateText = Resource.GetResourceText(@"Templates\gradle_application\build.gradle");
-                        var gGradle = new GradleProjectGenerator(SolutionName, p, ProjectReferences, InputDirectory, OutputDirectory, BuildDirectory, BuildGradleTemplateText, Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture, ConfigurationType);
+                        var gGradle = new GradleProjectGenerator(SolutionName, p, ProjectReferences, InputDirectory, BuildDirectory / "gradle", BuildDirectory, BuildGradleTemplateText, Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture, ConfigurationType);
                         gGradle.Generate(ForceRegenerate);
                     }
                     else if (ProjectTargetType == TargetType.GradleLibrary)
                     {
                         var BuildGradleTemplateText = Resource.GetResourceText(@"Templates\gradle_library\build.gradle");
-                        var gGradle = new GradleProjectGenerator(SolutionName, p, ProjectReferences, InputDirectory, OutputDirectory, BuildDirectory, BuildGradleTemplateText, Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture, ConfigurationType);
+                        var gGradle = new GradleProjectGenerator(SolutionName, p, ProjectReferences, InputDirectory, BuildDirectory / "gradle", BuildDirectory, BuildGradleTemplateText, Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture, ConfigurationType);
                         gGradle.Generate(ForceRegenerate);
                     }
                 }
