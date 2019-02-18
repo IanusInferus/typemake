@@ -8,6 +8,7 @@ namespace TypeMake.Cpp
     public class GradleProjectGenerator
     {
         private String SolutionName;
+        private String ProjectName;
         private Project Project;
         private List<ProjectReference> ProjectReferences;
         private PathString InputDirectory;
@@ -25,6 +26,7 @@ namespace TypeMake.Cpp
         public GradleProjectGenerator(String SolutionName, Project Project, List<ProjectReference> ProjectReferences, PathString InputDirectory, PathString OutputDirectory, PathString SolutionOutputDirectory, String BuildGradleTemplateText, ToolchainType Toolchain, CompilerType Compiler, OperatingSystemType BuildingOperatingSystem, ArchitectureType BuildingOperatingSystemArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType? TargetArchitectureType, ConfigurationType? ConfigurationType)
         {
             this.SolutionName = SolutionName;
+            this.ProjectName = Project.Name.Split(':').First();
             this.Project = Project;
             this.ProjectReferences = ProjectReferences;
             this.InputDirectory = InputDirectory.FullPath;
@@ -46,7 +48,7 @@ namespace TypeMake.Cpp
 
         public void Generate(bool ForceRegenerate)
         {
-            var BuildGradlePath = OutputDirectory / Project.Name / "build.gradle";
+            var BuildGradlePath = OutputDirectory / ProjectName / "build.gradle";
             var BaseDirPath = BuildGradlePath.Parent;
 
             var Lines = GenerateLines(BuildGradlePath, BaseDirPath).ToList();
@@ -59,12 +61,12 @@ namespace TypeMake.Cpp
 
             var Results = BuildGradleTemplateText.Replace("\r\n", "\n").Split('\n').AsEnumerable();
             var ApplicationId = conf.Options.ContainsKey("gradle.applicationId") ? conf.Options["gradle.applicationId"] : null;
-            Results = Results.Select(Line => Line.Replace("${ApplicationId}", ApplicationId ?? (SolutionName + "." + (Project.TargetName ?? Project.Name)).ToLower()));
+            Results = Results.Select(Line => Line.Replace("${ApplicationId}", ApplicationId ?? (SolutionName + "." + (Project.TargetName ?? ProjectName)).ToLower()));
             Results = Results.Select(Line => Line.Replace("${ProjectSrcDir}", InputDirectory.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix)));
             Results = Results.Select(Line => Line.Replace("${SolutionOutputDir}", SolutionOutputDirectory.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix)));
             Results = Results.Select(Line => Line.Replace("${ArchitectureType}", TargetArchitectureType.Value.ToString()));
             Results = Results.Select(Line => Line.Replace("${AndroidAbi}", GetArchitectureString(TargetArchitectureType.Value)));
-            Results = Results.Select(Line => Line.Replace("${ProjectTargetName}", Project.TargetName ?? Project.Name));
+            Results = Results.Select(Line => Line.Replace("${ProjectTargetName}", Project.TargetName ?? ProjectName));
 
             return Results;
         }

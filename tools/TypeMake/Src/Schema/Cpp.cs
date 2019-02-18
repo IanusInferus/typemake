@@ -9,8 +9,11 @@ namespace TypeMake.Cpp
         Executable,
         StaticLibrary,
         DynamicLibrary,
+        MacBundle,
         GradleApplication,
-        GradleLibrary
+        GradleLibrary,
+        iOSStaticFramework,
+        iOSSharedFramework
     }
     public enum ToolchainType
     {
@@ -91,8 +94,8 @@ namespace TypeMake.Cpp
     public class Project
     {
         public String Name;
-        public String TargetName;
+        public String TargetName = null;
         public TargetType TargetType;
-        public List<Configuration> Configurations;
+        public List<Configuration> Configurations = new List<Configuration> { };
     }
 }
