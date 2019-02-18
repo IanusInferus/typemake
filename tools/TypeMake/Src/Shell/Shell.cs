@@ -242,7 +242,7 @@ namespace TypeMake
             Unix
         }
         private static Regex rBackslashBeforeDoubleQuotes = new Regex(@"\\+((?="")|$)", RegexOptions.ExplicitCapture);
-        private static Regex rComplexChars = new Regex(@"[\s!""#$%&'()*+,/;<=>?@\[\\\]^`{|}~]", RegexOptions.ExplicitCapture);
+        private static Regex rComplexChars = new Regex(@"[\s!""#$%&'()*,;<>?@\[\\\]^`{|}~]", RegexOptions.ExplicitCapture);
         public static String EscapeArgument(String Argument, ArgumentStyle ArgumentStyle)
         {
             //\0 \r \n can not be escaped
