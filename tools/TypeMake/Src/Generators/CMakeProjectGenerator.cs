@@ -51,7 +51,7 @@ namespace TypeMake.Cpp
             yield return @"cmake_minimum_required(VERSION 3.0.2)";
             yield return $@"project({Project.Name})";
 
-            if ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary) || (Project.TargetType == TargetType.GradleApplication) || (Project.TargetType == TargetType.GradleLibrary))
+            if ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary))
             {
                 var LibDirectories = conf.LibDirectories.Select(d => d.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix)).ToList();
                 if (LibDirectories.Count != 0)
@@ -73,7 +73,7 @@ namespace TypeMake.Cpp
             {
                 yield return @"add_library(${PROJECT_NAME} STATIC """")";
             }
-            else if ((Project.TargetType == TargetType.DynamicLibrary) || (Project.TargetType == TargetType.GradleApplication) || (Project.TargetType == TargetType.GradleLibrary))
+            else if (Project.TargetType == TargetType.DynamicLibrary)
             {
                 yield return @"add_library(${PROJECT_NAME} SHARED """")";
             }
@@ -156,7 +156,7 @@ namespace TypeMake.Cpp
                 yield return @"target_compile_options(${PROJECT_NAME} PRIVATE " + CFlagStr + ((CFlags.Count > 0) && (CppFlags.Count > 0) ? " " : "") + (CppFlags.Count > 0 ? "$<$<COMPILE_LANGUAGE:CXX>:" + CppFlagStr + ">" : "") + ")";
             }
 
-            if ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary) || (Project.TargetType == TargetType.GradleApplication) || (Project.TargetType == TargetType.GradleLibrary))
+            if ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary))
             {
                 var LinkerFlags = conf.LinkerFlags;
                 if (LinkerFlags.Count != 0)

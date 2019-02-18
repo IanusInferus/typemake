@@ -98,9 +98,9 @@ namespace TypeMake
             //products
             AddRequired("basic.static", "math");
             AddRequired("standard.dynamic", "math");
-            AddRequired("hello.executable", "math");
-            AddRequired("hello.executable.ios", "math");
-            AddRequired("hello.gradle.android", "math");
+            AddRequired("hello", "math");
+            AddRequired("hello.ios", "math");
+            AddRequired("hello.android", "math");
 
             var Projects = new List<ProjectDescription>();
 
@@ -189,18 +189,8 @@ namespace TypeMake
                 var InputDirectory = p.ProductPath;
                 var Extensions = p.ProductPath.FileName.ToString().Split('.').Skip(1).ToArray();
                 var ProductTargetType = TargetType.Executable;
-                if (Extensions.Contains("gradle", StringComparer.OrdinalIgnoreCase))
-                {
-                    if (Extensions.Contains("dynamic", StringComparer.OrdinalIgnoreCase))
-                    {
-                        ProductTargetType = TargetType.GradleLibrary;
-                    }
-                    else
-                    {
-                        ProductTargetType = TargetType.GradleApplication;
-                    }
-                }
-                else if (Extensions.Contains("dynamic", StringComparer.OrdinalIgnoreCase))
+                var GradleTargetType = (TargetType?)(null);
+                if (Extensions.Contains("dynamic", StringComparer.OrdinalIgnoreCase))
                 {
                     ProductTargetType = TargetType.DynamicLibrary;
                 }
@@ -208,11 +198,19 @@ namespace TypeMake
                 {
                     ProductTargetType = TargetType.StaticLibrary;
                 }
-                var IsTargetOperatingSystemMatched = IsOperatingSystemMatchExtensions(Extensions, TargetOperatingSystem);
-                if ((TargetOperatingSystem != OperatingSystemType.Android) && ((ProductTargetType == TargetType.GradleLibrary) || (ProductTargetType == TargetType.GradleApplication)))
+                if (System.IO.File.Exists(InputDirectory / "AndroidManifest.xml"))
                 {
-                    IsTargetOperatingSystemMatched = false;
+                    if (ProductTargetType == TargetType.DynamicLibrary)
+                    {
+                        GradleTargetType = TargetType.GradleLibrary;
+                    }
+                    else
+                    {
+                        ProductTargetType = TargetType.DynamicLibrary;
+                        GradleTargetType = TargetType.GradleApplication;
+                    }
                 }
+                var IsTargetOperatingSystemMatched = IsOperatingSystemMatchExtensions(Extensions, TargetOperatingSystem);
                 if ((TargetOperatingSystem == OperatingSystemType.iOS) && (ProductTargetType == TargetType.Executable))
                 {
                     IsTargetOperatingSystemMatched = IsOperatingSystemMatchExtensions(Extensions, TargetOperatingSystem, true);
@@ -252,6 +250,7 @@ namespace TypeMake
                         Definition = new Project
                         {
                             Name = ProductName,
+                            TargetName = TargetName,
                             TargetType = IsTargetOperatingSystemMatched ? ProductTargetType : TargetType.StaticLibrary,
                             Configurations = (new List<Configuration>
                             {
@@ -282,6 +281,28 @@ namespace TypeMake
                         PhysicalPath = InputDirectory,
                         DependentProjectToRequirement = DependentModuleToRequirement
                     });
+                    if ((TargetOperatingSystem == OperatingSystemType.Android) && (GradleTargetType != null))
+                    {
+                        Projects.Add(new ProjectDescription
+                        {
+                            Definition = new Project
+                            {
+                                Name = ProductName + ":" + GradleTargetType.Value.ToString(),
+                                TargetName = TargetName,
+                                TargetType = GradleTargetType.Value
+                            },
+                            ExportConfigurations = new List<Configuration> { },
+                            Reference = new ProjectReference
+                            {
+                                Id = GetIdForProject(ProductName),
+                                Name = ProductName + ":" + GradleTargetType.Value.ToString(),
+                                VirtualDir = p.VirtualDir,
+                                FilePath = BuildDirectory / "gradle" / GetProjectFileName(ProductName)
+                            },
+                            PhysicalPath = InputDirectory,
+                            DependentProjectToRequirement = new Dictionary<String, bool> { [ProductName] = true }
+                        });
+                    }
                 }
             }
 
@@ -359,19 +380,24 @@ namespace TypeMake
                 }
                 else if (Toolchain == ToolchainType.Gradle_CMake)
                 {
-                    var g = new CMakeProjectGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture, ConfigurationType);
-                    g.Generate(ForceRegenerate);
                     if (ProjectTargetType == TargetType.GradleApplication)
                     {
                         var BuildGradleTemplateText = Resource.GetResourceText(@"Templates\gradle_application\build.gradle");
-                        var gGradle = new GradleProjectGenerator(SolutionName, p, ProjectReferences, InputDirectory, BuildDirectory / "gradle", BuildDirectory, BuildGradleTemplateText, Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture, ConfigurationType);
+                        var gGradle = new GradleProjectGenerator(SolutionName, p, ProjectReferences, InputDirectory, OutputDirectory, BuildDirectory, BuildGradleTemplateText, Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture, ConfigurationType);
                         gGradle.Generate(ForceRegenerate);
+                        continue;
                     }
                     else if (ProjectTargetType == TargetType.GradleLibrary)
                     {
                         var BuildGradleTemplateText = Resource.GetResourceText(@"Templates\gradle_library\build.gradle");
-                        var gGradle = new GradleProjectGenerator(SolutionName, p, ProjectReferences, InputDirectory, BuildDirectory / "gradle", BuildDirectory, BuildGradleTemplateText, Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture, ConfigurationType);
+                        var gGradle = new GradleProjectGenerator(SolutionName, p, ProjectReferences, InputDirectory, OutputDirectory, BuildDirectory, BuildGradleTemplateText, Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture, ConfigurationType);
                         gGradle.Generate(ForceRegenerate);
+                        continue;
+                    }
+                    else
+                    {
+                        var g = new CMakeProjectGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture, ConfigurationType);
+                        g.Generate(ForceRegenerate);
                     }
                 }
                 else
@@ -406,7 +432,14 @@ namespace TypeMake
                 CopyDirectory(System.Reflection.Assembly.GetEntryAssembly().Location.AsPath().Parent / "Templates/gradle", BuildDirectory / "gradle");
                 var g = new CMakeSolutionGenerator(SolutionName, SortedProjects, BuildDirectory);
                 g.Generate(ForceRegenerate);
-                TextFile.WriteToFile(BuildDirectory / "gradle/settings.gradle", "include " + String.Join(", ", GradleProjectNames.Select(n => "':" + n + "'")), new UTF8Encoding(false), !ForceRegenerate);
+                if (GradleProjectNames.Count > 0)
+                {
+                    TextFile.WriteToFile(BuildDirectory / "gradle/settings.gradle", "include " + String.Join(", ", GradleProjectNames.Select(n => "':" + n.Split(':').First() + "'")), new UTF8Encoding(false), !ForceRegenerate);
+                }
+                else
+                {
+                    TextFile.WriteToFile(BuildDirectory / "gradle/settings.gradle", "", new UTF8Encoding(false), !ForceRegenerate);
+                }
             }
             else
             {
