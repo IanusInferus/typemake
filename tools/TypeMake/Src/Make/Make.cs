@@ -289,7 +289,19 @@ namespace TypeMake
                             {
                                 Name = ProductName + ":" + GradleTargetType.Value.ToString(),
                                 TargetName = TargetName,
-                                TargetType = GradleTargetType.Value
+                                TargetType = GradleTargetType.Value,
+                                Configurations = new List<Configuration>
+                                {
+                                    new Configuration
+                                    {
+                                        Files = new List<Cpp.File>
+                                        {
+                                            new Cpp.File { Path = InputDirectory / "java", Type = FileType.Unknown },
+                                            new Cpp.File { Path = InputDirectory / "include", Type = FileType.Unknown },
+                                            new Cpp.File { Path = InputDirectory / "src", Type = FileType.Unknown }
+                                        }
+                                    }
+                                }
                             },
                             ExportConfigurations = new List<Configuration> { },
                             Reference = new ProjectReference
