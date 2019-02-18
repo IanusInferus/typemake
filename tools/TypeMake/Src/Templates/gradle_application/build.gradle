@@ -18,7 +18,7 @@ android {
     sourceSets {
         main {
             manifest.srcFile '${ProjectSrcDir}/AndroidManifest.xml'
-            java.srcDirs = ['${ProjectSrcDir}/java', '${ProjectSrcDir}/include', '${ProjectSrcDir}/src']
+            java.srcDirs = [${SourceRoots}]
             res.srcDirs = ['${ProjectSrcDir}/res']
             assets.srcDirs = ['${ProjectSrcDir}/assets']
         }
@@ -38,12 +38,12 @@ dependencies {
 }
 
 task copySoLibraryDebug(type: Sync) {
-    from '${SolutionOutputDir}/${ArchitectureType}_Debug'
+    from '${TargetDirectoryDebug}'
     include 'lib${ProjectTargetName}.so'
     into '${SolutionOutputDir}/${ArchitectureType}_Debug/gradle/${ProjectTargetName}/${AndroidAbi}'
 }
 task copySoLibraryRelease(type: Sync) {
-    from '${SolutionOutputDir}/${ArchitectureType}_Release'
+    from '${TargetDirectoryRelease}'
     include 'lib${ProjectTargetName}.so'
     into '${SolutionOutputDir}/${ArchitectureType}_Release/gradle/${ProjectTargetName}/${AndroidAbi}'
 }
