@@ -1,10 +1,10 @@
 # TypeMake
 
-It's never easy to develop a cross-platform C++ project. When there is no prebuilt releases for a software and people need to compile it from source on their own machine, usually it will cost them a lot of time to fight with the build process. Their machines differ in many aspects with the developers' machines, such as different operating systems, different compilers, different thirdparty library paths. This frustrates both developers and users. There are many repositories containing non-buildable build configurations, and there are many repositories existing merely to build a software on a specific platform.
+It's never easy to develop a cross-platform C++ project. If no prebuilt releases for a software is provided and people need to compile it from source on their own machine, it will usually cost a lot of time to pass through the build process. Their machines differ in many aspects from the developers' machines, such as different operating systems, different compilers and different third-party library paths. This frustrates both developers and users. There are many repositories that only build on a specific platform or even provides a broken build configuration.
 
-[CMake](https://cmake.org/) is a well-known software to solve this problem. But it features many weaknesses, such as archaic syntax of the scripting language and discrete build script files. It's also quite difficult to figure out what to adjust in scripts knowing which options to adjust in Visual Studio or XCode.
+[CMake](https://cmake.org/) is a well-known software that solves this problem. But its script-based features have many weaknesses, such as archaic syntax of the scripting language and discrete build script files. It's also quite difficult to figure out what to adjust in scripts knowing which options to adjust in Visual Studio or XCode.
 
-To solve the above problems, and to make the build process of a C++ project debuggable, I propose the TypeMake build system. It is developed fully in C#, making it a typed and debuggable program. Both developers and users can debug a build process easily like a trivial C# project. No more "Please help me on building the project on Windows" issues.
+To solve the above problems and to make the build process of a C++ project debuggable, I created the TypeMake build system. It is developed fully in C#, making it a typed and debuggable program. Both developers and users can debug a build process easily like a simple C# project. No more "Please help me in building the project on Windows" requests.
 
 ## Usage
 
