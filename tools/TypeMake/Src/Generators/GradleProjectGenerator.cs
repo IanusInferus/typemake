@@ -62,19 +62,40 @@ namespace TypeMake.Cpp
             var confRelease = Project.Configurations.Merged(Project.TargetType, Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitectureType, Cpp.ConfigurationType.Release);
 
             var Results = BuildGradleTemplateText.Replace("\r\n", "\n").Split('\n').AsEnumerable();
-            var ApplicationId = conf.Options.ContainsKey("gradle.applicationId") ? conf.Options["gradle.applicationId"] : null;
             var SolutionOutputDir = SolutionOutputDirectory.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix);
             var ArchitectureType = TargetArchitectureType.Value.ToString();
-            Results = Results.Select(Line => Line.Replace("${ApplicationId}", ApplicationId ?? (SolutionName + "." + (Project.TargetName ?? ProjectName)).ToLower()));
-            Results = Results.Select(Line => Line.Replace("${ProjectSrcDir}", InputDirectory.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix)));
-            Results = Results.Select(Line => Line.Replace("${SourceRoots}", String.Join(", ", conf.Files.Where(f => System.IO.Directory.Exists(f.Path)).Select(f => "'" + f.Path.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix) + "'"))));
-            Results = Results.Select(Line => Line.Replace("${SolutionOutputDir}", SolutionOutputDir));
-            Results = Results.Select(Line => Line.Replace("${ArchitectureType}", ArchitectureType));
-            Results = Results.Select(Line => Line.Replace("${AndroidAbi}", GetArchitectureString(TargetArchitectureType.Value)));
-            Results = Results.Select(Line => Line.Replace("${ProjectTargetName}", Project.TargetName ?? ProjectName));
-            Results = Results.Select(Line => Line.Replace("${ProjectName}", ProjectName));
-            Results = Results.Select(Line => Line.Replace("${TargetDirectoryDebug}", confDebug.Options.ContainsKey("gradle.targetDirectory") ? confDebug.Options["gradle.targetDirectory"].AsPath().RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix) : $"{SolutionOutputDir}/{ArchitectureType}_Debug"));
-            Results = Results.Select(Line => Line.Replace("${TargetDirectoryRelease}", confRelease.Options.ContainsKey("gradle.targetDirectory") ? confRelease.Options["gradle.targetDirectory"].AsPath().RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix) : $"{SolutionOutputDir}/{ArchitectureType}_Release"));
+            var ProjectTargetName = Project.TargetName ?? ProjectName;
+            var ApplicationId = conf.Options.ContainsKey("gradle.applicationId") ? conf.Options["gradle.applicationId"] : (SolutionName + "." + ProjectTargetName).ToLower();
+            var ManifestSrcFile = confDebug.Options.ContainsKey("gradle.manifestSrcFile") ? confDebug.Options["gradle.manifestSrcFile"].AsPath().RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix) : (InputDirectory / "AndroidManifest.xml").RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix);
+            var JavaSrcDirs = String.Join(", ", conf.Files.Where(f => System.IO.Directory.Exists(f.Path)).Select(f => "'" + f.Path.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix) + "'"));
+            var ResSrcDirs = conf.Options.ContainsKey("gradle.resSrcDirs") ? String.Join(", ", conf.Options["gradle.resSrcDirs"].Split(';').Select(d => "'" + d.AsPath().RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix) + "'")) : "'" + (InputDirectory / "res").RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix) + "'";
+            var AssetsSrcDirs = conf.Options.ContainsKey("gradle.assetsSrcDirs") ? String.Join(", ", conf.Options["gradle.assetsSrcDirs"].Split(';').Select(d => "'" + d.AsPath().RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix) + "'")) : "'" + (InputDirectory / "assets").RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix) + "'";
+            var AndroidAbi = GetArchitectureString(TargetArchitectureType.Value);
+            var TempJniLibsDirDebug = confDebug.Options.ContainsKey("gradle.tempJniLibsDirectory") ? confDebug.Options["gradle.tempJniLibsDirectory"].AsPath().RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix) : $"{SolutionOutputDir}/{ArchitectureType}_Debug/gradle/{ProjectTargetName}";
+            var TempJniLibsDirRelease = confRelease.Options.ContainsKey("gradle.tempJniLibsDirectory") ? confRelease.Options["gradle.tempJniLibsDirectory"].AsPath().RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix) : $"{SolutionOutputDir}/{ArchitectureType}_Release/gradle/{ProjectTargetName}";
+            var TargetDirectoryDebug = confDebug.Options.ContainsKey("gradle.targetDirectory") ? confDebug.Options["gradle.targetDirectory"].AsPath().RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix) : $"{SolutionOutputDir}/{ArchitectureType}_Debug";
+            var TargetDirectoryRelease = confRelease.Options.ContainsKey("gradle.targetDirectory") ? confRelease.Options["gradle.targetDirectory"].AsPath().RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix) : $"{SolutionOutputDir}/{ArchitectureType}_Release";
+            if (ConfigurationType == Cpp.ConfigurationType.Debug)
+            {
+                TempJniLibsDirRelease = TempJniLibsDirDebug;
+                TargetDirectoryRelease = TargetDirectoryDebug;
+            }
+            else if (ConfigurationType == Cpp.ConfigurationType.Release)
+            {
+                TempJniLibsDirDebug = TempJniLibsDirRelease;
+                TargetDirectoryDebug = TargetDirectoryRelease;
+            }
+            Results = Results.Select(Line => Line.Replace("${ProjectTargetName}", ProjectTargetName));
+            Results = Results.Select(Line => Line.Replace("${ApplicationId}", ApplicationId));
+            Results = Results.Select(Line => Line.Replace("${ManifestSrcFile}", ManifestSrcFile));
+            Results = Results.Select(Line => Line.Replace("${JavaSrcDirs}", JavaSrcDirs));
+            Results = Results.Select(Line => Line.Replace("${ResSrcDirs}", ResSrcDirs));
+            Results = Results.Select(Line => Line.Replace("${AssetsSrcDirs}", AssetsSrcDirs));
+            Results = Results.Select(Line => Line.Replace("${AndroidAbi}", AndroidAbi));
+            Results = Results.Select(Line => Line.Replace("${TempJniLibsDirDebug}", TempJniLibsDirDebug));
+            Results = Results.Select(Line => Line.Replace("${TempJniLibsDirRelease}", TempJniLibsDirRelease));
+            Results = Results.Select(Line => Line.Replace("${TargetDirectoryDebug}", TargetDirectoryDebug));
+            Results = Results.Select(Line => Line.Replace("${TargetDirectoryRelease}", TargetDirectoryRelease));
 
             return Results;
         }

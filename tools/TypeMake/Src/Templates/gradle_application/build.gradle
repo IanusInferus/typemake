@@ -17,16 +17,16 @@ android {
     }
     sourceSets {
         main {
-            manifest.srcFile '${ProjectSrcDir}/AndroidManifest.xml'
-            java.srcDirs = [${SourceRoots}]
-            res.srcDirs = ['${ProjectSrcDir}/res']
-            assets.srcDirs = ['${ProjectSrcDir}/assets']
+            manifest.srcFile '${ManifestSrcFile}'
+            java.srcDirs = [${JavaSrcDirs}]
+            res.srcDirs = [${ResSrcDirs}]
+            assets.srcDirs = [${AssetsSrcDirs}]
         }
         debug {
-            jniLibs.srcDirs = ['${SolutionOutputDir}/${ArchitectureType}_Debug/gradle/${ProjectTargetName}']
+            jniLibs.srcDirs = ['${TempJniLibsDirDebug}']
         }
         release {
-            jniLibs.srcDirs = ['${SolutionOutputDir}/${ArchitectureType}_Release/gradle/${ProjectTargetName}']
+            jniLibs.srcDirs = ['${TempJniLibsDirRelease}']
         }
     }
 }
@@ -40,12 +40,12 @@ dependencies {
 task copySoLibraryDebug(type: Sync) {
     from '${TargetDirectoryDebug}'
     include 'lib${ProjectTargetName}.so'
-    into '${SolutionOutputDir}/${ArchitectureType}_Debug/gradle/${ProjectTargetName}/${AndroidAbi}'
+    into '${TempJniLibsDirDebug}/${AndroidAbi}'
 }
 task copySoLibraryRelease(type: Sync) {
     from '${TargetDirectoryRelease}'
     include 'lib${ProjectTargetName}.so'
-    into '${SolutionOutputDir}/${ArchitectureType}_Release/gradle/${ProjectTargetName}/${AndroidAbi}'
+    into '${TempJniLibsDirRelease}/${AndroidAbi}'
 }
 project.afterEvaluate {
     preBuild.dependsOn copySoLibraryDebug
