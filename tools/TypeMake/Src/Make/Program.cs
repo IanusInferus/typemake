@@ -580,7 +580,7 @@ namespace TypeMake
                 Lines.Add(Shell.EscapeArgumentForShell(CMake, Shell.ShellArgumentStyle.CMD) + " " + String.Join(" ", CMakeArguments.Select(a => Shell.EscapeArgumentForShell(a, Shell.ShellArgumentStyle.CMD))) + " || exit /b 1");
                 Lines.Add(Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.CMD) + " || exit /b 1");
                 Lines.Add("pushd gradle || exit /b 1");
-                Lines.Add(@"call .\gradlew.bat build || exit /b 1");
+                Lines.Add($@"call .\gradlew.bat assemble{Configuration} || exit /b 1");
                 Lines.Add("popd");
                 Lines.Add("");
                 var BuildPath = BuildDirectory / "build.cmd";
@@ -594,7 +594,7 @@ namespace TypeMake
                 Lines.Add(Shell.EscapeArgumentForShell(CMake, Shell.ShellArgumentStyle.Bash) + " " + String.Join(" ", CMakeArguments.Select(a => Shell.EscapeArgumentForShell(a, Shell.ShellArgumentStyle.Bash))));
                 Lines.Add(Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.Bash));
                 Lines.Add("pushd gradle");
-                Lines.Add(@"./gradlew build");
+                Lines.Add($@"./gradlew assemble{Configuration}");
                 Lines.Add("popd");
                 Lines.Add("");
                 var BuildPath = BuildDirectory / "build.sh";
