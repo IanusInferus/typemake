@@ -382,7 +382,12 @@ namespace TypeMake
                 Lines.Add("if \"%SUB_NO_PAUSE_SYMBOL%\"==\"1\" set NO_PAUSE_SYMBOL=1");
                 Lines.Add("if /I \"%COMSPEC%\" == %CMDCMDLINE% set NO_PAUSE_SYMBOL=1");
                 Lines.Add("set SUB_NO_PAUSE_SYMBOL=1");
+                Lines.Add("call :main");
+                Lines.Add("set EXIT_CODE=%ERRORLEVEL%");
+                Lines.Add("if not \"%NO_PAUSE_SYMBOL%\"==\"1\" pause");
+                Lines.Add("exit /b %EXIT_CODE%");
                 Lines.Add("");
+                Lines.Add(":main");
                 foreach (var p in Memory.Variables)
                 {
                     if (p.Key == "BuildAfterGenerate")
@@ -406,8 +411,8 @@ namespace TypeMake
                         Lines.Add($"set " + Shell.EscapeArgumentForShell(p.Key + "=" + p.Value, Shell.ShellArgumentStyle.CMD));
                     }
                 }
-                Lines.Add("pushd \"%SourceDirectory%\"");
-                Lines.Add("call .\\typemake.cmd %* & popd & if not \"%NO_PAUSE_SYMBOL%\"==\"1\" pause & exit /b %EXIT_CODE%"); //all commands after typemake need to be in one line; or it may cause trouble when the file is changed by typemake
+                Lines.Add("pushd \"%SourceDirectory%\" || exit /b 1");
+                Lines.Add("call .\\typemake.cmd %* || exit /b 1 & popd"); //all commands after typemake need to be in one line; or it may cause trouble when the file is changed by typemake
                 Lines.Add("");
                 var RetypemakePath = BuildDirectory / "retypemake.cmd";
                 if (OverwriteRetypemakeScript || !File.Exists(RetypemakePath))
@@ -422,6 +427,8 @@ namespace TypeMake
             else
             {
                 var Lines = new List<String>();
+                Lines.Add("#!/bin/bash");
+                Lines.Add("set -e");
                 foreach (var p in Memory.Variables)
                 {
                     if (p.Key == "BuildAfterGenerate")
@@ -469,11 +476,13 @@ namespace TypeMake
             Lines.Add("if \"%SUB_NO_PAUSE_SYMBOL%\"==\"1\" set NO_PAUSE_SYMBOL=1");
             Lines.Add("if /I \"%COMSPEC%\" == %CMDCMDLINE% set NO_PAUSE_SYMBOL=1");
             Lines.Add("set SUB_NO_PAUSE_SYMBOL=1");
-            Lines.Add("");
-            Lines.Add($@"""{VSDir.ToString(PathStringStyle.Windows)}\MSBuild\15.0\Bin\MSBuild.exe"" {SolutionName}.sln /p:Configuration={Configuration} /p:Platform={SlnGenerator.GetArchitectureString(TargetArchitecture)}");
-            Lines.Add("");
+            Lines.Add("call :main");
+            Lines.Add("set EXIT_CODE=%ERRORLEVEL%");
             Lines.Add("if not \"%NO_PAUSE_SYMBOL%\"==\"1\" pause");
             Lines.Add("exit /b %EXIT_CODE%");
+            Lines.Add("");
+            Lines.Add(":main");
+            Lines.Add($@"""{VSDir.ToString(PathStringStyle.Windows)}\MSBuild\15.0\Bin\MSBuild.exe"" {SolutionName}.sln /p:Configuration={Configuration} /p:Platform={SlnGenerator.GetArchitectureString(TargetArchitecture)} || exit /b 1");
             Lines.Add("");
             var BuildPath = BuildDirectory / $"build_{TargetArchitecture}_{Configuration}.cmd";
             TextFile.WriteToFile(BuildPath, String.Join("\r\n", Lines), System.Text.Encoding.Default, !ForceRegenerate);
@@ -493,12 +502,14 @@ namespace TypeMake
                 Lines.Add("if \"%SUB_NO_PAUSE_SYMBOL%\"==\"1\" set NO_PAUSE_SYMBOL=1");
                 Lines.Add("if /I \"%COMSPEC%\" == %CMDCMDLINE% set NO_PAUSE_SYMBOL=1");
                 Lines.Add("set SUB_NO_PAUSE_SYMBOL=1");
-                Lines.Add("");
-                Lines.Add("wsl " + Shell.EscapeArgumentForShell(CMake, Shell.ShellArgumentStyle.CMD) + " " + String.Join(" ", CMakeArguments.Select(a => Shell.EscapeArgumentForShell(a, Shell.ShellArgumentStyle.CMD))));
-                Lines.Add("wsl " + Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.CMD));
-                Lines.Add("");
+                Lines.Add("call :main");
+                Lines.Add("set EXIT_CODE=%ERRORLEVEL%");
                 Lines.Add("if not \"%NO_PAUSE_SYMBOL%\"==\"1\" pause");
                 Lines.Add("exit /b %EXIT_CODE%");
+                Lines.Add("");
+                Lines.Add(":main");
+                Lines.Add("wsl " + Shell.EscapeArgumentForShell(CMake, Shell.ShellArgumentStyle.CMD) + " " + String.Join(" ", CMakeArguments.Select(a => Shell.EscapeArgumentForShell(a, Shell.ShellArgumentStyle.CMD))) + " || exit /b 1");
+                Lines.Add("wsl " + Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.CMD) + " || exit /b 1");
                 Lines.Add("");
                 var BuildPath = BuildDirectory / "build.cmd";
                 TextFile.WriteToFile(BuildPath, String.Join("\r\n", Lines), System.Text.Encoding.Default, !ForceRegenerate);
@@ -506,6 +517,8 @@ namespace TypeMake
             else
             {
                 var Lines = new List<String>();
+                Lines.Add("#!/bin/bash");
+                Lines.Add("set -e");
                 Lines.Add(Shell.EscapeArgumentForShell(CMake, Shell.ShellArgumentStyle.Bash) + " " + String.Join(" ", CMakeArguments.Select(a => Shell.EscapeArgumentForShell(a, Shell.ShellArgumentStyle.Bash))));
                 Lines.Add(Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.Bash));
                 Lines.Add("");
@@ -517,6 +530,8 @@ namespace TypeMake
         private static void GenerateBuildScriptXCode(Cpp.OperatingSystemType BuildingOperatingSystem, PathString BuildDirectory, Make.Result Result, bool ForceRegenerate)
         {
             var Lines = new List<String>();
+            Lines.Add("#!/bin/bash");
+            Lines.Add("set -e");
             foreach (var p in Result.SortedProjects)
             {
                 Lines.Add($"xcodebuild -project projects/{p.Name}.xcodeproj");
@@ -556,15 +571,17 @@ namespace TypeMake
                 Lines.Add("if \"%SUB_NO_PAUSE_SYMBOL%\"==\"1\" set NO_PAUSE_SYMBOL=1");
                 Lines.Add("if /I \"%COMSPEC%\" == %CMDCMDLINE% set NO_PAUSE_SYMBOL=1");
                 Lines.Add("set SUB_NO_PAUSE_SYMBOL=1");
-                Lines.Add("");
-                Lines.Add(Shell.EscapeArgumentForShell(CMake, Shell.ShellArgumentStyle.CMD) + " " + String.Join(" ", CMakeArguments.Select(a => Shell.EscapeArgumentForShell(a, Shell.ShellArgumentStyle.CMD))));
-                Lines.Add(Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.CMD));
-                Lines.Add("pushd gradle");
-                Lines.Add(@"call .\gradlew.bat build");
-                Lines.Add("popd");
-                Lines.Add("");
+                Lines.Add("call :main");
+                Lines.Add("set EXIT_CODE=%ERRORLEVEL%");
                 Lines.Add("if not \"%NO_PAUSE_SYMBOL%\"==\"1\" pause");
                 Lines.Add("exit /b %EXIT_CODE%");
+                Lines.Add("");
+                Lines.Add(":main");
+                Lines.Add(Shell.EscapeArgumentForShell(CMake, Shell.ShellArgumentStyle.CMD) + " " + String.Join(" ", CMakeArguments.Select(a => Shell.EscapeArgumentForShell(a, Shell.ShellArgumentStyle.CMD))) + " || exit /b 1");
+                Lines.Add(Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.CMD) + " || exit /b 1");
+                Lines.Add("pushd gradle || exit /b 1");
+                Lines.Add(@"call .\gradlew.bat build || exit /b 1");
+                Lines.Add("popd");
                 Lines.Add("");
                 var BuildPath = BuildDirectory / "build.cmd";
                 TextFile.WriteToFile(BuildPath, String.Join("\r\n", Lines), System.Text.Encoding.Default, !ForceRegenerate);
@@ -572,6 +589,8 @@ namespace TypeMake
             else
             {
                 var Lines = new List<String>();
+                Lines.Add("#!/bin/bash");
+                Lines.Add("set -e");
                 Lines.Add(Shell.EscapeArgumentForShell(CMake, Shell.ShellArgumentStyle.Bash) + " " + String.Join(" ", CMakeArguments.Select(a => Shell.EscapeArgumentForShell(a, Shell.ShellArgumentStyle.Bash))));
                 Lines.Add(Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.Bash));
                 Lines.Add("pushd gradle");
