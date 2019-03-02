@@ -34,13 +34,11 @@ dependencies {
 }
 
 task copySoLibraryDebug(type: Sync) {
-    from '${TargetDirectoryDebug}'
-    include 'lib${ProjectTargetName}.so'
+    from ${LibsDebug}
     into '${TempJniLibsDirDebug}/${AndroidAbi}'
 }
 task copySoLibraryRelease(type: Sync) {
-    from '${TargetDirectoryRelease}'
-    include 'lib${ProjectTargetName}.so'
+    from ${LibsRelease}
     into '${TempJniLibsDirRelease}/${AndroidAbi}'
 }
 project.afterEvaluate {
