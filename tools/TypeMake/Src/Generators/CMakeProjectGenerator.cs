@@ -161,7 +161,7 @@ namespace TypeMake.Cpp
                 var LinkerFlags = conf.LinkerFlags;
                 if (LinkerFlags.Count != 0)
                 {
-                    var LinkerFlagStr = String.Join(" ", CFlags.Select(f => (f == null ? "" : Regex.IsMatch(f, @"[ ""^|]") ? "\"" + f.Replace("\"", "\"\"") + "\"" : f)));
+                    var LinkerFlagStr = String.Join(" ", LinkerFlags.Select(f => (f == null ? "" : Regex.IsMatch(f, @"[ ""^|]") ? "\"" + f.Replace("\"", "\"\"") + "\"" : f)));
                     yield return @"set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS " + LinkerFlagStr + ")";
                 }
 
