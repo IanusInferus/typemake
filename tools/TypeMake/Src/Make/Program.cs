@@ -404,7 +404,7 @@ namespace TypeMake
                     }
                 }
                 Lines.Add("pushd \"%SourceDirectory%\" || exit /b 1");
-                Lines.Add("call .\\typemake.cmd %* || exit /b 1 & popd"); //all commands after typemake need to be in one line; or it may cause trouble when the file is changed by typemake
+                Lines.Add("call .\\typemake.cmd %* || exit /b 1 & popd & exit /b 0"); //all commands after typemake need to be in one line; or it may cause trouble when the file is changed by typemake
                 Lines.Add("");
                 var RetypemakePath = BuildDirectory / "retypemake.cmd";
                 if (OverwriteRetypemakeScript || !File.Exists(RetypemakePath))
