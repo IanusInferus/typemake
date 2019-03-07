@@ -19,8 +19,9 @@ namespace TypeMake.Cpp
         private OperatingSystemType TargetOperatingSystem;
         private ArchitectureType? TargetArchitectureType;
         private ConfigurationType? ConfigurationType;
+        private bool EnableAbsolutePath;
 
-        public CMakeProjectGenerator(Project Project, List<ProjectReference> ProjectReferences, PathString InputDirectory, PathString OutputDirectory, ToolchainType Toolchain, CompilerType Compiler, OperatingSystemType BuildingOperatingSystem, ArchitectureType BuildingOperatingSystemArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType? TargetArchitectureType, ConfigurationType? ConfigurationType)
+        public CMakeProjectGenerator(Project Project, List<ProjectReference> ProjectReferences, PathString InputDirectory, PathString OutputDirectory, ToolchainType Toolchain, CompilerType Compiler, OperatingSystemType BuildingOperatingSystem, ArchitectureType BuildingOperatingSystemArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType? TargetArchitectureType, ConfigurationType? ConfigurationType, bool EnableAbsolutePath)
         {
             this.Project = Project;
             this.ProjectReferences = ProjectReferences;
@@ -33,6 +34,7 @@ namespace TypeMake.Cpp
             this.TargetOperatingSystem = TargetOperatingSystem;
             this.TargetArchitectureType = TargetArchitectureType;
             this.ConfigurationType = ConfigurationType;
+            this.EnableAbsolutePath = EnableAbsolutePath;
         }
 
         public void Generate(bool ForceRegenerate)
@@ -53,7 +55,7 @@ namespace TypeMake.Cpp
 
             if ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary))
             {
-                var LibDirectories = conf.LibDirectories.Select(d => d.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix)).ToList();
+                var LibDirectories = conf.LibDirectories.Select(d => d.FullPath.RelativeTo(BaseDirPath, EnableAbsolutePath).ToString(PathStringStyle.Unix)).ToList();
                 if (LibDirectories.Count != 0)
                 {
                     yield return @"link_directories(";
@@ -87,7 +89,7 @@ namespace TypeMake.Cpp
             }
             if (conf.OutputDirectory != null)
             {
-                var OutDir = conf.OutputDirectory.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix);
+                var OutDir = conf.OutputDirectory.RelativeTo(BaseDirPath, EnableAbsolutePath).ToString(PathStringStyle.Unix);
                 yield return $@"set_property(TARGET ${{PROJECT_NAME}} PROPERTY ARCHIVE_OUTPUT_DIRECTORY {OutDir})";
                 yield return $@"set_property(TARGET ${{PROJECT_NAME}} PROPERTY LIBRARY_OUTPUT_DIRECTORY {OutDir})";
                 yield return $@"set_property(TARGET ${{PROJECT_NAME}} PROPERTY RUNTIME_OUTPUT_DIRECTORY {OutDir})";
@@ -111,7 +113,7 @@ namespace TypeMake.Cpp
             {
                 if ((f.Type == FileType.CSource) || (f.Type == FileType.CppSource) || (f.Type == FileType.ObjectiveCSource) || (f.Type == FileType.ObjectiveCppSource))
                 {
-                    yield return "  " + f.Path.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix);
+                    yield return "  " + f.Path.FullPath.RelativeTo(BaseDirPath, EnableAbsolutePath).ToString(PathStringStyle.Unix);
                 }
             }
             yield return @")";
@@ -122,12 +124,12 @@ namespace TypeMake.Cpp
                 yield return $@"source_group({Name} FILES";
                 foreach (var f in g)
                 {
-                    yield return "  " + f.Path.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix);
+                    yield return "  " + f.Path.FullPath.RelativeTo(BaseDirPath, EnableAbsolutePath).ToString(PathStringStyle.Unix);
                 }
                 yield return @")";
             }
 
-            var IncludeDirectories = conf.IncludeDirectories.Select(d => d.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix)).ToList();
+            var IncludeDirectories = conf.IncludeDirectories.Select(d => d.FullPath.RelativeTo(BaseDirPath, EnableAbsolutePath).ToString(PathStringStyle.Unix)).ToList();
             if (IncludeDirectories.Count != 0)
             {
                 yield return @"target_include_directories(${PROJECT_NAME} PRIVATE";
@@ -189,6 +191,15 @@ namespace TypeMake.Cpp
             }
 
             yield return "";
+        }
+    }
+
+    internal static class CMakeProjectGeneratorUtils
+    {
+        public static PathString RelativeTo(this PathString p, PathString BaseDirectory, bool EnableAbsolutePath)
+        {
+            if (EnableAbsolutePath) { return p; }
+            return p.RelativeTo(BaseDirectory);
         }
     }
 }

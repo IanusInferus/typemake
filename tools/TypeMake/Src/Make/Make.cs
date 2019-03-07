@@ -387,7 +387,7 @@ namespace TypeMake
                 }
                 else if (Toolchain == ToolchainType.CMake)
                 {
-                    var g = new CMakeProjectGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture, ConfigurationType);
+                    var g = new CMakeProjectGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture, ConfigurationType, false);
                     g.Generate(ForceRegenerate);
                 }
                 else if (Toolchain == ToolchainType.Gradle_CMake)
@@ -408,7 +408,7 @@ namespace TypeMake
                     }
                     else
                     {
-                        var g = new CMakeProjectGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture, ConfigurationType);
+                        var g = new CMakeProjectGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture, ConfigurationType, BuildingOperatingSystem == OperatingSystemType.Windows);
                         g.Generate(ForceRegenerate);
                     }
                 }
