@@ -290,16 +290,7 @@ namespace TypeMake
                 var AndroidSdk = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "AndroidSdk", Quiet, BuildingOperatingSystem == Cpp.OperatingSystemType.Windows ? (Environment.GetEnvironmentVariable("LocalAppData").AsPath() / "Android/sdk").ToString() : "", p => Directory.Exists(p / "platform-tools") ? new KeyValuePair<bool, String>(true, "") : new KeyValuePair<bool, String>(false, "No platform-tools directory inside."));
                 var AndroidNdk = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "AndroidNdk", Quiet, AndroidSdk / "ndk-bundle", p => Directory.Exists(p / "build") ? new KeyValuePair<bool, String>(true, "") : new KeyValuePair<bool, String>(false, "No build directory inside."));
                 var CMake = Shell.RequireEnvironmentVariableFilePath(Memory, "CMake", Quiet, Shell.TryLocate("cmake") ?? (BuildingOperatingSystem == Cpp.OperatingSystemType.Windows ? (Environment.GetEnvironmentVariable("ProgramFiles").AsPath() / @"CMake\bin\cmake.exe") : "".AsPath()));
-                var TargetArchitecture = Shell.RequireEnvironmentVariableEnum(Memory, "TargetArchitecture", Quiet, Cpp.ArchitectureType.armeabi_v7a);
-                var Configuration = Shell.RequireEnvironmentVariableEnum(Memory, "Configuration", Quiet, Cpp.ConfigurationType.Debug);
-                var BuildDirectory = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "BuildDirectory", Quiet, $"build/android_{TargetArchitecture}_{Configuration}".AsPath(), p => !File.Exists(p) ? new KeyValuePair<bool, String>(true, "") : new KeyValuePair<bool, String>(false, "Exist as a file."));
-                var m = new Make(Cpp.ToolchainType.Gradle_CMake, Cpp.CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture, Configuration, SourceDirectory, BuildDirectory, null, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
-                var Projects = m.GetAvailableProjects();
-                var SelectedProjects = GetSelectedProjects(Memory, Quiet, Projects, m.CheckUnresolvedDependencies);
-                GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, OverwriteRetypemakeScript);
-                m.Execute(SelectedProjects);
-                TextFile.WriteToFile(BuildDirectory / "gradle/local.properties", $"sdk.dir={AndroidSdk.ToString(PathStringStyle.Unix)}", new System.Text.UTF8Encoding(false), !ForceRegenerate);
-                var Make = "".AsPath();
+                String Make = null;
                 if (BuildingOperatingSystemArchitecture == Cpp.ArchitectureType.x86_64)
                 {
                     if (BuildingOperatingSystem == Cpp.OperatingSystemType.Windows)
@@ -314,16 +305,17 @@ namespace TypeMake
                     {
                         Make = AndroidNdk / "prebuilt/darwin-x86_64/bin/make";
                     }
-                    else
-                    {
-                        throw new InvalidOperationException();
-                    }
                 }
-                else
-                {
-                    Console.WriteLine("UnsupportedBuildingOperatingSystemArchitecture: " + Shell.OperatingSystemArchitecture.ToString());
-                    return 1;
-                }
+                Make = Shell.RequireEnvironmentVariableFilePath(Memory, "Make", Quiet, Make);
+                var TargetArchitecture = Shell.RequireEnvironmentVariableEnum(Memory, "TargetArchitecture", Quiet, Cpp.ArchitectureType.armeabi_v7a);
+                var Configuration = Shell.RequireEnvironmentVariableEnum(Memory, "Configuration", Quiet, Cpp.ConfigurationType.Debug);
+                var BuildDirectory = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "BuildDirectory", Quiet, $"build/android_{TargetArchitecture}_{Configuration}".AsPath(), p => !File.Exists(p) ? new KeyValuePair<bool, String>(true, "") : new KeyValuePair<bool, String>(false, "Exist as a file."));
+                var m = new Make(Cpp.ToolchainType.Gradle_CMake, Cpp.CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture, Configuration, SourceDirectory, BuildDirectory, null, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
+                var Projects = m.GetAvailableProjects();
+                var SelectedProjects = GetSelectedProjects(Memory, Quiet, Projects, m.CheckUnresolvedDependencies);
+                GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, OverwriteRetypemakeScript);
+                m.Execute(SelectedProjects);
+                TextFile.WriteToFile(BuildDirectory / "gradle/local.properties", $"sdk.dir={AndroidSdk.ToString(PathStringStyle.Unix)}", new System.Text.UTF8Encoding(false), !ForceRegenerate);
                 GenerateBuildScriptAndroid(BuildingOperatingSystem, BuildDirectory, TargetArchitecture, Configuration, AndroidNdk, CMake, Make, ForceRegenerate);
                 if (BuildAfterGenerate)
                 {
@@ -578,7 +570,7 @@ namespace TypeMake
                 Lines.Add("");
                 Lines.Add(":main");
                 Lines.Add(Shell.EscapeArgumentForShell(CMake, Shell.ShellArgumentStyle.CMD) + " " + String.Join(" ", CMakeArguments.Select(a => Shell.EscapeArgumentForShell(a, Shell.ShellArgumentStyle.CMD))) + " || exit /b 1");
-                Lines.Add(Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.CMD) + " || exit /b 1");
+                Lines.Add(Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.CMD) + " -j" + Environment.ProcessorCount.ToString() + " || exit /b 1");
                 Lines.Add("pushd gradle || exit /b 1");
                 Lines.Add($@"call .\gradlew.bat assemble{Configuration} || exit /b 1");
                 Lines.Add("popd");
@@ -592,7 +584,7 @@ namespace TypeMake
                 Lines.Add("#!/bin/bash");
                 Lines.Add("set -e");
                 Lines.Add(Shell.EscapeArgumentForShell(CMake, Shell.ShellArgumentStyle.Bash) + " " + String.Join(" ", CMakeArguments.Select(a => Shell.EscapeArgumentForShell(a, Shell.ShellArgumentStyle.Bash))));
-                Lines.Add(Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.Bash));
+                Lines.Add(Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.Bash) + " -j" + Environment.ProcessorCount.ToString());
                 Lines.Add("pushd gradle");
                 Lines.Add($@"./gradlew assemble{Configuration}");
                 Lines.Add("popd");
