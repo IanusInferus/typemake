@@ -133,18 +133,12 @@ namespace TypeMake.Cpp
                     }
                     else if (TargetOperatingSystem == OperatingSystemType.iOS)
                     {
-                        if (DevelopmentTeam != "")
+                        if ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary) || (Project.TargetType == TargetType.iOSStaticFramework) || (Project.TargetType == TargetType.iOSSharedFramework))
                         {
-                            if ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary) || (Project.TargetType == TargetType.iOSStaticFramework) || (Project.TargetType == TargetType.iOSSharedFramework))
-                            {
-                                BuildSettings["CODE_SIGN_IDENTITY"] = Value.CreateString("iPhone Developer");
-                                BuildSettings["CODE_SIGN_STYLE"] = Value.CreateString("Automatic");
-                                if (Project.TargetType == TargetType.Executable)
-                                {
-                                    BuildSettings["DEVELOPMENT_TEAM"] = Value.CreateString(DevelopmentTeam);
-                                }
-                                BuildSettings["PROVISIONING_PROFILE_SPECIFIER"] = Value.CreateString("");
-                            }
+                            BuildSettings["CODE_SIGN_IDENTITY"] = Value.CreateString("iPhone Developer");
+                            BuildSettings["CODE_SIGN_STYLE"] = Value.CreateString("Automatic");
+                            BuildSettings["DEVELOPMENT_TEAM"] = Value.CreateString(DevelopmentTeam);
+                            BuildSettings["PROVISIONING_PROFILE_SPECIFIER"] = Value.CreateString("");
                         }
                         if ((Project.TargetType == TargetType.DynamicLibrary) || (Project.TargetType == TargetType.iOSSharedFramework))
                         {
@@ -171,10 +165,10 @@ namespace TypeMake.Cpp
                     }
                     if ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.MacBundle) || (Project.TargetType == TargetType.iOSStaticFramework) || (Project.TargetType == TargetType.iOSSharedFramework))
                     {
-                        var InfoPlistPath = (InputDirectory / "Info.plist").RelativeTo(BaseDirPath);
+                        var InfoPlistPath = InputDirectory / "Info.plist";
                         if (System.IO.File.Exists(InfoPlistPath))
                         {
-                            BuildSettings["INFOPLIST_FILE"] = Value.CreateString(InfoPlistPath.ToString(PathStringStyle.Unix));
+                            BuildSettings["INFOPLIST_FILE"] = Value.CreateString(InfoPlistPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix));
                         }
                     }
 
