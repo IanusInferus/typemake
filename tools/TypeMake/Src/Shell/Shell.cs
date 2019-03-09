@@ -324,6 +324,10 @@ namespace TypeMake
             var cps = GetConsolePositionState();
             var d = Options.InputDisplay ?? (!String.IsNullOrEmpty(Options.DefaultValue) ? "[" + Options.DefaultValue + "]" : "");
             var v = Environment.GetEnvironmentVariable(Name);
+            if (v == "_EMPTY_")
+            {
+                v = "";
+            }
             if (v == null)
             {
                 if (Options.Quiet) { throw new InvalidOperationException("Variable '" + Name + "' not exist."); }
@@ -374,14 +378,7 @@ namespace TypeMake
             {
                 Console.WriteLine(Name + "=" + v);
             }
-            if (Memory.Variables.ContainsKey(Name))
-            {
-                Memory.Variables[Name] = v;
-            }
-            else
-            {
-                Memory.Variables.Add(Name, v);
-            }
+            Memory.Variables[Name] = v == "" ? "_EMPTY_" : v;
             return v;
         }
         public static T RequireEnvironmentVariableEnum<T>(EnvironmentVariableMemory Memory, String Name, bool Quiet, HashSet<T> Selections, T DefaultValue = default(T)) where T : struct
