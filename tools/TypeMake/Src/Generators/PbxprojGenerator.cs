@@ -124,6 +124,9 @@ namespace TypeMake.Cpp
                         if (Project.TargetType == TargetType.DynamicLibrary)
                         {
                             BuildSettings["EXECUTABLE_PREFIX"] = Value.CreateString("lib");
+                        }
+                        if ((Project.TargetType == TargetType.DynamicLibrary) || (Project.TargetType == TargetType.MacBundle))
+                        {
                             BuildSettings["DYLIB_INSTALL_NAME_BASE"] = Value.CreateString("@rpath");
                             BuildSettings["SKIP_INSTALL"] = Value.CreateString("YES");
                         }
@@ -132,14 +135,18 @@ namespace TypeMake.Cpp
                     {
                         if (DevelopmentTeam != null)
                         {
-                            if ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary))
+                            if ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary) || (Project.TargetType == TargetType.iOSStaticFramework) || (Project.TargetType == TargetType.iOSSharedFramework))
                             {
                                 BuildSettings["CODE_SIGN_IDENTITY"] = Value.CreateString("iPhone Developer");
-                                BuildSettings["DEVELOPMENT_TEAM"] = Value.CreateString(DevelopmentTeam);
+                                BuildSettings["CODE_SIGN_STYLE"] = Value.CreateString("Automatic");
+                                if (Project.TargetType == TargetType.Executable)
+                                {
+                                    BuildSettings["DEVELOPMENT_TEAM"] = Value.CreateString(DevelopmentTeam);
+                                }
                                 BuildSettings["PROVISIONING_PROFILE_SPECIFIER"] = Value.CreateString("");
                             }
                         }
-                        if (Project.TargetType == TargetType.DynamicLibrary)
+                        if ((Project.TargetType == TargetType.DynamicLibrary) || (Project.TargetType == TargetType.iOSSharedFramework))
                         {
                             BuildSettings["DYLIB_COMPATIBILITY_VERSION"] = Value.CreateString("1");
                             BuildSettings["DYLIB_CURRENT_VERSION"] = Value.CreateString("1");
@@ -148,26 +155,36 @@ namespace TypeMake.Cpp
                             BuildSettings["LD_RUNPATH_SEARCH_PATHS"] = Value.CreateString("$(inherited) @executable_path/Frameworks @loader_path/Frameworks");
                             BuildSettings["SKIP_INSTALL"] = Value.CreateString("YES");
                         }
-                        if ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary))
+                        if (Project.TargetType == TargetType.iOSStaticFramework)
                         {
-                            var InfoPlistPath = (InputDirectory / "Info.plist").RelativeTo(BaseDirPath);
-                            if (System.IO.File.Exists(InfoPlistPath))
-                            {
-                                BuildSettings["INFOPLIST_FILE"] = Value.CreateString(InfoPlistPath.ToString(PathStringStyle.Unix));
-                            }
+                            BuildSettings["MACH_O_TYPE"] = Value.CreateString("staticlib");
+                            BuildSettings["GENERATE_MASTER_OBJECT_FILE"] = Value.CreateString("YES");
+                        }
+                        else if (Project.TargetType == TargetType.iOSSharedFramework)
+                        {
+                            BuildSettings["MACH_O_TYPE"] = Value.CreateString("mh_dylib");
+                        }
+                        if ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary) || (Project.TargetType == TargetType.iOSStaticFramework) || (Project.TargetType == TargetType.iOSSharedFramework))
+                        {
                             BuildSettings["TARGETED_DEVICE_FAMILY"] = Value.CreateString("1,2");
                         }
                     }
+                    if ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.MacBundle) || (Project.TargetType == TargetType.iOSSharedFramework))
+                    {
+                        var InfoPlistPath = (InputDirectory / "Info.plist").RelativeTo(BaseDirPath);
+                        if (System.IO.File.Exists(InfoPlistPath))
+                        {
+                            BuildSettings["INFOPLIST_FILE"] = Value.CreateString(InfoPlistPath.ToString(PathStringStyle.Unix));
+                        }
+                    }
 
-                    BuildSettings["LIBRARY_SEARCH_PATHS"] = Value.CreateString($"$(SRCROOT)/../{ConfigurationType}$(EFFECTIVE_PLATFORM_NAME)");
-                    BuildSettings["CONFIGURATION_TEMP_DIR"] = Value.CreateString($"$(SRCROOT)/../{ConfigurationType}$(EFFECTIVE_PLATFORM_NAME)/$(PROJECT_NAME)");
                     if (conf.OutputDirectory != null)
                     {
-                        BuildSettings["CONFIGURATION_BUILD_DIR"] = Value.CreateString(("$(SRCROOT)".AsPath() / conf.OutputDirectory.RelativeTo(BaseDirPath)).ToString(PathStringStyle.Unix));
+                        BuildSettings["TARGET_BUILD_DIR"] = Value.CreateString(("$(SRCROOT)".AsPath() / conf.OutputDirectory.RelativeTo(BaseDirPath)).ToString(PathStringStyle.Unix));
                     }
                     else
                     {
-                        BuildSettings["CONFIGURATION_BUILD_DIR"] = Value.CreateString($"$(SRCROOT)/../{ConfigurationType}$(EFFECTIVE_PLATFORM_NAME)");
+                        BuildSettings["TARGET_BUILD_DIR"] = Value.CreateString($"$(SRCROOT)/../{ConfigurationType}$(EFFECTIVE_PLATFORM_NAME)");
                     }
 
                     foreach (var o in conf.Options)
@@ -204,7 +221,7 @@ namespace TypeMake.Cpp
                     }
                     else if (Type == "PBXFrameworksBuildPhase")
                     {
-                        if ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary))
+                        if ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary) || (Project.TargetType == TargetType.iOSStaticFramework) || (Project.TargetType == TargetType.iOSSharedFramework) || (Project.TargetType == TargetType.MacBundle))
                         {
                             var Files = Phase["files"];
                             foreach (var Project in ProjectReferences)
@@ -255,6 +272,24 @@ namespace TypeMake.Cpp
                     TargetFile.Dict["explicitFileType"] = Value.CreateString("compiled.mach-o.dylib");
                     TargetFile.Dict["path"] = Value.CreateString("lib" + ProductName + ".dylib");
                 }
+                else if (Project.TargetType == TargetType.iOSStaticFramework)
+                {
+                    Target["productType"] = Value.CreateString("com.apple.product-type.framework");
+                    TargetFile.Dict["explicitFileType"] = Value.CreateString("wrapper.framework");
+                    TargetFile.Dict["path"] = Value.CreateString(ProductName + ".framework");
+                }
+                else if (Project.TargetType == TargetType.iOSSharedFramework)
+                {
+                    Target["productType"] = Value.CreateString("com.apple.product-type.framework");
+                    TargetFile.Dict["explicitFileType"] = Value.CreateString("wrapper.framework");
+                    TargetFile.Dict["path"] = Value.CreateString(ProductName + ".framework");
+                }
+                else if (Project.TargetType == TargetType.MacBundle)
+                {
+                    Target["productType"] = Value.CreateString("com.apple.product-type.bundle");
+                    TargetFile.Dict["explicitFileType"] = Value.CreateString("wrapper.cfbundle");
+                    TargetFile.Dict["path"] = Value.CreateString(ProductName + ".bundle");
+                }
                 else
                 {
                     throw new NotSupportedException("NotSupportedTargetType: " + Project.TargetType.ToString());
@@ -290,7 +325,7 @@ namespace TypeMake.Cpp
                     BuildSettings["OTHER_CPLUSPLUSFLAGS"] = Value.CreateArray(CppFlags.Concat(new List<String> { "$(inherited)" }).Select(d => Value.CreateString(d)).ToList());
                 }
 
-                if ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary))
+                if ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary) || (Project.TargetType == TargetType.iOSStaticFramework) || (Project.TargetType == TargetType.iOSSharedFramework) || (Project.TargetType == TargetType.MacBundle))
                 {
                     var LibDirectories = conf.LibDirectories.Select(d => d.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix)).ToList();
                     if (LibDirectories.Count != 0)
@@ -316,6 +351,9 @@ namespace TypeMake.Cpp
                 {
                     throw new NotSupportedException("NotSupportedTargetOperatingSystem: " + TargetOperatingSystem.ToString());
                 }
+
+                BuildSettings["CONFIGURATION_TEMP_DIR"] = Value.CreateString($"$(SRCROOT)/../{ConfigurationType}$(EFFECTIVE_PLATFORM_NAME)");
+                BuildSettings["CONFIGURATION_BUILD_DIR"] = Value.CreateString($"$(SRCROOT)/../{ConfigurationType}$(EFFECTIVE_PLATFORM_NAME)");
 
                 foreach (var o in conf.Options)
                 {
