@@ -133,7 +133,7 @@ namespace TypeMake.Cpp
                     }
                     else if (TargetOperatingSystem == OperatingSystemType.iOS)
                     {
-                        if (DevelopmentTeam != null)
+                        if (DevelopmentTeam != "")
                         {
                             if ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary) || (Project.TargetType == TargetType.iOSStaticFramework) || (Project.TargetType == TargetType.iOSSharedFramework))
                             {
