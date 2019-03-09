@@ -169,7 +169,7 @@ namespace TypeMake.Cpp
                             BuildSettings["TARGETED_DEVICE_FAMILY"] = Value.CreateString("1,2");
                         }
                     }
-                    if ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.MacBundle) || (Project.TargetType == TargetType.iOSSharedFramework))
+                    if ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.MacBundle) || (Project.TargetType == TargetType.iOSStaticFramework) || (Project.TargetType == TargetType.iOSSharedFramework))
                     {
                         var InfoPlistPath = (InputDirectory / "Info.plist").RelativeTo(BaseDirPath);
                         if (System.IO.File.Exists(InfoPlistPath))
