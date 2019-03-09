@@ -58,11 +58,12 @@ namespace TypeMake.Cpp
         ObjectiveCppSource
     }
 
-    [DebuggerDisplay("Path = {Path}, Type = {Type}")]
+    [DebuggerDisplay("Path = {Path}, Type = {Type}, IsExported = {IsExported}")]
     public class File
     {
         public PathString Path;
-        public FileType Type;
+        public FileType Type = FileType.Unknown;
+        public bool IsExported = false;
     }
     public class Configuration
     {

@@ -213,7 +213,7 @@ namespace TypeMake.Cpp
                                 var File = new Dictionary<String, Value>();
                                 File.Add("fileRef", Value.CreateString(RelativePathToObjects[RelativePath]));
                                 File.Add("isa", Value.CreateString("PBXBuildFile"));
-                                var Hash = GetHashOfPath(TargetName + ":" + RelativePath);
+                                var Hash = GetHashOfPath(TargetName + ":PBXSourcesBuildPhase:" + RelativePath);
                                 Objects.Add(Hash, Value.CreateDict(File));
                                 Files.Array.Add(Value.CreateString(Hash));
                             }
@@ -230,7 +230,25 @@ namespace TypeMake.Cpp
                                 var File = new Dictionary<String, Value>();
                                 File.Add("fileRef", Value.CreateString(RelativePathToObjects[RelativePath]));
                                 File.Add("isa", Value.CreateString("PBXBuildFile"));
-                                var Hash = GetHashOfPath(TargetName + ":" + RelativePath);
+                                var Hash = GetHashOfPath(TargetName + ":PBXFrameworksBuildPhase:" + RelativePath);
+                                Objects.Add(Hash, Value.CreateDict(File));
+                                Files.Array.Add(Value.CreateString(Hash));
+                            }
+                        }
+                    }
+                    else if (Type == "PBXHeadersBuildPhase")
+                    {
+                        var Files = Phase["files"];
+                        foreach (var f in confF.Files)
+                        {
+                            if ((f.Type == FileType.Header) && f.IsExported)
+                            {
+                                var RelativePath = f.Path.FullPath.RelativeTo(OutputDirectory).ToString(PathStringStyle.Unix);
+                                var File = new Dictionary<String, Value>();
+                                File.Add("fileRef", Value.CreateString(RelativePathToObjects[RelativePath]));
+                                File.Add("isa", Value.CreateString("PBXBuildFile"));
+                                File.Add("settings", Value.CreateDict(new Dictionary<String, Value> { ["ATTRIBUTES"] = Value.CreateArray(new List<Value> { Value.CreateString("Public") }) }));
+                                var Hash = GetHashOfPath(TargetName + ":PBXHeadersBuildPhase:" + RelativePath);
                                 Objects.Add(Hash, Value.CreateDict(File));
                                 Files.Array.Add(Value.CreateString(Hash));
                             }
