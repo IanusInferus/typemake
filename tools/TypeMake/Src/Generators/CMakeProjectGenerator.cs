@@ -160,11 +160,11 @@ namespace TypeMake.Cpp
 
             if ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary))
             {
-                var LinkerFlags = conf.LinkerFlags;
+                var LinkerFlags = conf.LinkerFlags.Select(f => (f == null ? "" : Regex.IsMatch(f, @"[ ""^|]") ? "\"" + f.Replace("\"", "\"\"") + "\"" : f)).ToList();
                 if (LinkerFlags.Count != 0)
                 {
-                    var LinkerFlagStr = String.Join(" ", LinkerFlags.Select(f => (f == null ? "" : Regex.IsMatch(f, @"[ ""^|]") ? "\"" + f.Replace("\"", "\"\"") + "\"" : f)));
-                    yield return @"set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS " + LinkerFlagStr + ")";
+                    var LinkerFlagStr = String.Join(" ", LinkerFlags.Select(f => f.Replace("\\", "\\\\").Replace("\"", "\\\"")));
+                    yield return @"set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS """ + LinkerFlagStr + @""")";
                 }
 
                 if (ProjectReferences.Count + conf.Libs.Count > 0)
