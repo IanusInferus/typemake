@@ -501,7 +501,7 @@ namespace TypeMake
                 Lines.Add("");
                 Lines.Add(":main");
                 Lines.Add("wsl " + Shell.EscapeArgumentForShell(CMake, Shell.ShellArgumentStyle.CMD) + " " + String.Join(" ", CMakeArguments.Select(a => Shell.EscapeArgumentForShell(a, Shell.ShellArgumentStyle.CMD))) + " || exit /b 1");
-                Lines.Add("wsl " + Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.CMD) + " || exit /b 1");
+                Lines.Add("wsl " + Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.CMD) + " -j" + Environment.ProcessorCount.ToString() + " || exit /b 1");
                 Lines.Add("");
                 var BuildPath = BuildDirectory / "build.cmd";
                 TextFile.WriteToFile(BuildPath, String.Join("\r\n", Lines), System.Text.Encoding.Default, !ForceRegenerate);
@@ -512,7 +512,7 @@ namespace TypeMake
                 Lines.Add("#!/bin/bash");
                 Lines.Add("set -e");
                 Lines.Add(Shell.EscapeArgumentForShell(CMake, Shell.ShellArgumentStyle.Bash) + " " + String.Join(" ", CMakeArguments.Select(a => Shell.EscapeArgumentForShell(a, Shell.ShellArgumentStyle.Bash))));
-                Lines.Add(Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.Bash));
+                Lines.Add(Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.Bash) + " -j" + Environment.ProcessorCount.ToString());
                 Lines.Add("");
                 var BuildPath = BuildDirectory / "build.sh";
                 TextFile.WriteToFile(BuildPath, String.Join("\n", Lines), new System.Text.UTF8Encoding(false), !ForceRegenerate);
