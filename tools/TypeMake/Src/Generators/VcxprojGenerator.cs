@@ -189,6 +189,15 @@ namespace TypeMake.Cpp
                     ClCompile.SetElementValue(xn + "AdditionalOptions", "%(AdditionalOptions) " + String.Join(" ", CompilerFlags.Select(f => (f == null ? "" : Regex.IsMatch(f, @"^[0-9]+$") ? f : "\"" + f.Replace("\"", "\"\"\"") + "\""))));
                 }
 
+                foreach (var o in conf.Options)
+                {
+                    var Prefix = "vc.ClCompile.";
+                    if (o.Key.StartsWith(Prefix))
+                    {
+                        ClCompile.SetElementValue(xn + o.Key.Substring(Prefix.Length), o.Value);
+                    }
+                }
+
                 if ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary))
                 {
                     var Link = ItemDefinitionGroup.Element(xn + "Link");
@@ -210,7 +219,16 @@ namespace TypeMake.Cpp
                     var LinkerFlags = conf.LinkerFlags.ToList();
                     if (LinkerFlags.Count != 0)
                     {
-                        ClCompile.SetElementValue(xn + "AdditionalOptions", "%(AdditionalOptions) " + String.Join(" ", LinkerFlags.Select(f => (f == null ? "" : Regex.IsMatch(f, @"^[0-9]+$") ? f : "\"" + f.Replace("\"", "\"\"") + "\""))));
+                        Link.SetElementValue(xn + "AdditionalOptions", "%(AdditionalOptions) " + String.Join(" ", LinkerFlags.Select(f => (f == null ? "" : Regex.IsMatch(f, @"^[0-9]+$") ? f : "\"" + f.Replace("\"", "\"\"") + "\""))));
+                    }
+
+                    foreach (var o in conf.Options)
+                    {
+                        var Prefix = "vc.Link.";
+                        if (o.Key.StartsWith(Prefix))
+                        {
+                            Link.SetElementValue(xn + o.Key.Substring(Prefix.Length), o.Value);
+                        }
                     }
                 }
             }
