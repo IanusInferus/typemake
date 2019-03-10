@@ -157,7 +157,11 @@ namespace TypeMake.Cpp
                     var Prefix = "vc.";
                     if (o.Key.StartsWith(Prefix))
                     {
-                        PropertyGroup.SetElementValue(xn + o.Key.Substring(Prefix.Length), o.Value);
+                        var Key = o.Key.Substring(Prefix.Length);
+                        if (!Key.Contains("."))
+                        {
+                            PropertyGroup.SetElementValue(xn + Key, o.Value);
+                        }
                     }
                 }
 
