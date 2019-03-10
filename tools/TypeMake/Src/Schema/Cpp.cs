@@ -78,6 +78,7 @@ namespace TypeMake.Cpp
 
         public List<PathString> IncludeDirectories = new List<PathString> { };
         public List<KeyValuePair<String, String>> Defines = new List<KeyValuePair<String, String>> { };
+        public List<String> CommonFlags = new List<String> { };
         public List<String> CFlags = new List<String> { };
         public List<String> CppFlags = new List<String> { };
         public Dictionary<String, String> Options = new Dictionary<String, String> { };

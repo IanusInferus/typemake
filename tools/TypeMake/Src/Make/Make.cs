@@ -542,7 +542,7 @@ namespace TypeMake
                 {
                     MatchingCompilers = new List<CompilerType> { CompilerType.VisualC },
                     Defines = ParseDefines("_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS"),
-                    CFlags = new List<String> { "/bigobj" }
+                    CommonFlags = new List<String> { "/bigobj" }
                 },
                 new Configuration
                 {
@@ -552,7 +552,7 @@ namespace TypeMake
                 new Configuration
                 {
                     MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Linux },
-                    CFlags = new List<String> { "-fPIC" }
+                    CommonFlags = new List<String> { "-fPIC" }
                 },
                 new Configuration
                 {

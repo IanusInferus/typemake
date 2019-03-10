@@ -326,12 +326,12 @@ namespace TypeMake.Cpp
                 {
                     BuildSettings["GCC_PREPROCESSOR_DEFINITIONS"] = Value.CreateArray(Defines.Select(d => d.Value == null ? d.Key : Regex.IsMatch(d.Value, @"^[0-9]+$") ? d.Key + "=" + d.Value : "'" + d.Key + "=" + "\"" + d.Value.Replace("\"", "") + "\"'").Concat(new List<String> { "$(inherited)" }).Select(d => Value.CreateString(d)).ToList());
                 }
-                var CFlags = conf.CFlags;
+                var CFlags = conf.CommonFlags.Concat(conf.CFlags).ToList(); ;
                 if (CFlags.Count != 0)
                 {
                     BuildSettings["OTHER_CFLAGS"] = Value.CreateArray(CFlags.Concat(new List<String> { "$(inherited)" }).Select(d => Value.CreateString(d)).ToList());
                 }
-                var CppFlags = conf.CFlags.Concat(conf.CppFlags).ToList();
+                var CppFlags = conf.CommonFlags.Concat(conf.CppFlags).ToList();
                 if (CppFlags.Count != 0)
                 {
                     BuildSettings["OTHER_CPLUSPLUSFLAGS"] = Value.CreateArray(CppFlags.Concat(new List<String> { "$(inherited)" }).Select(d => Value.CreateString(d)).ToList());

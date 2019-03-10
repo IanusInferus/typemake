@@ -50,7 +50,7 @@ namespace TypeMake.Cpp
         {
             var conf = Project.Configurations.Merged(Project.TargetType, Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitectureType, ConfigurationType);
 
-            yield return @"cmake_minimum_required(VERSION 3.0.2)";
+            yield return @"cmake_minimum_required(VERSION 3.3.2)";
             yield return $@"project({Project.Name})";
 
             if ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary))
@@ -149,13 +149,13 @@ namespace TypeMake.Cpp
                 }
                 yield return @")";
             }
-            var CFlags = conf.CFlags;
-            var CppFlags = conf.CppFlags;
-            var CFlagStr = String.Join(" ", CFlags.Select(f => (f == null ? "" : Regex.IsMatch(f, @"[ ""^|]") ? "\"" + f.Replace("\"", "\\\"") + "\"" : f)));
-            var CppFlagStr = String.Join(" ", CppFlags.Select(f => (f == null ? "" : Regex.IsMatch(f, @"[ ""^|]") ? "\"" + f.Replace("\"", "\\\"") + "\"" : f)));
-            if (CFlags.Count + CppFlags.Count != 0)
+            var CommonFlags = conf.CommonFlags.Select(f => (f == null ? "" : Regex.IsMatch(f, @"[ ""^|]") ? "\"" + f.Replace("\"", "\\\"") + "\"" : f)).ToList();
+            var CFlags = conf.CFlags.Select(f => (f == null ? "" : Regex.IsMatch(f, @"[ ""^|]") ? "\"" + f.Replace("\"", "\\\"") + "\"" : f)).ToList();
+            var CppFlags = conf.CppFlags.Select(f => (f == null ? "" : Regex.IsMatch(f, @"[ ""^|]") ? "\"" + f.Replace("\"", "\\\"") + "\"" : f)).ToList();
+            var Flags = String.Join(" ", CommonFlags.Concat(CFlags.Select(f => "$<$<COMPILE_LANGUAGE:C>:" + f + ">")).Concat(CppFlags.Select(f => "$<$<COMPILE_LANGUAGE:CXX>:" + f + ">")));
+            if (Flags.Length != 0)
             {
-                yield return @"target_compile_options(${PROJECT_NAME} PRIVATE " + CFlagStr + ((CFlags.Count > 0) && (CppFlags.Count > 0) ? " " : "") + (CppFlags.Count > 0 ? "$<$<COMPILE_LANGUAGE:CXX>:" + CppFlagStr + ">" : "") + ")";
+                yield return @"target_compile_options(${PROJECT_NAME} PRIVATE " + Flags + ")";
             }
 
             if ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary))

@@ -34,6 +34,7 @@ namespace TypeMake.Cpp
                 MatchingConfigurationTypes = ConfigurationType == null ? null : new List<ConfigurationType> { ConfigurationType.Value },
                 IncludeDirectories = Matched.SelectMany(c => c.IncludeDirectories).Distinct().ToList(),
                 Defines = Matched.SelectMany(c => c.Defines).ToList(),
+                CommonFlags = Matched.SelectMany(c => c.CommonFlags).ToList(),
                 CFlags = Matched.SelectMany(c => c.CFlags).ToList(),
                 CppFlags = Matched.SelectMany(c => c.CppFlags).ToList(),
                 Options = Matched.SelectMany(c => c.Options).ToDictionary(p => p.Key, p => p.Value),
