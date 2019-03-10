@@ -172,14 +172,17 @@ namespace TypeMake.Cpp
                         }
                     }
 
+                    String OutputDir;
                     if (conf.OutputDirectory != null)
                     {
-                        BuildSettings["TARGET_BUILD_DIR"] = Value.CreateString(("$(SRCROOT)".AsPath() / conf.OutputDirectory.RelativeTo(BaseDirPath)).ToString(PathStringStyle.Unix));
+                        OutputDir = ("$(SRCROOT)".AsPath() / conf.OutputDirectory.RelativeTo(BaseDirPath)).ToString(PathStringStyle.Unix);
                     }
                     else
                     {
-                        BuildSettings["TARGET_BUILD_DIR"] = Value.CreateString($"$(SRCROOT)/../{ConfigurationType}$(EFFECTIVE_PLATFORM_NAME)");
+                        OutputDir = $"$(SRCROOT)/../{ConfigurationType}$(EFFECTIVE_PLATFORM_NAME)";
                     }
+                    BuildSettings["TARGET_BUILD_DIR"] = Value.CreateString(OutputDir);
+                    BuildSettings["DWARF_DSYM_FOLDER_PATH"] = Value.CreateString(OutputDir);
 
                     foreach (var o in conf.Options)
                     {
