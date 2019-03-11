@@ -57,7 +57,8 @@ namespace TypeMake.Cpp
         CSource,
         CppSource,
         ObjectiveCSource,
-        ObjectiveCppSource
+        ObjectiveCppSource,
+        EmbeddedContent
     }
 
     [DebuggerDisplay("Path = {Path}, Type = {Type}, IsExported = {IsExported}")]

@@ -256,6 +256,23 @@ namespace TypeMake.Cpp
                             }
                         }
                     }
+                    else if (Type == "PBXResourcesBuildPhase")
+                    {
+                        var Files = Phase["files"];
+                        foreach (var f in confF.Files)
+                        {
+                            if (f.Type == FileType.EmbeddedContent)
+                            {
+                                var RelativePath = f.Path.FullPath.RelativeTo(OutputDirectory).ToString(PathStringStyle.Unix);
+                                var File = new Dictionary<String, Value>();
+                                File.Add("fileRef", Value.CreateString(RelativePathToObjects[RelativePath]));
+                                File.Add("isa", Value.CreateString("PBXBuildFile"));
+                                var Hash = GetHashOfPath(TargetName + ":PBXResourcesBuildPhase:" + RelativePath);
+                                Objects.Add(Hash, Value.CreateDict(File));
+                                Files.Array.Add(Value.CreateString(Hash));
+                            }
+                        }
+                    }
                 }
                 Target["name"] = Value.CreateString(Project.Name);
                 Target["productName"] = Value.CreateString(ProductName);
@@ -446,13 +463,32 @@ namespace TypeMake.Cpp
                 {
                     LastKnownFileType = "sourcecode.cpp.objcpp";
                 }
-                else if ((File.Type == FileType.Unknown) && FileName.EndsWith("Info.plist", StringComparison.OrdinalIgnoreCase))
+                else if ((File.Type == FileType.Unknown) || (File.Type == FileType.EmbeddedContent))
                 {
-                    LastKnownFileType = "text.plist.xml";
+                    if (FileName.EndsWith(".plist", StringComparison.OrdinalIgnoreCase))
+                    {
+                        LastKnownFileType = "text.plist.xml";
+                    }
+                    else if (FileName.EndsWith(".storyboard", StringComparison.OrdinalIgnoreCase))
+                    {
+                        LastKnownFileType = "file.storyboard";
+                    }
+                    else if (FileName.EndsWith(".xib", StringComparison.OrdinalIgnoreCase))
+                    {
+                        LastKnownFileType = "file.xib";
+                    }
+                    else if (FileName.EndsWith(".png", StringComparison.OrdinalIgnoreCase) || FileName.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) || FileName.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase) || FileName.EndsWith(".gif", StringComparison.OrdinalIgnoreCase) || FileName.EndsWith(".bmp", StringComparison.OrdinalIgnoreCase))
+                    {
+                        LastKnownFileType = "image";
+                    }
                 }
                 if (LastKnownFileType != "")
                 {
                     FileObject.Add("lastKnownFileType", Value.CreateString(LastKnownFileType));
+                }
+                else if (File.Type == FileType.EmbeddedContent)
+                {
+                    FileObject.Add("explicitFileType", Value.CreateString("sourcecode"));
                 }
                 if (FilePhysicalPath != GroupPhysicalPath / FileName)
                 {

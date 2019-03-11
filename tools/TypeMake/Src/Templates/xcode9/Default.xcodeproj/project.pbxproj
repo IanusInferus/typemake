@@ -10,6 +10,17 @@
 	<string>48</string>
 	<key>objects</key>
 	<dict>
+		<key>CD3092A52236946000A3ABE9</key>
+		<dict>
+			<key>buildActionMask</key>
+			<string>2147483647</string>
+			<key>files</key>
+			<array/>
+			<key>isa</key>
+			<string>PBXResourcesBuildPhase</string>
+			<key>runOnlyForDeploymentPostprocessing</key>
+			<string>0</string>
+		</dict>
 		<key>CDB235CC2078AB3800F8F245</key>
 		<dict>
 			<key>children</key>
@@ -124,6 +135,7 @@
 				<string>CDB235D12078AB3800F8F245</string>
 				<string>CDB235D22078AB3800F8F245</string>
 				<string>CDB235D32078AB3800F8F245</string>
+				<string>CD3092A52236946000A3ABE9</string>
 			</array>
 			<key>buildRules</key>
 			<array/>

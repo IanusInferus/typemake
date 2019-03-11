@@ -630,6 +630,14 @@ namespace TypeMake
             {
                 return new Cpp.File { Path = FilePath, Type = FileType.ObjectiveCppSource };
             }
+            else if (Ext == "storyboard")
+            {
+                return new Cpp.File { Path = FilePath, Type = FileType.EmbeddedContent };
+            }
+            else if (Ext == "xib")
+            {
+                return new Cpp.File { Path = FilePath, Type = FileType.EmbeddedContent };
+            }
             else
             {
                 return new Cpp.File { Path = FilePath, Type = FileType.Unknown };
