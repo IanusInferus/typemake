@@ -9,9 +9,11 @@ namespace TypeMake.Cpp
         Executable,
         StaticLibrary,
         DynamicLibrary,
+        MacApplication,
         MacBundle,
         GradleApplication,
         GradleLibrary,
+        iOSApplication,
         iOSStaticFramework,
         iOSSharedFramework
     }

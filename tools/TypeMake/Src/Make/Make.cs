@@ -198,6 +198,17 @@ namespace TypeMake
                 {
                     ProductTargetType = TargetType.StaticLibrary;
                 }
+                if ((ProductTargetType == TargetType.Executable) && System.IO.File.Exists(InputDirectory / "Info.plist"))
+                {
+                    if (TargetOperatingSystem == OperatingSystemType.Mac)
+                    {
+                        ProductTargetType = TargetType.MacApplication;
+                    }
+                    else if (TargetOperatingSystem == OperatingSystemType.iOS)
+                    {
+                        ProductTargetType = TargetType.iOSApplication;
+                    }
+                }
                 if (System.IO.File.Exists(InputDirectory / "AndroidManifest.xml"))
                 {
                     if (ProductTargetType == TargetType.DynamicLibrary)
@@ -211,7 +222,7 @@ namespace TypeMake
                     }
                 }
                 var IsTargetOperatingSystemMatched = IsOperatingSystemMatchExtensions(Extensions, TargetOperatingSystem);
-                if ((TargetOperatingSystem == OperatingSystemType.iOS) && (ProductTargetType == TargetType.Executable))
+                if (ProductTargetType == TargetType.iOSApplication)
                 {
                     IsTargetOperatingSystemMatched = IsOperatingSystemMatchExtensions(Extensions, TargetOperatingSystem, true);
                 }
@@ -219,7 +230,7 @@ namespace TypeMake
                 {
                     var DependentModuleToRequirement = Dependencies.ContainsKey(ProductName) ? Dependencies[ProductName] : new Dictionary<String, bool>();
                     var Defines = new List<KeyValuePair<String, String>> { };
-                    if (ProductTargetType == TargetType.Executable)
+                    if ((ProductTargetType == TargetType.Executable) || (ProductTargetType == TargetType.MacApplication) || (ProductTargetType == TargetType.iOSApplication) || (ProductTargetType == TargetType.GradleApplication))
                     {
                     }
                     else if (ProductTargetType == TargetType.StaticLibrary)
@@ -227,15 +238,7 @@ namespace TypeMake
                         Defines.Add(new KeyValuePair<String, String>(SolutionName.ToUpperInvariant() + "_BUILD", null));
                         Defines.Add(new KeyValuePair<String, String>(SolutionName.ToUpperInvariant() + "_STATIC", null));
                     }
-                    else if (ProductTargetType == TargetType.DynamicLibrary)
-                    {
-                        Defines.Add(new KeyValuePair<String, String>(SolutionName.ToUpperInvariant() + "_BUILD", null));
-                        Defines.Add(new KeyValuePair<String, String>(SolutionName.ToUpperInvariant() + "_DYNAMIC", null));
-                    }
-                    else if (ProductTargetType == TargetType.GradleApplication)
-                    {
-                    }
-                    else if (ProductTargetType == TargetType.GradleLibrary)
+                    else if ((ProductTargetType == TargetType.DynamicLibrary) || (ProductTargetType == TargetType.GradleLibrary))
                     {
                         Defines.Add(new KeyValuePair<String, String>(SolutionName.ToUpperInvariant() + "_BUILD", null));
                         Defines.Add(new KeyValuePair<String, String>(SolutionName.ToUpperInvariant() + "_DYNAMIC", null));
@@ -260,7 +263,8 @@ namespace TypeMake
                         },
                         new Configuration
                         {
-                            MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.iOS },
+                            MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Mac, OperatingSystemType.iOS },
+                            MatchingTargetTypes = new List<TargetType> { TargetType.MacApplication, TargetType.MacBundle, TargetType.iOSApplication, TargetType.iOSStaticFramework, TargetType.iOSSharedFramework },
                             Options = new Dictionary<String, String>
                             {
                                 ["xcode.target.PRODUCT_BUNDLE_IDENTIFIER"] = SolutionName + "." + TargetName

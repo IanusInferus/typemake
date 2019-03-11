@@ -119,6 +119,26 @@ namespace TypeMake.Cpp
                     var conf = Project.Configurations.Merged(Project.TargetType, ToolchainType.Mac_XCode, CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitectureType, ConfigurationType);
 
                     BuildSettings["PRODUCT_NAME"] = Value.CreateString(ProductName);
+                    if ((Project.TargetType == TargetType.MacApplication) || (Project.TargetType == TargetType.MacBundle) || (Project.TargetType == TargetType.iOSApplication) || (Project.TargetType == TargetType.iOSStaticFramework) || (Project.TargetType == TargetType.iOSSharedFramework))
+                    {
+                        if (TargetOperatingSystem == OperatingSystemType.Mac)
+                        {
+                            BuildSettings["CODE_SIGN_IDENTITY"] = Value.CreateString("Mac Developer");
+                        }
+                        else if (TargetOperatingSystem == OperatingSystemType.iOS)
+                        {
+                            BuildSettings["CODE_SIGN_IDENTITY"] = Value.CreateString("iPhone Developer");
+                        }
+                        BuildSettings["CODE_SIGN_STYLE"] = Value.CreateString("Automatic");
+                        BuildSettings["DEVELOPMENT_TEAM"] = Value.CreateString(DevelopmentTeam);
+                        BuildSettings["PROVISIONING_PROFILE_SPECIFIER"] = Value.CreateString("");
+
+                        var InfoPlistPath = InputDirectory / "Info.plist";
+                        if (System.IO.File.Exists(InfoPlistPath))
+                        {
+                            BuildSettings["INFOPLIST_FILE"] = Value.CreateString(InfoPlistPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix));
+                        }
+                    }
                     if (TargetOperatingSystem == OperatingSystemType.Mac)
                     {
                         if (Project.TargetType == TargetType.DynamicLibrary)
@@ -133,13 +153,6 @@ namespace TypeMake.Cpp
                     }
                     else if (TargetOperatingSystem == OperatingSystemType.iOS)
                     {
-                        if ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary) || (Project.TargetType == TargetType.iOSStaticFramework) || (Project.TargetType == TargetType.iOSSharedFramework))
-                        {
-                            BuildSettings["CODE_SIGN_IDENTITY"] = Value.CreateString("iPhone Developer");
-                            BuildSettings["CODE_SIGN_STYLE"] = Value.CreateString("Automatic");
-                            BuildSettings["DEVELOPMENT_TEAM"] = Value.CreateString(DevelopmentTeam);
-                            BuildSettings["PROVISIONING_PROFILE_SPECIFIER"] = Value.CreateString("");
-                        }
                         if ((Project.TargetType == TargetType.DynamicLibrary) || (Project.TargetType == TargetType.iOSSharedFramework))
                         {
                             BuildSettings["DYLIB_COMPATIBILITY_VERSION"] = Value.CreateString("1");
@@ -158,17 +171,9 @@ namespace TypeMake.Cpp
                         {
                             BuildSettings["MACH_O_TYPE"] = Value.CreateString("mh_dylib");
                         }
-                        if ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary) || (Project.TargetType == TargetType.iOSStaticFramework) || (Project.TargetType == TargetType.iOSSharedFramework))
+                        if ((Project.TargetType == TargetType.iOSApplication) || (Project.TargetType == TargetType.DynamicLibrary) || (Project.TargetType == TargetType.iOSStaticFramework) || (Project.TargetType == TargetType.iOSSharedFramework))
                         {
                             BuildSettings["TARGETED_DEVICE_FAMILY"] = Value.CreateString("1,2");
-                        }
-                    }
-                    if ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.MacBundle) || (Project.TargetType == TargetType.iOSStaticFramework) || (Project.TargetType == TargetType.iOSSharedFramework))
-                    {
-                        var InfoPlistPath = InputDirectory / "Info.plist";
-                        if (System.IO.File.Exists(InfoPlistPath))
-                        {
-                            BuildSettings["INFOPLIST_FILE"] = Value.CreateString(InfoPlistPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix));
                         }
                     }
 
@@ -218,7 +223,7 @@ namespace TypeMake.Cpp
                     }
                     else if (Type == "PBXFrameworksBuildPhase")
                     {
-                        if ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary) || (Project.TargetType == TargetType.iOSStaticFramework) || (Project.TargetType == TargetType.iOSSharedFramework) || (Project.TargetType == TargetType.MacBundle))
+                        if ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary) || (Project.TargetType == TargetType.MacApplication) || (Project.TargetType == TargetType.MacBundle) || (Project.TargetType == TargetType.iOSApplication) || (Project.TargetType == TargetType.iOSStaticFramework) || (Project.TargetType == TargetType.iOSSharedFramework))
                         {
                             var Files = Phase["files"];
                             foreach (var Project in ProjectReferences)
@@ -258,22 +263,15 @@ namespace TypeMake.Cpp
 
                 if (Project.TargetType == TargetType.Executable)
                 {
-                    if (TargetOperatingSystem == OperatingSystemType.Mac)
-                    {
-                        Target["productType"] = Value.CreateString("com.apple.product-type.tool");
-                        TargetFile.Dict["explicitFileType"] = Value.CreateString("compiled.mach-o.executable");
-                        TargetFile.Dict["path"] = Value.CreateString(ProductName);
-                    }
-                    else if (TargetOperatingSystem == OperatingSystemType.iOS)
-                    {
-                        Target["productType"] = Value.CreateString("com.apple.product-type.application");
-                        TargetFile.Dict["explicitFileType"] = Value.CreateString("wrapper.application");
-                        TargetFile.Dict["path"] = Value.CreateString(ProductName + ".app");
-                    }
-                    else
-                    {
-                        throw new NotSupportedException("NotSupportedTargetOperatingSystem: " + TargetOperatingSystem.ToString());
-                    }
+                    Target["productType"] = Value.CreateString("com.apple.product-type.tool");
+                    TargetFile.Dict["explicitFileType"] = Value.CreateString("compiled.mach-o.executable");
+                    TargetFile.Dict["path"] = Value.CreateString(ProductName);
+                }
+                else if ((Project.TargetType == TargetType.MacApplication) || (Project.TargetType == TargetType.iOSApplication))
+                {
+                    Target["productType"] = Value.CreateString("com.apple.product-type.application");
+                    TargetFile.Dict["explicitFileType"] = Value.CreateString("wrapper.application");
+                    TargetFile.Dict["path"] = Value.CreateString(ProductName + ".app");
                 }
                 else if (Project.TargetType == TargetType.StaticLibrary)
                 {
@@ -287,6 +285,12 @@ namespace TypeMake.Cpp
                     TargetFile.Dict["explicitFileType"] = Value.CreateString("compiled.mach-o.dylib");
                     TargetFile.Dict["path"] = Value.CreateString("lib" + ProductName + ".dylib");
                 }
+                else if (Project.TargetType == TargetType.MacBundle)
+                {
+                    Target["productType"] = Value.CreateString("com.apple.product-type.bundle");
+                    TargetFile.Dict["explicitFileType"] = Value.CreateString("wrapper.cfbundle");
+                    TargetFile.Dict["path"] = Value.CreateString(ProductName + ".bundle");
+                }
                 else if (Project.TargetType == TargetType.iOSStaticFramework)
                 {
                     Target["productType"] = Value.CreateString("com.apple.product-type.framework");
@@ -298,12 +302,6 @@ namespace TypeMake.Cpp
                     Target["productType"] = Value.CreateString("com.apple.product-type.framework");
                     TargetFile.Dict["explicitFileType"] = Value.CreateString("wrapper.framework");
                     TargetFile.Dict["path"] = Value.CreateString(ProductName + ".framework");
-                }
-                else if (Project.TargetType == TargetType.MacBundle)
-                {
-                    Target["productType"] = Value.CreateString("com.apple.product-type.bundle");
-                    TargetFile.Dict["explicitFileType"] = Value.CreateString("wrapper.cfbundle");
-                    TargetFile.Dict["path"] = Value.CreateString(ProductName + ".bundle");
                 }
                 else
                 {
@@ -340,7 +338,7 @@ namespace TypeMake.Cpp
                     BuildSettings["OTHER_CPLUSPLUSFLAGS"] = Value.CreateArray(CppFlags.Concat(new List<String> { "$(inherited)" }).Select(d => Value.CreateString(d)).ToList());
                 }
 
-                if ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary) || (Project.TargetType == TargetType.iOSStaticFramework) || (Project.TargetType == TargetType.iOSSharedFramework) || (Project.TargetType == TargetType.MacBundle))
+                if ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary) || (Project.TargetType == TargetType.MacApplication) || (Project.TargetType == TargetType.MacBundle) || (Project.TargetType == TargetType.iOSApplication) || (Project.TargetType == TargetType.iOSStaticFramework) || (Project.TargetType == TargetType.iOSSharedFramework))
                 {
                     var LibDirectories = conf.LibDirectories.Select(d => d.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix)).ToList();
                     if (LibDirectories.Count != 0)
