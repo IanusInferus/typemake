@@ -593,14 +593,32 @@ namespace TypeMake
 
         private static List<Cpp.File> GetFilesInDirectory(PathString d, OperatingSystemType TargetOperatingSystem, bool IsTargetOperatingSystemMatched, bool TopOnly = false)
         {
-            if (!Directory.Exists(d)) { return new List<Cpp.File> { }; }
             var l = new List<Cpp.File>();
-            foreach (var FilePathRelative in Directory.EnumerateFiles(d, "*", TopOnly ? SearchOption.TopDirectoryOnly : SearchOption.AllDirectories))
+            FillFilesInDirectory(d, TargetOperatingSystem, IsTargetOperatingSystemMatched, TopOnly, l);
+            return l;
+        }
+        private static void FillFilesInDirectory(PathString d, OperatingSystemType TargetOperatingSystem, bool IsTargetOperatingSystemMatched, bool TopOnly, List<Cpp.File> Results)
+        {
+            if (!Directory.Exists(d)) { return; }
+            foreach (var FilePathRelative in Directory.EnumerateDirectories(d, "*", SearchOption.TopDirectoryOnly))
             {
                 var FilePath = FilePathRelative.AsPath().FullPath;
-                l.Add(GetFileByPath(FilePath, TargetOperatingSystem, IsTargetOperatingSystemMatched));
+                var Ext = FilePath.Extension.TrimStart('.').ToLowerInvariant();
+                if (Ext == "xcassets")
+                {
+                    Results.Add(new Cpp.File { Path = FilePath, Type = FileType.EmbeddedContent });
+                    continue;
+                }
+                if (!TopOnly)
+                {
+                    FillFilesInDirectory(FilePathRelative, TargetOperatingSystem, IsTargetOperatingSystemMatched, TopOnly, Results);
+                }
             }
-            return l;
+            foreach (var FilePathRelative in Directory.EnumerateFiles(d, "*", SearchOption.TopDirectoryOnly))
+            {
+                var FilePath = FilePathRelative.AsPath().FullPath;
+                Results.Add(GetFileByPath(FilePath, TargetOperatingSystem, IsTargetOperatingSystemMatched));
+            }
         }
         private static Cpp.File GetFileByPath(PathString FilePath, OperatingSystemType TargetOperatingSystem, bool IsTargetOperatingSystemMatched)
         {

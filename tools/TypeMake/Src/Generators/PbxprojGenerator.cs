@@ -481,6 +481,10 @@ namespace TypeMake.Cpp
                     {
                         LastKnownFileType = "image";
                     }
+                    else if (FileName.EndsWith(".xcassets", StringComparison.OrdinalIgnoreCase))
+                    {
+                        LastKnownFileType = "folder.assetcatalog";
+                    }
                 }
                 if (LastKnownFileType != "")
                 {
