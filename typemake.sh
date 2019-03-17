@@ -8,10 +8,11 @@ set -e
 
 command -v mono >/dev/null 2>&1 || {
   echo 'mono' not found.
-  echo you need to install mono
-  echo openSUSE: sudo zypper install mono
-  echo CentOS: sudo yum install mono
-  echo Ubuntu: sudo apt install mono
+  echo you need to install mono-devel
+  echo openSUSE: sudo zypper install mono-devel
+  echo CentOS: sudo yum install mono-devel
+  echo Ubuntu: sudo apt install mono-devel
+  echo Mac: brew install mono
   exit 1
 }
 
