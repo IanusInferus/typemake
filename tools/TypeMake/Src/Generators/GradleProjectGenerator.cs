@@ -70,6 +70,7 @@ namespace TypeMake.Cpp
             var JavaSrcDirs = String.Join(", ", conf.Files.Where(f => System.IO.Directory.Exists(f.Path)).Select(f => "'" + f.Path.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix) + "'"));
             var ResSrcDirs = conf.Options.ContainsKey("gradle.resSrcDirs") ? String.Join(", ", conf.Options["gradle.resSrcDirs"].Split(';').Select(d => "'" + d.AsPath().RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix) + "'")) : "'" + (InputDirectory / "res").RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix) + "'";
             var AssetsSrcDirs = conf.Options.ContainsKey("gradle.assetsSrcDirs") ? String.Join(", ", conf.Options["gradle.assetsSrcDirs"].Split(';').Select(d => "'" + d.AsPath().RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix) + "'")) : "'" + (InputDirectory / "assets").RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix) + "'";
+            var JarDirs = conf.Options.ContainsKey("gradle.jarDirs") ? conf.Options["gradle.jarDirs"].Split(';').Select(d => d.AsPath().RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix)).ToList() : new List<String> { };
             var AndroidAbi = GetArchitectureString(TargetArchitectureType.Value);
             var TempJniLibsDirDebug = confDebug.Options.ContainsKey("gradle.tempJniLibsDirectory") ? confDebug.Options["gradle.tempJniLibsDirectory"].AsPath().RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix) : $"{SolutionOutputDir}/{ArchitectureType}_Debug/gradle/{ProjectName}";
             var TempJniLibsDirRelease = confRelease.Options.ContainsKey("gradle.tempJniLibsDirectory") ? confRelease.Options["gradle.tempJniLibsDirectory"].AsPath().RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix) : $"{SolutionOutputDir}/{ArchitectureType}_Release/gradle/{ProjectName}";
@@ -135,6 +136,7 @@ namespace TypeMake.Cpp
             Results = Results.Select(Line => Line.Replace("${TempJniLibsDirRelease}", TempJniLibsDirRelease));
             Results = Results.Select(Line => Line.Replace("${LibsDebug}", LibsDebug));
             Results = Results.Select(Line => Line.Replace("${LibsRelease}", LibsRelease));
+            Results = Results.SelectMany(Line => Line.Contains("${JarDirs}") ? JarDirs.Select(JarDir => Line.Replace("${JarDirs}", JarDir)) : new List<String> { Line });
 
             return Results;
         }
