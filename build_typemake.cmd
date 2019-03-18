@@ -10,11 +10,6 @@ if not "%NO_PAUSE_SYMBOL%"=="1" pause
 exit /b %EXIT_CODE%
 
 :main
-if not exist tools\TypeMake\Bin\TypeMake.exe (
-  pushd tools\TypeMake || exit /b 1
-  call Build.cmd || exit /b 1
-  popd
-)
-
-set SourceDirectory=.
-tools\TypeMake\Bin\TypeMake.exe %* || exit /b 1
+pushd tools\TypeMake || exit /b 1
+call Build.cmd || exit /b 1
+popd
