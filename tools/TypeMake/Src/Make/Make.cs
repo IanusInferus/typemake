@@ -642,11 +642,25 @@ namespace TypeMake
             }
             else if (Ext == "m")
             {
-                return new Cpp.File { Path = FilePath, Type = FileType.ObjectiveCSource };
+                if ((TargetOperatingSystem == OperatingSystemType.iOS) || (TargetOperatingSystem == OperatingSystemType.Mac))
+                {
+                    return new Cpp.File { Path = FilePath, Type = FileType.ObjectiveCSource };
+                }
+                else
+                {
+                    return new Cpp.File { Path = FilePath, Type = FileType.Unknown };
+                }
             }
             else if (Ext == "mm")
             {
-                return new Cpp.File { Path = FilePath, Type = FileType.ObjectiveCppSource };
+                if ((TargetOperatingSystem == OperatingSystemType.iOS) || (TargetOperatingSystem == OperatingSystemType.Mac))
+                {
+                    return new Cpp.File { Path = FilePath, Type = FileType.ObjectiveCppSource };
+                }
+                else
+                {
+                    return new Cpp.File { Path = FilePath, Type = FileType.Unknown };
+                }
             }
             else if (Ext == "storyboard")
             {
