@@ -239,22 +239,24 @@ namespace TypeMake.Cpp
 
             var Import = xVcxproj.Elements(xn + "Import").LastOrDefault();
 
-            foreach (var conf in Project.Configurations.Matches(Project.TargetType, ToolchainType.Windows_VisualC, CompilerType.VisualC, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, null))
+            foreach (var gConf in Project.Configurations.Matches(Project.TargetType, ToolchainType.Windows_VisualC, CompilerType.VisualC, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, null).GroupBy(conf => Tuple.Create(conf.MatchingConfigurationTypes, conf.MatchingTargetArchitectures), new ConfigurationTypesAndArchitecturesComparer()))
             {
+                var MatchingConfigurationTypes = gConf.Key.Item1;
+                var MatchingTargetArchitectures = gConf.Key.Item2;
                 var Conditions = new List<String>();
-                if ((conf.MatchingConfigurationTypes != null) || (conf.MatchingTargetArchitectures != null))
+                if ((MatchingConfigurationTypes != null) || (MatchingTargetArchitectures != null))
                 {
                     var Keys = "";
                     var Values = new List<String> { "" };
-                    if (conf.MatchingConfigurationTypes != null)
+                    if (MatchingConfigurationTypes != null)
                     {
                         Keys = (Keys != "" ? Keys + "|" : "") + "$(Configuration)";
-                        Values = conf.MatchingConfigurationTypes.SelectMany(t => Values.Select(v => (v != "" ? v + "|" : "") + t.ToString())).ToList();
+                        Values = MatchingConfigurationTypes.SelectMany(t => Values.Select(v => (v != "" ? v + "|" : "") + t.ToString())).ToList();
                     }
-                    if (conf.MatchingTargetArchitectures != null)
+                    if (MatchingTargetArchitectures != null)
                     {
                         Keys = (Keys != "" ? Keys + "|" : "") + "$(Platform)";
-                        Values = conf.MatchingTargetArchitectures.SelectMany(a => Values.Select(v => (v != "" ? v + "|" : "") + GetArchitectureString(a))).ToList();
+                        Values = MatchingTargetArchitectures.SelectMany(a => Values.Select(v => (v != "" ? v + "|" : "") + GetArchitectureString(a))).ToList();
                     }
                     Conditions = Values.Select(v => "'" + Keys + "' == '" + v + "'").ToList();
                 }
@@ -278,7 +280,7 @@ namespace TypeMake.Cpp
                     {
                         FileItemGroup.Add(new XAttribute("Condition", Condition));
                     }
-                    foreach (var f in conf.Files)
+                    foreach (var f in gConf.SelectMany(conf => conf.Files))
                     {
                         var RelativePath = f.Path.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Windows);
                         XElement x;
@@ -528,6 +530,41 @@ namespace TypeMake.Cpp
             else
             {
                 return "10.0.10240.0";
+            }
+        }
+    }
+
+    internal class ConfigurationTypesAndArchitecturesComparer : IEqualityComparer<Tuple<List<ConfigurationType>, List<ArchitectureType>>>
+    {
+        public bool Equals(Tuple<List<ConfigurationType>, List<ArchitectureType>> x, Tuple<List<ConfigurationType>, List<ArchitectureType>> y)
+        {
+            if ((x.Item1 == null) && (y.Item1 != null)) { return false; }
+            if ((x.Item1 != null) && (y.Item1 == null)) { return false; }
+            if ((x.Item2 == null) && (y.Item2 != null)) { return false; }
+            if ((x.Item2 != null) && (y.Item2 == null)) { return false; }
+            return ((x.Item1 == y.Item1) || x.Item1.SequenceEqual(y.Item1)) && ((x.Item2 == y.Item2) || x.Item2.SequenceEqual(y.Item2));
+        }
+
+        public int GetHashCode(Tuple<List<ConfigurationType>, List<ArchitectureType>> obj)
+        {
+            unchecked
+            {
+                int hash = 17;
+                if (obj.Item1 != null)
+                {
+                    foreach (var v in obj.Item1)
+                    {
+                        hash = hash * 31 + v.GetHashCode();
+                    }
+                }
+                if (obj.Item2 != null)
+                {
+                    foreach (var v in obj.Item2)
+                    {
+                        hash = hash * 31 + v.GetHashCode();
+                    }
+                }
+                return hash;
             }
         }
     }
