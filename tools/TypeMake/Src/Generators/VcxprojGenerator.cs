@@ -185,7 +185,7 @@ namespace TypeMake.Cpp
                 var Defines = conf.Defines;
                 if (Defines.Count != 0)
                 {
-                    ClCompile.SetElementValue(xn + "PreprocessorDefinitions", String.Join(";", Defines.Select(d => d.Key + (d.Value == null ? "" : "=" + (Regex.IsMatch(d.Value, @"^[0-9]+$") ? d.Value : "\"" + d.Value.Replace("\"", "") + "\"")))) + ";%(PreprocessorDefinitions)");
+                    ClCompile.SetElementValue(xn + "PreprocessorDefinitions", String.Join(";", Defines.Select(d => d.Key + (d.Value == null ? "" : "=" + d.Value))) + ";%(PreprocessorDefinitions)");
                 }
                 var CompilerFlags = conf.CommonFlags.Concat(conf.CFlags).Concat(conf.CppFlags).ToList();
                 if (CompilerFlags.Count != 0)
@@ -324,7 +324,7 @@ namespace TypeMake.Cpp
                                     var Defines = conf.Defines;
                                     if (Defines.Count != 0)
                                     {
-                                        x.Add(new XElement(xn + "PreprocessorDefinitions", String.Join(";", Defines.Select(d => d.Key + (d.Value == null ? "" : "=" + (Regex.IsMatch(d.Value, @"^[0-9]+$") ? d.Value : "\"" + d.Value.Replace("\"", "") + "\"")))) + ";%(PreprocessorDefinitions)", Attributes));
+                                        x.Add(new XElement(xn + "PreprocessorDefinitions", String.Join(";", Defines.Select(d => d.Key + (d.Value == null ? "" : "=" + d.Value))) + ";%(PreprocessorDefinitions)", Attributes));
                                     }
                                     var CompilerFlags = conf.CommonFlags.Concat(conf.CFlags).Concat(conf.CppFlags).ToList();
                                     if (CompilerFlags.Count != 0)

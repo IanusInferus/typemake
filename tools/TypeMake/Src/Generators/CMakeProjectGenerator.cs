@@ -145,7 +145,7 @@ namespace TypeMake.Cpp
                 yield return @"target_compile_definitions(${PROJECT_NAME} PRIVATE";
                 foreach (var d in Defines)
                 {
-                    yield return @"  -D" + d.Key + (d.Value == null ? "" : "=" + (Regex.IsMatch(d.Value, @"^[0-9]+$") ? d.Value : "\"" + d.Value.Replace("\"", "") + "\""));
+                    yield return @"  -D" + d.Key + (d.Value == null ? "" : "=" + d.Value);
                 }
                 yield return @")";
             }

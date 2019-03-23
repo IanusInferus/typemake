@@ -342,7 +342,7 @@ namespace TypeMake.Cpp
                 var Defines = conf.Defines;
                 if (Defines.Count != 0)
                 {
-                    BuildSettings["GCC_PREPROCESSOR_DEFINITIONS"] = Value.CreateArray(Defines.Select(d => d.Value == null ? d.Key : Regex.IsMatch(d.Value, @"^[0-9]+$") ? d.Key + "=" + d.Value : "'" + d.Key + "=" + "\"" + d.Value.Replace("\"", "") + "\"'").Concat(new List<String> { "$(inherited)" }).Select(d => Value.CreateString(d)).ToList());
+                    BuildSettings["GCC_PREPROCESSOR_DEFINITIONS"] = Value.CreateArray(Defines.Select(d => d.Value == null ? d.Key : Regex.IsMatch(d.Value, @"^[A-Za-z0-9]+$") ? d.Key + "=" + d.Value : "'" + d.Key + "=" + d.Value + "'").Concat(new List<String> { "$(inherited)" }).Select(d => Value.CreateString(d)).ToList());
                 }
                 var CFlags = conf.CommonFlags.Concat(conf.CFlags).ToList(); ;
                 if (CFlags.Count != 0)
