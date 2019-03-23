@@ -61,13 +61,6 @@ namespace TypeMake.Cpp
         EmbeddedContent
     }
 
-    [DebuggerDisplay("Path = {Path}, Type = {Type}, IsExported = {IsExported}")]
-    public class File
-    {
-        public PathString Path;
-        public FileType Type = FileType.Unknown;
-        public bool IsExported = false;
-    }
     public class Configuration
     {
         public List<TargetType> MatchingTargetTypes = null;
@@ -93,6 +86,15 @@ namespace TypeMake.Cpp
         public List<File> Files = new List<File> { };
 
         public PathString OutputDirectory = null;
+    }
+
+    [DebuggerDisplay("Path = {Path}, Type = {Type}, IsExported = {IsExported}")]
+    public class File
+    {
+        public PathString Path;
+        public FileType Type = FileType.Unknown;
+        public bool IsExported = false;
+        public List<Configuration> Configurations = new List<Configuration> { };
     }
 
     [DebuggerDisplay("Name = {Name}, TargetName = {TargetName}, TargetType = {TargetType}, Configurations = ...")]

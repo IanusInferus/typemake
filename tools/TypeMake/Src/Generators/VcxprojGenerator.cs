@@ -244,26 +244,7 @@ namespace TypeMake.Cpp
                 var MatchingConfigurationTypes = gConf.Key.Item1;
                 var MatchingTargetArchitectures = gConf.Key.Item2;
                 var Conditions = new List<String>();
-                if ((MatchingConfigurationTypes != null) || (MatchingTargetArchitectures != null))
-                {
-                    var Keys = "";
-                    var Values = new List<String> { "" };
-                    if (MatchingConfigurationTypes != null)
-                    {
-                        Keys = (Keys != "" ? Keys + "|" : "") + "$(Configuration)";
-                        Values = MatchingConfigurationTypes.SelectMany(t => Values.Select(v => (v != "" ? v + "|" : "") + t.ToString())).ToList();
-                    }
-                    if (MatchingTargetArchitectures != null)
-                    {
-                        Keys = (Keys != "" ? Keys + "|" : "") + "$(Platform)";
-                        Values = MatchingTargetArchitectures.SelectMany(a => Values.Select(v => (v != "" ? v + "|" : "") + GetArchitectureString(a))).ToList();
-                    }
-                    Conditions = Values.Select(v => "'" + Keys + "' == '" + v + "'").ToList();
-                }
-                else
-                {
-                    Conditions = new List<string> { null };
-                }
+                Conditions = GetConditions(MatchingConfigurationTypes, MatchingTargetArchitectures);
 
                 foreach (var Condition in Conditions)
                 {
@@ -280,19 +261,19 @@ namespace TypeMake.Cpp
                     {
                         FileItemGroup.Add(new XAttribute("Condition", Condition));
                     }
-                    foreach (var f in gConf.SelectMany(conf => conf.Files))
+                    foreach (var File in gConf.SelectMany(conf => conf.Files))
                     {
-                        var RelativePath = f.Path.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Windows);
+                        var RelativePath = File.Path.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Windows);
                         XElement x;
-                        if (f.Type == FileType.Header)
+                        if (File.Type == FileType.Header)
                         {
                             x = new XElement(xn + "ClInclude", new XAttribute("Include", RelativePath));
                         }
-                        else if (f.Type == FileType.CSource)
+                        else if (File.Type == FileType.CSource)
                         {
                             x = new XElement(xn + "ClCompile", new XAttribute("Include", RelativePath));
                         }
-                        else if (f.Type == FileType.CppSource)
+                        else if (File.Type == FileType.CppSource)
                         {
                             x = new XElement(xn + "ClCompile", new XAttribute("Include", RelativePath));
                             x.Add(new XElement(xn + "ObjectFileName", "$(IntDir)" + RelativePath.Replace("..", "__") + ".obj"));
@@ -300,6 +281,67 @@ namespace TypeMake.Cpp
                         else
                         {
                             x = new XElement(xn + "None", new XAttribute("Include", RelativePath));
+                        }
+                        if ((File.Type == FileType.CSource) || (File.Type == FileType.CppSource))
+                        {
+                            var fileConfs = File.Configurations.Matches(Project.TargetType, ToolchainType.Windows_VisualC, CompilerType.VisualC, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, null);
+
+                            foreach (var conf in fileConfs)
+                            {
+                                var FileMatchingConfigurationTypes = conf.MatchingConfigurationTypes;
+                                var FileMatchingTargetArchitectures = conf.MatchingTargetArchitectures;
+                                if ((FileMatchingConfigurationTypes != null) && (MatchingConfigurationTypes != null))
+                                {
+                                    FileMatchingConfigurationTypes = FileMatchingConfigurationTypes.Intersect(MatchingConfigurationTypes).ToList();
+                                    if (FileMatchingConfigurationTypes.Count == MatchingConfigurationTypes.Count)
+                                    {
+                                        FileMatchingConfigurationTypes = null;
+                                    }
+                                }
+                                if ((FileMatchingTargetArchitectures != null) && (MatchingTargetArchitectures != null))
+                                {
+                                    FileMatchingTargetArchitectures = FileMatchingTargetArchitectures.Intersect(MatchingTargetArchitectures).ToList();
+                                    if (FileMatchingTargetArchitectures.Count == MatchingTargetArchitectures.Count)
+                                    {
+                                        FileMatchingTargetArchitectures = null;
+                                    }
+                                }
+                                var FileConditions = GetConditions(FileMatchingConfigurationTypes, FileMatchingTargetArchitectures);
+
+                                foreach (var FileCondition in FileConditions)
+                                {
+                                    var Attributes = new XAttribute[] { };
+                                    if (FileCondition != null)
+                                    {
+                                        Attributes = new XAttribute[] { new XAttribute("Condition", FileCondition) };
+                                    }
+
+                                    var IncludeDirectories = conf.IncludeDirectories.Select(d => d.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Windows)).ToList();
+                                    if (IncludeDirectories.Count != 0)
+                                    {
+                                        x.Add(new XElement(xn + "AdditionalIncludeDirectories", String.Join(";", IncludeDirectories) + ";%(AdditionalIncludeDirectories)", Attributes));
+                                    }
+                                    var Defines = conf.Defines;
+                                    if (Defines.Count != 0)
+                                    {
+                                        x.Add(new XElement(xn + "PreprocessorDefinitions", String.Join(";", Defines.Select(d => d.Key + (d.Value == null ? "" : "=" + (Regex.IsMatch(d.Value, @"^[0-9]+$") ? d.Value : "\"" + d.Value.Replace("\"", "") + "\"")))) + ";%(PreprocessorDefinitions)", Attributes));
+                                    }
+                                    var CompilerFlags = conf.CommonFlags.Concat(conf.CFlags).Concat(conf.CppFlags).ToList();
+                                    if (CompilerFlags.Count != 0)
+                                    {
+                                        x.Add(new XElement(xn + "AdditionalOptions", "%(AdditionalOptions) " + String.Join(" ", CompilerFlags.Select(f => (f == null ? "" : Regex.IsMatch(f, @"^[0-9]+$") ? f : "\"" + f.Replace("\"", "\"\"\"") + "\""))), Attributes));
+                                    }
+
+                                    foreach (var o in conf.Options)
+                                    {
+                                        var Prefix = "vc.ClCompile.";
+                                        if (o.Key.StartsWith(Prefix))
+                                        {
+                                            x.Add(new XElement(xn + o.Key.Substring(Prefix.Length), o.Value, Attributes));
+                                        }
+                                    }
+                                }
+                            }
                         }
                         FileItemGroup.Add(x);
                     }
@@ -531,6 +573,33 @@ namespace TypeMake.Cpp
             {
                 return "10.0.10240.0";
             }
+        }
+
+        private static List<string> GetConditions(List<ConfigurationType> MatchingConfigurationTypes, List<ArchitectureType> MatchingTargetArchitectures)
+        {
+            List<string> Conditions;
+            if ((MatchingConfigurationTypes != null) || (MatchingTargetArchitectures != null))
+            {
+                var Keys = "";
+                var Values = new List<String> { "" };
+                if (MatchingConfigurationTypes != null)
+                {
+                    Keys = (Keys != "" ? Keys + "|" : "") + "$(Configuration)";
+                    Values = MatchingConfigurationTypes.SelectMany(t => Values.Select(v => (v != "" ? v + "|" : "") + t.ToString())).ToList();
+                }
+                if (MatchingTargetArchitectures != null)
+                {
+                    Keys = (Keys != "" ? Keys + "|" : "") + "$(Platform)";
+                    Values = MatchingTargetArchitectures.SelectMany(a => Values.Select(v => (v != "" ? v + "|" : "") + GetArchitectureString(a))).ToList();
+                }
+                Conditions = Values.Select(v => "'" + Keys + "' == '" + v + "'").ToList();
+            }
+            else
+            {
+                Conditions = new List<String> { null };
+            }
+
+            return Conditions;
         }
     }
 
