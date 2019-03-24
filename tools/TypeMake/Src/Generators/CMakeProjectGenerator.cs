@@ -189,33 +189,66 @@ namespace TypeMake.Cpp
 
             if ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary))
             {
+                var DefaultOutDir = "";
+                if (TargetArchitectureType.HasValue)
+                {
+                    var Architecture = TargetArchitectureType.Value;
+                    DefaultOutDir = $@"${{CMAKE_CURRENT_BINARY_DIR}}/../../{Architecture}_${{CMAKE_BUILD_TYPE}}";
+                }
+                else
+                {
+                    DefaultOutDir = $@"${{CMAKE_CURRENT_BINARY_DIR}}/../../${{CMAKE_BUILD_TYPE}}";
+                }
+
                 var LinkerFlags = conf.LinkerFlags.Select(f => (f == null ? "" : Regex.IsMatch(f, @"[ ""^|]") ? "\"" + f.Replace("\"", "\"\"") + "\"" : f)).ToList();
-                if (LinkerFlags.Count != 0)
+                if (LinkerFlags.Count > 0)
                 {
                     var LinkerFlagStr = String.Join(" ", LinkerFlags.Select(f => f.Replace("\\", "\\\\").Replace("\"", "\\\"")));
                     yield return @"set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS """ + LinkerFlagStr + @""")";
                 }
 
-                if (ProjectReferences.Count + conf.Libs.Count > 0)
+                yield return @"add_dependencies(${PROJECT_NAME}";
+                foreach (var p in ProjectReferences)
+                {
+                    yield return "  " + p.Name;
+                }
+                yield return @")";
+
+                var PostObjectFileLinkerFlags = new List<String>();
+                PostObjectFileLinkerFlags.Add("-L" + DefaultOutDir);
+                foreach (var Lib in conf.Libs)
+                {
+                    if (Lib.Parts.Count == 1)
+                    {
+                        PostObjectFileLinkerFlags.Add("-l" + Lib.ToString(PathStringStyle.Unix));
+                    }
+                    else
+                    {
+                        PostObjectFileLinkerFlags.Add(Lib.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix));
+                    }
+                }
+                foreach (var p in ProjectReferences)
+                {
+                    PostObjectFileLinkerFlags.Add("-l" + p.Name);
+                }
+
+                if (PostObjectFileLinkerFlags.Count > 0)
                 {
                     yield return @"target_link_libraries(${PROJECT_NAME} PRIVATE";
                     if ((Compiler == CompilerType.gcc) || (Compiler == CompilerType.clang))
                     {
                         yield return @"  -Wl,--start-group";
                     }
-                    foreach (var p in ProjectReferences)
-                    {
-                        yield return "  " + p.Name;
-                    }
-                    foreach (var lib in conf.Libs)
-                    {
-                        yield return "  " + lib.ToString(PathStringStyle.Unix);
-                    }
+                    yield return "  \"" + String.Join(" ", PostObjectFileLinkerFlags) + "\""; //bypass CMake limitation with the order of linker flags
                     if ((Compiler == CompilerType.gcc) || (Compiler == CompilerType.clang))
                     {
                         yield return @"  -Wl,--end-group";
                     }
                     yield return @")";
+                }
+                else
+                {
+                    yield return @"target_link_libraries(${PROJECT_NAME})";
                 }
             }
 
