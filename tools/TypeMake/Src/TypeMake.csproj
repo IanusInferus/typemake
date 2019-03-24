@@ -41,7 +41,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Base\Configuration.cs" />
     <Compile Include="Base\Hash.cs" />
     <Compile Include="Base\PlistFile.cs" />
     <Compile Include="Base\SlnFile.cs" />
@@ -49,6 +48,7 @@
     <Compile Include="Base\TopologicalSort.cs" />
     <Compile Include="Generators\CMakeProjectGenerator.cs" />
     <Compile Include="Generators\CMakeSolutionGenerator.cs" />
+    <Compile Include="Generators\ConfigurationUtils.cs" />
     <Compile Include="Generators\GradleProjectGenerator.cs" />
     <Compile Include="Generators\PbxprojGenerator.cs" />
     <Compile Include="Generators\PbxprojSolutionGenerator.cs" />
