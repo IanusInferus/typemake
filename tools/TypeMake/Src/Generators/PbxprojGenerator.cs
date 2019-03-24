@@ -215,6 +215,25 @@ namespace TypeMake.Cpp
                                 var File = new Dictionary<String, Value>();
                                 File.Add("fileRef", Value.CreateString(RelativePathToObjects[RelativePath]));
                                 File.Add("isa", Value.CreateString("PBXBuildFile"));
+
+                                var FileConf = f.Configurations.Merged(Project.TargetType, ToolchainType.Mac_XCode, CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitectureType, null);
+
+                                var FileFlags = FileConf.CommonFlags;
+                                if ((f.Type == FileType.CSource) || (f.Type == FileType.ObjectiveCSource))
+                                {
+                                    FileFlags = FileFlags.Concat(FileConf.CFlags).ToList();
+                                }
+                                else if ((f.Type == FileType.CppSource) || (f.Type == FileType.ObjectiveCppSource))
+                                {
+                                    FileFlags = FileFlags.Concat(FileConf.CppFlags).ToList();
+                                }
+                                FileFlags = FileFlags.Concat(FileConf.Defines.Select(d => d.Value == null ? d.Key : Regex.IsMatch(d.Value, @"^[A-Za-z0-9]+$") ? "-D" + d.Key + "=" + d.Value : "'-D" + d.Key + "=" + d.Value + "'")).ToList();
+
+                                if (FileFlags.Count > 0)
+                                {
+                                    File.Add("settings", Value.CreateDict(new Dictionary<String, Value> { ["COMPILER_FLAGS"] = Value.CreateString(String.Join(" ", FileFlags)) }));
+                                }
+
                                 var Hash = GetHashOfPath(TargetName + ":PBXSourcesBuildPhase:" + RelativePath);
                                 Objects.Add(Hash, Value.CreateDict(File));
                                 Files.Array.Add(Value.CreateString(Hash));

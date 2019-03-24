@@ -131,30 +131,27 @@ namespace TypeMake.Cpp
 
             foreach (var f in conf.Files)
             {
-                if (f.Configurations != null)
+                var FilePath = f.Path.FullPath.RelativeTo(BaseDirPath, EnableAbsolutePath).ToString(PathStringStyle.Unix);
+                var FileConf = f.Configurations.Merged(Project.TargetType, Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitectureType, ConfigurationType);
+                var FileDefines = FileConf.Defines;
+                if (FileDefines.Count != 0)
                 {
-                    var FilePath = f.Path.FullPath.RelativeTo(BaseDirPath, EnableAbsolutePath).ToString(PathStringStyle.Unix);
-                    var FileConf = f.Configurations.Merged(Project.TargetType, Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitectureType, ConfigurationType);
-                    var FileDefines = FileConf.Defines;
-                    if (FileDefines.Count != 0)
-                    {
-                        var FileDefinesStr = String.Join(";", FileDefines.Select(d => (d.Key + (d.Value == null ? "" : "=" + d.Value).Replace("\"", "\\\""))));
-                        yield return $@"set_source_files_properties ({FilePath} PROPERTIES COMPILE_DEFINITIONS ""{FileDefinesStr}"")";
-                    }
-                    var FileFlags = FileConf.CommonFlags;
-                    if ((f.Type == FileType.CSource) || (f.Type == FileType.ObjectiveCSource))
-                    {
-                        FileFlags = FileFlags.Concat(FileConf.CFlags).ToList();
-                    }
-                    else if ((f.Type == FileType.CppSource) || (f.Type == FileType.ObjectiveCppSource))
-                    {
-                        FileFlags = FileFlags.Concat(FileConf.CppFlags).ToList();
-                    }
-                    if (FileFlags.Count != 0)
-                    {
-                        var FileFlagsStr = String.Join(" ", FileFlags).Replace("\"", "\\\"");
-                        yield return $@"set_source_files_properties ({FilePath} PROPERTIES COMPILE_FLAGS ""{FileFlagsStr}"")";
-                    }
+                    var FileDefinesStr = String.Join(";", FileDefines.Select(d => (d.Key + (d.Value == null ? "" : "=" + d.Value).Replace("\"", "\\\""))));
+                    yield return $@"set_source_files_properties ({FilePath} PROPERTIES COMPILE_DEFINITIONS ""{FileDefinesStr}"")";
+                }
+                var FileFlags = FileConf.CommonFlags;
+                if ((f.Type == FileType.CSource) || (f.Type == FileType.ObjectiveCSource))
+                {
+                    FileFlags = FileFlags.Concat(FileConf.CFlags).ToList();
+                }
+                else if ((f.Type == FileType.CppSource) || (f.Type == FileType.ObjectiveCppSource))
+                {
+                    FileFlags = FileFlags.Concat(FileConf.CppFlags).ToList();
+                }
+                if (FileFlags.Count != 0)
+                {
+                    var FileFlagsStr = String.Join(" ", FileFlags).Replace("\"", "\\\"");
+                    yield return $@"set_source_files_properties ({FilePath} PROPERTIES COMPILE_FLAGS ""{FileFlagsStr}"")";
                 }
             }
 

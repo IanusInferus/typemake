@@ -326,7 +326,15 @@ namespace TypeMake.Cpp
                                     {
                                         x.Add(new XElement(xn + "PreprocessorDefinitions", String.Join(";", Defines.Select(d => d.Key + (d.Value == null ? "" : "=" + d.Value))) + ";%(PreprocessorDefinitions)", Attributes));
                                     }
-                                    var CompilerFlags = conf.CommonFlags.Concat(conf.CFlags).Concat(conf.CppFlags).ToList();
+                                    var CompilerFlags = conf.CommonFlags;
+                                    if ((File.Type == FileType.CSource) || (File.Type == FileType.ObjectiveCSource))
+                                    {
+                                        CompilerFlags = CompilerFlags.Concat(conf.CFlags).ToList();
+                                    }
+                                    else if ((File.Type == FileType.CppSource) || (File.Type == FileType.ObjectiveCppSource))
+                                    {
+                                        CompilerFlags = CompilerFlags.Concat(conf.CppFlags).ToList();
+                                    }
                                     if (CompilerFlags.Count != 0)
                                     {
                                         x.Add(new XElement(xn + "AdditionalOptions", "%(AdditionalOptions) " + String.Join(" ", CompilerFlags.Select(f => (f == null ? "" : Regex.IsMatch(f, @"^[0-9]+$") ? f : "\"" + f.Replace("\"", "\"\"\"") + "\""))), Attributes));
