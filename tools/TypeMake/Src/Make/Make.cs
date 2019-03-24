@@ -519,7 +519,7 @@ namespace TypeMake
             }
             else if (Toolchain == ToolchainType.Gradle_CMake)
             {
-                CopyDirectory(System.Reflection.Assembly.GetEntryAssembly().Location.AsPath().Parent / "Templates/gradle", BuildDirectory / "gradle");
+                FileUtils.CopyDirectory(System.Reflection.Assembly.GetEntryAssembly().Location.AsPath().Parent / "Templates/gradle", BuildDirectory / "gradle", !ForceRegenerate);
                 var g = new CMakeSolutionGenerator(SolutionName, SortedProjects, BuildDirectory);
                 g.Generate(ForceRegenerate);
                 if (GradleProjectNames.Count > 0)
@@ -679,6 +679,10 @@ namespace TypeMake
         {
             return Defines.Split(';').Select(d => d.Split('=')).Select(arr => arr.Length >= 2 ? new KeyValuePair<String, String>(arr[0], arr[1]) : new KeyValuePair<String, String>(arr[0], null)).ToList();
         }
+        private static List<String> ParseFlags(String Flags)
+        {
+            return Flags.Split(' ').ToList();
+        }
         private String GetIdForProject(String ProjectName)
         {
             if (ProjectIds.ContainsKey(ProjectName))
@@ -779,19 +783,6 @@ namespace TypeMake
                 }
             }
             return !IsExact;
-        }
-        private static void CopyDirectory(String SourceDirectory, String DestinationDirectory)
-        {
-            foreach (var f in Directory.EnumerateFiles(SourceDirectory, "*", SearchOption.AllDirectories))
-            {
-                var fNew = DestinationDirectory / f.AsPath().RelativeTo(SourceDirectory);
-                var NewDir = fNew.Parent;
-                if ((NewDir != "") && !Directory.Exists(NewDir))
-                {
-                    Directory.CreateDirectory(NewDir);
-                }
-                System.IO.File.Copy(f, fNew, true);
-            }
         }
     }
 }

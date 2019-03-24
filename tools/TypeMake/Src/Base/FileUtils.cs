@@ -28,5 +28,13 @@ namespace TypeMake
             }
             File.Copy(SourceFilePath, DestinationFilePath, true);
         }
+        public static void CopyDirectory(String SourceDirectory, String DestinationDirectory, bool CopyOnlyOnModified)
+        {
+            foreach (var f in Directory.EnumerateFiles(SourceDirectory, "*", SearchOption.AllDirectories))
+            {
+                var fNew = DestinationDirectory / f.AsPath().RelativeTo(SourceDirectory);
+                Copy(f, fNew, CopyOnlyOnModified);
+            }
+        }
     }
 }
