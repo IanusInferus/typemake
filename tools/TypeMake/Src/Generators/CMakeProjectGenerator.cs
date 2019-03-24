@@ -129,6 +129,35 @@ namespace TypeMake.Cpp
                 yield return @")";
             }
 
+            foreach (var f in conf.Files)
+            {
+                if (f.Configurations != null)
+                {
+                    var FilePath = f.Path.FullPath.RelativeTo(BaseDirPath, EnableAbsolutePath).ToString(PathStringStyle.Unix);
+                    var FileConf = f.Configurations.Merged(Project.TargetType, Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitectureType, ConfigurationType);
+                    var FileDefines = FileConf.Defines;
+                    if (FileDefines.Count != 0)
+                    {
+                        var FileDefinesStr = String.Join(";", FileDefines.Select(d => (d.Key + (d.Value == null ? "" : "=" + d.Value).Replace("\"", "\\\""))));
+                        yield return $@"set_source_files_properties ({FilePath} PROPERTIES COMPILE_DEFINITIONS ""{FileDefinesStr}"")";
+                    }
+                    var FileFlags = FileConf.CommonFlags;
+                    if ((f.Type == FileType.CSource) || (f.Type == FileType.ObjectiveCSource))
+                    {
+                        FileFlags = FileFlags.Concat(FileConf.CFlags).ToList();
+                    }
+                    else if ((f.Type == FileType.CppSource) || (f.Type == FileType.ObjectiveCppSource))
+                    {
+                        FileFlags = FileFlags.Concat(FileConf.CppFlags).ToList();
+                    }
+                    if (FileFlags.Count != 0)
+                    {
+                        var FileFlagsStr = String.Join(" ", FileFlags).Replace("\"", "\\\"");
+                        yield return $@"set_source_files_properties ({FilePath} PROPERTIES COMPILE_FLAGS ""{FileFlagsStr}"")";
+                    }
+                }
+            }
+
             var IncludeDirectories = conf.IncludeDirectories.Select(d => d.FullPath.RelativeTo(BaseDirPath, EnableAbsolutePath).ToString(PathStringStyle.Unix)).ToList();
             if (IncludeDirectories.Count != 0)
             {
@@ -145,7 +174,7 @@ namespace TypeMake.Cpp
                 yield return @"target_compile_definitions(${PROJECT_NAME} PRIVATE";
                 foreach (var d in Defines)
                 {
-                    yield return @"  -D" + d.Key + (d.Value == null ? "" : "=" + d.Value);
+                    yield return @"  " + d.Key + (d.Value == null ? "" : "=" + d.Value);
                 }
                 yield return @")";
             }
