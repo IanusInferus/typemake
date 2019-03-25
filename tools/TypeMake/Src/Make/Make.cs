@@ -587,7 +587,7 @@ namespace TypeMake
                 },
                 new Configuration
                 {
-                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Linux },
+                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Linux, OperatingSystemType.Android },
                     CommonFlags = new List<String> { "-fPIC" }
                 },
                 new Configuration
@@ -603,7 +603,20 @@ namespace TypeMake
                 new Configuration
                 {
                     MatchingCompilers = new List<CompilerType> { CompilerType.clang },
-                    CppFlags = new List<String>{ "-std=c++14", "-stdlib=libc++" }
+                    CppFlags = ParseFlags("-std=c++14 -stdlib=libc++")
+                },
+                new Configuration
+                {
+                    MatchingCompilers = new List<CompilerType> { CompilerType.gcc, CompilerType.clang },
+                    MatchingConfigurationTypes = new List<ConfigurationType> { Cpp.ConfigurationType.Debug },
+                    CommonFlags = ParseFlags("-O0 -g")
+                },
+                new Configuration
+                {
+                    MatchingCompilers = new List<CompilerType> { CompilerType.gcc, CompilerType.clang },
+                    MatchingConfigurationTypes = new List<ConfigurationType> { Cpp.ConfigurationType.Release },
+                    Defines = ParseDefines("NDEBUG"),
+                    CommonFlags = ParseFlags("-Os -s")
                 }
             };
             foreach (var Architecture in Enum.GetValues(typeof(ArchitectureType)).Cast<ArchitectureType>())
