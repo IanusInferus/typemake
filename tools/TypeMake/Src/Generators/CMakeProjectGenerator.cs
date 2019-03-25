@@ -204,29 +204,21 @@ namespace TypeMake.Cpp
                     yield return @"set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS """ + LinkerFlagStr + @""")";
                 }
 
-                yield return @"add_dependencies(${PROJECT_NAME}";
-                foreach (var p in ProjectReferences)
-                {
-                    yield return "  " + p.Name;
-                }
-                yield return @")";
-
                 var PostObjectFileLinkerFlags = new List<String>();
-                PostObjectFileLinkerFlags.Add("-L" + DefaultOutDir);
                 foreach (var Lib in conf.Libs)
                 {
                     if (Lib.Parts.Count == 1)
                     {
-                        PostObjectFileLinkerFlags.Add("-l" + Lib.ToString(PathStringStyle.Unix));
+                        PostObjectFileLinkerFlags.Add(Lib.ToString(PathStringStyle.Unix));
                     }
                     else
                     {
-                        PostObjectFileLinkerFlags.Add(Lib.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix));
+                        PostObjectFileLinkerFlags.Add("\"-Wl,--as-needed " + Lib.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix) + " -Wl,--no-as-needed\""); //bypass CMake limitation with the order of linker flags and the addition of '-l' before library with a relative or absolute path
                     }
                 }
                 foreach (var p in ProjectReferences)
                 {
-                    PostObjectFileLinkerFlags.Add("-l" + p.Name);
+                    PostObjectFileLinkerFlags.Add(p.Name);
                 }
 
                 if (PostObjectFileLinkerFlags.Count > 0)
@@ -236,7 +228,10 @@ namespace TypeMake.Cpp
                     {
                         yield return @"  -Wl,--start-group";
                     }
-                    yield return "  \"" + String.Join(" ", PostObjectFileLinkerFlags) + "\""; //bypass CMake limitation with the order of linker flags
+                    foreach (var f in PostObjectFileLinkerFlags)
+                    {
+                        yield return "  " + f;
+                    }
                     if ((Compiler == CompilerType.gcc) || (Compiler == CompilerType.clang))
                     {
                         yield return @"  -Wl,--end-group";
