@@ -51,6 +51,8 @@
     <Compile Include="Generators\CMakeSolutionGenerator.cs" />
     <Compile Include="Generators\ConfigurationUtils.cs" />
     <Compile Include="Generators\GradleProjectGenerator.cs" />
+    <Compile Include="Generators\NinjaProjectGenerator.cs" />
+    <Compile Include="Generators\NinjaSolutionGenerator.cs" />
     <Compile Include="Generators\PbxprojGenerator.cs" />
     <Compile Include="Generators\PbxprojSolutionGenerator.cs" />
     <Compile Include="Generators\SlnGenerator.cs" />

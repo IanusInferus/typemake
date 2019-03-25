@@ -468,6 +468,11 @@ namespace TypeMake
                     var g = new CMakeProjectGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture, ConfigurationType, false);
                     g.Generate(ForceRegenerate);
                 }
+                else if (Toolchain == ToolchainType.Ninja)
+                {
+                    var g = new NinjaProjectGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture.Value, ConfigurationType.Value);
+                    g.Generate(ForceRegenerate);
+                }
                 else if (Toolchain == ToolchainType.Gradle_CMake)
                 {
                     if (ProjectTargetType == TargetType.GradleApplication)
@@ -515,6 +520,11 @@ namespace TypeMake
             else if (Toolchain == ToolchainType.CMake)
             {
                 var g = new CMakeSolutionGenerator(SolutionName, SortedProjects, BuildDirectory);
+                g.Generate(ForceRegenerate);
+            }
+            else if (Toolchain == ToolchainType.Ninja)
+            {
+                var g = new NinjaSolutionGenerator(SolutionName, SortedProjects, BuildDirectory / "projects", "gcc", "g++", "ar");
                 g.Generate(ForceRegenerate);
             }
             else if (Toolchain == ToolchainType.Gradle_CMake)
@@ -701,7 +711,7 @@ namespace TypeMake
                 ProjectIds.Add(ProjectName, g);
                 return g;
             }
-            else if ((Toolchain == ToolchainType.CMake) || (Toolchain == ToolchainType.Gradle_CMake))
+            else if ((Toolchain == ToolchainType.CMake) || (Toolchain == ToolchainType.Ninja) || (Toolchain == ToolchainType.Gradle_CMake) || (Toolchain == ToolchainType.Gradle_Ninja))
             {
                 return "";
             }
@@ -753,7 +763,7 @@ namespace TypeMake
             {
                 return ProjectName + ".xcodeproj";
             }
-            else if ((Toolchain == ToolchainType.CMake) || (Toolchain == ToolchainType.Gradle_CMake))
+            else if ((Toolchain == ToolchainType.CMake) || (Toolchain == ToolchainType.Ninja) || (Toolchain == ToolchainType.Gradle_CMake) || (Toolchain == ToolchainType.Gradle_Ninja))
             {
                 return ProjectName;
             }

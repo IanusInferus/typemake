@@ -46,7 +46,7 @@ namespace TypeMake.Cpp
             TextFile.WriteToFile(CMakeListsPath, String.Join("\n", Lines), new UTF8Encoding(false), !ForceRegenerate);
         }
 
-        private IEnumerable<String> GenerateLines(String CMakeListsPath, String BaseDirPath)
+        private IEnumerable<String> GenerateLines(PathString CMakeListsPath, PathString BaseDirPath)
         {
             var conf = Project.Configurations.Merged(Project.TargetType, Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitectureType, ConfigurationType);
 
@@ -186,17 +186,6 @@ namespace TypeMake.Cpp
 
             if ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary))
             {
-                var DefaultOutDir = "";
-                if (TargetArchitectureType.HasValue)
-                {
-                    var Architecture = TargetArchitectureType.Value;
-                    DefaultOutDir = $@"${{CMAKE_CURRENT_BINARY_DIR}}/../../{Architecture}_${{CMAKE_BUILD_TYPE}}";
-                }
-                else
-                {
-                    DefaultOutDir = $@"${{CMAKE_CURRENT_BINARY_DIR}}/../../${{CMAKE_BUILD_TYPE}}";
-                }
-
                 var LinkerFlags = conf.LinkerFlags.Select(f => (f == null ? "" : Regex.IsMatch(f, @"[ ""^|]") ? "\"" + f.Replace("\"", "\"\"") + "\"" : f)).ToList();
                 if (LinkerFlags.Count > 0)
                 {

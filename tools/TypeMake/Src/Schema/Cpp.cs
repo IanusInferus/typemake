@@ -22,7 +22,9 @@ namespace TypeMake.Cpp
         Windows_VisualC,
         Mac_XCode,
         CMake,
-        Gradle_CMake
+        Ninja,
+        Gradle_CMake,
+        Gradle_Ninja
     }
     public enum CompilerType
     {

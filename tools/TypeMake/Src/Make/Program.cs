@@ -198,25 +198,47 @@ namespace TypeMake
             {
                 var TargetArchitecture = Cpp.ArchitectureType.x86_64;
                 var Configuration = Shell.RequireEnvironmentVariableEnum(Memory, "Configuration", Quiet, Cpp.ConfigurationType.Debug);
+                var Toolchain = Shell.RequireEnvironmentVariableEnum(Memory, "Toolchain", Quiet, new HashSet<Cpp.ToolchainType> { Cpp.ToolchainType.Ninja, Cpp.ToolchainType.CMake }, Cpp.ToolchainType.Ninja);
                 var CMake = "".AsPath();
                 var Make = "".AsPath();
+                if (Toolchain == Cpp.ToolchainType.CMake)
+                {
+                    if (BuildingOperatingSystem == Cpp.OperatingSystemType.Windows)
+                    {
+                        CMake = Shell.RequireEnvironmentVariable(Memory, "CMake", new Shell.EnvironmentVariableReadOptions { Quiet = Quiet, DefaultValue = "cmake" });
+                        Make = Shell.RequireEnvironmentVariable(Memory, "Make", new Shell.EnvironmentVariableReadOptions { Quiet = Quiet, DefaultValue = "make" });
+                    }
+                    else if (BuildingOperatingSystem == Cpp.OperatingSystemType.Linux)
+                    {
+                        CMake = Shell.RequireEnvironmentVariableFilePath(Memory, "CMake", Quiet, Shell.TryLocate("cmake") ?? "");
+                        Make = Shell.RequireEnvironmentVariableFilePath(Memory, "Make", Quiet, Shell.TryLocate("make") ?? "");
+                    }
+                }
+                var Ninja = "".AsPath();
                 if (BuildingOperatingSystem == Cpp.OperatingSystemType.Windows)
                 {
-                    CMake = Shell.RequireEnvironmentVariable(Memory, "CMake", new Shell.EnvironmentVariableReadOptions { Quiet = Quiet, DefaultValue = "cmake" });
-                    Make = Shell.RequireEnvironmentVariable(Memory, "Make", new Shell.EnvironmentVariableReadOptions { Quiet = Quiet, DefaultValue = "make" });
+                    Ninja = SourceDirectory / "tools/Ninja/ninja-linux/ninja";
                 }
                 else if (BuildingOperatingSystem == Cpp.OperatingSystemType.Linux)
                 {
-                    CMake = Shell.RequireEnvironmentVariableFilePath(Memory, "CMake", Quiet, Shell.TryLocate("cmake") ?? "");
-                    Make = Shell.RequireEnvironmentVariableFilePath(Memory, "Make", Quiet, Shell.TryLocate("make") ?? "");
+                    Ninja = SourceDirectory / "tools/Ninja/ninja-linux/ninja";
                 }
-                var BuildDirectory = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "BuildDirectory", Quiet, $"build/linux_{TargetArchitecture}_{Configuration}".AsPath(), p => !File.Exists(p) ? new KeyValuePair<bool, String>(true, "") : new KeyValuePair<bool, String>(false, "Exist as a file."));
-                var m = new Make(Cpp.ToolchainType.CMake, Cpp.CompilerType.gcc, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture, Configuration, SourceDirectory, BuildDirectory, null, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
+                else if (BuildingOperatingSystem == Cpp.OperatingSystemType.Mac)
+                {
+                    Ninja = SourceDirectory / "tools/Ninja/ninja-mac/ninja";
+                }
+                else
+                {
+                    WriteLineError("Current building host operating system is not supported.");
+                    return 1;
+                }
+                var BuildDirectory = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "BuildDirectory", Quiet, $"build/linux_{Toolchain}_{TargetArchitecture}_{Configuration}".AsPath(), p => !File.Exists(p) ? new KeyValuePair<bool, String>(true, "") : new KeyValuePair<bool, String>(false, "Exist as a file."));
+                var m = new Make(Toolchain, Cpp.CompilerType.gcc, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture, Configuration, SourceDirectory, BuildDirectory, null, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
                 var Projects = m.GetAvailableProjects();
                 var SelectedProjects = GetSelectedProjects(Memory, Quiet, Projects, m.CheckUnresolvedDependencies);
                 GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, OverwriteRetypemakeScript);
                 m.Execute(SelectedProjects);
-                GenerateBuildScriptLinux(BuildingOperatingSystem, BuildDirectory, Configuration, CMake, Make, ForceRegenerate);
+                GenerateBuildScriptLinux(Toolchain, BuildingOperatingSystem, BuildDirectory, Configuration, CMake, Make, Ninja, ForceRegenerate);
                 if (BuildAfterGenerate)
                 {
                     using (var d = Shell.PushDirectory(BuildDirectory))
@@ -480,44 +502,81 @@ namespace TypeMake
             var BuildPath = BuildDirectory / $"build_{TargetArchitecture}_{Configuration}.cmd";
             TextFile.WriteToFile(BuildPath, String.Join("\r\n", Lines), System.Text.Encoding.Default, !ForceRegenerate);
         }
-        private static void GenerateBuildScriptLinux(Cpp.OperatingSystemType BuildingOperatingSystem, PathString BuildDirectory, Cpp.ConfigurationType Configuration, PathString CMake, PathString Make, bool ForceRegenerate)
+        private static void GenerateBuildScriptLinux(Cpp.ToolchainType Toolchain, Cpp.OperatingSystemType BuildingOperatingSystem, PathString BuildDirectory, Cpp.ConfigurationType Configuration, PathString CMake, PathString Make, PathString Ninja, bool ForceRegenerate)
         {
-            var CMakeArguments = new List<String>();
-            CMakeArguments.Add(".");
-            CMakeArguments.Add($"-DCMAKE_BUILD_TYPE={Configuration}");
+            if (Toolchain == Cpp.ToolchainType.CMake)
+            {
+                var CMakeArguments = new List<String>();
+                CMakeArguments.Add(".");
+                CMakeArguments.Add($"-DCMAKE_BUILD_TYPE={Configuration}");
 
-            if (BuildingOperatingSystem == Cpp.OperatingSystemType.Windows)
-            {
-                var Lines = new List<String>();
-                Lines.Add("@echo off");
-                Lines.Add("");
-                Lines.Add("setlocal");
-                Lines.Add("if \"%SUB_NO_PAUSE_SYMBOL%\"==\"1\" set NO_PAUSE_SYMBOL=1");
-                Lines.Add("if /I \"%COMSPEC%\" == %CMDCMDLINE% set NO_PAUSE_SYMBOL=1");
-                Lines.Add("set SUB_NO_PAUSE_SYMBOL=1");
-                Lines.Add("call :main");
-                Lines.Add("set EXIT_CODE=%ERRORLEVEL%");
-                Lines.Add("if not \"%NO_PAUSE_SYMBOL%\"==\"1\" pause");
-                Lines.Add("exit /b %EXIT_CODE%");
-                Lines.Add("");
-                Lines.Add(":main");
-                Lines.Add("wsl " + Shell.EscapeArgumentForShell(CMake, Shell.ShellArgumentStyle.CMD) + " " + String.Join(" ", CMakeArguments.Select(a => Shell.EscapeArgumentForShell(a, Shell.ShellArgumentStyle.CMD))) + " || exit /b 1");
-                Lines.Add("wsl " + Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.CMD) + " -j" + Environment.ProcessorCount.ToString() + " || exit /b 1");
-                Lines.Add("");
-                var BuildPath = BuildDirectory / "build.cmd";
-                TextFile.WriteToFile(BuildPath, String.Join("\r\n", Lines), System.Text.Encoding.Default, !ForceRegenerate);
+                if (BuildingOperatingSystem == Cpp.OperatingSystemType.Windows)
+                {
+                    var Lines = new List<String>();
+                    Lines.Add("@echo off");
+                    Lines.Add("");
+                    Lines.Add("setlocal");
+                    Lines.Add("if \"%SUB_NO_PAUSE_SYMBOL%\"==\"1\" set NO_PAUSE_SYMBOL=1");
+                    Lines.Add("if /I \"%COMSPEC%\" == %CMDCMDLINE% set NO_PAUSE_SYMBOL=1");
+                    Lines.Add("set SUB_NO_PAUSE_SYMBOL=1");
+                    Lines.Add("call :main");
+                    Lines.Add("set EXIT_CODE=%ERRORLEVEL%");
+                    Lines.Add("if not \"%NO_PAUSE_SYMBOL%\"==\"1\" pause");
+                    Lines.Add("exit /b %EXIT_CODE%");
+                    Lines.Add("");
+                    Lines.Add(":main");
+                    Lines.Add("wsl " + Shell.EscapeArgumentForShell(CMake, Shell.ShellArgumentStyle.CMD) + " " + String.Join(" ", CMakeArguments.Select(a => Shell.EscapeArgumentForShell(a, Shell.ShellArgumentStyle.CMD))) + " || exit /b 1");
+                    Lines.Add("wsl " + Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.CMD) + " -j" + Environment.ProcessorCount.ToString() + " || exit /b 1");
+                    Lines.Add("");
+                    var BuildPath = BuildDirectory / "build.cmd";
+                    TextFile.WriteToFile(BuildPath, String.Join("\r\n", Lines), System.Text.Encoding.Default, !ForceRegenerate);
+                }
+                else
+                {
+                    var Lines = new List<String>();
+                    Lines.Add("#!/bin/bash");
+                    Lines.Add("set -e");
+                    Lines.Add(Shell.EscapeArgumentForShell(CMake, Shell.ShellArgumentStyle.Bash) + " " + String.Join(" ", CMakeArguments.Select(a => Shell.EscapeArgumentForShell(a, Shell.ShellArgumentStyle.Bash))));
+                    Lines.Add(Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.Bash) + " -j" + Environment.ProcessorCount.ToString());
+                    Lines.Add("");
+                    var BuildPath = BuildDirectory / "build.sh";
+                    TextFile.WriteToFile(BuildPath, String.Join("\n", Lines), new System.Text.UTF8Encoding(false), !ForceRegenerate);
+                    MergeExitCode(Shell.Execute("chmod", "+x", BuildPath));
+                }
             }
-            else
+            else if (Toolchain == Cpp.ToolchainType.Ninja)
             {
-                var Lines = new List<String>();
-                Lines.Add("#!/bin/bash");
-                Lines.Add("set -e");
-                Lines.Add(Shell.EscapeArgumentForShell(CMake, Shell.ShellArgumentStyle.Bash) + " " + String.Join(" ", CMakeArguments.Select(a => Shell.EscapeArgumentForShell(a, Shell.ShellArgumentStyle.Bash))));
-                Lines.Add(Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.Bash) + " -j" + Environment.ProcessorCount.ToString());
-                Lines.Add("");
-                var BuildPath = BuildDirectory / "build.sh";
-                TextFile.WriteToFile(BuildPath, String.Join("\n", Lines), new System.Text.UTF8Encoding(false), !ForceRegenerate);
-                MergeExitCode(Shell.Execute("chmod", "+x", BuildPath));
+                if (BuildingOperatingSystem == Cpp.OperatingSystemType.Windows)
+                {
+                    var Lines = new List<String>();
+                    Lines.Add("@echo off");
+                    Lines.Add("");
+                    Lines.Add("setlocal");
+                    Lines.Add("if \"%SUB_NO_PAUSE_SYMBOL%\"==\"1\" set NO_PAUSE_SYMBOL=1");
+                    Lines.Add("if /I \"%COMSPEC%\" == %CMDCMDLINE% set NO_PAUSE_SYMBOL=1");
+                    Lines.Add("set SUB_NO_PAUSE_SYMBOL=1");
+                    Lines.Add("call :main");
+                    Lines.Add("set EXIT_CODE=%ERRORLEVEL%");
+                    Lines.Add("if not \"%NO_PAUSE_SYMBOL%\"==\"1\" pause");
+                    Lines.Add("exit /b %EXIT_CODE%");
+                    Lines.Add("");
+                    Lines.Add(":main");
+                    Lines.Add("wsl " + Shell.EscapeArgumentForShell(Ninja.RelativeTo(BuildDirectory).ToString(PathStringStyle.Unix), Shell.ShellArgumentStyle.CMD) + " -j" + Environment.ProcessorCount.ToString() + " -C projects -f build.ninja || exit /b 1");
+                    Lines.Add("");
+                    var BuildPath = BuildDirectory / "build.cmd";
+                    TextFile.WriteToFile(BuildPath, String.Join("\r\n", Lines), System.Text.Encoding.Default, !ForceRegenerate);
+                }
+                else
+                {
+                    var Lines = new List<String>();
+                    Lines.Add("#!/bin/bash");
+                    Lines.Add("set -e");
+                    Lines.Add(Shell.EscapeArgumentForShell(Ninja.RelativeTo(BuildDirectory).ToString(PathStringStyle.Unix), Shell.ShellArgumentStyle.Bash) + " -j" + Environment.ProcessorCount.ToString() + " -C projects -f build.ninja");
+                    Lines.Add("");
+                    var BuildPath = BuildDirectory / "build.sh";
+                    TextFile.WriteToFile(BuildPath, String.Join("\n", Lines), new System.Text.UTF8Encoding(false), !ForceRegenerate);
+                    MergeExitCode(Shell.Execute("chmod", "+x", BuildPath));
+                }
             }
         }
         private static void GenerateBuildScriptXCode(Cpp.OperatingSystemType BuildingOperatingSystem, PathString BuildDirectory, Make.Result Result, bool ForceRegenerate)

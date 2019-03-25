@@ -26,7 +26,7 @@ namespace TypeMake
             TextFile.WriteToFile(CMakeListsPath, String.Join("\n", Lines), new UTF8Encoding(false), !ForceRegenerate);
         }
 
-        private IEnumerable<String> GenerateLines(String CMakeListsPath)
+        private IEnumerable<String> GenerateLines(PathString CMakeListsPath)
         {
             yield return @"cmake_minimum_required(VERSION 3.0.2)";
             yield return $@"project({SolutionName})";

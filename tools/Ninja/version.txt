@@ -1,0 +1,5 @@
+https://ninja-build.org/
+https://github.com/ninja-build/ninja/releases
+https://github.com/ninja-build/ninja/releases/download/v1.9.0/ninja-win.zip
+https://github.com/ninja-build/ninja/releases/download/v1.9.0/ninja-linux.zip
+https://github.com/ninja-build/ninja/releases/download/v1.9.0/ninja-mac.zip
