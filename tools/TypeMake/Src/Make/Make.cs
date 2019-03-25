@@ -22,12 +22,15 @@ namespace TypeMake
         private PathString SourceDirectory;
         private PathString BuildDirectory;
         private String XCodeDevelopmentTeam;
+        private String CCompiler;
+        private String CppCompiler;
+        private String Archiver;
         private bool ForceRegenerate;
         private bool EnableNonTargetingOperatingSystemDummy;
 
         private Dictionary<String, String> ProjectIds = new Dictionary<String, String>();
 
-        public Make(ToolchainType Toolchain, CompilerType Compiler, OperatingSystemType BuildingOperatingSystem, ArchitectureType BuildingOperatingSystemArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType? TargetArchitecture, ConfigurationType? ConfigurationType, PathString SourceDirectory, PathString BuildDirectory, String XCodeDevelopmentTeam, bool ForceRegenerate, bool EnableNonTargetingOperatingSystemDummy)
+        public Make(ToolchainType Toolchain, CompilerType Compiler, OperatingSystemType BuildingOperatingSystem, ArchitectureType BuildingOperatingSystemArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType? TargetArchitecture, ConfigurationType? ConfigurationType, PathString SourceDirectory, PathString BuildDirectory, String XCodeDevelopmentTeam, String CCompiler, String CppCompiler, String Archiver, bool ForceRegenerate, bool EnableNonTargetingOperatingSystemDummy)
         {
             this.Toolchain = Toolchain;
             this.Compiler = Compiler;
@@ -39,6 +42,9 @@ namespace TypeMake
             this.SourceDirectory = SourceDirectory.FullPath;
             this.BuildDirectory = BuildDirectory.FullPath;
             this.XCodeDevelopmentTeam = XCodeDevelopmentTeam;
+            this.CCompiler = CCompiler;
+            this.CppCompiler = CppCompiler;
+            this.Archiver = Archiver;
             this.ForceRegenerate = ForceRegenerate;
             this.EnableNonTargetingOperatingSystemDummy = EnableNonTargetingOperatingSystemDummy;
         }
@@ -473,7 +479,7 @@ namespace TypeMake
                     var g = new NinjaProjectGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture.Value, ConfigurationType.Value);
                     g.Generate(ForceRegenerate);
                 }
-                else if (Toolchain == ToolchainType.Gradle_CMake)
+                else if ((Toolchain == ToolchainType.Gradle_CMake) || (Toolchain == ToolchainType.Gradle_Ninja))
                 {
                     if (ProjectTargetType == TargetType.GradleApplication)
                     {
@@ -491,8 +497,16 @@ namespace TypeMake
                     }
                     else
                     {
-                        var g = new CMakeProjectGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture, ConfigurationType, BuildingOperatingSystem == OperatingSystemType.Windows);
-                        g.Generate(ForceRegenerate);
+                        if (Toolchain == ToolchainType.Gradle_CMake)
+                        {
+                            var g = new CMakeProjectGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture, ConfigurationType, BuildingOperatingSystem == OperatingSystemType.Windows);
+                            g.Generate(ForceRegenerate);
+                        }
+                        else if (Toolchain == ToolchainType.Gradle_Ninja)
+                        {
+                            var g = new NinjaProjectGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture.Value, ConfigurationType.Value);
+                            g.Generate(ForceRegenerate);
+                        }
                     }
                 }
                 else
@@ -524,14 +538,22 @@ namespace TypeMake
             }
             else if (Toolchain == ToolchainType.Ninja)
             {
-                var g = new NinjaSolutionGenerator(SolutionName, SortedProjects, BuildDirectory / "projects", "gcc", "g++", "ar");
+                var g = new NinjaSolutionGenerator(SolutionName, SortedProjects, BuildDirectory / "projects", CCompiler, CppCompiler, Archiver);
                 g.Generate(ForceRegenerate);
             }
-            else if (Toolchain == ToolchainType.Gradle_CMake)
+            else if ((Toolchain == ToolchainType.Gradle_CMake) || (Toolchain == ToolchainType.Gradle_Ninja))
             {
                 FileUtils.CopyDirectory(System.Reflection.Assembly.GetEntryAssembly().Location.AsPath().Parent / "Templates/gradle", BuildDirectory / "gradle", !ForceRegenerate);
-                var g = new CMakeSolutionGenerator(SolutionName, SortedProjects, BuildDirectory);
-                g.Generate(ForceRegenerate);
+                if (Toolchain == ToolchainType.Gradle_CMake)
+                {
+                    var g = new CMakeSolutionGenerator(SolutionName, SortedProjects, BuildDirectory);
+                    g.Generate(ForceRegenerate);
+                }
+                else if (Toolchain == ToolchainType.Gradle_Ninja)
+                {
+                    var g = new NinjaSolutionGenerator(SolutionName, SortedProjects, BuildDirectory / "projects", CCompiler, CppCompiler, Archiver);
+                    g.Generate(ForceRegenerate);
+                }
                 if (GradleProjectNames.Count > 0)
                 {
                     TextFile.WriteToFile(BuildDirectory / "gradle/settings.gradle", "include " + String.Join(", ", GradleProjectNames.Select(n => "':" + n.Split(':').First() + "'")), new UTF8Encoding(false), !ForceRegenerate);

@@ -166,7 +166,7 @@ namespace TypeMake
                     Configuration = Shell.RequireEnvironmentVariableEnum(Memory, "Configuration", Quiet, Cpp.ConfigurationType.Debug);
                 }
                 var BuildDirectory = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "BuildDirectory", Quiet, "build/windows".AsPath(), p => !File.Exists(p) ? new KeyValuePair<bool, String>(true, "") : new KeyValuePair<bool, String>(false, "Exist as a file."));
-                var m = new Make(Cpp.ToolchainType.Windows_VisualC, Cpp.CompilerType.VisualC, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, null, SourceDirectory, BuildDirectory, null, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
+                var m = new Make(Cpp.ToolchainType.Windows_VisualC, Cpp.CompilerType.VisualC, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, null, SourceDirectory, BuildDirectory, null, null, null, null, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
                 var Projects = m.GetAvailableProjects();
                 var SelectedProjects = GetSelectedProjects(Memory, Quiet, Projects, m.CheckUnresolvedDependencies);
                 GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, OverwriteRetypemakeScript);
@@ -197,10 +197,11 @@ namespace TypeMake
             else if (TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
             {
                 var TargetArchitecture = Cpp.ArchitectureType.x86_64;
-                var Configuration = Shell.RequireEnvironmentVariableEnum(Memory, "Configuration", Quiet, Cpp.ConfigurationType.Debug);
                 var Toolchain = Shell.RequireEnvironmentVariableEnum(Memory, "Toolchain", Quiet, new HashSet<Cpp.ToolchainType> { Cpp.ToolchainType.Ninja, Cpp.ToolchainType.CMake }, Cpp.ToolchainType.Ninja);
+                var Configuration = Shell.RequireEnvironmentVariableEnum(Memory, "Configuration", Quiet, Cpp.ConfigurationType.Debug);
                 var CMake = "".AsPath();
                 var Make = "".AsPath();
+                var Ninja = "".AsPath();
                 if (Toolchain == Cpp.ToolchainType.CMake)
                 {
                     if (BuildingOperatingSystem == Cpp.OperatingSystemType.Windows)
@@ -214,26 +215,28 @@ namespace TypeMake
                         Make = Shell.RequireEnvironmentVariableFilePath(Memory, "Make", Quiet, Shell.TryLocate("make") ?? "");
                     }
                 }
-                var Ninja = "".AsPath();
-                if (BuildingOperatingSystem == Cpp.OperatingSystemType.Windows)
+                else if (Toolchain == Cpp.ToolchainType.Ninja)
                 {
-                    Ninja = SourceDirectory / "tools/Ninja/ninja-linux/ninja";
-                }
-                else if (BuildingOperatingSystem == Cpp.OperatingSystemType.Linux)
-                {
-                    Ninja = SourceDirectory / "tools/Ninja/ninja-linux/ninja";
-                }
-                else if (BuildingOperatingSystem == Cpp.OperatingSystemType.Mac)
-                {
-                    Ninja = SourceDirectory / "tools/Ninja/ninja-mac/ninja";
-                }
-                else
-                {
-                    WriteLineError("Current building host operating system is not supported.");
-                    return 1;
+                    if (BuildingOperatingSystem == Cpp.OperatingSystemType.Windows)
+                    {
+                        Ninja = SourceDirectory / "tools/Ninja/ninja-linux/ninja";
+                    }
+                    else if (BuildingOperatingSystem == Cpp.OperatingSystemType.Linux)
+                    {
+                        Ninja = SourceDirectory / "tools/Ninja/ninja-linux/ninja";
+                    }
+                    else if (BuildingOperatingSystem == Cpp.OperatingSystemType.Mac)
+                    {
+                        Ninja = SourceDirectory / "tools/Ninja/ninja-mac/ninja";
+                    }
+                    else
+                    {
+                        WriteLineError("Current building host operating system is not supported.");
+                        return 1;
+                    }
                 }
                 var BuildDirectory = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "BuildDirectory", Quiet, $"build/linux_{Toolchain}_{TargetArchitecture}_{Configuration}".AsPath(), p => !File.Exists(p) ? new KeyValuePair<bool, String>(true, "") : new KeyValuePair<bool, String>(false, "Exist as a file."));
-                var m = new Make(Toolchain, Cpp.CompilerType.gcc, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture, Configuration, SourceDirectory, BuildDirectory, null, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
+                var m = new Make(Toolchain, Cpp.CompilerType.gcc, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture, Configuration, SourceDirectory, BuildDirectory, null, "gcc", "g++", "ar", ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
                 var Projects = m.GetAvailableProjects();
                 var SelectedProjects = GetSelectedProjects(Memory, Quiet, Projects, m.CheckUnresolvedDependencies);
                 GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, OverwriteRetypemakeScript);
@@ -262,7 +265,7 @@ namespace TypeMake
             {
                 var BuildDirectory = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "BuildDirectory", Quiet, "build/mac".AsPath(), p => !File.Exists(p) ? new KeyValuePair<bool, String>(true, "") : new KeyValuePair<bool, String>(false, "Exist as a file."));
                 var DevelopmentTeam = Shell.RequireEnvironmentVariable(Memory, "DevelopmentTeam", new Shell.EnvironmentVariableReadOptions { Quiet = Quiet, InputDisplay = "(optional, find by searching an existing pbxproj file with DEVELOPMENT_TEAM)" });
-                var m = new Make(Cpp.ToolchainType.Mac_XCode, Cpp.CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, null, SourceDirectory, BuildDirectory, DevelopmentTeam, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
+                var m = new Make(Cpp.ToolchainType.Mac_XCode, Cpp.CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, null, SourceDirectory, BuildDirectory, DevelopmentTeam, null, null, null, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
                 var Projects = m.GetAvailableProjects();
                 var SelectedProjects = GetSelectedProjects(Memory, Quiet, Projects, m.CheckUnresolvedDependencies);
                 GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, OverwriteRetypemakeScript);
@@ -287,7 +290,7 @@ namespace TypeMake
             {
                 var BuildDirectory = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "BuildDirectory", Quiet, "build/ios".AsPath(), p => !File.Exists(p) ? new KeyValuePair<bool, String>(true, "") : new KeyValuePair<bool, String>(false, "Exist as a file."));
                 var DevelopmentTeam = Shell.RequireEnvironmentVariable(Memory, "DevelopmentTeam", new Shell.EnvironmentVariableReadOptions { Quiet = Quiet, InputDisplay = "(optional, find by searching an existing pbxproj file with DEVELOPMENT_TEAM)" });
-                var m = new Make(Cpp.ToolchainType.Mac_XCode, Cpp.CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, null, SourceDirectory, BuildDirectory, DevelopmentTeam, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
+                var m = new Make(Cpp.ToolchainType.Mac_XCode, Cpp.CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, null, SourceDirectory, BuildDirectory, DevelopmentTeam, null, null, null, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
                 var Projects = m.GetAvailableProjects();
                 var SelectedProjects = GetSelectedProjects(Memory, Quiet, Projects, m.CheckUnresolvedDependencies);
                 GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, OverwriteRetypemakeScript);
@@ -312,34 +315,92 @@ namespace TypeMake
             {
                 var AndroidSdk = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "AndroidSdk", Quiet, BuildingOperatingSystem == Cpp.OperatingSystemType.Windows ? (Environment.GetEnvironmentVariable("LocalAppData").AsPath() / "Android/sdk").ToString() : "", p => Directory.Exists(p / "platform-tools") ? new KeyValuePair<bool, String>(true, "") : new KeyValuePair<bool, String>(false, "No platform-tools directory inside."));
                 var AndroidNdk = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "AndroidNdk", Quiet, AndroidSdk / "ndk-bundle", p => Directory.Exists(p / "build") ? new KeyValuePair<bool, String>(true, "") : new KeyValuePair<bool, String>(false, "No build directory inside."));
-                var CMake = Shell.RequireEnvironmentVariableFilePath(Memory, "CMake", Quiet, Shell.TryLocate("cmake") ?? (BuildingOperatingSystem == Cpp.OperatingSystemType.Windows ? (Environment.GetEnvironmentVariable("ProgramFiles").AsPath() / @"CMake\bin\cmake.exe") : "".AsPath()));
-                String Make = null;
-                if (BuildingOperatingSystemArchitecture == Cpp.ArchitectureType.x86_64)
+                var Toolchain = Shell.RequireEnvironmentVariableEnum(Memory, "Toolchain", Quiet, new HashSet<Cpp.ToolchainType> { Cpp.ToolchainType.Gradle_Ninja, Cpp.ToolchainType.Gradle_CMake }, Cpp.ToolchainType.Gradle_Ninja);
+                var TargetArchitecture = Shell.RequireEnvironmentVariableEnum(Memory, "TargetArchitecture", Quiet, Cpp.ArchitectureType.armeabi_v7a);
+                var Configuration = Shell.RequireEnvironmentVariableEnum(Memory, "Configuration", Quiet, Cpp.ConfigurationType.Debug);
+                var CMake = "".AsPath();
+                var Make = "".AsPath();
+                var Ninja = "".AsPath();
+                var CC = "";
+                var CXX = "";
+                var AR = "";
+                if (Toolchain == Cpp.ToolchainType.Gradle_CMake)
                 {
+                    CMake = Shell.RequireEnvironmentVariableFilePath(Memory, "CMake", Quiet, Shell.TryLocate("cmake") ?? (BuildingOperatingSystem == Cpp.OperatingSystemType.Windows ? (Environment.GetEnvironmentVariable("ProgramFiles").AsPath() / @"CMake\bin\cmake.exe") : "".AsPath()));
+                    if (BuildingOperatingSystemArchitecture == Cpp.ArchitectureType.x86_64)
+                    {
+                        if (BuildingOperatingSystem == Cpp.OperatingSystemType.Windows)
+                        {
+                            Make = AndroidNdk / @"prebuilt\windows-x86_64\bin\make.exe";
+                        }
+                        else if (BuildingOperatingSystem == Cpp.OperatingSystemType.Linux)
+                        {
+                            Make = AndroidNdk / "prebuilt/linux-x86_64/bin/make";
+                        }
+                        else if (BuildingOperatingSystem == Cpp.OperatingSystemType.Mac)
+                        {
+                            Make = AndroidNdk / "prebuilt/darwin-x86_64/bin/make";
+                        }
+                    }
+                    Make = Shell.RequireEnvironmentVariableFilePath(Memory, "Make", Quiet, Make);
+                }
+                else if (Toolchain == Cpp.ToolchainType.Gradle_Ninja)
+                {
+                    var Host = "";
+                    var ExeSuffix = "";
                     if (BuildingOperatingSystem == Cpp.OperatingSystemType.Windows)
                     {
-                        Make = AndroidNdk / @"prebuilt\windows-x86_64\bin\make.exe";
+                        Ninja = SourceDirectory / "tools/Ninja/ninja-win/ninja.exe";
+                        Host = "windows-x86_64";
+                        ExeSuffix = ".exe";
                     }
                     else if (BuildingOperatingSystem == Cpp.OperatingSystemType.Linux)
                     {
-                        Make = AndroidNdk / "prebuilt/linux-x86_64/bin/make";
+                        Ninja = SourceDirectory / "tools/Ninja/ninja-linux/ninja";
+                        Host = "linux-x86_64";
+                        ExeSuffix = "";
                     }
                     else if (BuildingOperatingSystem == Cpp.OperatingSystemType.Mac)
                     {
-                        Make = AndroidNdk / "prebuilt/darwin-x86_64/bin/make";
+                        Ninja = SourceDirectory / "tools/Ninja/ninja-mac/ninja";
+                        Host = "darwin-x86_64";
+                        ExeSuffix = "";
                     }
+                    else
+                    {
+                        WriteLineError("Current building host operating system is not supported.");
+                        return 1;
+                    }
+                    var TargetPrefix = "";
+                    if (TargetArchitecture == Cpp.ArchitectureType.x86)
+                    {
+                        TargetPrefix = "i686";
+                    }
+                    else if (TargetArchitecture == Cpp.ArchitectureType.x86_64)
+                    {
+                        TargetPrefix = "x86_64";
+                    }
+                    else if (TargetArchitecture == Cpp.ArchitectureType.armeabi_v7a)
+                    {
+                        TargetPrefix = "armv7a";
+                    }
+                    else if (TargetArchitecture == Cpp.ArchitectureType.arm64_v8a)
+                    {
+                        TargetPrefix = "aarch64";
+                    }
+                    var ApiLevel = 17;
+                    CC = AndroidNdk / $"toolchains/llvm/prebuilt/{Host}/bin/clang{ExeSuffix} --target={TargetPrefix}-linux-androideabi{ApiLevel} -fno-addrsig -stdlib=libc++ -fPIC";
+                    CXX = AndroidNdk / $"toolchains/llvm/prebuilt/{Host}/bin/clang++{ExeSuffix} --target={TargetPrefix}-linux-androideabi{ApiLevel} -fno-addrsig -stdlib=libc++ -fPIC";
+                    AR = AndroidNdk / $"toolchains/llvm/prebuilt/{Host}/bin/llvm-ar{ExeSuffix}";
                 }
-                Make = Shell.RequireEnvironmentVariableFilePath(Memory, "Make", Quiet, Make);
-                var TargetArchitecture = Shell.RequireEnvironmentVariableEnum(Memory, "TargetArchitecture", Quiet, Cpp.ArchitectureType.armeabi_v7a);
-                var Configuration = Shell.RequireEnvironmentVariableEnum(Memory, "Configuration", Quiet, Cpp.ConfigurationType.Debug);
-                var BuildDirectory = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "BuildDirectory", Quiet, $"build/android_{TargetArchitecture}_{Configuration}".AsPath(), p => !File.Exists(p) ? new KeyValuePair<bool, String>(true, "") : new KeyValuePair<bool, String>(false, "Exist as a file."));
-                var m = new Make(Cpp.ToolchainType.Gradle_CMake, Cpp.CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture, Configuration, SourceDirectory, BuildDirectory, null, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
+                var BuildDirectory = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "BuildDirectory", Quiet, $"build/android_{Toolchain}_{TargetArchitecture}_{Configuration}".AsPath(), p => !File.Exists(p) ? new KeyValuePair<bool, String>(true, "") : new KeyValuePair<bool, String>(false, "Exist as a file."));
+                var m = new Make(Toolchain, Cpp.CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture, Configuration, SourceDirectory, BuildDirectory, null, CC, CXX, AR, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
                 var Projects = m.GetAvailableProjects();
                 var SelectedProjects = GetSelectedProjects(Memory, Quiet, Projects, m.CheckUnresolvedDependencies);
                 GenerateRetypemakeScript(BuildingOperatingSystem, SourceDirectory, BuildDirectory, Memory, OverwriteRetypemakeScript);
                 m.Execute(SelectedProjects);
                 TextFile.WriteToFile(BuildDirectory / "gradle/local.properties", $"sdk.dir={AndroidSdk.ToString(PathStringStyle.Unix)}", new System.Text.UTF8Encoding(false), !ForceRegenerate);
-                GenerateBuildScriptAndroid(BuildingOperatingSystem, BuildDirectory, TargetArchitecture, Configuration, AndroidNdk, CMake, Make, ForceRegenerate);
+                GenerateBuildScriptAndroid(Toolchain, BuildingOperatingSystem, BuildDirectory, TargetArchitecture, Configuration, AndroidNdk, CMake, Make, Ninja, ForceRegenerate);
                 if (BuildAfterGenerate)
                 {
                     using (var d = Shell.PushDirectory(BuildDirectory))
@@ -596,62 +657,105 @@ namespace TypeMake
                 MergeExitCode(Shell.Execute("chmod", "+x", BuildPath));
             }
         }
-        private static void GenerateBuildScriptAndroid(Cpp.OperatingSystemType BuildingOperatingSystem, PathString BuildDirectory, Cpp.ArchitectureType TargetArchitecture, Cpp.ConfigurationType Configuration, PathString AndroidNdk, PathString CMake, PathString Make, bool ForceRegenerate)
+        private static void GenerateBuildScriptAndroid(Cpp.ToolchainType Toolchain, Cpp.OperatingSystemType BuildingOperatingSystem, PathString BuildDirectory, Cpp.ArchitectureType TargetArchitecture, Cpp.ConfigurationType Configuration, PathString AndroidNdk, PathString CMake, PathString Make, PathString Ninja, bool ForceRegenerate)
         {
-            var CMakeArguments = new List<String>();
-            CMakeArguments.Add(".");
-            CMakeArguments.Add("-G");
-            CMakeArguments.Add("Unix Makefiles");
-            CMakeArguments.Add($"-DCMAKE_BUILD_TYPE={Configuration}");
-            CMakeArguments.Add($"-DCMAKE_MAKE_PROGRAM={Make.ToString(PathStringStyle.Unix)}");
-            CMakeArguments.Add($"-DANDROID_NDK={AndroidNdk.ToString(PathStringStyle.Unix)}");
-            CMakeArguments.Add($"-DCMAKE_TOOLCHAIN_FILE={(AndroidNdk / "build/cmake/android.toolchain.cmake").ToString(PathStringStyle.Unix)}");
-            CMakeArguments.Add($"-DANDROID_STL=c++_static");
-            CMakeArguments.Add($"-DANDROID_PLATFORM=android-17");
-            CMakeArguments.Add($"-DANDROID_ABI={Cpp.GradleProjectGenerator.GetArchitectureString(TargetArchitecture)}");
-            if (TargetArchitecture == Cpp.ArchitectureType.armeabi_v7a)
+            if (Toolchain == Cpp.ToolchainType.Gradle_CMake)
             {
-                CMakeArguments.Add($"-DANDROID_ARM_NEON=ON");
-            }
+                var CMakeArguments = new List<String>();
+                CMakeArguments.Add(".");
+                CMakeArguments.Add("-G");
+                CMakeArguments.Add("Unix Makefiles");
+                CMakeArguments.Add($"-DCMAKE_BUILD_TYPE={Configuration}");
+                CMakeArguments.Add($"-DCMAKE_MAKE_PROGRAM={Make.ToString(PathStringStyle.Unix)}");
+                CMakeArguments.Add($"-DANDROID_NDK={AndroidNdk.ToString(PathStringStyle.Unix)}");
+                CMakeArguments.Add($"-DCMAKE_TOOLCHAIN_FILE={(AndroidNdk / "build/cmake/android.toolchain.cmake").ToString(PathStringStyle.Unix)}");
+                CMakeArguments.Add($"-DANDROID_STL=c++_static");
+                CMakeArguments.Add($"-DANDROID_PLATFORM=android-17");
+                CMakeArguments.Add($"-DANDROID_ABI={Cpp.GradleProjectGenerator.GetArchitectureString(TargetArchitecture)}");
+                if (TargetArchitecture == Cpp.ArchitectureType.armeabi_v7a)
+                {
+                    CMakeArguments.Add($"-DANDROID_ARM_NEON=ON");
+                }
 
-            if (BuildingOperatingSystem == Cpp.OperatingSystemType.Windows)
-            {
-                var Lines = new List<String>();
-                Lines.Add("@echo off");
-                Lines.Add("");
-                Lines.Add("setlocal");
-                Lines.Add("if \"%SUB_NO_PAUSE_SYMBOL%\"==\"1\" set NO_PAUSE_SYMBOL=1");
-                Lines.Add("if /I \"%COMSPEC%\" == %CMDCMDLINE% set NO_PAUSE_SYMBOL=1");
-                Lines.Add("set SUB_NO_PAUSE_SYMBOL=1");
-                Lines.Add("call :main");
-                Lines.Add("set EXIT_CODE=%ERRORLEVEL%");
-                Lines.Add("if not \"%NO_PAUSE_SYMBOL%\"==\"1\" pause");
-                Lines.Add("exit /b %EXIT_CODE%");
-                Lines.Add("");
-                Lines.Add(":main");
-                Lines.Add(Shell.EscapeArgumentForShell(CMake, Shell.ShellArgumentStyle.CMD) + " " + String.Join(" ", CMakeArguments.Select(a => Shell.EscapeArgumentForShell(a, Shell.ShellArgumentStyle.CMD))) + " || exit /b 1");
-                Lines.Add(Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.CMD) + " -j" + Environment.ProcessorCount.ToString() + " || exit /b 1");
-                Lines.Add("pushd gradle || exit /b 1");
-                Lines.Add($@"call .\gradlew.bat assemble{Configuration} || exit /b 1");
-                Lines.Add("popd");
-                Lines.Add("");
-                var BuildPath = BuildDirectory / "build.cmd";
-                TextFile.WriteToFile(BuildPath, String.Join("\r\n", Lines), System.Text.Encoding.Default, !ForceRegenerate);
+                if (BuildingOperatingSystem == Cpp.OperatingSystemType.Windows)
+                {
+                    var Lines = new List<String>();
+                    Lines.Add("@echo off");
+                    Lines.Add("");
+                    Lines.Add("setlocal");
+                    Lines.Add("if \"%SUB_NO_PAUSE_SYMBOL%\"==\"1\" set NO_PAUSE_SYMBOL=1");
+                    Lines.Add("if /I \"%COMSPEC%\" == %CMDCMDLINE% set NO_PAUSE_SYMBOL=1");
+                    Lines.Add("set SUB_NO_PAUSE_SYMBOL=1");
+                    Lines.Add("call :main");
+                    Lines.Add("set EXIT_CODE=%ERRORLEVEL%");
+                    Lines.Add("if not \"%NO_PAUSE_SYMBOL%\"==\"1\" pause");
+                    Lines.Add("exit /b %EXIT_CODE%");
+                    Lines.Add("");
+                    Lines.Add(":main");
+                    Lines.Add(Shell.EscapeArgumentForShell(CMake, Shell.ShellArgumentStyle.CMD) + " " + String.Join(" ", CMakeArguments.Select(a => Shell.EscapeArgumentForShell(a, Shell.ShellArgumentStyle.CMD))) + " || exit /b 1");
+                    Lines.Add(Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.CMD) + " -j" + Environment.ProcessorCount.ToString() + " || exit /b 1");
+                    Lines.Add("pushd gradle || exit /b 1");
+                    Lines.Add($@"call .\gradlew.bat assemble{Configuration} || exit /b 1");
+                    Lines.Add("popd");
+                    Lines.Add("");
+                    var BuildPath = BuildDirectory / "build.cmd";
+                    TextFile.WriteToFile(BuildPath, String.Join("\r\n", Lines), System.Text.Encoding.Default, !ForceRegenerate);
+                }
+                else
+                {
+                    var Lines = new List<String>();
+                    Lines.Add("#!/bin/bash");
+                    Lines.Add("set -e");
+                    Lines.Add(Shell.EscapeArgumentForShell(CMake, Shell.ShellArgumentStyle.Bash) + " " + String.Join(" ", CMakeArguments.Select(a => Shell.EscapeArgumentForShell(a, Shell.ShellArgumentStyle.Bash))));
+                    Lines.Add(Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.Bash) + " -j" + Environment.ProcessorCount.ToString());
+                    Lines.Add("pushd gradle");
+                    Lines.Add($@"./gradlew assemble{Configuration}");
+                    Lines.Add("popd");
+                    Lines.Add("");
+                    var BuildPath = BuildDirectory / "build.sh";
+                    TextFile.WriteToFile(BuildPath, String.Join("\n", Lines), new System.Text.UTF8Encoding(false), !ForceRegenerate);
+                    MergeExitCode(Shell.Execute("chmod", "+x", BuildPath));
+                }
             }
-            else
+            else if (Toolchain == Cpp.ToolchainType.Gradle_Ninja)
             {
-                var Lines = new List<String>();
-                Lines.Add("#!/bin/bash");
-                Lines.Add("set -e");
-                Lines.Add(Shell.EscapeArgumentForShell(CMake, Shell.ShellArgumentStyle.Bash) + " " + String.Join(" ", CMakeArguments.Select(a => Shell.EscapeArgumentForShell(a, Shell.ShellArgumentStyle.Bash))));
-                Lines.Add(Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.Bash) + " -j" + Environment.ProcessorCount.ToString());
-                Lines.Add("pushd gradle");
-                Lines.Add($@"./gradlew assemble{Configuration}");
-                Lines.Add("popd");
-                Lines.Add("");
-                var BuildPath = BuildDirectory / "build.sh";
-                TextFile.WriteToFile(BuildPath, String.Join("\n", Lines), new System.Text.UTF8Encoding(false), !ForceRegenerate);
-                MergeExitCode(Shell.Execute("chmod", "+x", BuildPath));
+                if (BuildingOperatingSystem == Cpp.OperatingSystemType.Windows)
+                {
+                    var Lines = new List<String>();
+                    Lines.Add("@echo off");
+                    Lines.Add("");
+                    Lines.Add("setlocal");
+                    Lines.Add("if \"%SUB_NO_PAUSE_SYMBOL%\"==\"1\" set NO_PAUSE_SYMBOL=1");
+                    Lines.Add("if /I \"%COMSPEC%\" == %CMDCMDLINE% set NO_PAUSE_SYMBOL=1");
+                    Lines.Add("set SUB_NO_PAUSE_SYMBOL=1");
+                    Lines.Add("call :main");
+                    Lines.Add("set EXIT_CODE=%ERRORLEVEL%");
+                    Lines.Add("if not \"%NO_PAUSE_SYMBOL%\"==\"1\" pause");
+                    Lines.Add("exit /b %EXIT_CODE%");
+                    Lines.Add("");
+                    Lines.Add(":main");
+                    Lines.Add(Shell.EscapeArgumentForShell(Ninja.RelativeTo(BuildDirectory).ToString(PathStringStyle.Windows), Shell.ShellArgumentStyle.CMD) + " -j" + Environment.ProcessorCount.ToString() + " -C projects -f build.ninja || exit /b 1");
+                    Lines.Add("pushd gradle || exit /b 1");
+                    Lines.Add($@"call .\gradlew.bat assemble{Configuration} || exit /b 1");
+                    Lines.Add("popd");
+                    Lines.Add("");
+                    var BuildPath = BuildDirectory / "build.cmd";
+                    TextFile.WriteToFile(BuildPath, String.Join("\r\n", Lines), System.Text.Encoding.Default, !ForceRegenerate);
+                }
+                else
+                {
+                    var Lines = new List<String>();
+                    Lines.Add("#!/bin/bash");
+                    Lines.Add("set -e");
+                    Lines.Add(Shell.EscapeArgumentForShell(Ninja.RelativeTo(BuildDirectory).ToString(PathStringStyle.Unix), Shell.ShellArgumentStyle.Bash) + " -j" + Environment.ProcessorCount.ToString() + " -C projects -f build.ninja");
+                    Lines.Add("pushd gradle");
+                    Lines.Add($@"./gradlew assemble{Configuration}");
+                    Lines.Add("popd");
+                    Lines.Add("");
+                    var BuildPath = BuildDirectory / "build.sh";
+                    TextFile.WriteToFile(BuildPath, String.Join("\n", Lines), new System.Text.UTF8Encoding(false), !ForceRegenerate);
+                    MergeExitCode(Shell.Execute("chmod", "+x", BuildPath));
+                }
             }
         }
 
