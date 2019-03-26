@@ -372,27 +372,31 @@ namespace TypeMake
                         return 1;
                     }
                     var TargetPrefix = "";
+                    var ApiLevel = 17;
                     if (TargetArchitecture == Cpp.ArchitectureType.x86)
                     {
                         TargetPrefix = "i686";
+                        ApiLevel = 21;
                     }
                     else if (TargetArchitecture == Cpp.ArchitectureType.x86_64)
                     {
                         TargetPrefix = "x86_64";
+                        ApiLevel = 21;
                     }
                     else if (TargetArchitecture == Cpp.ArchitectureType.armeabi_v7a)
                     {
                         TargetPrefix = "armv7a";
+                        ApiLevel = 17;
                     }
                     else if (TargetArchitecture == Cpp.ArchitectureType.arm64_v8a)
                     {
                         TargetPrefix = "aarch64";
+                        ApiLevel = 21;
                     }
-                    var ApiLevel = 17;
                     var ToolchainPath = AndroidNdk / $"toolchains/llvm/prebuilt/{Host}";
                     //https://android.googlesource.com/platform/ndk/+/ndk-release-r19/docs/BuildSystemMaintainers.md
-                    CC = $"{ToolchainPath / "bin/clang"}{ExeSuffix} --target={TargetPrefix}-linux-androideabi{ApiLevel} --sysroot={ToolchainPath / "sysroot"} -fno-addrsig -fPIC";
-                    CXX = $"{ToolchainPath / "bin/clang++"}{ExeSuffix} --target={TargetPrefix}-linux-androideabi{ApiLevel} --sysroot={ToolchainPath / "sysroot"} -fno-addrsig -stdlib=libc++ -fPIC";
+                    CC = $"{ToolchainPath / "bin/clang"}{ExeSuffix} --target={TargetPrefix}-linux-androideabi{ApiLevel} --sysroot={ToolchainPath / "sysroot"}";
+                    CXX = $"{ToolchainPath / "bin/clang++"}{ExeSuffix} --target={TargetPrefix}-linux-androideabi{ApiLevel} --sysroot={ToolchainPath / "sysroot"}";
                     AR = $"{ToolchainPath / "bin/llvm-ar"}{ExeSuffix}";
                 }
                 var BuildDirectory = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "BuildDirectory", Quiet, $"build/android_{Toolchain.ToString().Replace("Gradle_", "")}_{TargetArchitecture}_{Configuration}".AsPath(), p => !File.Exists(p) ? new KeyValuePair<bool, String>(true, "") : new KeyValuePair<bool, String>(false, "Exist as a file."));

@@ -19,10 +19,24 @@ Target Operating System vs Building Operating System
 |                                         |   Windows 10 x64   |      Linux x64     |      MacOS x64     |
 | :-------------------------------------: | :----------------: | :----------------: | :----------------: |
 |  Windows x86/x64/armeabi-v7a/arm64-v8a  |       VS2017       |                    |                    |
-|                Linux x64                |      WSL+cmake     |        cmake       |                    |
+|                Linux x64                |      WSL+Ninja     |        Ninja       |                    |
+|                Linux x64                |      WSL+CMake     |        CMake       |                    |
 |                MacOS x64                |                    |                    |        XCode       |
-|  Android x86/x64/armeabi-v7a/arm64-v8a  |  NDK+cmake+gradle  |  NDK+cmake+gradle  |  NDK+cmake+gradle  |
+|  Android x86/x64/armeabi-v7a/arm64-v8a  |  NDK+Ninja+Gradle  |  NDK+Ninja+Gradle  |  NDK+Ninja+Gradle  |
+|  Android x86/x64/armeabi-v7a/arm64-v8a  |  NDK+CMake+Gradle  |  NDK+CMake+Gradle  |  NDK+CMake+Gradle  |
 |        iOS armeabi-v7a/arm64-v8a        |                    |                    |        XCode       |
+
+## Dependencies
+
+Windows: VS2017
+
+Linux: \[CMake(>=3.3.2)\] gcc(8.0) mono-devel(5.x) glibc(develop 2.18/runtime 2.14)
+
+Mac: XCode(10.0) mono(5.x)
+
+Android: AndroidSDK AndroidNDK(r19c) gradle(4.4) \[cmake(>=3.3.2)\]
+
+iOS: XCode(10.0)
 
 ## Notice
 

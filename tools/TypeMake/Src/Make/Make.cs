@@ -588,7 +588,18 @@ namespace TypeMake
                 new Configuration
                 {
                     MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Linux, OperatingSystemType.Android },
-                    CommonFlags = new List<String> { "-fPIC" }
+                    CommonFlags = new List<String> { "-fPIC" },
+                    Libs = new List<PathString> { "dl" }
+                },
+                new Configuration
+                {
+                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Linux },
+                    Libs = new List<PathString> { "pthread" }
+                },
+                new Configuration
+                {
+                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Android },
+                    Libs = new List<PathString> { "log" }
                 },
                 new Configuration
                 {
@@ -597,13 +608,25 @@ namespace TypeMake
                 },
                 new Configuration
                 {
+                    MatchingConfigurationTypes = new List<ConfigurationType> { Cpp.ConfigurationType.Release },
+                    Defines = ParseDefines("NDEBUG")
+                },
+                new Configuration
+                {
+                    MatchingCompilers = new List<CompilerType> { CompilerType.gcc, CompilerType.clang },
+                    CppFlags = ParseFlags("-std=c++14")
+                },
+                new Configuration
+                {
                     MatchingCompilers = new List<CompilerType> { CompilerType.gcc },
-                    CppFlags = new List<String>{ "-std=c++14" }
+                    LinkerFlags = ParseFlags("-static-libgcc -static-libstdc++"),
+                    Libs = new List<PathString> { "rt" }
                 },
                 new Configuration
                 {
                     MatchingCompilers = new List<CompilerType> { CompilerType.clang },
-                    CppFlags = ParseFlags("-std=c++14 -stdlib=libc++")
+                    CppFlags = ParseFlags("-stdlib=libc++"),
+                    LinkerFlags = ParseFlags("-stdlib=libc++ -static-libstdc++")
                 },
                 new Configuration
                 {
@@ -616,7 +639,14 @@ namespace TypeMake
                     MatchingCompilers = new List<CompilerType> { CompilerType.gcc, CompilerType.clang },
                     MatchingConfigurationTypes = new List<ConfigurationType> { Cpp.ConfigurationType.Release },
                     Defines = ParseDefines("NDEBUG"),
-                    CommonFlags = ParseFlags("-Os -s")
+                    CommonFlags = ParseFlags("-O2")
+                },
+                new Configuration
+                {
+                    MatchingToolchains = new List<ToolchainType> { ToolchainType.Gradle_Ninja },
+                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Android },
+                    CommonFlags = ParseFlags("-fno-addrsig -fPIE -fPIC -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -Wa,--noexecstack"),
+                    LinkerFlags = ParseFlags("-Wl,-z,relro")
                 }
             };
             foreach (var Architecture in Enum.GetValues(typeof(ArchitectureType)).Cast<ArchitectureType>())
