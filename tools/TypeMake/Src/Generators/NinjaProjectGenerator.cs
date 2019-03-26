@@ -51,13 +51,16 @@ namespace TypeMake.Cpp
             yield return "ninja_required_version = 1.3";
             yield return "";
 
-            var CommonFlags = new List<String>();
-            CommonFlags.AddRange(conf.IncludeDirectories.Select(d => d.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix)).Select(d => "-I" + (d.Contains(" ") ? "\"" + d + "\"" : d)));
-            CommonFlags.AddRange(conf.Defines.Select(d => "-D" + d.Key + (d.Value == null ? "" : "=" + d.Value)));
-            CommonFlags.AddRange(conf.CommonFlags.Select(f => (f == null ? "" : Regex.IsMatch(f, @"[ ""^|]") ? "\"" + f.Replace("\"", "\\\"") + "\"" : f)));
+            var ExecutingOperatingSystem = (BuildingOperatingSystem == OperatingSystemType.Windows) && (TargetOperatingSystem == OperatingSystemType.Linux) ? TargetOperatingSystem : BuildingOperatingSystem;
+            var Escape = ExecutingOperatingSystem == OperatingSystemType.Windows ? (Func<String, String>)(arg => Shell.EscapeArgument(arg, Shell.ArgumentStyle.Windows)) : (Func<String, String>)(arg => Shell.EscapeArgumentForShell(arg, Shell.ShellArgumentStyle.Bash));
 
-            var CFlags = conf.CFlags.Select(f => (f == null ? "" : Regex.IsMatch(f, @"[ ""^|]") ? "\"" + f.Replace("\"", "\\\"") + "\"" : f)).ToList();
-            var CppFlags = conf.CppFlags.Select(f => (f == null ? "" : Regex.IsMatch(f, @"[ ""^|]") ? "\"" + f.Replace("\"", "\\\"") + "\"" : f)).ToList();
+            var CommonFlags = new List<String>();
+            CommonFlags.AddRange(conf.IncludeDirectories.Select(d => d.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix)).Select(d => "-I" + d));
+            CommonFlags.AddRange(conf.Defines.Select(d => "-D" + d.Key + (d.Value == null ? "" : "=" + d.Value)));
+            CommonFlags.AddRange(conf.CommonFlags);
+
+            var CFlags = conf.CFlags.ToList();
+            var CppFlags = conf.CppFlags.ToList();
             var LinkerFlags = new List<String>();
             var Libs = new List<String>();
             var Dependencies = new List<String>();
@@ -70,7 +73,7 @@ namespace TypeMake.Cpp
                 var LibrarySearchPath = (OutputDirectory / ".." / $"{TargetArchitectureType}_{ConfigurationType}").RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix);
                 LinkerFlags.Add($"-L{LibrarySearchPath}");
                 LinkerFlags.AddRange(conf.LibDirectories.Select(d => d.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix)).Select(d => "-L" + (d.Contains(" ") ? "\"" + d + "\"" : d)));
-                LinkerFlags.AddRange(conf.LinkerFlags.Select(f => (f == null ? "" : Regex.IsMatch(f, @"[ ""^|]") ? "\"" + f.Replace("\"", "\"\"") + "\"" : f)));
+                LinkerFlags.AddRange(conf.LinkerFlags);
                 Libs.Add("-Wl,--start-group");
                 foreach (var Lib in conf.Libs)
                 {
@@ -91,11 +94,11 @@ namespace TypeMake.Cpp
                 Libs.Add("-Wl,--end-group");
             }
 
-            yield return "commonflags  = " + String.Join(" ", CommonFlags);
-            yield return "cflags  = " + String.Join(" ", CFlags);
-            yield return "cxxflags  = " + String.Join(" ", CppFlags);
-            yield return "ldflags  = " + String.Join(" ", LinkerFlags);
-            yield return "libs  = " + String.Join(" ", Libs);
+            yield return "commonflags  = " + String.Join(" ", CommonFlags.Select(f => Escape(f)));
+            yield return "cflags  = " + String.Join(" ", CFlags.Select(f => Escape(f)));
+            yield return "cxxflags  = " + String.Join(" ", CppFlags.Select(f => Escape(f)));
+            yield return "ldflags  = " + String.Join(" ", LinkerFlags.Select(f => Escape(f)));
+            yield return "libs  = " + String.Join(" ", Libs.Select(f => Escape(f)));
 
             yield return "";
 
@@ -108,7 +111,7 @@ namespace TypeMake.Cpp
 
                 var FileFlags = new List<String>();
                 FileFlags.AddRange(FileConf.Defines.Select(d => "-D" + d.Key + (d.Value == null ? "" : "=" + d.Value)));
-                FileFlags.AddRange(FileConf.CommonFlags.Select(f => (f == null ? "" : Regex.IsMatch(f, @"[ ""^|]") ? "\"" + f.Replace("\"", "\\\"") + "\"" : f)));
+                FileFlags.AddRange(FileConf.CommonFlags);
 
                 if (File.Type == FileType.CSource)
                 {
@@ -133,7 +136,7 @@ namespace TypeMake.Cpp
 
                 if (FileFlags.Count > 0)
                 {
-                    yield return $"  fileflags = {String.Join(" ", FileFlags)}";
+                    yield return $"  fileflags = {String.Join(" ", FileFlags.Select(f => Escape(f)))}";
                 }
             }
 
@@ -163,7 +166,7 @@ namespace TypeMake.Cpp
 
             var TargetPath = ((conf.OutputDirectory != null ? conf.OutputDirectory : (OutputDirectory / ".." / $"{TargetArchitectureType}_{ConfigurationType}")) / TargetName).RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix);
 
-            yield return $"build {TargetPath}: {RuleName} {String.Join(" ", ObjectFilePaths)}" + (Dependencies.Count > 0 ? " | " + String.Join(" ", Dependencies): "");
+            yield return $"build {TargetPath}: {RuleName} {String.Join(" ", ObjectFilePaths)}" + (Dependencies.Count > 0 ? " | " + String.Join(" ", Dependencies) : "");
 
             yield return "";
         }
