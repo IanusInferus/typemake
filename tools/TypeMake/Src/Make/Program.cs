@@ -393,7 +393,7 @@ namespace TypeMake
                     CXX = AndroidNdk / $"toolchains/llvm/prebuilt/{Host}/bin/clang++{ExeSuffix} --target={TargetPrefix}-linux-androideabi{ApiLevel} -fno-addrsig -stdlib=libc++ -fPIC";
                     AR = AndroidNdk / $"toolchains/llvm/prebuilt/{Host}/bin/llvm-ar{ExeSuffix}";
                 }
-                var BuildDirectory = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "BuildDirectory", Quiet, $"build/android_{Toolchain}_{TargetArchitecture}_{Configuration}".AsPath(), p => !File.Exists(p) ? new KeyValuePair<bool, String>(true, "") : new KeyValuePair<bool, String>(false, "Exist as a file."));
+                var BuildDirectory = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "BuildDirectory", Quiet, $"build/android_{Toolchain.ToString().Replace("Gradle_", "")}_{TargetArchitecture}_{Configuration}".AsPath(), p => !File.Exists(p) ? new KeyValuePair<bool, String>(true, "") : new KeyValuePair<bool, String>(false, "Exist as a file."));
                 var m = new Make(Toolchain, Cpp.CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture, Configuration, SourceDirectory, BuildDirectory, null, CC, CXX, AR, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
                 var Projects = m.GetAvailableProjects();
                 var SelectedProjects = GetSelectedProjects(Memory, Quiet, Projects, m.CheckUnresolvedDependencies);
