@@ -647,6 +647,20 @@ namespace TypeMake
                     MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Android },
                     CommonFlags = ParseFlags("-fno-addrsig -fPIE -fPIC -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -Wa,--noexecstack"),
                     LinkerFlags = ParseFlags("-Wl,-z,relro")
+                },
+                new Configuration
+                {
+                    MatchingToolchains = new List<ToolchainType> { ToolchainType.Ninja, ToolchainType.Gradle_Ninja },
+                    MatchingCompilers = new List<CompilerType> { CompilerType.gcc },
+                    CommonFlags = ParseFlags("-fdiagnostics-color"),
+                    LinkerFlags = ParseFlags("-fdiagnostics-color")
+                },
+                new Configuration
+                {
+                    MatchingToolchains = new List<ToolchainType> { ToolchainType.Ninja, ToolchainType.Gradle_Ninja },
+                    MatchingCompilers = new List<CompilerType> { CompilerType.clang },
+                    CommonFlags = ParseFlags("-fcolor-diagnostics -fansi-escape-codes"),
+                    LinkerFlags = ParseFlags("-fcolor-diagnostics -fansi-escape-codes")
                 }
             };
             foreach (var Architecture in Enum.GetValues(typeof(ArchitectureType)).Cast<ArchitectureType>())
