@@ -389,9 +389,11 @@ namespace TypeMake
                         TargetPrefix = "aarch64";
                     }
                     var ApiLevel = 17;
-                    CC = AndroidNdk / $"toolchains/llvm/prebuilt/{Host}/bin/clang{ExeSuffix} --target={TargetPrefix}-linux-androideabi{ApiLevel} -fno-addrsig -stdlib=libc++ -fPIC";
-                    CXX = AndroidNdk / $"toolchains/llvm/prebuilt/{Host}/bin/clang++{ExeSuffix} --target={TargetPrefix}-linux-androideabi{ApiLevel} -fno-addrsig -stdlib=libc++ -fPIC";
-                    AR = AndroidNdk / $"toolchains/llvm/prebuilt/{Host}/bin/llvm-ar{ExeSuffix}";
+                    var ToolchainPath = AndroidNdk / $"toolchains/llvm/prebuilt/{Host}";
+                    //https://android.googlesource.com/platform/ndk/+/ndk-release-r19/docs/BuildSystemMaintainers.md
+                    CC = $"{ToolchainPath / "bin/clang"}{ExeSuffix} --target={TargetPrefix}-linux-androideabi{ApiLevel} --sysroot={ToolchainPath / "sysroot"} -fno-addrsig -fPIC";
+                    CXX = $"{ToolchainPath / "bin/clang++"}{ExeSuffix} --target={TargetPrefix}-linux-androideabi{ApiLevel} --sysroot={ToolchainPath / "sysroot"} -fno-addrsig -stdlib=libc++ -fPIC";
+                    AR = $"{ToolchainPath / "bin/llvm-ar"}{ExeSuffix}";
                 }
                 var BuildDirectory = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "BuildDirectory", Quiet, $"build/android_{Toolchain.ToString().Replace("Gradle_", "")}_{TargetArchitecture}_{Configuration}".AsPath(), p => !File.Exists(p) ? new KeyValuePair<bool, String>(true, "") : new KeyValuePair<bool, String>(false, "Exist as a file."));
                 var m = new Make(Toolchain, Cpp.CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture, Configuration, SourceDirectory, BuildDirectory, null, CC, CXX, AR, ForceRegenerate, EnableNonTargetingOperatingSystemDummy);
