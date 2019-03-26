@@ -130,6 +130,11 @@ namespace TypeMake.Cpp
                     yield return $"build {ObjectFilePath}: cxx {FilePath}";
                 }
                 ObjectFilePaths.Add(ObjectFilePath);
+
+                if (FileFlags.Count > 0)
+                {
+                    yield return $"  fileflags = {String.Join(" ", FileFlags)}";
+                }
             }
 
             var TargetName = "";
