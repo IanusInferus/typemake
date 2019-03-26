@@ -26,6 +26,18 @@ Target Operating System vs Building Operating System
 |  Android x86/x64/armeabi-v7a/arm64-v8a  |  NDK+CMake+Gradle  |  NDK+CMake+Gradle  |  NDK+CMake+Gradle  |
 |        iOS armeabi-v7a/arm64-v8a        |                    |                    |        XCode       |
 
+## Dependencies
+
+Windows: VS2017
+
+Linux: \[CMake(>=3.3.2)\] gcc(8.0) mono-devel(5.x) glibc(develop 2.18/runtime 2.14)
+
+Mac: XCode(10.0) mono(5.x)
+
+Android: AndroidSDK AndroidNDK(r19c) gradle(4.4) \[cmake(>=3.3.2)\]
+
+iOS: XCode(10.0)
+
 ## Notice
 
 You need to set a key to build Android release APK and iOS applications/dynamic libraries.
