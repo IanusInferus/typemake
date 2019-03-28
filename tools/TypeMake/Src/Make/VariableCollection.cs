@@ -315,7 +315,7 @@ namespace TypeMake
                 }
                 else if (v.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
                 {
-                    if (v.Toolchain == Cpp.ToolchainType.CMake)
+                    if (v.Toolchain == Cpp.ToolchainType.Gradle_CMake)
                     {
                         if (v.HostOperatingSystem == Cpp.OperatingSystemType.Windows)
                         {
@@ -347,7 +347,7 @@ namespace TypeMake
                 }
                 else if (v.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
                 {
-                    if (v.Toolchain == Cpp.ToolchainType.CMake)
+                    if (v.Toolchain == Cpp.ToolchainType.Gradle_CMake)
                     {
                         String DefaultMake = null;
                         if (v.HostArchitecture == Cpp.ArchitectureType.x86_64)
@@ -374,7 +374,7 @@ namespace TypeMake
             {
                 if ((v.TargetOperatingSystem == Cpp.OperatingSystemType.Linux) || (v.TargetOperatingSystem == Cpp.OperatingSystemType.Android))
                 {
-                    if (v.Toolchain == Cpp.ToolchainType.Ninja)
+                    if ((v.Toolchain == Cpp.ToolchainType.Ninja) || (v.Toolchain == Cpp.ToolchainType.Gradle_Ninja))
                     {
                         if (v.HostOperatingSystem == Cpp.OperatingSystemType.Windows)
                         {
@@ -408,56 +408,60 @@ namespace TypeMake
             var TargetPrefix = "";
             var ApiLevel = 17;
             var ToolchainPath = "".AsPath();
-            if ((v.TargetOperatingSystem == Cpp.OperatingSystemType.Android) && (v.Toolchain == Cpp.ToolchainType.Ninja))
-            {
-                if (v.HostOperatingSystem == Cpp.OperatingSystemType.Windows)
-                {
-                    Host = "windows-x86_64";
-                    ExeSuffix = ".exe";
-                }
-                else if (v.HostOperatingSystem == Cpp.OperatingSystemType.Linux)
-                {
-                    Host = "linux-x86_64";
-                    ExeSuffix = "";
-                }
-                else if (v.HostOperatingSystem == Cpp.OperatingSystemType.Mac)
-                {
-                    Host = "darwin-x86_64";
-                    ExeSuffix = "";
-                }
-                else
-                {
-                    throw new InvalidOperationException("HostOperatingSystemNotSupported");
-                }
-                if (v.TargetArchitecture == Cpp.ArchitectureType.x86)
-                {
-                    TargetPrefix = "i686";
-                    ApiLevel = 21;
-                }
-                else if (v.TargetArchitecture == Cpp.ArchitectureType.x86_64)
-                {
-                    TargetPrefix = "x86_64";
-                    ApiLevel = 21;
-                }
-                else if (v.TargetArchitecture == Cpp.ArchitectureType.armeabi_v7a)
-                {
-                    TargetPrefix = "armv7a";
-                    ApiLevel = 17;
-                }
-                else if (v.TargetArchitecture == Cpp.ArchitectureType.arm64_v8a)
-                {
-                    TargetPrefix = "aarch64";
-                    ApiLevel = 21;
-                }
-                ToolchainPath = v.AndroidNdk / $"toolchains/llvm/prebuilt/{Host}";
-            }
-
-            //https://developer.android.com/ndk/guides/standalone_toolchain
-            //https://android.googlesource.com/platform/ndk/+/ndk-release-r19/docs/BuildSystemMaintainers.md
 
             vc.AddVariableFetch((Action OnInteraction) =>
             {
-                if (v.Toolchain == Cpp.ToolchainType.Ninja)
+                if ((v.TargetOperatingSystem == Cpp.OperatingSystemType.Android) && (v.Toolchain == Cpp.ToolchainType.Gradle_Ninja))
+                {
+                    if (v.HostOperatingSystem == Cpp.OperatingSystemType.Windows)
+                    {
+                        Host = "windows-x86_64";
+                        ExeSuffix = ".exe";
+                    }
+                    else if (v.HostOperatingSystem == Cpp.OperatingSystemType.Linux)
+                    {
+                        Host = "linux-x86_64";
+                        ExeSuffix = "";
+                    }
+                    else if (v.HostOperatingSystem == Cpp.OperatingSystemType.Mac)
+                    {
+                        Host = "darwin-x86_64";
+                        ExeSuffix = "";
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException("HostOperatingSystemNotSupported");
+                    }
+                    if (v.TargetArchitecture == Cpp.ArchitectureType.x86)
+                    {
+                        TargetPrefix = "i686";
+                        ApiLevel = 21;
+                    }
+                    else if (v.TargetArchitecture == Cpp.ArchitectureType.x86_64)
+                    {
+                        TargetPrefix = "x86_64";
+                        ApiLevel = 21;
+                    }
+                    else if (v.TargetArchitecture == Cpp.ArchitectureType.armeabi_v7a)
+                    {
+                        TargetPrefix = "armv7a";
+                        ApiLevel = 17;
+                    }
+                    else if (v.TargetArchitecture == Cpp.ArchitectureType.arm64_v8a)
+                    {
+                        TargetPrefix = "aarch64";
+                        ApiLevel = 21;
+                    }
+                    ToolchainPath = v.AndroidNdk / $"toolchains/llvm/prebuilt/{Host}";
+                }
+
+                //https://developer.android.com/ndk/guides/standalone_toolchain
+                //https://android.googlesource.com/platform/ndk/+/ndk-release-r19/docs/BuildSystemMaintainers.md
+            });
+
+            vc.AddVariableFetch((Action OnInteraction) =>
+            {
+                if ((v.Toolchain == Cpp.ToolchainType.Ninja) || (v.Toolchain == Cpp.ToolchainType.Gradle_Ninja))
                 {
                     if (v.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
                     {
@@ -472,7 +476,7 @@ namespace TypeMake
 
             vc.AddVariableFetch((Action OnInteraction) =>
             {
-                if (v.Toolchain == Cpp.ToolchainType.Ninja)
+                if ((v.Toolchain == Cpp.ToolchainType.Ninja) || (v.Toolchain == Cpp.ToolchainType.Gradle_Ninja))
                 {
                     if (v.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
                     {
@@ -487,7 +491,7 @@ namespace TypeMake
 
             vc.AddVariableFetch((Action OnInteraction) =>
             {
-                if (v.Toolchain == Cpp.ToolchainType.Ninja)
+                if ((v.Toolchain == Cpp.ToolchainType.Ninja) || (v.Toolchain == Cpp.ToolchainType.Gradle_Ninja))
                 {
                     if (v.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
                     {
