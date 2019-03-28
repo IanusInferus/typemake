@@ -692,7 +692,7 @@ namespace TypeMake
             foreach (var FilePathRelative in Directory.EnumerateDirectories(d, "*", SearchOption.TopDirectoryOnly))
             {
                 var FilePath = FilePathRelative.AsPath().FullPath;
-                var Ext = FilePath.Extension.TrimStart('.').ToLowerInvariant();
+                var Ext = FilePath.Extension.ToLowerInvariant();
                 if (Ext == "xcassets")
                 {
                     Results.Add(new Cpp.File { Path = FilePath, Type = FileType.EmbeddedContent });
@@ -711,7 +711,7 @@ namespace TypeMake
         }
         private static Cpp.File GetFileByPath(PathString FilePath, OperatingSystemType TargetOperatingSystem, bool IsTargetOperatingSystemMatched)
         {
-            var Ext = FilePath.Extension.TrimStart('.').ToLowerInvariant();
+            var Ext = FilePath.Extension.ToLowerInvariant();
             var Extensions = FilePath.FileName.Split('.', '_').Skip(1).ToList();
             if (!IsTargetOperatingSystemMatched || !IsOperatingSystemMatchExtensions(Extensions, TargetOperatingSystem))
             {

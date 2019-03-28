@@ -45,12 +45,12 @@ namespace TypeMake
                 var RetypemakeScriptPath = argv[0].AsPath();
                 String[] Lines;
                 Regex rVariable;
-                if (RetypemakeScriptPath.Extension.Equals(".cmd", StringComparison.OrdinalIgnoreCase))
+                if (RetypemakeScriptPath.Extension.ToLowerInvariant() == "cmd")
                 {
                     Lines = File.ReadAllLines(RetypemakeScriptPath, System.Text.Encoding.Default);
                     rVariable = new Regex(@"^set\s+(""(?<Key>[^=]+)=(?<Value>.*)""|(?<Key>[^=]+)=(?<Value>.*))\s*$");
                 }
-                else if (RetypemakeScriptPath.Extension == ".sh")
+                else if (RetypemakeScriptPath.Extension.ToLowerInvariant() == "sh")
                 {
                     Lines = File.ReadAllLines(RetypemakeScriptPath, new System.Text.UTF8Encoding(false));
                     rVariable = new Regex(@"^export\s+(?<Key>[^=]+)=('(?<Value>.*)'|(?<Value>.*))\s*$");

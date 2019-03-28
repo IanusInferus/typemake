@@ -90,7 +90,7 @@ namespace TypeMake.Cpp
             var SoLibraryPathsRelease = new List<PathString> { TargetDirectoryRelease / $"lib{ProjectTargetName}.so" };
             foreach (var Lib in confDebug.Libs)
             {
-                if (!Lib.Extension.Equals(".so", StringComparison.OrdinalIgnoreCase)) { continue; }
+                if (Lib.Extension.ToLowerInvariant() != "so") { continue; }
                 var Found = false;
                 foreach (var LibDirectory in confDebug.LibDirectories)
                 {
@@ -108,7 +108,7 @@ namespace TypeMake.Cpp
             }
             foreach (var Lib in confRelease.Libs)
             {
-                if (!Lib.Extension.Equals(".so", StringComparison.OrdinalIgnoreCase)) { continue; }
+                if (Lib.Extension.ToLowerInvariant() != "so") { continue; }
                 var Found = false;
                 foreach (var LibDirectory in confRelease.LibDirectories)
                 {
