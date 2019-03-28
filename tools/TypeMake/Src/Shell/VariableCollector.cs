@@ -14,13 +14,13 @@ namespace TypeMake
         }
         public void Execute()
         {
-            var PreviousFetchWithUserInteraction = new Stack<Tuple<int, int, int, Shell.ConsolePositionState>>();
+            var PreviousFetchWithUserInteraction = new Stack<Tuple<int, int, Shell.ConsolePositionState>>();
             var Index = 0;
             while (Index < VariableFetchs.Count)
             {
                 try
                 {
-                    var Current = Tuple.Create(Index, Console.CursorTop, Console.CursorLeft, Shell.GetConsolePositionState());
+                    var Current = Tuple.Create(Index, Console.CursorTop, Shell.GetConsolePositionState());
                     var Fetch = VariableFetchs[Index];
                     bool Interactive = false;
                     Fetch(() => Interactive = true);
@@ -37,13 +37,12 @@ namespace TypeMake
                         Index = p.Item1;
                         if (Shell.OperatingSystem == Shell.OperatingSystemType.Windows)
                         {
-                            var cps = p.Item4;
+                            var cps = p.Item3;
                             var Top = p.Item2;
-                            var Left = p.Item3;
 
                             var cpsNew = Shell.GetConsolePositionState();
                             Shell.SetConsolePositionState(cps);
-                            Shell.BackspaceCursorToPosition(Top, Left);
+                            Shell.BackspaceCursorToLine(Top);
                             Shell.SetConsolePositionState(cpsNew);
                         }
                     }

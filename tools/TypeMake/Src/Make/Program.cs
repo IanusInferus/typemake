@@ -220,9 +220,9 @@ namespace TypeMake
         }
         public static void WriteLineError(String Line)
         {
-            Console.ForegroundColor = ConsoleColor.Red;
+            Shell.SetForegroundColor(ConsoleColor.Red);
             Console.Error.WriteLine(Line);
-            Console.ResetColor();
+            Shell.ResetColor();
         }
 
         public static void DisplayInfo()

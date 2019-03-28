@@ -321,9 +321,8 @@ namespace TypeMake
         }
         public static String RequireEnvironmentVariable(EnvironmentVariableMemory Memory, String Name, EnvironmentVariableReadOptions Options)
         {
-            var OriginalForegroundColor = Console.ForegroundColor;
+            var OriginalForegroundColor = GetForegroundColor();
             var Top = Console.CursorTop;
-            var Left = Console.CursorLeft;
             var cps = GetConsolePositionState();
             var d = Options.InputDisplay ?? (!String.IsNullOrEmpty(Options.DefaultValue) ? "[" + Options.DefaultValue + "]" : "");
             var v = Environment.GetEnvironmentVariable(Name);
@@ -335,9 +334,10 @@ namespace TypeMake
             {
                 if (Options.Quiet) { throw new InvalidOperationException("Variable '" + Name + "' not exist."); }
                 if (Options.OnInteraction != null) { Options.OnInteraction(); }
-                if (Options.ForegroundColor != null) { Console.ForegroundColor = Options.ForegroundColor.Value; }
+                if (Options.ForegroundColor != null) { SetForegroundColor(Options.ForegroundColor.Value); }
                 Console.Write("'" + Name + "' not exist. Input" + (d == "" ? "" : " " + d) + ": ");
-                Console.ForegroundColor = OriginalForegroundColor;
+                if (OriginalForegroundColor == null) {  }
+                SetForegroundColor(OriginalForegroundColor);
                 try
                 {
                     v = Options.IsPassword ? ReadLinePassword(Options.EnableCancellation) : ReadLineWithSuggestion(Options.Suggester, Options.EnableCancellation);
@@ -348,11 +348,11 @@ namespace TypeMake
                 }
                 finally
                 {
-                    if (OperatingSystem == OperatingSystemType.Windows)
+                    if (Shell.OperatingSystem == Shell.OperatingSystemType.Windows)
                     {
                         var cpsNew = GetConsolePositionState();
                         SetConsolePositionState(cps);
-                        BackspaceCursorToPosition(Top, Left);
+                        BackspaceCursorToLine(Top);
                         SetConsolePositionState(cpsNew);
                     }
                 }
@@ -365,9 +365,9 @@ namespace TypeMake
                 var ValidationMessage = ValidationResult.Value == "" ? "Variable '" + Name + "' invalid." : "Variable '" + Name + "' invalid. " + ValidationResult.Value;
                 if (Options.Quiet) { throw new InvalidOperationException(ValidationMessage); }
                 if (Options.OnInteraction != null) { Options.OnInteraction(); }
-                if (Options.ForegroundColor != null) { Console.ForegroundColor = Options.ForegroundColor.Value; }
+                if (Options.ForegroundColor != null) { SetForegroundColor(Options.ForegroundColor.Value); }
                 Console.Write(ValidationMessage + " Input" + (d == "" ? "" : " " + d) + ": ");
-                Console.ForegroundColor = OriginalForegroundColor;
+                SetForegroundColor(OriginalForegroundColor);
                 try
                 {
                     v = Options.IsPassword ? ReadLinePassword(Options.EnableCancellation) : ReadLineWithSuggestion(Options.Suggester, Options.EnableCancellation);
@@ -378,11 +378,11 @@ namespace TypeMake
                 }
                 finally
                 {
-                    if (OperatingSystem == OperatingSystemType.Windows)
+                    if (Shell.OperatingSystem == Shell.OperatingSystemType.Windows)
                     {
                         var cpsNew = GetConsolePositionState();
                         SetConsolePositionState(cps);
-                        BackspaceCursorToPosition(Top, Left);
+                        BackspaceCursorToLine(Top);
                         SetConsolePositionState(cpsNew);
                     }
                 }
@@ -391,18 +391,16 @@ namespace TypeMake
             {
                 v = Options.PostMapper(v);
             }
+            if (Options.ForegroundColor != null) { SetForegroundColor(Options.ForegroundColor.Value); }
             if (Options.IsPassword)
             {
-                if (Options.ForegroundColor != null) { Console.ForegroundColor = Options.ForegroundColor.Value; }
                 Console.WriteLine(Name + "=[***]");
-                Console.ForegroundColor = OriginalForegroundColor;
             }
             else
             {
-                if (Options.ForegroundColor != null) { Console.ForegroundColor = Options.ForegroundColor.Value; }
                 Console.WriteLine(Name + "=" + v);
-                Console.ForegroundColor = OriginalForegroundColor;
             }
+            SetForegroundColor(OriginalForegroundColor);
             Memory.Variables[Name] = v == "" ? "_EMPTY_" : v;
             return v;
         }
@@ -806,15 +804,15 @@ namespace TypeMake
                     ConfirmedLastTop = Console.CursorTop;
                     ConfirmedLastLeft = Console.CursorLeft;
                     Next = Suggested.First;
-                    Console.BackgroundColor = ConsoleColor.Blue;
-                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    SetBackgroundColor(ConsoleColor.Blue);
+                    SetForegroundColor(ConsoleColor.Yellow);
                     while (Next != null)
                     {
                         Next.Value = new KeyValuePair<Char, KeyValuePair<int, int>>(Next.Value.Key, new KeyValuePair<int, int>(Console.CursorTop, Console.CursorLeft));
                         Console.Write(Next.Value.Key);
                         Next = Next.Next;
                     }
-                    Console.ResetColor();
+                    ResetColor();
                     SuggestedLastTop = Console.CursorTop;
                     SuggestedLastLeft = Console.CursorLeft;
                     MoveCursorToPosition(Top, Left);
@@ -1000,7 +998,11 @@ namespace TypeMake
                 return Console.ReadLine();
             }
         }
-        public static void BackspaceCursorToPosition(int Top, int Left)
+        public static void BackspaceCursorToLine(int Top)
+        {
+            BackspaceCursorToPosition(Top, 0);
+        }
+        private static void BackspaceCursorToPosition(int Top, int Left)
         {
             while (true)
             {
@@ -1025,13 +1027,129 @@ namespace TypeMake
             }
             MoveCursorToPosition(Top, Left);
         }
-        public static void MoveCursorToPosition(int Top, int Left)
+        private static void MoveCursorToPosition(int Top, int Left)
         {
-            Console.SetCursorPosition(Left, Top);
+            Console.SetCursorPosition(Math.Max(0, Math.Min(Left, Console.BufferWidth - 1)), Math.Max(0, Math.Min(Top, Console.BufferHeight - 1)));
         }
-        public static void MoveCursorToPosition(KeyValuePair<int, int> Pair)
+        private static void MoveCursorToPosition(KeyValuePair<int, int> Pair)
         {
-            Console.SetCursorPosition(Pair.Value, Pair.Key);
+            MoveCursorToPosition(Pair.Key, Pair.Value);
+        }
+        private static int GetColorCode(ConsoleColor Color, bool Back)
+        {
+            if (!Back)
+            {
+                if (Color == ConsoleColor.Black) { return 30; }
+                if (Color == ConsoleColor.Red) { return 31; }
+                if (Color == ConsoleColor.Green) { return 32; }
+                if (Color == ConsoleColor.Yellow) { return 33; }
+                if (Color == ConsoleColor.Blue) { return 34; }
+                if (Color == ConsoleColor.Magenta) { return 35; }
+                if (Color == ConsoleColor.Cyan) { return 36; }
+                if (Color == ConsoleColor.White) { return 37; }
+                if (Color == ConsoleColor.DarkGray) { return 30; }
+                if (Color == ConsoleColor.DarkRed) { return 31; }
+                if (Color == ConsoleColor.DarkGreen) { return 32; }
+                if (Color == ConsoleColor.DarkYellow) { return 33; }
+                if (Color == ConsoleColor.DarkBlue) { return 34; }
+                if (Color == ConsoleColor.DarkMagenta) { return 35; }
+                if (Color == ConsoleColor.DarkCyan) { return 36; }
+                if (Color == ConsoleColor.Gray) { return 37; }
+                throw new InvalidOperationException();
+            }
+            else
+            {
+                if (Color == ConsoleColor.Black) { return 40; }
+                if (Color == ConsoleColor.Red) { return 41; }
+                if (Color == ConsoleColor.Green) { return 42; }
+                if (Color == ConsoleColor.Yellow) { return 43; }
+                if (Color == ConsoleColor.Blue) { return 44; }
+                if (Color == ConsoleColor.Magenta) { return 45; }
+                if (Color == ConsoleColor.Cyan) { return 46; }
+                if (Color == ConsoleColor.White) { return 47; }
+                if (Color == ConsoleColor.DarkGray) { return 40; }
+                if (Color == ConsoleColor.DarkRed) { return 41; }
+                if (Color == ConsoleColor.DarkGreen) { return 42; }
+                if (Color == ConsoleColor.DarkYellow) { return 43; }
+                if (Color == ConsoleColor.DarkBlue) { return 44; }
+                if (Color == ConsoleColor.DarkMagenta) { return 45; }
+                if (Color == ConsoleColor.DarkCyan) { return 46; }
+                if (Color == ConsoleColor.Gray) { return 47; }
+                throw new InvalidOperationException();
+            }
+        }
+        private static ConsoleColor? CurrentBackgroundColor = null;
+        private static ConsoleColor? CurrentForegroundColor = null;
+        public static ConsoleColor? GetBackgroundColor()
+        {
+            return CurrentBackgroundColor;
+        }
+        public static ConsoleColor? GetForegroundColor()
+        {
+            return CurrentForegroundColor;
+        }
+        public static void SetBackgroundColor(ConsoleColor? Color)
+        {
+            CurrentBackgroundColor = Color;
+            if (OperatingSystem == OperatingSystemType.Windows)
+            {
+                if (Color == null)
+                {
+                    Console.ResetColor();
+                }
+                else
+                {
+                    Console.BackgroundColor = Color.Value;
+                }
+            }
+            else
+            {
+                if (Color == null)
+                {
+                    Console.Write($"\x1B[0m");
+                }
+                else
+                {
+                    Console.Write($"\x1B[{GetColorCode(Color.Value, true)}m");
+                }
+            }
+        }
+        public static void SetForegroundColor(ConsoleColor? Color)
+        {
+            CurrentForegroundColor = Color;
+            if (OperatingSystem == OperatingSystemType.Windows)
+            {
+                if (Color == null)
+                {
+                    Console.ResetColor();
+                }
+                else
+                {
+                    Console.ForegroundColor = Color.Value;
+                }
+            }
+            else
+            {
+                if (Color == null)
+                {
+                    Console.Write($"\x1B[0m");
+                }
+                else
+                {
+                    Console.Write($"\x1B[{GetColorCode(Color.Value, false)}m");
+                }
+            }
+        }
+        public static void ResetColor()
+        {
+            if (OperatingSystem == OperatingSystemType.Windows)
+            {
+                Console.ResetColor();
+            }
+            else
+            {
+                Console.Write("\x1B[0m");
+            }
         }
         public class ConsolePositionState
         {
@@ -1056,9 +1174,12 @@ namespace TypeMake
         }
         public static void SetConsolePositionState(ConsolePositionState s)
         {
-            Console.SetWindowSize(s.WindowWidth, s.WindowHeight);
-            Console.SetWindowPosition(s.WindowLeft, s.WindowTop);
-            Console.SetBufferSize(s.BufferWidth, s.BufferHeight);
+            if (OperatingSystem == OperatingSystemType.Windows)
+            {
+                Console.SetWindowSize(s.WindowWidth, s.WindowHeight);
+                Console.SetWindowPosition(s.WindowLeft, s.WindowTop);
+                Console.SetBufferSize(s.BufferWidth, s.BufferHeight);
+            }
         }
     }
 }
