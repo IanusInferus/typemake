@@ -1019,9 +1019,8 @@ namespace TypeMake
                 }
                 else
                 {
-                    Console.Write("\b");
-                    Console.Write(" ");
-                    Console.Write("\b");
+                    var Count = Console.CursorLeft - (Console.CursorTop == Top ? Left : 0);
+                    Console.Write(new String('\b', Count) + new String(' ', Count) + new String('\b', Count));
                 }
             }
             MoveCursorToPosition(Top, Left);
