@@ -1142,6 +1142,8 @@ namespace TypeMake
         }
         public static void ResetColor()
         {
+            CurrentBackgroundColor = null;
+            CurrentForegroundColor = null;
             if (OperatingSystem == OperatingSystemType.Windows)
             {
                 Console.ResetColor();
