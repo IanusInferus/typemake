@@ -105,7 +105,7 @@ namespace TypeMake
                 GenerateBuildScriptWindows(v.BuildDirectory, r.SolutionName, Cpp.ArchitectureType.armeabi_v7a, Cpp.ConfigurationType.Release, v.VSDir, v.ForceRegenerate);
                 GenerateBuildScriptWindows(v.BuildDirectory, r.SolutionName, Cpp.ArchitectureType.arm64_v8a, Cpp.ConfigurationType.Debug, v.VSDir, v.ForceRegenerate);
                 GenerateBuildScriptWindows(v.BuildDirectory, r.SolutionName, Cpp.ArchitectureType.arm64_v8a, Cpp.ConfigurationType.Release, v.VSDir, v.ForceRegenerate);
-                if (v.BuildAfterGenerate)
+                if (v.BuildNow)
                 {
                     if (v.HostOperatingSystem == Cpp.OperatingSystemType.Windows)
                     {
@@ -123,7 +123,7 @@ namespace TypeMake
             else if (v.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
             {
                 GenerateBuildScriptLinux(v.Toolchain, v.HostOperatingSystem, v.BuildDirectory, v.Configuration.Value, v.CMake, v.Make, v.Ninja, v.ForceRegenerate);
-                if (v.BuildAfterGenerate)
+                if (v.BuildNow)
                 {
                     using (var d = Shell.PushDirectory(v.BuildDirectory))
                     {
@@ -145,7 +145,7 @@ namespace TypeMake
             else if (v.TargetOperatingSystem == Cpp.OperatingSystemType.Mac)
             {
                 GenerateBuildScriptXCode(v.HostOperatingSystem, v.BuildDirectory, r, v.ForceRegenerate);
-                if (v.BuildAfterGenerate)
+                if (v.BuildNow)
                 {
                     using (var d = Shell.PushDirectory(v.BuildDirectory))
                     {
@@ -163,7 +163,7 @@ namespace TypeMake
             else if (v.TargetOperatingSystem == Cpp.OperatingSystemType.iOS)
             {
                 GenerateBuildScriptXCode(v.HostOperatingSystem, v.BuildDirectory, r, v.ForceRegenerate);
-                if (v.BuildAfterGenerate)
+                if (v.BuildNow)
                 {
                     using (var d = Shell.PushDirectory(v.BuildDirectory))
                     {
@@ -182,7 +182,7 @@ namespace TypeMake
             {
                 TextFile.WriteToFile(v.BuildDirectory / "gradle/local.properties", $"sdk.dir={v.AndroidSdk.ToString(PathStringStyle.Unix)}", new System.Text.UTF8Encoding(false), !v.ForceRegenerate);
                 GenerateBuildScriptAndroid(v.Toolchain, v.HostOperatingSystem, v.BuildDirectory, v.TargetArchitecture.Value, v.Configuration.Value, v.AndroidNdk, v.CMake, v.Make, v.Ninja, v.ForceRegenerate);
-                if (v.BuildAfterGenerate)
+                if (v.BuildNow)
                 {
                     using (var d = Shell.PushDirectory(v.BuildDirectory))
                     {

@@ -16,6 +16,7 @@ namespace TypeMake
         public Cpp.ConfigurationType? Configuration;
         public bool OverwriteRetypemakeScript;
         public bool ForceRegenerate;
+        public bool EnablePathCheck;
         public bool EnableNonTargetingOperatingSystemDummy;
         public PathString SourceDirectory;
         public PathString BuildDirectory;
@@ -33,7 +34,7 @@ namespace TypeMake
         public Make m;
         public Dictionary<String, Make.ProjectDescription> SelectedProjects;
 
-        public bool BuildAfterGenerate;
+        public bool BuildNow;
     }
     public static class VariableCollection
     {
@@ -243,6 +244,11 @@ namespace TypeMake
 
             vc.AddVariableFetch((Action OnInteraction) =>
             {
+                v.EnablePathCheck = Shell.RequireEnvironmentVariableBoolean(Memory, "EnablePathCheck", Quiet, true, Options => Options.OnInteraction = OnInteraction);
+            });
+
+            vc.AddVariableFetch((Action OnInteraction) =>
+            {
                 v.EnableNonTargetingOperatingSystemDummy = Shell.RequireEnvironmentVariableBoolean(Memory, "EnableNonTargetingOperatingSystemDummy", Quiet, false, Options => Options.OnInteraction = OnInteraction);
             });
 
@@ -254,7 +260,11 @@ namespace TypeMake
                 }
             });
 
-            var PathValidator = v.BuildAfterGenerate ? null : (Func<PathString, KeyValuePair<bool, String>>)(p => new KeyValuePair<bool, String>(true, ""));
+            Func<PathString, KeyValuePair<bool, String>> PathValidator = null;
+            vc.AddVariableFetch((Action OnInteraction) =>
+            {
+                PathValidator = v.EnablePathCheck ? null : (Func<PathString, KeyValuePair<bool, String>>)(p => new KeyValuePair<bool, String>(true, ""));
+            });
 
             vc.AddVariableFetch((Action OnInteraction) =>
             {
@@ -527,7 +537,7 @@ namespace TypeMake
 
             vc.AddVariableFetch((Action OnInteraction) =>
             {
-                v.BuildAfterGenerate = Shell.RequireEnvironmentVariableBoolean(Memory, "BuildAfterGenerate", Quiet, true, Options => { Options.ForegroundColor = ConsoleColor.Cyan; Options.OnInteraction = OnInteraction; });
+                v.BuildNow = Shell.RequireEnvironmentVariableBoolean(Memory, "BuildNow", Quiet, true, Options => { Options.ForegroundColor = ConsoleColor.Cyan; Options.OnInteraction = OnInteraction; });
             });
 
             vc.Execute();
