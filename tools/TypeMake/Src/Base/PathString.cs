@@ -18,10 +18,6 @@ namespace TypeMake
                 return;
             }
             var v = Value.TrimEnd('\\', '/').Replace('\\', '/').Replace('/', Path.DirectorySeparatorChar);
-            if (v == "")
-            {
-                v = ".";
-            }
             if (v.EndsWith(":") && !v.Contains(Path.DirectorySeparatorChar))
             {
                 v += Path.DirectorySeparatorChar;
@@ -32,28 +28,28 @@ namespace TypeMake
         {
             get
             {
-                return Path.GetFullPath(Value).AsPath();
+                return Path.GetFullPath(ToString()).AsPath();
             }
         }
         public String FileName
         {
             get
             {
-                return Path.GetFileName(Value);
+                return Path.GetFileName(ToString());
             }
         }
         public String Extension
         {
             get
             {
-                return Path.GetExtension(Value);
+                return Path.GetExtension(ToString()).TrimStart('.');
             }
         }
         public String FileNameWithoutExtension
         {
             get
             {
-                return Path.GetFileNameWithoutExtension(Value);
+                return Path.GetFileNameWithoutExtension(ToString());
             }
         }
         public PathString ChnageExtension(String Extension)
@@ -81,7 +77,7 @@ namespace TypeMake
         {
             get
             {
-                var p = Value.TrimEnd(Path.DirectorySeparatorChar).Split(Path.DirectorySeparatorChar).ToList();
+                var p = ToString().TrimEnd(Path.DirectorySeparatorChar).Split(Path.DirectorySeparatorChar).ToList();
                 if (p.Count > 0)
                 {
                     if (p[0] == "")
@@ -262,8 +258,8 @@ namespace TypeMake
 
         public static PathString operator /(PathString Left, PathString Right)
         {
-            if (Left.Value == ".") { return Right; }
-            if (Right.Value == ".") { return Left; }
+            if (Left.Value == "") { return Right; }
+            if (Right.Value == "") { return Left; }
             if (Right.Value.StartsWith(Slash)) { return Right; }
             var DirectorySeparatorStart = Right.Value.IndexOf(Path.DirectorySeparatorChar);
             if (DirectorySeparatorStart > 0)
@@ -278,7 +274,7 @@ namespace TypeMake
         }
         public static PathString operator /(String Left, PathString Right)
         {
-            return new PathString(Left) / Right.Value;
+            return new PathString(Left) / Right;
         }
         public static PathString operator +(PathString Left, String Right)
         {
@@ -287,7 +283,7 @@ namespace TypeMake
         }
         public static implicit operator String(PathString p)
         {
-            return p != null ? p.Value : null;
+            return p != null ? p.ToString() : null;
         }
         public static implicit operator PathString(String s)
         {
@@ -296,19 +292,18 @@ namespace TypeMake
 
         public override string ToString()
         {
-            return Value;
+            return Value == "" ? "." : Value;
         }
-
 
         public string ToString(PathStringStyle Style)
         {
             if (Style == PathStringStyle.Windows)
             {
-                return Value.Replace('/', '\\');
+                return ToString().Replace('/', '\\');
             }
             else if (Style == PathStringStyle.Unix)
             {
-                return Value.Replace('\\', '/');
+                return ToString().Replace('\\', '/');
             }
             else
             {

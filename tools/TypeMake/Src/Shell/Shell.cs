@@ -653,21 +653,38 @@ namespace TypeMake
                 {
                     return DefaultValue ?? "";
                 }
-                PathString Parent;
+                PathString ConfirmedPath;
+                PathString ConfirmedParts;
                 try
                 {
-                    Parent = vConfirmed.AsPath().Parent;
+                    ConfirmedPath = vConfirmed.AsPath();
+                    if (vConfirmed.EndsWith("\\") || vConfirmed.EndsWith("/"))
+                    {
+                        ConfirmedParts = ConfirmedPath;
+                    }
+                    else
+                    {
+                        var Parts = ConfirmedPath.Parts;
+                        if (Parts.Count <= 1)
+                        {
+                            ConfirmedParts = "";
+                        }
+                        else
+                        {
+                            ConfirmedParts = PathString.Join(Parts.AsEnumerable().Reverse().Skip(1).Reverse());
+                        }
+                    }
                 }
                 catch (ArgumentException)
                 {
                     return vConfirmed;
                 }
-                if ((Parent != "") && !Directory.Exists(Parent)) { return vConfirmed; }
-                if (vConfirmed == ".") { return vConfirmed; }
-                if (vConfirmed == "..") { return vConfirmed; }
-                var FileSelections = EnableFile ? Directory.EnumerateFiles(Parent, "*", SearchOption.TopDirectoryOnly).Select(f => f.AsPath().FileName).ToList() : new List<string> { };
-                var DirectorySelections = EnableDirectory ? Directory.EnumerateDirectories(Parent, "*", SearchOption.TopDirectoryOnly).Select(d => d.AsPath().FileName).ToList() : new List<string> { };
-                var Selections = FileSelections.Concat(DirectorySelections).Select(s => Parent / s).ToList();
+                if ((ConfirmedParts != "") && !Directory.Exists(ConfirmedParts)) { return vConfirmed; }
+                if (EnableFile && File.Exists(ConfirmedPath) && !Cycle) { return vConfirmed; }
+                if (EnableDirectory && Directory.Exists(ConfirmedPath) && !Cycle) { return vConfirmed; }
+                var FileSelections = EnableFile ? Directory.EnumerateFiles(ConfirmedParts, "*", SearchOption.TopDirectoryOnly).Select(f => f.AsPath().FileName).ToList() : new List<string> { };
+                var DirectorySelections = EnableDirectory ? Directory.EnumerateDirectories(ConfirmedParts, "*", SearchOption.TopDirectoryOnly).Select(d => d.AsPath().FileName).ToList() : new List<string> { };
+                var Selections = FileSelections.Concat(DirectorySelections).Select(s => ConfirmedParts / s).ToList();
                 String FirstMatched = null;
                 String PreviousMatched = null;
                 bool HasExactMatch = false;
@@ -743,6 +760,10 @@ namespace TypeMake
                 int ConfirmedLastLeft = Console.CursorLeft;
                 int SuggestedLastTop = Console.CursorTop;
                 int SuggestedLastLeft = Console.CursorLeft;
+                void ClearSuggestion()
+                {
+                    Suggested = new LinkedList<KeyValuePair<Char, KeyValuePair<int, int>>>();
+                }
                 void RefreshSuggestion()
                 {
                     if (Suggester == null) { return; }
@@ -835,6 +856,8 @@ namespace TypeMake
                     }
                     if (EnableCancellation && (ki.Key == ConsoleKey.Escape))
                     {
+                        ClearSuggestion();
+                        RefreshCharsAfterCursor();
                         throw new UserCancelledException();
                     }
                     if (ki.Key == ConsoleKey.Enter)
@@ -904,13 +927,17 @@ namespace TypeMake
                     }
                     else if (ki.Key == ConsoleKey.Backspace)
                     {
-                        if (CurrentCharNode != null)
+                        if (Suggested.Count > 0)
+                        {
+                            ClearSuggestion();
+                            RefreshCharsAfterCursor();
+                        }
+                        else if (CurrentCharNode != null)
                         {
                             if (CurrentCharNode.Previous != null)
                             {
                                 MoveCursorToPosition(CurrentCharNode.Previous.Value.Value);
                                 Confirmed.Remove(CurrentCharNode.Previous);
-                                RefreshSuggestion();
                                 RefreshCharsAfterCursor();
                             }
                         }
@@ -920,7 +947,6 @@ namespace TypeMake
                             {
                                 MoveCursorToPosition(Confirmed.Last.Value.Value);
                                 Confirmed.RemoveLast();
-                                RefreshSuggestion();
                                 RefreshCharsAfterCursor();
                             }
                         }
