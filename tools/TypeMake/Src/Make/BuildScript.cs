@@ -7,9 +7,9 @@ namespace TypeMake
 {
     public partial class Program
     {
-        private static void GenerateRetypemakeScript(Cpp.OperatingSystemType BuildingOperatingSystem, PathString SourceDirectory, PathString BuildDirectory, Shell.EnvironmentVariableMemory Memory, bool OverwriteRetypemakeScript)
+        private static void GenerateRetypemakeScript(Cpp.OperatingSystemType HostOperatingSystem, PathString SourceDirectory, PathString BuildDirectory, Shell.EnvironmentVariableMemory Memory, bool OverwriteRetypemakeScript)
         {
-            if (BuildingOperatingSystem == Cpp.OperatingSystemType.Windows)
+            if (HostOperatingSystem == Cpp.OperatingSystemType.Windows)
             {
                 var Lines = new List<String>();
                 Lines.Add("@echo off");
@@ -123,7 +123,7 @@ namespace TypeMake
             var BuildPath = BuildDirectory / $"build_{TargetArchitecture}_{Configuration}.cmd";
             TextFile.WriteToFile(BuildPath, String.Join("\r\n", Lines), System.Text.Encoding.Default, !ForceRegenerate);
         }
-        private static void GenerateBuildScriptLinux(Cpp.ToolchainType Toolchain, Cpp.OperatingSystemType BuildingOperatingSystem, PathString BuildDirectory, Cpp.ConfigurationType Configuration, PathString CMake, PathString Make, PathString Ninja, bool ForceRegenerate)
+        private static void GenerateBuildScriptLinux(Cpp.ToolchainType Toolchain, Cpp.OperatingSystemType HostOperatingSystem, PathString BuildDirectory, Cpp.ConfigurationType Configuration, PathString CMake, PathString Make, PathString Ninja, bool ForceRegenerate)
         {
             if (Toolchain == Cpp.ToolchainType.CMake)
             {
@@ -131,7 +131,7 @@ namespace TypeMake
                 CMakeArguments.Add(".");
                 CMakeArguments.Add($"-DCMAKE_BUILD_TYPE={Configuration}");
 
-                if (BuildingOperatingSystem == Cpp.OperatingSystemType.Windows)
+                if (HostOperatingSystem == Cpp.OperatingSystemType.Windows)
                 {
                     var Lines = new List<String>();
                     Lines.Add("@echo off");
@@ -167,7 +167,7 @@ namespace TypeMake
             }
             else if (Toolchain == Cpp.ToolchainType.Ninja)
             {
-                if (BuildingOperatingSystem == Cpp.OperatingSystemType.Windows)
+                if (HostOperatingSystem == Cpp.OperatingSystemType.Windows)
                 {
                     var Lines = new List<String>();
                     Lines.Add("@echo off");
@@ -200,7 +200,7 @@ namespace TypeMake
                 }
             }
         }
-        private static void GenerateBuildScriptXCode(Cpp.OperatingSystemType BuildingOperatingSystem, PathString BuildDirectory, Make.Result Result, bool ForceRegenerate)
+        private static void GenerateBuildScriptXCode(Cpp.OperatingSystemType HostOperatingSystem, PathString BuildDirectory, Make.Result Result, bool ForceRegenerate)
         {
             var Lines = new List<String>();
             Lines.Add("#!/bin/bash");
@@ -212,12 +212,12 @@ namespace TypeMake
             Lines.Add("");
             var BuildPath = BuildDirectory / "build.sh";
             TextFile.WriteToFile(BuildPath, String.Join("\n", Lines), new System.Text.UTF8Encoding(false), !ForceRegenerate);
-            if (BuildingOperatingSystem != Cpp.OperatingSystemType.Windows)
+            if (HostOperatingSystem != Cpp.OperatingSystemType.Windows)
             {
                 MergeExitCode(Shell.Execute("chmod", "+x", BuildPath));
             }
         }
-        private static void GenerateBuildScriptAndroid(Cpp.ToolchainType Toolchain, Cpp.OperatingSystemType BuildingOperatingSystem, PathString BuildDirectory, Cpp.ArchitectureType TargetArchitecture, Cpp.ConfigurationType Configuration, PathString AndroidNdk, PathString CMake, PathString Make, PathString Ninja, bool ForceRegenerate)
+        private static void GenerateBuildScriptAndroid(Cpp.ToolchainType Toolchain, Cpp.OperatingSystemType HostOperatingSystem, PathString BuildDirectory, Cpp.ArchitectureType TargetArchitecture, Cpp.ConfigurationType Configuration, PathString AndroidNdk, PathString CMake, PathString Make, PathString Ninja, bool ForceRegenerate)
         {
             if (Toolchain == Cpp.ToolchainType.Gradle_CMake)
             {
@@ -237,7 +237,7 @@ namespace TypeMake
                     CMakeArguments.Add($"-DANDROID_ARM_NEON=ON");
                 }
 
-                if (BuildingOperatingSystem == Cpp.OperatingSystemType.Windows)
+                if (HostOperatingSystem == Cpp.OperatingSystemType.Windows)
                 {
                     var Lines = new List<String>();
                     Lines.Add("@echo off");
@@ -279,7 +279,7 @@ namespace TypeMake
             }
             else if (Toolchain == Cpp.ToolchainType.Gradle_Ninja)
             {
-                if (BuildingOperatingSystem == Cpp.OperatingSystemType.Windows)
+                if (HostOperatingSystem == Cpp.OperatingSystemType.Windows)
                 {
                     var Lines = new List<String>();
                     Lines.Add("@echo off");

@@ -14,21 +14,21 @@ namespace TypeMake.Cpp
         private PathString InputDirectory;
         private PathString OutputDirectory;
         private String PbxprojTemplateText;
-        private OperatingSystemType BuildingOperatingSystem;
-        private ArchitectureType BuildingOperatingSystemArchitecture;
+        private OperatingSystemType HostOperatingSystem;
+        private ArchitectureType HostArchitecture;
         private OperatingSystemType TargetOperatingSystem;
         private ArchitectureType TargetArchitectureType;
         private String DevelopmentTeam;
 
-        public PbxprojGenerator(Project Project, List<ProjectReference> ProjectReferences, PathString InputDirectory, PathString OutputDirectory, String PbxprojTemplateText, OperatingSystemType BuildingOperatingSystem, ArchitectureType BuildingOperatingSystemArchitecture, OperatingSystemType TargetOperatingSystem, String DevelopmentTeam = null)
+        public PbxprojGenerator(Project Project, List<ProjectReference> ProjectReferences, PathString InputDirectory, PathString OutputDirectory, String PbxprojTemplateText, OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, String DevelopmentTeam = null)
         {
             this.Project = Project;
             this.ProjectReferences = ProjectReferences;
             this.InputDirectory = InputDirectory.FullPath;
             this.OutputDirectory = OutputDirectory.FullPath;
             this.PbxprojTemplateText = PbxprojTemplateText;
-            this.BuildingOperatingSystem = BuildingOperatingSystem;
-            this.BuildingOperatingSystemArchitecture = BuildingOperatingSystemArchitecture;
+            this.HostOperatingSystem = HostOperatingSystem;
+            this.HostArchitecture = HostArchitecture;
             this.TargetOperatingSystem = TargetOperatingSystem;
             this.TargetArchitectureType = TargetOperatingSystem == OperatingSystemType.iOS ? ArchitectureType.arm64_v8a : ArchitectureType.x86_64; //TODO: need better handling
             this.DevelopmentTeam = DevelopmentTeam;
@@ -86,7 +86,7 @@ namespace TypeMake.Cpp
             ObjectReferenceValidityTest(Objects, RootObjectKey);
 
             var RelativePathToObjects = new Dictionary<String, String>();
-            foreach (var conf in Project.Configurations.Matches(Project.TargetType, ToolchainType.Mac_XCode, CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitectureType, null))
+            foreach (var conf in Project.Configurations.Matches(Project.TargetType, ToolchainType.Mac_XCode, CompilerType.clang, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitectureType, null))
             {
                 foreach (var f in conf.Files)
                 {
@@ -116,7 +116,7 @@ namespace TypeMake.Cpp
                     var BuildConfiguration = Objects[BuildConfigurationKey.String].Dict;
                     var ConfigurationType = (ConfigurationType)(Enum.Parse(typeof(ConfigurationType), BuildConfiguration["name"].String));
                     var BuildSettings = BuildConfiguration["buildSettings"].Dict;
-                    var conf = Project.Configurations.Merged(Project.TargetType, ToolchainType.Mac_XCode, CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitectureType, ConfigurationType);
+                    var conf = Project.Configurations.Merged(Project.TargetType, ToolchainType.Mac_XCode, CompilerType.clang, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitectureType, ConfigurationType);
 
                     BuildSettings["PRODUCT_NAME"] = Value.CreateString(ProductName);
                     if ((Project.TargetType == TargetType.MacApplication) || (Project.TargetType == TargetType.MacBundle) || (Project.TargetType == TargetType.iOSApplication) || (Project.TargetType == TargetType.iOSStaticFramework) || (Project.TargetType == TargetType.iOSSharedFramework))
@@ -199,7 +199,7 @@ namespace TypeMake.Cpp
                     }
                 }
 
-                var confF = Project.Configurations.Merged(Project.TargetType, ToolchainType.Mac_XCode, CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitectureType, null);
+                var confF = Project.Configurations.Merged(Project.TargetType, ToolchainType.Mac_XCode, CompilerType.clang, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitectureType, null);
                 foreach (var PhaseKey in Target["buildPhases"].Array)
                 {
                     var Phase = Objects[PhaseKey.String].Dict;
@@ -216,7 +216,7 @@ namespace TypeMake.Cpp
                                 File.Add("fileRef", Value.CreateString(RelativePathToObjects[RelativePath]));
                                 File.Add("isa", Value.CreateString("PBXBuildFile"));
 
-                                var FileConf = f.Configurations.Merged(Project.TargetType, ToolchainType.Mac_XCode, CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitectureType, null);
+                                var FileConf = f.Configurations.Merged(Project.TargetType, ToolchainType.Mac_XCode, CompilerType.clang, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitectureType, null);
 
                                 var FileFlags = FileConf.CommonFlags;
                                 if ((f.Type == FileType.CSource) || (f.Type == FileType.ObjectiveCSource))
@@ -351,7 +351,7 @@ namespace TypeMake.Cpp
                 var ConfigurationType = (ConfigurationType)(Enum.Parse(typeof(ConfigurationType), BuildConfiguration["name"].String));
                 var BuildSettings = BuildConfiguration["buildSettings"].Dict;
 
-                var conf = Project.Configurations.Merged(Project.TargetType, ToolchainType.Mac_XCode, CompilerType.clang, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitectureType, ConfigurationType);
+                var conf = Project.Configurations.Merged(Project.TargetType, ToolchainType.Mac_XCode, CompilerType.clang, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitectureType, ConfigurationType);
 
                 var IncludeDirectories = conf.IncludeDirectories.Select(d => d.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix)).ToList();
                 if (IncludeDirectories.Count != 0)

@@ -17,11 +17,11 @@ namespace TypeMake.Cpp
         private PathString OutputDirectory;
         private String VcxprojTemplateText;
         private String VcxprojFilterTemplateText;
-        private OperatingSystemType BuildingOperatingSystem;
-        private ArchitectureType BuildingOperatingSystemArchitecture;
+        private OperatingSystemType HostOperatingSystem;
+        private ArchitectureType HostArchitecture;
         private OperatingSystemType TargetOperatingSystem;
 
-        public VcxprojGenerator(Project Project, String ProjectId, List<ProjectReference> ProjectReferences, PathString InputDirectory, PathString OutputDirectory, String VcxprojTemplateText, String VcxprojFilterTemplateText, OperatingSystemType BuildingOperatingSystem, ArchitectureType BuildingOperatingSystemArchitecture, OperatingSystemType TargetOperatingSystem)
+        public VcxprojGenerator(Project Project, String ProjectId, List<ProjectReference> ProjectReferences, PathString InputDirectory, PathString OutputDirectory, String VcxprojTemplateText, String VcxprojFilterTemplateText, OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem)
         {
             this.Project = Project;
             this.ProjectId = ProjectId;
@@ -30,8 +30,8 @@ namespace TypeMake.Cpp
             this.OutputDirectory = OutputDirectory.FullPath;
             this.VcxprojTemplateText = VcxprojTemplateText;
             this.VcxprojFilterTemplateText = VcxprojFilterTemplateText;
-            this.BuildingOperatingSystem = BuildingOperatingSystem;
-            this.BuildingOperatingSystemArchitecture = BuildingOperatingSystemArchitecture;
+            this.HostOperatingSystem = HostOperatingSystem;
+            this.HostArchitecture = HostArchitecture;
             this.TargetOperatingSystem = TargetOperatingSystem;
         }
 
@@ -112,7 +112,7 @@ namespace TypeMake.Cpp
                 var Architecture = Pair.Key.Value;
                 var Name = Pair.Value;
 
-                var conf = Project.Configurations.Merged(Project.TargetType, ToolchainType.Windows_VisualC, CompilerType.VisualC, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, Architecture, ConfigurationType);
+                var conf = Project.Configurations.Merged(Project.TargetType, ToolchainType.Windows_VisualC, CompilerType.VisualC, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, Architecture, ConfigurationType);
 
                 var PropertyGroup = xVcxproj.Elements(xn + "PropertyGroup").Where(e => (e.Attribute("Condition") != null) && (e.Attribute("Condition").Value == "'$(Configuration)|$(Platform)'=='" + Name + "'")).LastOrDefault();
                 if (PropertyGroup == null)
@@ -239,7 +239,7 @@ namespace TypeMake.Cpp
 
             var Import = xVcxproj.Elements(xn + "Import").LastOrDefault();
 
-            foreach (var gConf in Project.Configurations.Matches(Project.TargetType, ToolchainType.Windows_VisualC, CompilerType.VisualC, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, null).GroupBy(conf => Tuple.Create(conf.MatchingConfigurationTypes, conf.MatchingTargetArchitectures), new ConfigurationTypesAndArchitecturesComparer()))
+            foreach (var gConf in Project.Configurations.Matches(Project.TargetType, ToolchainType.Windows_VisualC, CompilerType.VisualC, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, null, null).GroupBy(conf => Tuple.Create(conf.MatchingConfigurationTypes, conf.MatchingTargetArchitectures), new ConfigurationTypesAndArchitecturesComparer()))
             {
                 var MatchingConfigurationTypes = gConf.Key.Item1;
                 var MatchingTargetArchitectures = gConf.Key.Item2;
@@ -284,7 +284,7 @@ namespace TypeMake.Cpp
                         }
                         if ((File.Type == FileType.CSource) || (File.Type == FileType.CppSource))
                         {
-                            var fileConfs = File.Configurations.Matches(Project.TargetType, ToolchainType.Windows_VisualC, CompilerType.VisualC, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, null);
+                            var fileConfs = File.Configurations.Matches(Project.TargetType, ToolchainType.Windows_VisualC, CompilerType.VisualC, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, null, null);
 
                             foreach (var conf in fileConfs)
                             {
@@ -433,7 +433,7 @@ namespace TypeMake.Cpp
 
             var Files = new HashSet<String>(StringComparer.OrdinalIgnoreCase);
             var Filters = new HashSet<String>(StringComparer.OrdinalIgnoreCase);
-            foreach (var conf in Project.Configurations.Matches(Project.TargetType, ToolchainType.Windows_VisualC, CompilerType.VisualC, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, null, null))
+            foreach (var conf in Project.Configurations.Matches(Project.TargetType, ToolchainType.Windows_VisualC, CompilerType.VisualC, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, null, null))
             {
                 foreach (var f in conf.Files)
                 {
@@ -546,7 +546,7 @@ namespace TypeMake.Cpp
         private static String WindowsTargetPlatformVersion = null;
         private String GetWindowsTargetPlatformVersion()
         {
-            if (BuildingOperatingSystem == OperatingSystemType.Windows)
+            if (HostOperatingSystem == OperatingSystemType.Windows)
             {
                 lock (WindowsTargetPlatformVersionLock)
                 {

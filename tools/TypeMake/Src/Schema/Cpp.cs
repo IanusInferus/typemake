@@ -68,8 +68,8 @@ namespace TypeMake.Cpp
         public List<TargetType> MatchingTargetTypes = null;
         public List<ToolchainType> MatchingToolchains = null;
         public List<CompilerType> MatchingCompilers = null;
-        public List<OperatingSystemType> MatchingBuildingOperatingSystems = null;
-        public List<ArchitectureType> MatchingBuildingOperatingSystemArchitectures = null;
+        public List<OperatingSystemType> MatchingHostOperatingSystems = null;
+        public List<ArchitectureType> MatchingHostArchitectures = null;
         public List<OperatingSystemType> MatchingTargetOperatingSystems = null;
         public List<ArchitectureType> MatchingTargetArchitectures = null;
         public List<ConfigurationType> MatchingConfigurationTypes = null;

@@ -14,13 +14,13 @@ namespace TypeMake.Cpp
         private PathString OutputDirectory;
         private ToolchainType Toolchain;
         private CompilerType Compiler;
-        private OperatingSystemType BuildingOperatingSystem;
-        private ArchitectureType BuildingOperatingSystemArchitecture;
+        private OperatingSystemType HostOperatingSystem;
+        private ArchitectureType HostArchitecture;
         private OperatingSystemType TargetOperatingSystem;
         private ArchitectureType TargetArchitectureType;
         private ConfigurationType ConfigurationType;
 
-        public NinjaProjectGenerator(Project Project, List<ProjectReference> ProjectReferences, PathString InputDirectory, PathString OutputDirectory, ToolchainType Toolchain, CompilerType Compiler, OperatingSystemType BuildingOperatingSystem, ArchitectureType BuildingOperatingSystemArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType TargetArchitectureType, ConfigurationType ConfigurationType)
+        public NinjaProjectGenerator(Project Project, List<ProjectReference> ProjectReferences, PathString InputDirectory, PathString OutputDirectory, ToolchainType Toolchain, CompilerType Compiler, OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType TargetArchitectureType, ConfigurationType ConfigurationType)
         {
             this.Project = Project;
             this.ProjectReferences = ProjectReferences;
@@ -28,8 +28,8 @@ namespace TypeMake.Cpp
             this.OutputDirectory = OutputDirectory.FullPath;
             this.Toolchain = Toolchain;
             this.Compiler = Compiler;
-            this.BuildingOperatingSystem = BuildingOperatingSystem;
-            this.BuildingOperatingSystemArchitecture = BuildingOperatingSystemArchitecture;
+            this.HostOperatingSystem = HostOperatingSystem;
+            this.HostArchitecture = HostArchitecture;
             this.TargetOperatingSystem = TargetOperatingSystem;
             this.TargetArchitectureType = TargetArchitectureType;
             this.ConfigurationType = ConfigurationType;
@@ -46,12 +46,12 @@ namespace TypeMake.Cpp
 
         private IEnumerable<String> GenerateLines(PathString NinjaScriptPath, PathString BaseDirPath)
         {
-            var conf = Project.Configurations.Merged(Project.TargetType, Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitectureType, ConfigurationType);
+            var conf = Project.Configurations.Merged(Project.TargetType, Toolchain, Compiler, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitectureType, ConfigurationType);
 
             yield return "ninja_required_version = 1.3";
             yield return "";
 
-            var ExecutingOperatingSystem = (BuildingOperatingSystem == OperatingSystemType.Windows) && (TargetOperatingSystem == OperatingSystemType.Linux) ? TargetOperatingSystem : BuildingOperatingSystem;
+            var ExecutingOperatingSystem = (HostOperatingSystem == OperatingSystemType.Windows) && (TargetOperatingSystem == OperatingSystemType.Linux) ? TargetOperatingSystem : HostOperatingSystem;
             var Escape = ExecutingOperatingSystem == OperatingSystemType.Windows ? (Func<String, String>)(arg => Shell.EscapeArgument(arg, Shell.ArgumentStyle.Windows)) : (Func<String, String>)(arg => Shell.EscapeArgumentForShell(arg, Shell.ShellArgumentStyle.Bash));
 
             var CommonFlags = new List<String>();
@@ -107,7 +107,7 @@ namespace TypeMake.Cpp
             {
                 if ((File.Type != FileType.CSource) && (File.Type != FileType.CppSource)) { continue; }
 
-                var FileConf = File.Configurations.Merged(Project.TargetType, Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitectureType, ConfigurationType);
+                var FileConf = File.Configurations.Merged(Project.TargetType, Toolchain, Compiler, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitectureType, ConfigurationType);
 
                 var FileFlags = new List<String>();
                 FileFlags.AddRange(FileConf.Defines.Select(d => "-D" + d.Key + (d.Value == null ? "" : "=" + d.Value)));

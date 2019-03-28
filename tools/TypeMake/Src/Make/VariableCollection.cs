@@ -7,8 +7,8 @@ namespace TypeMake
 {
     public class Variables
     {
-        public Cpp.OperatingSystemType BuildingOperatingSystem;
-        public Cpp.ArchitectureType BuildingOperatingSystemArchitecture;
+        public Cpp.OperatingSystemType HostOperatingSystem;
+        public Cpp.ArchitectureType HostArchitecture;
         public Cpp.OperatingSystemType TargetOperatingSystem;
         public Cpp.ArchitectureType? TargetArchitecture;
         public Cpp.ToolchainType Toolchain;
@@ -46,19 +46,19 @@ namespace TypeMake
             {
                 if (Shell.OperatingSystem == Shell.OperatingSystemType.Windows)
                 {
-                    v.BuildingOperatingSystem = Cpp.OperatingSystemType.Windows;
+                    v.HostOperatingSystem = Cpp.OperatingSystemType.Windows;
                 }
                 else if (Shell.OperatingSystem == Shell.OperatingSystemType.Linux)
                 {
-                    v.BuildingOperatingSystem = Cpp.OperatingSystemType.Linux;
+                    v.HostOperatingSystem = Cpp.OperatingSystemType.Linux;
                 }
                 else if (Shell.OperatingSystem == Shell.OperatingSystemType.Mac)
                 {
-                    v.BuildingOperatingSystem = Cpp.OperatingSystemType.Mac;
+                    v.HostOperatingSystem = Cpp.OperatingSystemType.Mac;
                 }
                 else
                 {
-                    throw new InvalidOperationException("UnknownBuildingOperatingSystem");
+                    throw new InvalidOperationException("UnknownHostOperatingSystem");
                 }
             });
 
@@ -66,22 +66,22 @@ namespace TypeMake
             {
                 if (Shell.OperatingSystemArchitecture == Shell.OperatingSystemArchitectureType.x86_64)
                 {
-                    v.BuildingOperatingSystemArchitecture = Cpp.ArchitectureType.x86_64;
+                    v.HostArchitecture = Cpp.ArchitectureType.x86_64;
                 }
                 else if (Shell.OperatingSystemArchitecture == Shell.OperatingSystemArchitectureType.x86)
                 {
-                    v.BuildingOperatingSystemArchitecture = Cpp.ArchitectureType.x86;
+                    v.HostArchitecture = Cpp.ArchitectureType.x86;
                 }
                 else
                 {
-                    throw new InvalidOperationException("UnknownBuildingOperatingSystemArchitecture");
+                    throw new InvalidOperationException("UnknownHostArchitecture");
                 }
                 //process architecture is supposed to be the same as the operating system architecture
             });
 
             vc.AddVariableFetch((Action OnInteraction) =>
             {
-                v.TargetOperatingSystem = Shell.RequireEnvironmentVariableEnum<Cpp.OperatingSystemType>(Memory, "TargetOperatingSystem", Quiet, v.BuildingOperatingSystem, Options => Options.OnInteraction = OnInteraction);
+                v.TargetOperatingSystem = Shell.RequireEnvironmentVariableEnum<Cpp.OperatingSystemType>(Memory, "TargetOperatingSystem", Quiet, v.HostOperatingSystem, Options => Options.OnInteraction = OnInteraction);
             });
 
             vc.AddVariableFetch((Action OnInteraction) =>
@@ -261,7 +261,7 @@ namespace TypeMake
                 if (v.TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
                 {
                     String DefaultVSDir = "";
-                    if (v.BuildingOperatingSystem == Cpp.OperatingSystemType.Windows)
+                    if (v.HostOperatingSystem == Cpp.OperatingSystemType.Windows)
                     {
                         var ProgramFiles = Environment.GetEnvironmentVariable("ProgramFiles(x86)");
                         if (ProgramFiles != null)
@@ -285,7 +285,7 @@ namespace TypeMake
             {
                 if (v.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
                 {
-                    v.AndroidSdk = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "AndroidSdk", Quiet, v.BuildingOperatingSystem == Cpp.OperatingSystemType.Windows ? (Environment.GetEnvironmentVariable("LocalAppData").AsPath() / "Android/sdk").ToString() : "", PathValidator ?? (p => Directory.Exists(p / "platform-tools") ? new KeyValuePair<bool, String>(true, "") : new KeyValuePair<bool, String>(false, "No platform-tools directory inside.")), Options => Options.OnInteraction = OnInteraction);
+                    v.AndroidSdk = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "AndroidSdk", Quiet, v.HostOperatingSystem == Cpp.OperatingSystemType.Windows ? (Environment.GetEnvironmentVariable("LocalAppData").AsPath() / "Android/sdk").ToString() : "", PathValidator ?? (p => Directory.Exists(p / "platform-tools") ? new KeyValuePair<bool, String>(true, "") : new KeyValuePair<bool, String>(false, "No platform-tools directory inside.")), Options => Options.OnInteraction = OnInteraction);
                 }
             });
 
@@ -303,11 +303,11 @@ namespace TypeMake
                 {
                     if (v.Toolchain == Cpp.ToolchainType.CMake)
                     {
-                        if (v.BuildingOperatingSystem == Cpp.OperatingSystemType.Windows)
+                        if (v.HostOperatingSystem == Cpp.OperatingSystemType.Windows)
                         {
                             v.CMake = Shell.RequireEnvironmentVariable(Memory, "CMake", new Shell.EnvironmentVariableReadOptions { Quiet = Quiet, DefaultValue = "cmake", OnInteraction = OnInteraction });
                         }
-                        else if (v.BuildingOperatingSystem == Cpp.OperatingSystemType.Linux)
+                        else if (v.HostOperatingSystem == Cpp.OperatingSystemType.Linux)
                         {
                             v.CMake = Shell.RequireEnvironmentVariableFilePath(Memory, "CMake", Quiet, Shell.TryLocate("cmake") ?? "", PathValidator, Options => Options.OnInteraction = OnInteraction);
                         }
@@ -317,11 +317,11 @@ namespace TypeMake
                 {
                     if (v.Toolchain == Cpp.ToolchainType.CMake)
                     {
-                        if (v.BuildingOperatingSystem == Cpp.OperatingSystemType.Windows)
+                        if (v.HostOperatingSystem == Cpp.OperatingSystemType.Windows)
                         {
                             v.CMake = Shell.RequireEnvironmentVariableFilePath(Memory, "CMake", Quiet, Environment.GetEnvironmentVariable("ProgramFiles").AsPath() / @"CMake\bin\cmake.exe", PathValidator, Options => Options.OnInteraction = OnInteraction);
                         }
-                        else if (v.BuildingOperatingSystem == Cpp.OperatingSystemType.Linux)
+                        else if (v.HostOperatingSystem == Cpp.OperatingSystemType.Linux)
                         {
                             v.CMake = Shell.RequireEnvironmentVariableFilePath(Memory, "CMake", Quiet, Shell.TryLocate("cmake") ?? "", PathValidator, Options => Options.OnInteraction = OnInteraction);
                         }
@@ -335,11 +335,11 @@ namespace TypeMake
                 {
                     if (v.Toolchain == Cpp.ToolchainType.CMake)
                     {
-                        if (v.BuildingOperatingSystem == Cpp.OperatingSystemType.Windows)
+                        if (v.HostOperatingSystem == Cpp.OperatingSystemType.Windows)
                         {
                             v.Make = Shell.RequireEnvironmentVariable(Memory, "Make", new Shell.EnvironmentVariableReadOptions { Quiet = Quiet, DefaultValue = "make", OnInteraction = OnInteraction });
                         }
-                        else if (v.BuildingOperatingSystem == Cpp.OperatingSystemType.Linux)
+                        else if (v.HostOperatingSystem == Cpp.OperatingSystemType.Linux)
                         {
                             v.Make = Shell.RequireEnvironmentVariableFilePath(Memory, "Make", Quiet, Shell.TryLocate("make") ?? "", PathValidator, Options => Options.OnInteraction = OnInteraction);
                         }
@@ -350,17 +350,17 @@ namespace TypeMake
                     if (v.Toolchain == Cpp.ToolchainType.CMake)
                     {
                         String DefaultMake = null;
-                        if (v.BuildingOperatingSystemArchitecture == Cpp.ArchitectureType.x86_64)
+                        if (v.HostArchitecture == Cpp.ArchitectureType.x86_64)
                         {
-                            if (v.BuildingOperatingSystem == Cpp.OperatingSystemType.Windows)
+                            if (v.HostOperatingSystem == Cpp.OperatingSystemType.Windows)
                             {
                                 DefaultMake = v.AndroidNdk / @"prebuilt\windows-x86_64\bin\make.exe";
                             }
-                            else if (v.BuildingOperatingSystem == Cpp.OperatingSystemType.Linux)
+                            else if (v.HostOperatingSystem == Cpp.OperatingSystemType.Linux)
                             {
                                 DefaultMake = v.AndroidNdk / "prebuilt/linux-x86_64/bin/make";
                             }
-                            else if (v.BuildingOperatingSystem == Cpp.OperatingSystemType.Mac)
+                            else if (v.HostOperatingSystem == Cpp.OperatingSystemType.Mac)
                             {
                                 DefaultMake = v.AndroidNdk / "prebuilt/darwin-x86_64/bin/make";
                             }
@@ -376,7 +376,7 @@ namespace TypeMake
                 {
                     if (v.Toolchain == Cpp.ToolchainType.Ninja)
                     {
-                        if (v.BuildingOperatingSystem == Cpp.OperatingSystemType.Windows)
+                        if (v.HostOperatingSystem == Cpp.OperatingSystemType.Windows)
                         {
                             if (v.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
                             {
@@ -387,11 +387,11 @@ namespace TypeMake
                                 v.Ninja = v.SourceDirectory / "tools/Ninja/ninja-win/ninja.exe";
                             }
                         }
-                        else if (v.BuildingOperatingSystem == Cpp.OperatingSystemType.Linux)
+                        else if (v.HostOperatingSystem == Cpp.OperatingSystemType.Linux)
                         {
                             v.Ninja = v.SourceDirectory / "tools/Ninja/ninja-linux/ninja";
                         }
-                        else if (v.BuildingOperatingSystem == Cpp.OperatingSystemType.Mac)
+                        else if (v.HostOperatingSystem == Cpp.OperatingSystemType.Mac)
                         {
                             v.Ninja = v.SourceDirectory / "tools/Ninja/ninja-mac/ninja";
                         }
@@ -410,17 +410,17 @@ namespace TypeMake
             var ToolchainPath = "".AsPath();
             if ((v.TargetOperatingSystem == Cpp.OperatingSystemType.Android) && (v.Toolchain == Cpp.ToolchainType.Ninja))
             {
-                if (v.BuildingOperatingSystem == Cpp.OperatingSystemType.Windows)
+                if (v.HostOperatingSystem == Cpp.OperatingSystemType.Windows)
                 {
                     Host = "windows-x86_64";
                     ExeSuffix = ".exe";
                 }
-                else if (v.BuildingOperatingSystem == Cpp.OperatingSystemType.Linux)
+                else if (v.HostOperatingSystem == Cpp.OperatingSystemType.Linux)
                 {
                     Host = "linux-x86_64";
                     ExeSuffix = "";
                 }
-                else if (v.BuildingOperatingSystem == Cpp.OperatingSystemType.Mac)
+                else if (v.HostOperatingSystem == Cpp.OperatingSystemType.Mac)
                 {
                     Host = "darwin-x86_64";
                     ExeSuffix = "";
@@ -502,7 +502,7 @@ namespace TypeMake
 
             vc.AddVariableFetch((Action OnInteraction) =>
             {
-                var m = new Make(v.Toolchain, v.Compiler, v.BuildingOperatingSystem, v.BuildingOperatingSystemArchitecture, v.TargetOperatingSystem, v.TargetArchitecture, v.Configuration, v.SourceDirectory, v.BuildDirectory, v.DevelopmentTeam, v.CC, v.CXX, v.AR, v.ForceRegenerate, v.EnableNonTargetingOperatingSystemDummy);
+                var m = new Make(v.Toolchain, v.Compiler, v.HostOperatingSystem, v.HostArchitecture, v.TargetOperatingSystem, v.TargetArchitecture, v.Configuration, v.SourceDirectory, v.BuildDirectory, v.DevelopmentTeam, v.CC, v.CXX, v.AR, v.ForceRegenerate, v.EnableNonTargetingOperatingSystemDummy);
                 v.m = m;
                 var Projects = m.GetAvailableProjects();
                 var ProjectSet = new HashSet<String>(Projects.Values.Select(t => t.Definition.Name));

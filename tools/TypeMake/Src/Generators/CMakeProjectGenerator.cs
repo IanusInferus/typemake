@@ -14,14 +14,14 @@ namespace TypeMake.Cpp
         private PathString OutputDirectory;
         private ToolchainType Toolchain;
         private CompilerType Compiler;
-        private OperatingSystemType BuildingOperatingSystem;
-        private ArchitectureType BuildingOperatingSystemArchitecture;
+        private OperatingSystemType HostOperatingSystem;
+        private ArchitectureType HostArchitecture;
         private OperatingSystemType TargetOperatingSystem;
         private ArchitectureType? TargetArchitectureType;
         private ConfigurationType? ConfigurationType;
         private bool EnableAbsolutePath;
 
-        public CMakeProjectGenerator(Project Project, List<ProjectReference> ProjectReferences, PathString InputDirectory, PathString OutputDirectory, ToolchainType Toolchain, CompilerType Compiler, OperatingSystemType BuildingOperatingSystem, ArchitectureType BuildingOperatingSystemArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType? TargetArchitectureType, ConfigurationType? ConfigurationType, bool EnableAbsolutePath)
+        public CMakeProjectGenerator(Project Project, List<ProjectReference> ProjectReferences, PathString InputDirectory, PathString OutputDirectory, ToolchainType Toolchain, CompilerType Compiler, OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType? TargetArchitectureType, ConfigurationType? ConfigurationType, bool EnableAbsolutePath)
         {
             this.Project = Project;
             this.ProjectReferences = ProjectReferences;
@@ -29,8 +29,8 @@ namespace TypeMake.Cpp
             this.OutputDirectory = OutputDirectory.FullPath;
             this.Toolchain = Toolchain;
             this.Compiler = Compiler;
-            this.BuildingOperatingSystem = BuildingOperatingSystem;
-            this.BuildingOperatingSystemArchitecture = BuildingOperatingSystemArchitecture;
+            this.HostOperatingSystem = HostOperatingSystem;
+            this.HostArchitecture = HostArchitecture;
             this.TargetOperatingSystem = TargetOperatingSystem;
             this.TargetArchitectureType = TargetArchitectureType;
             this.ConfigurationType = ConfigurationType;
@@ -48,7 +48,7 @@ namespace TypeMake.Cpp
 
         private IEnumerable<String> GenerateLines(PathString CMakeListsPath, PathString BaseDirPath)
         {
-            var conf = Project.Configurations.Merged(Project.TargetType, Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitectureType, ConfigurationType);
+            var conf = Project.Configurations.Merged(Project.TargetType, Toolchain, Compiler, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitectureType, ConfigurationType);
 
             yield return @"cmake_minimum_required(VERSION 3.3.2)";
             yield return $@"project({Project.Name})";
@@ -132,7 +132,7 @@ namespace TypeMake.Cpp
             foreach (var f in conf.Files)
             {
                 var FilePath = f.Path.FullPath.RelativeTo(BaseDirPath, EnableAbsolutePath).ToString(PathStringStyle.Unix);
-                var FileConf = f.Configurations.Merged(Project.TargetType, Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitectureType, ConfigurationType);
+                var FileConf = f.Configurations.Merged(Project.TargetType, Toolchain, Compiler, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitectureType, ConfigurationType);
                 var FileDefines = FileConf.Defines;
                 if (FileDefines.Count != 0)
                 {

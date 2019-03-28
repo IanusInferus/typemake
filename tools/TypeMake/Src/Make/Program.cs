@@ -92,7 +92,7 @@ namespace TypeMake
             var Memory = new Shell.EnvironmentVariableMemory();
             var v = VariableCollection.Execute(Memory, Quiet);
 
-            GenerateRetypemakeScript(v.BuildingOperatingSystem, v.SourceDirectory, v.BuildDirectory, Memory, v.OverwriteRetypemakeScript);
+            GenerateRetypemakeScript(v.HostOperatingSystem, v.SourceDirectory, v.BuildDirectory, Memory, v.OverwriteRetypemakeScript);
             var r = v.m.Execute(v.SelectedProjects);
 
             if (v.TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
@@ -107,7 +107,7 @@ namespace TypeMake
                 GenerateBuildScriptWindows(v.BuildDirectory, r.SolutionName, Cpp.ArchitectureType.arm64_v8a, Cpp.ConfigurationType.Release, v.VSDir, v.ForceRegenerate);
                 if (v.BuildAfterGenerate)
                 {
-                    if (v.BuildingOperatingSystem == Cpp.OperatingSystemType.Windows)
+                    if (v.HostOperatingSystem == Cpp.OperatingSystemType.Windows)
                     {
                         using (var d = Shell.PushDirectory(v.BuildDirectory))
                         {
@@ -122,16 +122,16 @@ namespace TypeMake
             }
             else if (v.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
             {
-                GenerateBuildScriptLinux(v.Toolchain, v.BuildingOperatingSystem, v.BuildDirectory, v.Configuration.Value, v.CMake, v.Make, v.Ninja, v.ForceRegenerate);
+                GenerateBuildScriptLinux(v.Toolchain, v.HostOperatingSystem, v.BuildDirectory, v.Configuration.Value, v.CMake, v.Make, v.Ninja, v.ForceRegenerate);
                 if (v.BuildAfterGenerate)
                 {
                     using (var d = Shell.PushDirectory(v.BuildDirectory))
                     {
-                        if (v.BuildingOperatingSystem == Cpp.OperatingSystemType.Windows)
+                        if (v.HostOperatingSystem == Cpp.OperatingSystemType.Windows)
                         {
                             MergeExitCode(Shell.Execute(@".\build.cmd"));
                         }
-                        else if (v.BuildingOperatingSystem == Cpp.OperatingSystemType.Linux)
+                        else if (v.HostOperatingSystem == Cpp.OperatingSystemType.Linux)
                         {
                             MergeExitCode(Shell.Execute("./build.sh"));
                         }
@@ -144,12 +144,12 @@ namespace TypeMake
             }
             else if (v.TargetOperatingSystem == Cpp.OperatingSystemType.Mac)
             {
-                GenerateBuildScriptXCode(v.BuildingOperatingSystem, v.BuildDirectory, r, v.ForceRegenerate);
+                GenerateBuildScriptXCode(v.HostOperatingSystem, v.BuildDirectory, r, v.ForceRegenerate);
                 if (v.BuildAfterGenerate)
                 {
                     using (var d = Shell.PushDirectory(v.BuildDirectory))
                     {
-                        if (v.BuildingOperatingSystem == Cpp.OperatingSystemType.Mac)
+                        if (v.HostOperatingSystem == Cpp.OperatingSystemType.Mac)
                         {
                             MergeExitCode(Shell.Execute("./build.sh"));
                         }
@@ -162,12 +162,12 @@ namespace TypeMake
             }
             else if (v.TargetOperatingSystem == Cpp.OperatingSystemType.iOS)
             {
-                GenerateBuildScriptXCode(v.BuildingOperatingSystem, v.BuildDirectory, r, v.ForceRegenerate);
+                GenerateBuildScriptXCode(v.HostOperatingSystem, v.BuildDirectory, r, v.ForceRegenerate);
                 if (v.BuildAfterGenerate)
                 {
                     using (var d = Shell.PushDirectory(v.BuildDirectory))
                     {
-                        if (v.BuildingOperatingSystem == Cpp.OperatingSystemType.Mac)
+                        if (v.HostOperatingSystem == Cpp.OperatingSystemType.Mac)
                         {
                             MergeExitCode(Shell.Execute("./build.sh"));
                         }
@@ -181,16 +181,16 @@ namespace TypeMake
             else if (v.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
             {
                 TextFile.WriteToFile(v.BuildDirectory / "gradle/local.properties", $"sdk.dir={v.AndroidSdk.ToString(PathStringStyle.Unix)}", new System.Text.UTF8Encoding(false), !v.ForceRegenerate);
-                GenerateBuildScriptAndroid(v.Toolchain, v.BuildingOperatingSystem, v.BuildDirectory, v.TargetArchitecture.Value, v.Configuration.Value, v.AndroidNdk, v.CMake, v.Make, v.Ninja, v.ForceRegenerate);
+                GenerateBuildScriptAndroid(v.Toolchain, v.HostOperatingSystem, v.BuildDirectory, v.TargetArchitecture.Value, v.Configuration.Value, v.AndroidNdk, v.CMake, v.Make, v.Ninja, v.ForceRegenerate);
                 if (v.BuildAfterGenerate)
                 {
                     using (var d = Shell.PushDirectory(v.BuildDirectory))
                     {
-                        if (v.BuildingOperatingSystem == Cpp.OperatingSystemType.Windows)
+                        if (v.HostOperatingSystem == Cpp.OperatingSystemType.Windows)
                         {
                             MergeExitCode(Shell.Execute(@".\build.cmd"));
                         }
-                        else if ((v.BuildingOperatingSystem == Cpp.OperatingSystemType.Linux) || (v.BuildingOperatingSystem == Cpp.OperatingSystemType.Mac))
+                        else if ((v.HostOperatingSystem == Cpp.OperatingSystemType.Linux) || (v.HostOperatingSystem == Cpp.OperatingSystemType.Mac))
                         {
                             MergeExitCode(Shell.Execute("./build.sh"));
                         }

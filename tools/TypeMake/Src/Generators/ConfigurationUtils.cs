@@ -6,42 +6,42 @@ namespace TypeMake.Cpp
 {
     public static class ConfigurationUtils
     {
-        public static IEnumerable<Configuration> Matches(this IEnumerable<Configuration> Configurations, TargetType? TargetType, ToolchainType? Toolchain, CompilerType? Compiler, OperatingSystemType? BuildingOperatingSystem, ArchitectureType? BuildingOperatingSystemArchitecture, OperatingSystemType? TargetOperatingSystem, ArchitectureType? TargetArchitecture, ConfigurationType? ConfigurationType)
+        public static IEnumerable<Configuration> Matches(this IEnumerable<Configuration> Configurations, TargetType? TargetType, ToolchainType? Toolchain, CompilerType? Compiler, OperatingSystemType? HostOperatingSystem, ArchitectureType? HostArchitecture, OperatingSystemType? TargetOperatingSystem, ArchitectureType? TargetArchitecture, ConfigurationType? ConfigurationType)
         {
             Func<Configuration, bool> Filter = (Configuration c) =>
                 ((TargetType == null) || (c.MatchingTargetTypes == null) || (c.MatchingTargetTypes.Contains(TargetType.Value)))
                 && ((Toolchain == null) || (c.MatchingToolchains == null) || (c.MatchingToolchains.Contains(Toolchain.Value)))
                 && ((Compiler == null) || (c.MatchingCompilers == null) || (c.MatchingCompilers.Contains(Compiler.Value)))
-                && ((BuildingOperatingSystem == null) || (c.MatchingBuildingOperatingSystems == null) || (c.MatchingBuildingOperatingSystems.Contains(BuildingOperatingSystem.Value)))
-                && ((BuildingOperatingSystemArchitecture == null) || (c.MatchingBuildingOperatingSystemArchitectures == null) || (c.MatchingBuildingOperatingSystemArchitectures.Contains(BuildingOperatingSystemArchitecture.Value)))
+                && ((HostOperatingSystem == null) || (c.MatchingHostOperatingSystems == null) || (c.MatchingHostOperatingSystems.Contains(HostOperatingSystem.Value)))
+                && ((HostArchitecture == null) || (c.MatchingHostArchitectures == null) || (c.MatchingHostArchitectures.Contains(HostArchitecture.Value)))
                 && ((TargetOperatingSystem == null) || (c.MatchingTargetOperatingSystems == null) || (c.MatchingTargetOperatingSystems.Contains(TargetOperatingSystem.Value)))
                 && ((TargetArchitecture == null) || (c.MatchingTargetArchitectures == null) || (c.MatchingTargetArchitectures.Contains(TargetArchitecture.Value)))
                 && ((ConfigurationType == null) || (c.MatchingConfigurationTypes == null) || (c.MatchingConfigurationTypes.Contains(ConfigurationType.Value)));
             return Configurations.Where(Filter);
         }
-        public static IEnumerable<Configuration> StrictMatches(this IEnumerable<Configuration> Configurations, TargetType? TargetType, ToolchainType? Toolchain, CompilerType? Compiler, OperatingSystemType? BuildingOperatingSystem, ArchitectureType? BuildingOperatingSystemArchitecture, OperatingSystemType? TargetOperatingSystem, ArchitectureType? TargetArchitecture, ConfigurationType? ConfigurationType)
+        public static IEnumerable<Configuration> StrictMatches(this IEnumerable<Configuration> Configurations, TargetType? TargetType, ToolchainType? Toolchain, CompilerType? Compiler, OperatingSystemType? HostOperatingSystem, ArchitectureType? HostArchitecture, OperatingSystemType? TargetOperatingSystem, ArchitectureType? TargetArchitecture, ConfigurationType? ConfigurationType)
         {
             Func<Configuration, bool> Filter = (Configuration c) =>
                 ((c.MatchingTargetTypes == null) || ((TargetType != null) && c.MatchingTargetTypes.Contains(TargetType.Value)))
                 && ((c.MatchingToolchains == null) || ((Toolchain != null) && c.MatchingToolchains.Contains(Toolchain.Value)))
                 && ((c.MatchingCompilers == null) || ((Compiler != null) && c.MatchingCompilers.Contains(Compiler.Value)))
-                && ((c.MatchingBuildingOperatingSystems == null) || ((BuildingOperatingSystem != null) && c.MatchingBuildingOperatingSystems.Contains(BuildingOperatingSystem.Value)))
-                && ((c.MatchingBuildingOperatingSystemArchitectures == null) || ((BuildingOperatingSystemArchitecture != null) && c.MatchingBuildingOperatingSystemArchitectures.Contains(BuildingOperatingSystemArchitecture.Value)))
+                && ((c.MatchingHostOperatingSystems == null) || ((HostOperatingSystem != null) && c.MatchingHostOperatingSystems.Contains(HostOperatingSystem.Value)))
+                && ((c.MatchingHostArchitectures == null) || ((HostArchitecture != null) && c.MatchingHostArchitectures.Contains(HostArchitecture.Value)))
                 && ((c.MatchingTargetOperatingSystems == null) || ((TargetOperatingSystem != null) && c.MatchingTargetOperatingSystems.Contains(TargetOperatingSystem.Value)))
                 && ((c.MatchingTargetArchitectures == null) || ((TargetArchitecture != null) && c.MatchingTargetArchitectures.Contains(TargetArchitecture.Value)))
                 && ((c.MatchingConfigurationTypes == null) || ((ConfigurationType != null) && c.MatchingConfigurationTypes.Contains(ConfigurationType.Value)));
             return Configurations.Where(Filter);
         }
-        public static Configuration Merged(this IEnumerable<Configuration> Configurations, TargetType? TargetType, ToolchainType? Toolchain, CompilerType? Compiler, OperatingSystemType? BuildingOperatingSystem, ArchitectureType? BuildingOperatingSystemArchitecture, OperatingSystemType? TargetOperatingSystem, ArchitectureType? TargetArchitecture, ConfigurationType? ConfigurationType)
+        public static Configuration Merged(this IEnumerable<Configuration> Configurations, TargetType? TargetType, ToolchainType? Toolchain, CompilerType? Compiler, OperatingSystemType? HostOperatingSystem, ArchitectureType? HostArchitecture, OperatingSystemType? TargetOperatingSystem, ArchitectureType? TargetArchitecture, ConfigurationType? ConfigurationType)
         {
-            var Matched = Configurations.StrictMatches(TargetType, Toolchain, Compiler, BuildingOperatingSystem, BuildingOperatingSystemArchitecture, TargetOperatingSystem, TargetArchitecture, ConfigurationType).ToList();
+            var Matched = Configurations.StrictMatches(TargetType, Toolchain, Compiler, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, ConfigurationType).ToList();
             var conf = new Configuration
             {
                 MatchingTargetTypes = Toolchain == null ? null : new List<TargetType> { TargetType.Value },
                 MatchingToolchains = Toolchain == null ? null : new List<ToolchainType> { Toolchain.Value },
                 MatchingCompilers = Compiler == null ? null : new List<CompilerType> { Compiler.Value },
-                MatchingBuildingOperatingSystems = BuildingOperatingSystem == null ? null : new List<OperatingSystemType> { BuildingOperatingSystem.Value },
-                MatchingBuildingOperatingSystemArchitectures = BuildingOperatingSystemArchitecture == null ? null : new List<ArchitectureType> { BuildingOperatingSystemArchitecture.Value },
+                MatchingHostOperatingSystems = HostOperatingSystem == null ? null : new List<OperatingSystemType> { HostOperatingSystem.Value },
+                MatchingHostArchitectures = HostArchitecture == null ? null : new List<ArchitectureType> { HostArchitecture.Value },
                 MatchingTargetOperatingSystems = TargetOperatingSystem == null ? null : new List<OperatingSystemType> { TargetOperatingSystem.Value },
                 MatchingTargetArchitectures = TargetArchitecture == null ? null : new List<ArchitectureType> { TargetArchitecture.Value },
                 MatchingConfigurationTypes = ConfigurationType == null ? null : new List<ConfigurationType> { ConfigurationType.Value },
