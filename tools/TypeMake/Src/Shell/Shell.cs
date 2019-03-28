@@ -308,17 +308,20 @@ namespace TypeMake
             public String DefaultValue { get; set; } = null;
             public String InputDisplay { get; set; } = null;
             public bool IsPassword { get; set; } = false;
+            public bool EnableCancellation { get; set; } = true;
+            public ConsoleColor? ForegroundColor { get; set; } = null;
+            public Action OnInteraction { get; set; } = null;
             public EnvironmentVariableReadOptions()
             {
                 Suggester = (v, ConfirmedLength, Cycle, CyclePrevious) => String.IsNullOrEmpty(DefaultValue) ? v : GetCaseInsensitiveDefaultValueSuggester(DefaultValue)(v, ConfirmedLength, Cycle, CyclePrevious);
             }
         }
-        public static String RequireEnvironmentVariable(EnvironmentVariableMemory Memory, String Name)
+        public class UserCancelledException : Exception
         {
-            return RequireEnvironmentVariable(Memory, Name, new EnvironmentVariableReadOptions());
         }
         public static String RequireEnvironmentVariable(EnvironmentVariableMemory Memory, String Name, EnvironmentVariableReadOptions Options)
         {
+            var OriginalForegroundColor = Console.ForegroundColor;
             var Top = Console.CursorTop;
             var Left = Console.CursorLeft;
             var cps = GetConsolePositionState();
@@ -331,18 +334,27 @@ namespace TypeMake
             if (v == null)
             {
                 if (Options.Quiet) { throw new InvalidOperationException("Variable '" + Name + "' not exist."); }
+                if (Options.OnInteraction != null) { Options.OnInteraction(); }
+                if (Options.ForegroundColor != null) { Console.ForegroundColor = Options.ForegroundColor.Value; }
                 Console.Write("'" + Name + "' not exist. Input" + (d == "" ? "" : " " + d) + ": ");
-                v = Options.IsPassword ? ReadLinePassword() : ReadLineWithSuggestion(Options.Suggester);
-                if (v == "")
+                Console.ForegroundColor = OriginalForegroundColor;
+                try
                 {
-                    v = Options.DefaultValue ?? "";
+                    v = Options.IsPassword ? ReadLinePassword(Options.EnableCancellation) : ReadLineWithSuggestion(Options.Suggester, Options.EnableCancellation);
+                    if (v == "")
+                    {
+                        v = Options.DefaultValue ?? "";
+                    }
                 }
-                if (OperatingSystem == OperatingSystemType.Windows)
+                finally
                 {
-                    var cpsNew = GetConsolePositionState();
-                    SetConsolePositionState(cps);
-                    BackspaceCursorToPosition(Top, Left);
-                    SetConsolePositionState(cpsNew);
+                    if (OperatingSystem == OperatingSystemType.Windows)
+                    {
+                        var cpsNew = GetConsolePositionState();
+                        SetConsolePositionState(cps);
+                        BackspaceCursorToPosition(Top, Left);
+                        SetConsolePositionState(cpsNew);
+                    }
                 }
             }
             while (true)
@@ -352,18 +364,27 @@ namespace TypeMake
                 if (ValidationResult.Key) { break; }
                 var ValidationMessage = ValidationResult.Value == "" ? "Variable '" + Name + "' invalid." : "Variable '" + Name + "' invalid. " + ValidationResult.Value;
                 if (Options.Quiet) { throw new InvalidOperationException(ValidationMessage); }
+                if (Options.OnInteraction != null) { Options.OnInteraction(); }
+                if (Options.ForegroundColor != null) { Console.ForegroundColor = Options.ForegroundColor.Value; }
                 Console.Write(ValidationMessage + " Input" + (d == "" ? "" : " " + d) + ": ");
-                v = Options.IsPassword ? ReadLinePassword() : ReadLineWithSuggestion(Options.Suggester);
-                if (v == "")
+                Console.ForegroundColor = OriginalForegroundColor;
+                try
                 {
-                    v = Options.DefaultValue ?? "";
+                    v = Options.IsPassword ? ReadLinePassword(Options.EnableCancellation) : ReadLineWithSuggestion(Options.Suggester, Options.EnableCancellation);
+                    if (v == "")
+                    {
+                        v = Options.DefaultValue ?? "";
+                    }
                 }
-                if (OperatingSystem == OperatingSystemType.Windows)
+                finally
                 {
-                    var cpsNew = GetConsolePositionState();
-                    SetConsolePositionState(cps);
-                    BackspaceCursorToPosition(Top, Left);
-                    SetConsolePositionState(cpsNew);
+                    if (OperatingSystem == OperatingSystemType.Windows)
+                    {
+                        var cpsNew = GetConsolePositionState();
+                        SetConsolePositionState(cps);
+                        BackspaceCursorToPosition(Top, Left);
+                        SetConsolePositionState(cpsNew);
+                    }
                 }
             }
             if (Options.PostMapper != null)
@@ -372,20 +393,24 @@ namespace TypeMake
             }
             if (Options.IsPassword)
             {
+                if (Options.ForegroundColor != null) { Console.ForegroundColor = Options.ForegroundColor.Value; }
                 Console.WriteLine(Name + "=[***]");
+                Console.ForegroundColor = OriginalForegroundColor;
             }
             else
             {
+                if (Options.ForegroundColor != null) { Console.ForegroundColor = Options.ForegroundColor.Value; }
                 Console.WriteLine(Name + "=" + v);
+                Console.ForegroundColor = OriginalForegroundColor;
             }
             Memory.Variables[Name] = v == "" ? "_EMPTY_" : v;
             return v;
         }
-        public static T RequireEnvironmentVariableEnum<T>(EnvironmentVariableMemory Memory, String Name, bool Quiet, HashSet<T> Selections, T DefaultValue = default(T)) where T : struct
+        public static T RequireEnvironmentVariableEnum<T>(EnvironmentVariableMemory Memory, String Name, bool Quiet, HashSet<T> Selections, T DefaultValue = default(T), Action<EnvironmentVariableReadOptions> OnOptionCustomization = null) where T : struct
         {
             var InputDisplay = String.Join("|", Selections.Select(e => e.Equals(DefaultValue) ? "[" + e.ToString() + "]" : e.ToString()));
             T Output = default(T);
-            var s = RequireEnvironmentVariable(Memory, Name, new EnvironmentVariableReadOptions
+            var Options = new EnvironmentVariableReadOptions
             {
                 Quiet = Quiet,
                 Suggester = GetCaseInsensitiveSelectionSuggester(Selections.Select(e => e.ToString())),
@@ -400,7 +425,9 @@ namespace TypeMake
                 PostMapper = v => Output.ToString(),
                 DefaultValue = DefaultValue.ToString(),
                 InputDisplay = InputDisplay
-            });
+            };
+            if (OnOptionCustomization != null) { OnOptionCustomization(Options); }
+            var s = RequireEnvironmentVariable(Memory, Name, Options);
             if (Memory.VariableSelections.ContainsKey(Name))
             {
                 Memory.VariableSelections[Name] = Selections.Select(v => v.ToString()).ToList();
@@ -411,21 +438,23 @@ namespace TypeMake
             }
             return Output;
         }
-        public static T RequireEnvironmentVariableEnum<T>(EnvironmentVariableMemory Memory, String Name, bool Quiet, T DefaultValue = default(T)) where T : struct
+        public static T RequireEnvironmentVariableEnum<T>(EnvironmentVariableMemory Memory, String Name, bool Quiet, T DefaultValue = default(T), Action<EnvironmentVariableReadOptions> OnOptionCustomization = null) where T : struct
         {
-            return RequireEnvironmentVariableEnum<T>(Memory, Name, Quiet, new HashSet<T>(Enum.GetValues(typeof(T)).Cast<T>()), DefaultValue);
+            return RequireEnvironmentVariableEnum<T>(Memory, Name, Quiet, new HashSet<T>(Enum.GetValues(typeof(T)).Cast<T>()), DefaultValue, OnOptionCustomization);
         }
-        public static String RequireEnvironmentVariableSelection(EnvironmentVariableMemory Memory, String Name, bool Quiet, HashSet<String> Selections, String DefaultValue = "")
+        public static String RequireEnvironmentVariableSelection(EnvironmentVariableMemory Memory, String Name, bool Quiet, HashSet<String> Selections, String DefaultValue = "", Action<EnvironmentVariableReadOptions> OnOptionCustomization = null)
         {
             var InputDisplay = String.Join("|", Selections.Select(c => c.Equals(DefaultValue) ? "[" + c + "]" : c));
-            var s = RequireEnvironmentVariable(Memory, Name, new EnvironmentVariableReadOptions
+            var Options = new EnvironmentVariableReadOptions
             {
                 Quiet = Quiet,
                 Suggester = GetCaseInsensitiveSelectionSuggester(Selections),
                 Validator = v => new KeyValuePair<bool, String>(Selections.Contains(v), ""),
                 DefaultValue = DefaultValue.ToString(),
                 InputDisplay = InputDisplay
-            });
+            };
+            if (OnOptionCustomization != null) { OnOptionCustomization(Options); }
+            var s = RequireEnvironmentVariable(Memory, Name, Options);
             if (Memory.VariableSelections.ContainsKey(Name))
             {
                 Memory.VariableSelections[Name] = Selections.ToList();
@@ -436,10 +465,10 @@ namespace TypeMake
             }
             return s;
         }
-        public static List<String> RequireEnvironmentVariableMultipleSelection(EnvironmentVariableMemory Memory, String Name, bool Quiet, HashSet<String> Selections, HashSet<String> DefaultSelections = null, Func<List<String>, KeyValuePair<bool, String>> Validator = null)
+        public static List<String> RequireEnvironmentVariableMultipleSelection(EnvironmentVariableMemory Memory, String Name, bool Quiet, HashSet<String> Selections, HashSet<String> DefaultSelections = null, Func<List<String>, KeyValuePair<bool, String>> Validator = null, Action<EnvironmentVariableReadOptions> OnOptionCustomization = null)
         {
             var InputDisplay = String.Join(" ", Selections.Select(v => (DefaultSelections != null) && DefaultSelections.Contains(v) ? "[" + v + "]" : v));
-            var s = RequireEnvironmentVariable(Memory, Name, new EnvironmentVariableReadOptions
+            var Options = new EnvironmentVariableReadOptions
             {
                 Quiet = Quiet,
                 Suggester = GetCaseInsensitiveMultipleSelectionSuggester(Selections),
@@ -455,7 +484,9 @@ namespace TypeMake
                 },
                 DefaultValue = String.Join(" ", Selections.Intersect(DefaultSelections)),
                 InputDisplay = InputDisplay
-            });
+            };
+            if (OnOptionCustomization != null) { OnOptionCustomization(Options); }
+            var s = RequireEnvironmentVariable(Memory, Name, Options);
             if (Memory.VariableMultipleSelections.ContainsKey(Name))
             {
                 Memory.VariableMultipleSelections[Name] = Selections.ToList();
@@ -466,12 +497,12 @@ namespace TypeMake
             }
             return s.Split(' ').Where(Part => Part != "").ToList();
         }
-        public static bool RequireEnvironmentVariableBoolean(EnvironmentVariableMemory Memory, String Name, bool Quiet, bool DefaultValue = false)
+        public static bool RequireEnvironmentVariableBoolean(EnvironmentVariableMemory Memory, String Name, bool Quiet, bool DefaultValue = false, Action<EnvironmentVariableReadOptions> OnOptionCustomization = null)
         {
             var Selections = new List<bool> { false, true };
             var InputDisplay = String.Join("|", Selections.Select(c => c.Equals(DefaultValue) ? "[" + c.ToString() + "]" : c.ToString()));
             bool Output = false;
-            var s = RequireEnvironmentVariable(Memory, Name, new EnvironmentVariableReadOptions
+            var Options = new EnvironmentVariableReadOptions
             {
                 Quiet = Quiet,
                 Suggester = GetCaseInsensitiveSelectionSuggester(new List<String> { "False", "True" }),
@@ -495,33 +526,39 @@ namespace TypeMake
                 PostMapper = v => Output.ToString(),
                 DefaultValue = DefaultValue.ToString(),
                 InputDisplay = InputDisplay
-            });
+            };
+            if (OnOptionCustomization != null) { OnOptionCustomization(Options); }
+            var s = RequireEnvironmentVariable(Memory, Name, Options);
             return Output;
         }
-        public static PathString RequireEnvironmentVariableFilePath(EnvironmentVariableMemory Memory, String Name, bool Quiet, PathString DefaultValue = null, Func<PathString, KeyValuePair<bool, String>> Validator = null)
+        public static PathString RequireEnvironmentVariableFilePath(EnvironmentVariableMemory Memory, String Name, bool Quiet, PathString DefaultValue = null, Func<PathString, KeyValuePair<bool, String>> Validator = null, Action<EnvironmentVariableReadOptions> OnOptionCustomization = null)
         {
             Func<String, KeyValuePair<bool, String>> ValidatorWrapper = p => Validator(p);
-            var s = RequireEnvironmentVariable(Memory, Name, new EnvironmentVariableReadOptions
+            var Options = new EnvironmentVariableReadOptions
             {
                 Quiet = Quiet,
                 Suggester = GetPathSuggester(true, true, DefaultValue),
                 Validator = Validator != null ? ValidatorWrapper : (p => File.Exists(p) ? new KeyValuePair<bool, String>(true, "") : new KeyValuePair<bool, String>(false, "File not found.")),
                 PostMapper = p => p.AsPath().FullPath,
                 DefaultValue = DefaultValue
-            });
+            };
+            if (OnOptionCustomization != null) { OnOptionCustomization(Options); }
+            var s = RequireEnvironmentVariable(Memory, Name, Options);
             return s;
         }
-        public static PathString RequireEnvironmentVariableDirectoryPath(EnvironmentVariableMemory Memory, String Name, bool Quiet, PathString DefaultValue = null, Func<PathString, KeyValuePair<bool, String>> Validator = null)
+        public static PathString RequireEnvironmentVariableDirectoryPath(EnvironmentVariableMemory Memory, String Name, bool Quiet, PathString DefaultValue = null, Func<PathString, KeyValuePair<bool, String>> Validator = null, Action<EnvironmentVariableReadOptions> OnOptionCustomization = null)
         {
             Func<String, KeyValuePair<bool, String>> ValidatorWrapper = p => Validator(p);
-            var s = RequireEnvironmentVariable(Memory, Name, new EnvironmentVariableReadOptions
+            var Options = new EnvironmentVariableReadOptions
             {
                 Quiet = Quiet,
                 Suggester = GetPathSuggester(false, true, DefaultValue),
                 Validator = Validator != null ? ValidatorWrapper : (p => Directory.Exists(p) ? new KeyValuePair<bool, String>(true, "") : new KeyValuePair<bool, String>(false, "Directory not found.")),
                 PostMapper = p => p.AsPath().FullPath,
                 DefaultValue = DefaultValue
-            });
+            };
+            if (OnOptionCustomization != null) { OnOptionCustomization(Options); }
+            var s = RequireEnvironmentVariable(Memory, Name, Options);
             return s;
         }
         private static Func<String, int, bool, bool, String> GetCaseInsensitiveDefaultValueSuggester(String DefaultValue)
@@ -626,6 +663,8 @@ namespace TypeMake
                     return vConfirmed;
                 }
                 if ((Parent != "") && !Directory.Exists(Parent)) { return vConfirmed; }
+                if (vConfirmed == ".") { return vConfirmed; }
+                if (vConfirmed == "..") { return vConfirmed; }
                 var FileSelections = EnableFile ? Directory.EnumerateFiles(Parent, "*", SearchOption.TopDirectoryOnly).Select(f => f.AsPath().FileName).ToList() : new List<string> { };
                 var DirectorySelections = EnableDirectory ? Directory.EnumerateDirectories(Parent, "*", SearchOption.TopDirectoryOnly).Select(d => d.AsPath().FileName).ToList() : new List<string> { };
                 var Selections = FileSelections.Concat(DirectorySelections).Select(s => Parent / s).ToList();
@@ -665,12 +704,16 @@ namespace TypeMake
                 return FirstMatched ?? (Cycle ? v : vConfirmed);
             };
         }
-        public static String ReadLinePassword()
+        public static String ReadLinePassword(bool EnableCancellation)
         {
             var l = new LinkedList<Char>();
             while (true)
             {
                 var ki = Console.ReadKey(true);
+                if (EnableCancellation && (ki.Key == ConsoleKey.Escape))
+                {
+                    throw new UserCancelledException();
+                }
                 if (ki.Key == ConsoleKey.Enter)
                 {
                     Console.WriteLine();
@@ -689,7 +732,7 @@ namespace TypeMake
             }
             return new String(l.ToArray());
         }
-        public static String ReadLineWithSuggestion(Func<String, int, bool, bool, String> Suggester)
+        public static String ReadLineWithSuggestion(Func<String, int, bool, bool, String> Suggester, bool EnableCancellation)
         {
             if (OperatingSystem == OperatingSystemType.Windows)
             {
@@ -789,6 +832,10 @@ namespace TypeMake
                         MoveCursorToPosition(BackupTop, BackupLeft);
                         Top = Console.CursorTop;
                         Left = Console.CursorLeft;
+                    }
+                    if (EnableCancellation && (ki.Key == ConsoleKey.Escape))
+                    {
+                        throw new UserCancelledException();
                     }
                     if (ki.Key == ConsoleKey.Enter)
                     {
@@ -927,7 +974,7 @@ namespace TypeMake
                 return Console.ReadLine();
             }
         }
-        private static void BackspaceCursorToPosition(int Top, int Left)
+        public static void BackspaceCursorToPosition(int Top, int Left)
         {
             while (true)
             {
@@ -953,15 +1000,15 @@ namespace TypeMake
             }
             MoveCursorToPosition(Top, Left);
         }
-        private static void MoveCursorToPosition(int Top, int Left)
+        public static void MoveCursorToPosition(int Top, int Left)
         {
             Console.SetCursorPosition(Left, Top);
         }
-        private static void MoveCursorToPosition(KeyValuePair<int, int> Pair)
+        public static void MoveCursorToPosition(KeyValuePair<int, int> Pair)
         {
             Console.SetCursorPosition(Pair.Value, Pair.Key);
         }
-        private class ConsolePositionState
+        public class ConsolePositionState
         {
             public int BufferWidth = Console.BufferWidth;
             public int BufferHeight = Console.BufferHeight;
@@ -970,7 +1017,7 @@ namespace TypeMake
             public int WindowTop = Console.WindowTop;
             public int WindowLeft = Console.WindowLeft;
         }
-        private static ConsolePositionState GetConsolePositionState()
+        public static ConsolePositionState GetConsolePositionState()
         {
             return new ConsolePositionState
             {
@@ -982,7 +1029,7 @@ namespace TypeMake
                 WindowLeft = Console.WindowLeft
             };
         }
-        private static void SetConsolePositionState(ConsolePositionState s)
+        public static void SetConsolePositionState(ConsolePositionState s)
         {
             Console.SetWindowSize(s.WindowWidth, s.WindowHeight);
             Console.SetWindowPosition(s.WindowLeft, s.WindowTop);
