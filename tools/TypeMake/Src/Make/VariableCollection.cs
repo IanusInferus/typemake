@@ -537,7 +537,7 @@ namespace TypeMake
 
             vc.AddVariableFetch((Action OnInteraction) =>
             {
-                v.BuildNow = Shell.RequireEnvironmentVariableBoolean(Memory, "BuildNow", Quiet, true, Options => { Options.ForegroundColor = ConsoleColor.Cyan; Options.OnInteraction = OnInteraction; });
+                v.BuildNow = Shell.RequireEnvironmentVariableBoolean(Memory, "BuildNow", Quiet, false, Options => { Options.ForegroundColor = ConsoleColor.Cyan; Options.OnInteraction = OnInteraction; });
             });
 
             vc.Execute();

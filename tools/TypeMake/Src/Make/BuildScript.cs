@@ -26,11 +26,7 @@ namespace TypeMake
                 Lines.Add(":main");
                 foreach (var p in Memory.Variables)
                 {
-                    if (p.Key == "BuildAfterGenerate")
-                    {
-                        Lines.Add("set BuildAfterGenerate=False");
-                    }
-                    else if (p.Key == "BuildDirectory")
+                    if (p.Key == "BuildDirectory")
                     {
                         Lines.Add("set BuildDirectory=%~dp0");
                     }
@@ -67,11 +63,7 @@ namespace TypeMake
                 Lines.Add("set -e");
                 foreach (var p in Memory.Variables)
                 {
-                    if (p.Key == "BuildAfterGenerate")
-                    {
-                        Lines.Add("export BuildAfterGenerate=False");
-                    }
-                    else if (p.Key == "BuildDirectory")
+                    if (p.Key == "BuildDirectory")
                     {
                         Lines.Add("export BuildDirectory=$(cd `dirname \"$0\"`; pwd)");
                     }
