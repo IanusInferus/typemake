@@ -864,9 +864,9 @@ namespace TypeMake
                 {
                     return true;
                 }
-                if ((TargetOperatingSystem == OperatingSystemType.Windows) && String.Equals(e, "Win", StringComparison.OrdinalIgnoreCase))
+                if (String.Equals(e, "Win", StringComparison.OrdinalIgnoreCase))
                 {
-                    return true;
+                    return TargetOperatingSystem == OperatingSystemType.Windows;
                 }
                 if (Names.Contains(e))
                 {
