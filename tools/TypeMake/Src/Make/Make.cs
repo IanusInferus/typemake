@@ -643,6 +643,14 @@ namespace TypeMake
                 },
                 new Configuration
                 {
+                    MatchingCompilers = new List<CompilerType> { CompilerType.gcc, CompilerType.clang },
+                    MatchingHostArchitectures = new List<ArchitectureType> { ArchitectureType.x86_64 },
+                    MatchingTargetArchitectures = new List<ArchitectureType> { ArchitectureType.x86 },
+                    CommonFlags = ParseFlags("-m32"),
+                    LinkerFlags = ParseFlags("-m32")
+                },
+                new Configuration
+                {
                     MatchingToolchains = new List<ToolchainType> { ToolchainType.Gradle_Ninja },
                     MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Android },
                     CommonFlags = ParseFlags("-fno-addrsig -fPIE -fPIC -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -Wa,--noexecstack"),

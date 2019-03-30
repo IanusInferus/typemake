@@ -93,7 +93,7 @@ namespace TypeMake
                 }
                 else if (v.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
                 {
-                    v.TargetArchitecture = Cpp.ArchitectureType.x86_64;
+                    v.TargetArchitecture = Shell.RequireEnvironmentVariableEnum(Memory, "TargetArchitecture", Quiet, new HashSet<Cpp.ArchitectureType> { Cpp.ArchitectureType.x86, Cpp.ArchitectureType.x86_64 }, Cpp.ArchitectureType.x86_64, Options => Options.OnInteraction = OnInteraction);
                 }
                 else if (v.TargetOperatingSystem == Cpp.OperatingSystemType.Mac)
                 {
