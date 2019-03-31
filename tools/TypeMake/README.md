@@ -21,6 +21,7 @@ Target Operating System vs Building Operating System
 |  Windows x86/x64/armeabi-v7a/arm64-v8a  |       VS2017       |                    |                    |
 |              Linux x86/x64              |    WSL+Ninja+gcc   |      Ninja+gcc     |                    |
 |              Linux x86/x64              |    WSL+CMake+gcc   |      CMake+gcc     |                    |
+|     Linux armeabi-v7a-hf/arm64-v8a      |    WSL+Ninja+gcc   |      Ninja+gcc     |                    |
 |                MacOS x64                |                    |                    |        XCode       |
 |  Android x86/x64/armeabi-v7a/arm64-v8a  |  NDK+Ninja+Gradle  |  NDK+Ninja+Gradle  |  NDK+Ninja+Gradle  |
 |  Android x86/x64/armeabi-v7a/arm64-v8a  |  NDK+CMake+Gradle  |  NDK+CMake+Gradle  |  NDK+CMake+Gradle  |
@@ -30,7 +31,9 @@ Target Operating System vs Building Operating System
 
 Windows: VS2017
 
-Linux(openSUSE 15): \[CMake(>=3.3.2)\] gcc-c++(7.3.1) \[gcc-c++-32bit(7.3.1)\] mono-devel(5.x) glibc(develop 2.18/runtime 2.14)
+Linux(openSUSE 15): \[cmake(>=3.3.2)\] gcc-c++(7.3.1) \[gcc-c++-32bit(7.3.1)\] mono-devel(5.x) glibc(develop 2.18/runtime 2.14)
+
+Linux(Ubuntu 18.04): \[cmake(>=3.3.2)\] g++(7.3.0) \[g++-multilib(7.3.0)\] \[g++-arm-linux-gnueabihf(7.3.0)\] \[g++-aarch64-linux-gnu(7.3.0)\] mono-devel(5.x) glibc(develop 2.18/runtime 2.14)
 
 Mac: XCode(10.0) mono(5.x)
 
