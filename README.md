@@ -27,7 +27,7 @@ Target Operating System vs Building Operating System
 |  Android x86/x64/armv7a/arm64  |  NDK+CMake+Gradle  |  NDK+CMake+Gradle  |  NDK+CMake+Gradle  |
 |        iOS armv7a/arm64        |                    |                    |        XCode       |
 
-* Different OSs use different ABIs on the same CPU architecture.
+Different OSs use different ABIs on the same CPU architecture.
 
 ## Dependencies
 
