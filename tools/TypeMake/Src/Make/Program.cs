@@ -99,19 +99,36 @@ namespace TypeMake
             {
                 GenerateBuildScriptWindows(v.BuildDirectory, r.SolutionName, Cpp.ArchitectureType.x86, Cpp.ConfigurationType.Debug, v.VSDir, v.ForceRegenerate);
                 GenerateBuildScriptWindows(v.BuildDirectory, r.SolutionName, Cpp.ArchitectureType.x86, Cpp.ConfigurationType.Release, v.VSDir, v.ForceRegenerate);
-                GenerateBuildScriptWindows(v.BuildDirectory, r.SolutionName, Cpp.ArchitectureType.x86_64, Cpp.ConfigurationType.Debug, v.VSDir, v.ForceRegenerate);
-                GenerateBuildScriptWindows(v.BuildDirectory, r.SolutionName, Cpp.ArchitectureType.x86_64, Cpp.ConfigurationType.Release, v.VSDir, v.ForceRegenerate);
-                GenerateBuildScriptWindows(v.BuildDirectory, r.SolutionName, Cpp.ArchitectureType.armeabi_v7a, Cpp.ConfigurationType.Debug, v.VSDir, v.ForceRegenerate);
-                GenerateBuildScriptWindows(v.BuildDirectory, r.SolutionName, Cpp.ArchitectureType.armeabi_v7a, Cpp.ConfigurationType.Release, v.VSDir, v.ForceRegenerate);
-                GenerateBuildScriptWindows(v.BuildDirectory, r.SolutionName, Cpp.ArchitectureType.arm64_v8a, Cpp.ConfigurationType.Debug, v.VSDir, v.ForceRegenerate);
-                GenerateBuildScriptWindows(v.BuildDirectory, r.SolutionName, Cpp.ArchitectureType.arm64_v8a, Cpp.ConfigurationType.Release, v.VSDir, v.ForceRegenerate);
+                GenerateBuildScriptWindows(v.BuildDirectory, r.SolutionName, Cpp.ArchitectureType.x64, Cpp.ConfigurationType.Debug, v.VSDir, v.ForceRegenerate);
+                GenerateBuildScriptWindows(v.BuildDirectory, r.SolutionName, Cpp.ArchitectureType.x64, Cpp.ConfigurationType.Release, v.VSDir, v.ForceRegenerate);
+                GenerateBuildScriptWindows(v.BuildDirectory, r.SolutionName, Cpp.ArchitectureType.armv7a, Cpp.ConfigurationType.Debug, v.VSDir, v.ForceRegenerate);
+                GenerateBuildScriptWindows(v.BuildDirectory, r.SolutionName, Cpp.ArchitectureType.armv7a, Cpp.ConfigurationType.Release, v.VSDir, v.ForceRegenerate);
+                GenerateBuildScriptWindows(v.BuildDirectory, r.SolutionName, Cpp.ArchitectureType.arm64, Cpp.ConfigurationType.Debug, v.VSDir, v.ForceRegenerate);
+                GenerateBuildScriptWindows(v.BuildDirectory, r.SolutionName, Cpp.ArchitectureType.arm64, Cpp.ConfigurationType.Release, v.VSDir, v.ForceRegenerate);
                 if (v.BuildNow)
                 {
                     if (v.HostOperatingSystem == Cpp.OperatingSystemType.Windows)
                     {
+                        var ArchitectureName = "";
+                        if (v.TargetArchitecture == Cpp.ArchitectureType.x86)
+                        {
+                            ArchitectureName = "x86";
+                        }
+                        else if (v.TargetArchitecture == Cpp.ArchitectureType.x64)
+                        {
+                            ArchitectureName = "x64";
+                        }
+                        else if (v.TargetArchitecture == Cpp.ArchitectureType.armv7a)
+                        {
+                            ArchitectureName = "ARM32";
+                        }
+                        else if (v.TargetArchitecture == Cpp.ArchitectureType.arm64)
+                        {
+                            ArchitectureName = "ARM64";
+                        }
                         using (var d = Shell.PushDirectory(v.BuildDirectory))
                         {
-                            MergeExitCode(Shell.Execute($"build_{v.TargetArchitecture}_{v.Configuration}.cmd"));
+                            MergeExitCode(Shell.Execute($"build_{ArchitectureName}_{v.Configuration}.cmd"));
                         }
                     }
                     else

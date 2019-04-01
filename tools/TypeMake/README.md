@@ -16,16 +16,18 @@ TypeMake --help
 
 Target Operating System vs Building Operating System
 
-|                                         |   Windows 10 x64   |      Linux x64     |      MacOS x64     |
-| :-------------------------------------: | :----------------: | :----------------: | :----------------: |
-|  Windows x86/x64/armeabi-v7a/arm64-v8a  |       VS2017       |                    |                    |
-|              Linux x86/x64              |    WSL+Ninja+gcc   |      Ninja+gcc     |                    |
-|              Linux x86/x64              |    WSL+CMake+gcc   |      CMake+gcc     |                    |
-|     Linux armeabi-v7a-hf/arm64-v8a      |    WSL+Ninja+gcc   |      Ninja+gcc     |                    |
-|                MacOS x64                |                    |                    |        XCode       |
-|  Android x86/x64/armeabi-v7a/arm64-v8a  |  NDK+Ninja+Gradle  |  NDK+Ninja+Gradle  |  NDK+Ninja+Gradle  |
-|  Android x86/x64/armeabi-v7a/arm64-v8a  |  NDK+CMake+Gradle  |  NDK+CMake+Gradle  |  NDK+CMake+Gradle  |
-|        iOS armeabi-v7a/arm64-v8a        |                    |                    |        XCode       |
+|                                |   Windows 10 x64   |      Linux x64     |      MacOS x64     |
+| :----------------------------: | :----------------: | :----------------: | :----------------: |
+|  Windows x86/x64/armv7a/arm64  |       VS2017       |                    |                    |
+|          Linux x86/x64         |    WSL+Ninja+gcc   |      Ninja+gcc     |                    |
+|          Linux x86/x64         |    WSL+CMake+gcc   |      CMake+gcc     |                    |
+|       Linux armv7a/arm64       |    WSL+Ninja+gcc   |      Ninja+gcc     |                    |
+|            MacOS x64           |                    |                    |        XCode       |
+|  Android x86/x64/armv7a/arm64  |  NDK+Ninja+Gradle  |  NDK+Ninja+Gradle  |  NDK+Ninja+Gradle  |
+|  Android x86/x64/armv7a/arm64  |  NDK+CMake+Gradle  |  NDK+CMake+Gradle  |  NDK+CMake+Gradle  |
+|        iOS armv7a/arm64        |                    |                    |        XCode       |
+
+* Different OSs use different ABIs on the same CPU architecture.
 
 ## Dependencies
 

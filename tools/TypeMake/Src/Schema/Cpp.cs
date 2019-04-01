@@ -48,9 +48,9 @@ namespace TypeMake.Cpp
     public enum ArchitectureType
     {
         x86,
-        x86_64,
-        armeabi_v7a,
-        arm64_v8a
+        x64,
+        armv7a,
+        arm64
     }
     public enum FileType
     {

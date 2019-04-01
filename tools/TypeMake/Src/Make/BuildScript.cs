@@ -224,7 +224,7 @@ namespace TypeMake
                 CMakeArguments.Add($"-DANDROID_STL=c++_static");
                 CMakeArguments.Add($"-DANDROID_PLATFORM=android-17");
                 CMakeArguments.Add($"-DANDROID_ABI={Cpp.GradleProjectGenerator.GetArchitectureString(TargetArchitecture)}");
-                if (TargetArchitecture == Cpp.ArchitectureType.armeabi_v7a)
+                if (TargetArchitecture == Cpp.ArchitectureType.armv7a)
                 {
                     CMakeArguments.Add($"-DANDROID_ARM_NEON=ON");
                 }

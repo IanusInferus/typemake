@@ -524,15 +524,15 @@ namespace TypeMake.Cpp
             {
                 return "Win32";
             }
-            else if (Architecture == ArchitectureType.x86_64)
+            else if (Architecture == ArchitectureType.x64)
             {
                 return "x64";
             }
-            else if (Architecture == ArchitectureType.armeabi_v7a)
+            else if (Architecture == ArchitectureType.armv7a)
             {
                 return "ARM";
             }
-            else if (Architecture == ArchitectureType.arm64_v8a)
+            else if (Architecture == ArchitectureType.arm64)
             {
                 return "ARM64";
             }

@@ -67,7 +67,7 @@ namespace TypeMake
             {
                 if (Shell.OperatingSystemArchitecture == Shell.OperatingSystemArchitectureType.x86_64)
                 {
-                    v.HostArchitecture = Cpp.ArchitectureType.x86_64;
+                    v.HostArchitecture = Cpp.ArchitectureType.x64;
                 }
                 else if (Shell.OperatingSystemArchitecture == Shell.OperatingSystemArchitectureType.x86)
                 {
@@ -89,11 +89,11 @@ namespace TypeMake
             {
                 if (v.TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
                 {
-                    v.TargetArchitecture = Shell.RequireEnvironmentVariableEnum(Memory, "TargetArchitecture", Quiet, new HashSet<Cpp.ArchitectureType> { Cpp.ArchitectureType.x86, Cpp.ArchitectureType.x86_64, Cpp.ArchitectureType.armeabi_v7a, Cpp.ArchitectureType.arm64_v8a }, Cpp.ArchitectureType.x86_64, Options => Options.OnInteraction = OnInteraction);
+                    v.TargetArchitecture = Shell.RequireEnvironmentVariableEnum(Memory, "TargetArchitecture", Quiet, new HashSet<Cpp.ArchitectureType> { Cpp.ArchitectureType.x86, Cpp.ArchitectureType.x64, Cpp.ArchitectureType.armv7a, Cpp.ArchitectureType.arm64 }, Cpp.ArchitectureType.x64, Options => Options.OnInteraction = OnInteraction);
                 }
                 else if (v.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
                 {
-                    v.TargetArchitecture = Shell.RequireEnvironmentVariableEnum(Memory, "TargetArchitecture", Quiet, new HashSet<Cpp.ArchitectureType> { Cpp.ArchitectureType.x86, Cpp.ArchitectureType.x86_64, Cpp.ArchitectureType.armeabi_v7a, Cpp.ArchitectureType.arm64_v8a }, Cpp.ArchitectureType.x86_64, Options => Options.OnInteraction = OnInteraction);
+                    v.TargetArchitecture = Shell.RequireEnvironmentVariableEnum(Memory, "TargetArchitecture", Quiet, new HashSet<Cpp.ArchitectureType> { Cpp.ArchitectureType.x86, Cpp.ArchitectureType.x64, Cpp.ArchitectureType.armv7a, Cpp.ArchitectureType.arm64 }, Cpp.ArchitectureType.x64, Options => Options.OnInteraction = OnInteraction);
                 }
                 else if (v.TargetOperatingSystem == Cpp.OperatingSystemType.Mac)
                 {
@@ -105,7 +105,7 @@ namespace TypeMake
                 }
                 else if (v.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
                 {
-                    v.TargetArchitecture = Shell.RequireEnvironmentVariableEnum(Memory, "TargetArchitecture", Quiet, Cpp.ArchitectureType.armeabi_v7a, Options => Options.OnInteraction = OnInteraction);
+                    v.TargetArchitecture = Shell.RequireEnvironmentVariableEnum(Memory, "TargetArchitecture", Quiet, Cpp.ArchitectureType.armv7a, Options => Options.OnInteraction = OnInteraction);
                 }
                 else
                 {
@@ -121,7 +121,7 @@ namespace TypeMake
                 }
                 else if (v.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
                 {
-                    if ((v.TargetArchitecture == Cpp.ArchitectureType.x86) || (v.TargetArchitecture == Cpp.ArchitectureType.x86_64))
+                    if ((v.TargetArchitecture == Cpp.ArchitectureType.x86) || (v.TargetArchitecture == Cpp.ArchitectureType.x64))
                     {
                         v.Toolchain = Shell.RequireEnvironmentVariableEnum(Memory, "Toolchain", Quiet, new HashSet<Cpp.ToolchainType> { Cpp.ToolchainType.Ninja, Cpp.ToolchainType.CMake }, Cpp.ToolchainType.Ninja, Options => Options.OnInteraction = OnInteraction);
                     }
@@ -367,7 +367,7 @@ namespace TypeMake
                     if (v.Toolchain == Cpp.ToolchainType.Gradle_CMake)
                     {
                         String DefaultMake = null;
-                        if (v.HostArchitecture == Cpp.ArchitectureType.x86_64)
+                        if (v.HostArchitecture == Cpp.ArchitectureType.x64)
                         {
                             if (v.HostOperatingSystem == Cpp.OperatingSystemType.Windows)
                             {
@@ -454,17 +454,17 @@ namespace TypeMake
                         TargetPrefix = "i686";
                         ApiLevel = 21;
                     }
-                    else if (v.TargetArchitecture == Cpp.ArchitectureType.x86_64)
+                    else if (v.TargetArchitecture == Cpp.ArchitectureType.x64)
                     {
                         TargetPrefix = "x86_64";
                         ApiLevel = 21;
                     }
-                    else if (v.TargetArchitecture == Cpp.ArchitectureType.armeabi_v7a)
+                    else if (v.TargetArchitecture == Cpp.ArchitectureType.armv7a)
                     {
                         TargetPrefix = "armv7a";
                         ApiLevel = 17;
                     }
-                    else if (v.TargetArchitecture == Cpp.ArchitectureType.arm64_v8a)
+                    else if (v.TargetArchitecture == Cpp.ArchitectureType.arm64)
                     {
                         TargetPrefix = "aarch64";
                         ApiLevel = 21;
@@ -483,11 +483,11 @@ namespace TypeMake
                     if (v.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
                     {
                         var DefaultCC = "gcc";
-                        if (v.TargetArchitecture == Cpp.ArchitectureType.armeabi_v7a)
+                        if (v.TargetArchitecture == Cpp.ArchitectureType.armv7a)
                         {
                             DefaultCC = "arm-linux-gnueabihf-gcc";
                         }
-                        else if (v.TargetArchitecture == Cpp.ArchitectureType.arm64_v8a)
+                        else if (v.TargetArchitecture == Cpp.ArchitectureType.arm64)
                         {
                             DefaultCC = "aarch64-linux-gnu-gcc";
                         }
@@ -507,11 +507,11 @@ namespace TypeMake
                     if (v.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
                     {
                         var DefaultCXX = "g++";
-                        if (v.TargetArchitecture == Cpp.ArchitectureType.armeabi_v7a)
+                        if (v.TargetArchitecture == Cpp.ArchitectureType.armv7a)
                         {
                             DefaultCXX = "arm-linux-gnueabihf-g++";
                         }
-                        else if (v.TargetArchitecture == Cpp.ArchitectureType.arm64_v8a)
+                        else if (v.TargetArchitecture == Cpp.ArchitectureType.arm64)
                         {
                             DefaultCXX = "aarch64-linux-gnu-g++";
                         }
@@ -531,11 +531,11 @@ namespace TypeMake
                     if (v.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
                     {
                         var DefaultAR = "ar";
-                        if (v.TargetArchitecture == Cpp.ArchitectureType.armeabi_v7a)
+                        if (v.TargetArchitecture == Cpp.ArchitectureType.armv7a)
                         {
                             DefaultAR = "arm-linux-gnueabihf-ar";
                         }
-                        else if (v.TargetArchitecture == Cpp.ArchitectureType.arm64_v8a)
+                        else if (v.TargetArchitecture == Cpp.ArchitectureType.arm64)
                         {
                             DefaultAR = "aarch64-linux-gnu-ar";
                         }

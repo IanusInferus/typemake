@@ -147,15 +147,15 @@ namespace TypeMake.Cpp
             {
                 return "x86";
             }
-            else if (Architecture == Cpp.ArchitectureType.x86_64)
+            else if (Architecture == Cpp.ArchitectureType.x64)
             {
                 return "x86_64";
             }
-            else if (Architecture == Cpp.ArchitectureType.armeabi_v7a)
+            else if (Architecture == Cpp.ArchitectureType.armv7a)
             {
                 return "armeabi-v7a";
             }
-            else if (Architecture == Cpp.ArchitectureType.arm64_v8a)
+            else if (Architecture == Cpp.ArchitectureType.arm64)
             {
                 return "arm64-v8a";
             }

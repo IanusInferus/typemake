@@ -644,7 +644,7 @@ namespace TypeMake
                 new Configuration
                 {
                     MatchingCompilers = new List<CompilerType> { CompilerType.gcc, CompilerType.clang },
-                    MatchingHostArchitectures = new List<ArchitectureType> { ArchitectureType.x86_64 },
+                    MatchingHostArchitectures = new List<ArchitectureType> { ArchitectureType.x64 },
                     MatchingTargetArchitectures = new List<ArchitectureType> { ArchitectureType.x86 },
                     CommonFlags = ParseFlags("-m32"),
                     LinkerFlags = ParseFlags("-m32")

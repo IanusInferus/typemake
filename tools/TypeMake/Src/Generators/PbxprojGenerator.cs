@@ -30,7 +30,7 @@ namespace TypeMake.Cpp
             this.HostOperatingSystem = HostOperatingSystem;
             this.HostArchitecture = HostArchitecture;
             this.TargetOperatingSystem = TargetOperatingSystem;
-            this.TargetArchitectureType = TargetOperatingSystem == OperatingSystemType.iOS ? ArchitectureType.arm64_v8a : ArchitectureType.x86_64; //TODO: need better handling
+            this.TargetArchitectureType = TargetOperatingSystem == OperatingSystemType.iOS ? ArchitectureType.arm64 : ArchitectureType.x64; //TODO: need better handling
             this.DevelopmentTeam = DevelopmentTeam;
         }
 
