@@ -374,7 +374,7 @@ namespace TypeMake.Cpp
                 var RelativePath = p.FilePath.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Windows);
                 var x = new XElement(xn + "ProjectReference", new XAttribute("Include", RelativePath));
                 x.Add(new XElement(xn + "Project", "{" + p.Id.ToUpper() + "}"));
-                x.Add(new XElement(xn + "Name", "{" + p.Name + "}"));
+                x.Add(new XElement(xn + "Name", p.Name));
                 ProjectItemGroup.Add(x);
             }
             if (!ProjectItemGroup.HasElements)
