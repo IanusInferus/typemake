@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using TypeMake.Cpp.CMakeProjectGeneratorDetail;
 
 namespace TypeMake.Cpp
 {
@@ -237,12 +238,15 @@ namespace TypeMake.Cpp
         }
     }
 
-    internal static class CMakeProjectGeneratorUtils
+    namespace CMakeProjectGeneratorDetail
     {
-        public static PathString RelativeTo(this PathString p, PathString BaseDirectory, bool EnableAbsolutePath)
+        internal static class Utils
         {
-            if (EnableAbsolutePath) { return p; }
-            return p.RelativeTo(BaseDirectory);
+            public static PathString RelativeTo(this PathString p, PathString BaseDirectory, bool EnableAbsolutePath)
+            {
+                if (EnableAbsolutePath) { return p.FullPath; }
+                return p.RelativeTo(BaseDirectory);
+            }
         }
     }
 }

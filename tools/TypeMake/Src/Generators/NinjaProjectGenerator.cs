@@ -52,7 +52,8 @@ namespace TypeMake.Cpp
             yield return "";
 
             var ExecutingOperatingSystem = (HostOperatingSystem == OperatingSystemType.Windows) && (TargetOperatingSystem == OperatingSystemType.Linux) ? TargetOperatingSystem : HostOperatingSystem;
-            var Escape = ExecutingOperatingSystem == OperatingSystemType.Windows ? (Func<String, String>)(arg => Shell.EscapeArgument(arg, Shell.ArgumentStyle.Windows)) : (Func<String, String>)(arg => Shell.EscapeArgumentForShell(arg, Shell.ShellArgumentStyle.Bash));
+            var CommandArgumentEscape = ExecutingOperatingSystem == OperatingSystemType.Windows ? (Func<String, String>)(arg => Shell.EscapeArgument(arg, Shell.ArgumentStyle.Windows)) : (Func<String, String>)(arg => Shell.EscapeArgumentForShell(arg, Shell.ShellArgumentStyle.Bash));
+            Func<String, String> NinjaEscape = s => s.Replace("$", "$$").Replace(":", "$:").Replace(" ", "$ ");
 
             var CommonFlags = new List<String>();
             CommonFlags.AddRange(conf.IncludeDirectories.Select(d => d.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix)).Select(d => "-I" + d));
@@ -94,11 +95,11 @@ namespace TypeMake.Cpp
                 Libs.Add("-Wl,--end-group");
             }
 
-            yield return "commonflags  = " + String.Join(" ", CommonFlags.Select(f => Escape(f)));
-            yield return "cflags  = " + String.Join(" ", CFlags.Select(f => Escape(f)));
-            yield return "cxxflags  = " + String.Join(" ", CppFlags.Select(f => Escape(f)));
-            yield return "ldflags  = " + String.Join(" ", LinkerFlags.Select(f => Escape(f)));
-            yield return "libs  = " + String.Join(" ", Libs.Select(f => Escape(f)));
+            yield return "commonflags  = " + String.Join(" ", CommonFlags.Select(f => CommandArgumentEscape(f)));
+            yield return "cflags  = " + String.Join(" ", CFlags.Select(f => CommandArgumentEscape(f)));
+            yield return "cxxflags  = " + String.Join(" ", CppFlags.Select(f => CommandArgumentEscape(f)));
+            yield return "ldflags  = " + String.Join(" ", LinkerFlags.Select(f => CommandArgumentEscape(f)));
+            yield return "libs  = " + String.Join(" ", Libs.Select(f => CommandArgumentEscape(f)));
 
             yield return "";
 
@@ -123,20 +124,20 @@ namespace TypeMake.Cpp
                 }
 
                 var FilePath = File.Path.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix);
-                var ObjectFilePath = $"{Project.Name}/{File.Path.FullPath.RelativeTo(InputDirectory).ToString(PathStringStyle.Unix).Replace(".", "_")}.o";
+                var ObjectFilePath = Project.Name.AsPath() / (File.Path.FullPath.RelativeTo(InputDirectory).ToString(PathStringStyle.Unix).Replace("..", "__") + ".o");
                 if (File.Type == FileType.CSource)
                 {
-                    yield return $"build {ObjectFilePath}: cc {FilePath}";
+                    yield return $"build {NinjaEscape(ObjectFilePath)}: cc {NinjaEscape(FilePath)}";
                 }
                 else if (File.Type == FileType.CppSource)
                 {
-                    yield return $"build {ObjectFilePath}: cxx {FilePath}";
+                    yield return $"build {NinjaEscape(ObjectFilePath)}: cxx {NinjaEscape(FilePath)}";
                 }
                 ObjectFilePaths.Add(ObjectFilePath);
 
                 if (FileFlags.Count > 0)
                 {
-                    yield return $"  fileflags = {String.Join(" ", FileFlags.Select(f => Escape(f)))}";
+                    yield return $"  fileflags = {String.Join(" ", FileFlags.Select(f => CommandArgumentEscape(f)))}";
                 }
             }
 
@@ -166,7 +167,7 @@ namespace TypeMake.Cpp
 
             var TargetPath = ((conf.OutputDirectory != null ? conf.OutputDirectory : (OutputDirectory / ".." / $"{TargetArchitectureType}_{ConfigurationType}")) / TargetName).RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix);
 
-            yield return $"build {TargetPath}: {RuleName} {String.Join(" ", ObjectFilePaths)}" + (Dependencies.Count > 0 ? " | " + String.Join(" ", Dependencies) : "");
+            yield return $"build {NinjaEscape(TargetPath)}: {RuleName} {String.Join(" ", ObjectFilePaths.Select(p => NinjaEscape(p)))}" + (Dependencies.Count > 0 ? " | " + String.Join(" ", Dependencies.Select(p => NinjaEscape(p))) : "");
 
             yield return "";
         }

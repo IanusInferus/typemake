@@ -641,7 +641,7 @@ namespace TypeMake
                     MatchingCompilers = new List<CompilerType> { CompilerType.gcc, CompilerType.clang },
                     MatchingConfigurationTypes = new List<ConfigurationType> { Cpp.ConfigurationType.Release },
                     Defines = ParseDefines("NDEBUG"),
-                    CommonFlags = ParseFlags("-O2")
+                    CommonFlags = ParseFlags("-O2 -g")
                 },
                 new Configuration
                 {
@@ -656,7 +656,7 @@ namespace TypeMake
                     MatchingToolchains = new List<ToolchainType> { ToolchainType.Gradle_Ninja },
                     MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Android },
                     CommonFlags = ParseFlags("-fno-addrsig -fPIE -fPIC -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -Wa,--noexecstack"),
-                    LinkerFlags = ParseFlags("-Wl,-z,relro")
+                    LinkerFlags = ParseFlags("-Wl,--build-id -Wl,--warn-shared-textrel -Wl,--fatal-warnings -Wl,--no-undefined -Wl,-z,noexecstack -Wl,-z,relro -Wl,-z,now")
                 },
                 new Configuration
                 {
