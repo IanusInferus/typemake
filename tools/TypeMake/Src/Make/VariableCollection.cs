@@ -22,6 +22,7 @@ namespace TypeMake
         public PathString BuildDirectory;
         public String DevelopmentTeam;
         public PathString VSDir;
+        public int VSVersion;
         public PathString CMake;
         public PathString Make;
         public PathString Ninja;
@@ -283,18 +284,22 @@ namespace TypeMake
                         var ProgramFiles = Environment.GetEnvironmentVariable("ProgramFiles(x86)");
                         if (ProgramFiles != null)
                         {
-                            foreach (var d in new String[] { "Enterprise", "Professional", "Community", "BuildTools" })
+                            foreach (var Version in new int[] { 2019, 2018 })
                             {
-                                var p = ProgramFiles.AsPath() / "Microsoft Visual Studio/2017" / d;
-                                if (Directory.Exists(p))
+                                foreach (var d in new String[] { "Enterprise", "Professional", "Community", "BuildTools" })
                                 {
-                                    DefaultVSDir = p;
-                                    break;
+                                    var p = ProgramFiles.AsPath() / $"Microsoft Visual Studio/{Version}" / d;
+                                    if (Directory.Exists(p))
+                                    {
+                                        DefaultVSDir = p;
+                                        break;
+                                    }
                                 }
                             }
                         }
                     }
                     v.VSDir = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "VSDir", Quiet, DefaultVSDir, PathValidator, Options => Options.OnInteraction = OnInteraction);
+                    v.VSVersion = v.VSDir.ToString().Contains("2019") ? 2019 : 2017;
                 }
             });
 
@@ -550,7 +555,7 @@ namespace TypeMake
 
             vc.AddVariableFetch((Action OnInteraction) =>
             {
-                var m = new Make(v.Toolchain, v.Compiler, v.HostOperatingSystem, v.HostArchitecture, v.TargetOperatingSystem, v.TargetArchitecture, v.Configuration, v.SourceDirectory, v.BuildDirectory, v.DevelopmentTeam, v.CC, v.CXX, v.AR, v.ForceRegenerate, v.EnableNonTargetingOperatingSystemDummy);
+                var m = new Make(v.Toolchain, v.Compiler, v.HostOperatingSystem, v.HostArchitecture, v.TargetOperatingSystem, v.TargetArchitecture, v.Configuration, v.SourceDirectory, v.BuildDirectory, v.DevelopmentTeam, v.VSVersion, v.CC, v.CXX, v.AR, v.ForceRegenerate, v.EnableNonTargetingOperatingSystemDummy);
                 v.m = m;
                 var Projects = m.GetAvailableProjects();
                 var ProjectSet = new HashSet<String>(Projects.Values.Select(t => t.Definition.Name));

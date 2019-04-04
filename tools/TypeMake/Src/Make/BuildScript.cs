@@ -95,8 +95,9 @@ namespace TypeMake
                 }
             }
         }
-        private static void GenerateBuildScriptWindows(PathString BuildDirectory, String SolutionName, Cpp.ArchitectureType TargetArchitecture, Cpp.ConfigurationType Configuration, PathString VSDir, bool ForceRegenerate)
+        private static void GenerateBuildScriptWindows(PathString BuildDirectory, String SolutionName, Cpp.ArchitectureType TargetArchitecture, Cpp.ConfigurationType Configuration, PathString VSDir, int VSVersion, bool ForceRegenerate)
         {
+            var MSBuildVersion = VSVersion == 2019 ? "Current" : "15.0";
             var Lines = new List<String>();
             Lines.Add("@echo off");
             Lines.Add("");
@@ -110,7 +111,7 @@ namespace TypeMake
             Lines.Add("exit /b %EXIT_CODE%");
             Lines.Add("");
             Lines.Add(":main");
-            Lines.Add($@"""{VSDir.ToString(PathStringStyle.Windows)}\MSBuild\15.0\Bin\MSBuild.exe"" {SolutionName}.sln /p:Configuration={Configuration} /p:Platform={SlnGenerator.GetArchitectureString(TargetArchitecture)} /m:{Environment.ProcessorCount.ToString()} || exit /b 1");
+            Lines.Add($@"""{VSDir.ToString(PathStringStyle.Windows)}\MSBuild\{MSBuildVersion}\Bin\MSBuild.exe"" {SolutionName}.sln /p:Configuration={Configuration} /p:Platform={SlnGenerator.GetArchitectureString(TargetArchitecture)} /m:{Environment.ProcessorCount.ToString()} || exit /b 1");
             Lines.Add("");
             var BuildPath = BuildDirectory / $"build_{TargetArchitecture}_{Configuration}.cmd";
             TextFile.WriteToFile(BuildPath, String.Join("\r\n", Lines), System.Text.Encoding.Default, !ForceRegenerate);
