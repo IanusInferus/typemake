@@ -88,7 +88,7 @@ namespace TypeMake.Cpp
             var Suffix = Project.TargetType == TargetType.GradleApplication ? "apk" : Project.TargetType == TargetType.GradleLibrary ? "aar" : throw new InvalidOperationException();
             var JniLibs = Project.TargetType == TargetType.GradleApplication ? "lib" : Project.TargetType == TargetType.GradleLibrary ? "jni" : throw new InvalidOperationException();
 
-            var TargetDirectory = conf.Options.ContainsKey("gradle.targetDirectory") ? conf.Options["gradle.targetDirectory"].AsPath() : (SolutionOutputDirectory / $"{TargetArchitectureType}_Debug");
+            var TargetDirectory = conf.Options.ContainsKey("gradle.targetDirectory") ? conf.Options["gradle.targetDirectory"].AsPath() : (SolutionOutputDirectory / $"{TargetArchitectureType}_{ConfigurationType}");
 
             var SoLibraryPaths = new List<PathString> { TargetDirectory / $"lib{ProjectTargetName}.so" };
             foreach (var Lib in conf.Libs)
@@ -106,7 +106,7 @@ namespace TypeMake.Cpp
                 }
                 if (!Found)
                 {
-                    SoLibraryPaths.Add(SolutionOutputDirectory / $"{TargetArchitectureType}_Debug" / Lib);
+                    SoLibraryPaths.Add(SolutionOutputDirectory / $"{TargetArchitectureType}_{ConfigurationType}" / Lib);
                 }
             }
             var ApplicationId = conf.Options.ContainsKey("gradle.applicationId") ? conf.Options["gradle.applicationId"] : (SolutionName + "." + ProjectTargetName).ToLower();
@@ -187,7 +187,7 @@ namespace TypeMake.Cpp
                 {
                     yield return $@"dir /A:-D /S /B {e(JavaSrcDir / "*.java")} >> java_source_list.txt || exit /b 1";
                 }
-                yield return $@"{e(Javac)} -g -cp {e(AndroidJar)} -encoding utf-8 -d classes{String.Join("", JavaSrcDirs.Select(d => " -sourcepath " + e(d)))} -sourcepath gen{(JarFiles.Count > 0 ? " -cp " + e(String.Join(";", JarFiles)) : "")} @java_source_list.txt || exit /b 1";
+                yield return $@"{e(Javac)} -g -encoding utf-8 -d classes{String.Join("", JavaSrcDirs.Select(d => " -sourcepath " + e(d)))} -sourcepath gen {"-cp " + e(String.Join(";", new List<PathString> { AndroidJar }.Concat(JarFiles)))} @java_source_list.txt || exit /b 1";
                 yield return @"";
                 yield return @":: package class files to jar";
                 yield return $@"{e(Jar)} cvfM classes.jar -C classes . || exit /b 1";
@@ -282,7 +282,7 @@ namespace TypeMake.Cpp
                 {
                     yield return $@"find {e(JavaSrcDir)} -type f -name *.java >> java_source_list.txt";
                 }
-                yield return $@"{e(Javac)} -g -cp {e(AndroidJar)} -encoding utf-8 -d classes{String.Join("", JavaSrcDirs.Select(d => " -sourcepath " + e(d)))} -sourcepath gen{(JarFiles.Count > 0 ? " -cp " + e(String.Join(";", JarFiles)) : "")} @java_source_list.txt";
+                yield return $@"{e(Javac)} -g -encoding utf-8 -d classes{String.Join("", JavaSrcDirs.Select(d => " -sourcepath " + e(d)))} -sourcepath gen {"-cp " + e(String.Join(";", new List<PathString> { AndroidJar }.Concat(JarFiles)))} @java_source_list.txt";
                 yield return @"";
                 yield return @"# package class files to jar";
                 yield return $@"{e(Jar)} cvfM classes.jar -C classes .";
