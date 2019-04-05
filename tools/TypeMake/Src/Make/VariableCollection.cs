@@ -26,6 +26,7 @@ namespace TypeMake
         public PathString CMake;
         public PathString Make;
         public PathString Ninja;
+        public PathString Jdk;
         public PathString AndroidSdk;
         public PathString AndroidNdk;
         public String CC;
@@ -141,7 +142,7 @@ namespace TypeMake
                 }
                 else if (v.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
                 {
-                    v.Toolchain = Shell.RequireEnvironmentVariableEnum(Memory, "Toolchain", Quiet, new HashSet<Cpp.ToolchainType> { Cpp.ToolchainType.Gradle_Ninja, Cpp.ToolchainType.Gradle_CMake }, Cpp.ToolchainType.Gradle_Ninja, Options => Options.OnInteraction = OnInteraction);
+                    v.Toolchain = Shell.RequireEnvironmentVariableEnum(Memory, "Toolchain", Quiet, new HashSet<Cpp.ToolchainType> { Cpp.ToolchainType.Ninja, Cpp.ToolchainType.Gradle_Ninja, Cpp.ToolchainType.Gradle_CMake }, Cpp.ToolchainType.Ninja, Options => Options.OnInteraction = OnInteraction);
                 }
                 else
                 {
@@ -231,7 +232,7 @@ namespace TypeMake
                 }
                 else if (v.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
                 {
-                    DefaultBuildDir = $"build/android_{v.Toolchain.ToString().Replace("Gradle_", "")}_{v.TargetArchitecture}_{v.Configuration}";
+                    DefaultBuildDir = $"build/android_{v.Toolchain.ToString().Replace("Gradle_", "G")}_{v.TargetArchitecture}_{v.Configuration}";
                 }
                 else
                 {
@@ -307,7 +308,20 @@ namespace TypeMake
             {
                 if (v.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
                 {
-                    v.AndroidSdk = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "AndroidSdk", Quiet, v.HostOperatingSystem == Cpp.OperatingSystemType.Windows ? (Environment.GetEnvironmentVariable("LocalAppData").AsPath() / "Android/sdk").ToString() : "", PathValidator ?? (p => Directory.Exists(p / "platform-tools") ? new KeyValuePair<bool, String>(true, "") : new KeyValuePair<bool, String>(false, "No platform-tools directory inside.")), Options => Options.OnInteraction = OnInteraction);
+                    var DefaultJdk = Environment.GetEnvironmentVariable("JAVA_HOME").AsPath();
+                    if ((v.HostOperatingSystem != Cpp.OperatingSystemType.Windows) && String.IsNullOrEmpty(DefaultJdk))
+                    {
+                        DefaultJdk = "/usr";
+                    }
+                    v.Jdk = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "Jdk", Quiet, DefaultJdk, PathValidator ?? (p => File.Exists(p / (v.HostOperatingSystem == Cpp.OperatingSystemType.Windows ? "bin/javac.exe" : "bin/javac")) ? new KeyValuePair<bool, String>(true, "") : new KeyValuePair<bool, String>(false, "No bin/javac inside.")), Options => Options.OnInteraction = OnInteraction);
+                }
+            });
+
+            vc.AddVariableFetch((Action OnInteraction) =>
+            {
+                if (v.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
+                {
+                    v.AndroidSdk = Shell.RequireEnvironmentVariableDirectoryPath(Memory, "AndroidSdk", Quiet, v.HostOperatingSystem == Cpp.OperatingSystemType.Windows ? (Environment.GetEnvironmentVariable("LocalAppData").AsPath() / "Android/sdk").ToString() : "", PathValidator ?? (p => Directory.Exists(p / "tools") ? new KeyValuePair<bool, String>(true, "") : new KeyValuePair<bool, String>(false, "No tools directory inside.")), Options => Options.OnInteraction = OnInteraction);
                 }
             });
 
@@ -433,7 +447,7 @@ namespace TypeMake
 
             vc.AddVariableFetch((Action OnInteraction) =>
             {
-                if ((v.TargetOperatingSystem == Cpp.OperatingSystemType.Android) && (v.Toolchain == Cpp.ToolchainType.Gradle_Ninja))
+                if ((v.TargetOperatingSystem == Cpp.OperatingSystemType.Android) && ((v.Toolchain == Cpp.ToolchainType.Gradle_Ninja) || (v.Toolchain == Cpp.ToolchainType.Ninja)))
                 {
                     if (v.HostOperatingSystem == Cpp.OperatingSystemType.Windows)
                     {
@@ -555,7 +569,7 @@ namespace TypeMake
 
             vc.AddVariableFetch((Action OnInteraction) =>
             {
-                var m = new Make(v.Toolchain, v.Compiler, v.HostOperatingSystem, v.HostArchitecture, v.TargetOperatingSystem, v.TargetArchitecture, v.Configuration, v.SourceDirectory, v.BuildDirectory, v.DevelopmentTeam, v.VSVersion, v.CC, v.CXX, v.AR, v.ForceRegenerate, v.EnableNonTargetingOperatingSystemDummy);
+                var m = new Make(v.Toolchain, v.Compiler, v.HostOperatingSystem, v.HostArchitecture, v.TargetOperatingSystem, v.TargetArchitecture, v.Configuration, v.SourceDirectory, v.BuildDirectory, v.DevelopmentTeam, v.VSVersion, v.Jdk, v.AndroidSdk, v.AndroidNdk, v.CC, v.CXX, v.AR, v.ForceRegenerate, v.EnableNonTargetingOperatingSystemDummy);
                 v.m = m;
                 var Projects = m.GetAvailableProjects();
                 var ProjectSet = new HashSet<String>(Projects.Values.Select(t => t.Definition.Name));

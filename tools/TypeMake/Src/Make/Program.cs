@@ -197,8 +197,11 @@ namespace TypeMake
             }
             else if (v.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
             {
-                TextFile.WriteToFile(v.BuildDirectory / "gradle/local.properties", $"sdk.dir={v.AndroidSdk.ToString(PathStringStyle.Unix)}", new System.Text.UTF8Encoding(false), !v.ForceRegenerate);
-                GenerateBuildScriptAndroid(v.Toolchain, v.HostOperatingSystem, v.BuildDirectory, v.TargetArchitecture.Value, v.Configuration.Value, v.AndroidNdk, v.CMake, v.Make, v.Ninja, 17, v.ForceRegenerate);
+                if (v.Toolchain != Cpp.ToolchainType.Ninja)
+                {
+                    TextFile.WriteToFile(v.BuildDirectory / "gradle/local.properties", $"sdk.dir={v.AndroidSdk.ToString(PathStringStyle.Unix)}", new System.Text.UTF8Encoding(false), !v.ForceRegenerate);
+                }
+                GenerateBuildScriptAndroid(v.SelectedProjects.Values.Where(p =>(p.Definition.TargetType == Cpp.TargetType.GradleApplication) || (p.Definition.TargetType == Cpp.TargetType.GradleLibrary)).Select(p => p.Reference).ToList(), v.Toolchain, v.HostOperatingSystem, v.BuildDirectory, v.TargetArchitecture.Value, v.Configuration.Value, v.AndroidNdk, v.CMake, v.Make, v.Ninja, 17, v.ForceRegenerate);
                 if (v.BuildNow)
                 {
                     using (var d = Shell.PushDirectory(v.BuildDirectory))

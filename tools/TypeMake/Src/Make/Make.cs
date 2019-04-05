@@ -23,6 +23,9 @@ namespace TypeMake
         private PathString BuildDirectory;
         private String XCodeDevelopmentTeam;
         private int VSVersion;
+        private PathString Jdk;
+        private PathString AndroidSdk;
+        private PathString AndroidNdk;
         private String CCompiler;
         private String CppCompiler;
         private String Archiver;
@@ -31,7 +34,7 @@ namespace TypeMake
 
         private Dictionary<String, String> ProjectIds = new Dictionary<String, String>();
 
-        public Make(ToolchainType Toolchain, CompilerType Compiler, OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType? TargetArchitecture, ConfigurationType? ConfigurationType, PathString SourceDirectory, PathString BuildDirectory, String XCodeDevelopmentTeam, int VSVersion, String CCompiler, String CppCompiler, String Archiver, bool ForceRegenerate, bool EnableNonTargetingOperatingSystemDummy)
+        public Make(ToolchainType Toolchain, CompilerType Compiler, OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType? TargetArchitecture, ConfigurationType? ConfigurationType, PathString SourceDirectory, PathString BuildDirectory, String XCodeDevelopmentTeam, int VSVersion, PathString Jdk, PathString AndroidSdk, PathString AndroidNdk, String CCompiler, String CppCompiler, String Archiver, bool ForceRegenerate, bool EnableNonTargetingOperatingSystemDummy)
         {
             this.Toolchain = Toolchain;
             this.Compiler = Compiler;
@@ -44,6 +47,9 @@ namespace TypeMake
             this.BuildDirectory = BuildDirectory.FullPath;
             this.XCodeDevelopmentTeam = XCodeDevelopmentTeam;
             this.VSVersion = VSVersion;
+            this.Jdk = Jdk;
+            this.AndroidSdk = AndroidSdk;
+            this.AndroidNdk = AndroidNdk;
             this.CCompiler = CCompiler;
             this.CppCompiler = CppCompiler;
             this.Archiver = Archiver;
@@ -476,26 +482,46 @@ namespace TypeMake
                     var g = new CMakeProjectGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, Toolchain, Compiler, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, ConfigurationType, false);
                     g.Generate(ForceRegenerate);
                 }
-                else if (Toolchain == ToolchainType.Ninja)
+                else if ((Toolchain == ToolchainType.Ninja) && (TargetOperatingSystem != OperatingSystemType.Android))
                 {
                     var g = new NinjaProjectGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, Toolchain, Compiler, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture.Value, ConfigurationType.Value);
                     g.Generate(ForceRegenerate);
                 }
-                else if ((Toolchain == ToolchainType.Gradle_CMake) || (Toolchain == ToolchainType.Gradle_Ninja))
+                else if ((Toolchain == ToolchainType.Gradle_CMake) || (Toolchain == ToolchainType.Gradle_Ninja) || (Toolchain == ToolchainType.Ninja))
                 {
                     if (ProjectTargetType == TargetType.GradleApplication)
                     {
-                        var BuildGradleTemplateText = Resource.GetResourceText(@"Templates\gradle_application\build.gradle");
-                        var gGradle = new GradleProjectGenerator(SolutionName, p, ProjectReferences, InputDirectory, OutputDirectory, BuildDirectory, BuildGradleTemplateText, Toolchain, Compiler, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, ConfigurationType);
-                        gGradle.Generate(ForceRegenerate);
-                        continue;
+                        if (Toolchain == ToolchainType.Ninja)
+                        {
+                            var Out = OutputDirectory.FileName == "gradle" ? OutputDirectory.Parent / "batch" : OutputDirectory;
+                            var gBatch = new AndroidBatchProjectGenerator(SolutionName, p, ProjectReferences, InputDirectory, Out, BuildDirectory, Toolchain, Compiler, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, ConfigurationType, Jdk, AndroidSdk, AndroidNdk, "28.0.3", 15, 27, Environment.GetFolderPath(Environment.SpecialFolder.UserProfile).AsPath() / ".android/debug.keystore", "android", "androiddebugkey", "android", true);
+                            gBatch.Generate(ForceRegenerate);
+                            continue;
+                        }
+                        else
+                        {
+                            var BuildGradleTemplateText = Resource.GetResourceText(@"Templates\gradle_application\build.gradle");
+                            var gGradle = new GradleProjectGenerator(SolutionName, p, ProjectReferences, InputDirectory, OutputDirectory, BuildDirectory, BuildGradleTemplateText, Toolchain, Compiler, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, ConfigurationType);
+                            gGradle.Generate(ForceRegenerate);
+                            continue;
+                        }
                     }
                     else if (ProjectTargetType == TargetType.GradleLibrary)
                     {
-                        var BuildGradleTemplateText = Resource.GetResourceText(@"Templates\gradle_library\build.gradle");
-                        var gGradle = new GradleProjectGenerator(SolutionName, p, ProjectReferences, InputDirectory, OutputDirectory, BuildDirectory, BuildGradleTemplateText, Toolchain, Compiler, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, ConfigurationType);
-                        gGradle.Generate(ForceRegenerate);
-                        continue;
+                        if (Toolchain == ToolchainType.Ninja)
+                        {
+                            var Out = OutputDirectory.FileName == "gradle" ? OutputDirectory.Parent / "batch" : OutputDirectory;
+                            var gBatch = new AndroidBatchProjectGenerator(SolutionName, p, ProjectReferences, InputDirectory, Out, BuildDirectory, Toolchain, Compiler, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, ConfigurationType, Jdk, AndroidSdk, AndroidNdk, "28.0.3", 15, 27, Environment.GetFolderPath(Environment.SpecialFolder.UserProfile).AsPath() / ".android/debug.keystore", "android", "androiddebugkey", "android", true);
+                            gBatch.Generate(ForceRegenerate);
+                            continue;
+                        }
+                        else
+                        {
+                            var BuildGradleTemplateText = Resource.GetResourceText(@"Templates\gradle_library\build.gradle");
+                            var gGradle = new GradleProjectGenerator(SolutionName, p, ProjectReferences, InputDirectory, OutputDirectory, BuildDirectory, BuildGradleTemplateText, Toolchain, Compiler, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, ConfigurationType);
+                            gGradle.Generate(ForceRegenerate);
+                            continue;
+                        }
                     }
                     else
                     {
@@ -505,6 +531,11 @@ namespace TypeMake
                             g.Generate(ForceRegenerate);
                         }
                         else if (Toolchain == ToolchainType.Gradle_Ninja)
+                        {
+                            var g = new NinjaProjectGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, Toolchain, Compiler, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture.Value, ConfigurationType.Value);
+                            g.Generate(ForceRegenerate);
+                        }
+                        else if (Toolchain == ToolchainType.Ninja)
                         {
                             var g = new NinjaProjectGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, Toolchain, Compiler, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture.Value, ConfigurationType.Value);
                             g.Generate(ForceRegenerate);
@@ -653,7 +684,7 @@ namespace TypeMake
                 },
                 new Configuration
                 {
-                    MatchingToolchains = new List<ToolchainType> { ToolchainType.Gradle_Ninja },
+                    MatchingToolchains = new List<ToolchainType> { ToolchainType.Ninja, ToolchainType.Gradle_Ninja },
                     MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Android },
                     CommonFlags = ParseFlags("-fno-addrsig -fPIE -fPIC -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -Wa,--noexecstack"),
                     LinkerFlags = ParseFlags("-Wl,--build-id -Wl,--warn-shared-textrel -Wl,--fatal-warnings -Wl,--no-undefined -Wl,-z,noexecstack -Wl,-z,relro -Wl,-z,now")
