@@ -58,7 +58,7 @@
     <Compile Include="Generators\SlnGenerator.cs" />
     <Compile Include="Generators\VcxprojGenerator.cs" />
     <Compile Include="Base\XmlFile.cs" />
-    <Compile Include="Make\BuildScript.cs" />
+    <Compile Include="Generators\BuildScript.cs" />
     <Compile Include="Make\Make.cs" />
     <Compile Include="Make\Program.cs" />
     <Compile Include="Base\PathString.cs" />

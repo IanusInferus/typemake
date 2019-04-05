@@ -210,7 +210,7 @@ namespace TypeMake
                 MergeExitCode(Shell.Execute("chmod", "+x", BuildPath));
             }
         }
-        private static void GenerateBuildScriptAndroid(Cpp.ToolchainType Toolchain, Cpp.OperatingSystemType HostOperatingSystem, PathString BuildDirectory, Cpp.ArchitectureType TargetArchitecture, Cpp.ConfigurationType Configuration, PathString AndroidNdk, PathString CMake, PathString Make, PathString Ninja, bool ForceRegenerate)
+        private static void GenerateBuildScriptAndroid(Cpp.ToolchainType Toolchain, Cpp.OperatingSystemType HostOperatingSystem, PathString BuildDirectory, Cpp.ArchitectureType TargetArchitecture, Cpp.ConfigurationType Configuration, PathString AndroidNdk, PathString CMake, PathString Make, PathString Ninja, int ApiLevel, bool ForceRegenerate)
         {
             if (Toolchain == Cpp.ToolchainType.Gradle_CMake)
             {
@@ -223,7 +223,7 @@ namespace TypeMake
                 CMakeArguments.Add($"-DANDROID_NDK={AndroidNdk.ToString(PathStringStyle.Unix)}");
                 CMakeArguments.Add($"-DCMAKE_TOOLCHAIN_FILE={(AndroidNdk / "build/cmake/android.toolchain.cmake").ToString(PathStringStyle.Unix)}");
                 CMakeArguments.Add($"-DANDROID_STL=c++_static");
-                CMakeArguments.Add($"-DANDROID_PLATFORM=android-17");
+                CMakeArguments.Add($"-DANDROID_PLATFORM=android-{ApiLevel}");
                 CMakeArguments.Add($"-DANDROID_ABI={Cpp.GradleProjectGenerator.GetArchitectureString(TargetArchitecture)}");
                 if (TargetArchitecture == Cpp.ArchitectureType.armv7a)
                 {
