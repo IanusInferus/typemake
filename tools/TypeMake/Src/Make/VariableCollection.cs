@@ -158,7 +158,7 @@ namespace TypeMake
                 }
                 else if (v.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
                 {
-                    v.Compiler = Cpp.CompilerType.gcc;
+                    v.Compiler = Shell.RequireEnvironmentVariableEnum(Memory, "Compiler", Quiet, new HashSet<Cpp.CompilerType> { Cpp.CompilerType.gcc, Cpp.CompilerType.clang }, Cpp.CompilerType.gcc, Options => Options.OnInteraction = OnInteraction);
                 }
                 else if (v.TargetOperatingSystem == Cpp.OperatingSystemType.Mac)
                 {
@@ -220,7 +220,7 @@ namespace TypeMake
                 }
                 else if (v.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
                 {
-                    DefaultBuildDir = $"build/linux_{v.Toolchain}_{v.TargetArchitecture}_{v.Configuration}";
+                    DefaultBuildDir = $"build/linux_{v.Toolchain}_{v.Compiler}_{v.TargetArchitecture}_{v.Configuration}";
                 }
                 else if (v.TargetOperatingSystem == Cpp.OperatingSystemType.Mac)
                 {
@@ -502,13 +502,21 @@ namespace TypeMake
                     if (v.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
                     {
                         var DefaultCC = "gcc";
-                        if (v.TargetArchitecture == Cpp.ArchitectureType.armv7a)
+                        if (v.Compiler == Cpp.CompilerType.gcc)
                         {
-                            DefaultCC = "arm-linux-gnueabihf-gcc";
+                            DefaultCC = "gcc";
+                            if (v.TargetArchitecture == Cpp.ArchitectureType.armv7a)
+                            {
+                                DefaultCC = "arm-linux-gnueabihf-gcc";
+                            }
+                            else if (v.TargetArchitecture == Cpp.ArchitectureType.arm64)
+                            {
+                                DefaultCC = "aarch64-linux-gnu-gcc";
+                            }
                         }
-                        else if (v.TargetArchitecture == Cpp.ArchitectureType.arm64)
+                        else if (v.Compiler == Cpp.CompilerType.clang)
                         {
-                            DefaultCC = "aarch64-linux-gnu-gcc";
+                            DefaultCC = "clang";
                         }
                         v.CC = Shell.RequireEnvironmentVariable(Memory, "CC", new Shell.EnvironmentVariableReadOptions { Quiet = Quiet, DefaultValue = DefaultCC, OnInteraction = OnInteraction });
                     }
@@ -526,13 +534,21 @@ namespace TypeMake
                     if (v.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
                     {
                         var DefaultCXX = "g++";
-                        if (v.TargetArchitecture == Cpp.ArchitectureType.armv7a)
+                        if (v.Compiler == Cpp.CompilerType.gcc)
                         {
-                            DefaultCXX = "arm-linux-gnueabihf-g++";
+                            DefaultCXX = "g++";
+                            if (v.TargetArchitecture == Cpp.ArchitectureType.armv7a)
+                            {
+                                DefaultCXX = "arm-linux-gnueabihf-g++";
+                            }
+                            else if (v.TargetArchitecture == Cpp.ArchitectureType.arm64)
+                            {
+                                DefaultCXX = "aarch64-linux-gnu-g++";
+                            }
                         }
-                        else if (v.TargetArchitecture == Cpp.ArchitectureType.arm64)
+                        else if (v.Compiler == Cpp.CompilerType.clang)
                         {
-                            DefaultCXX = "aarch64-linux-gnu-g++";
+                            DefaultCXX = "clang++";
                         }
                         v.CXX = Shell.RequireEnvironmentVariable(Memory, "CXX", new Shell.EnvironmentVariableReadOptions { Quiet = Quiet, DefaultValue = DefaultCXX, OnInteraction = OnInteraction });
                     }
@@ -550,13 +566,20 @@ namespace TypeMake
                     if (v.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
                     {
                         var DefaultAR = "ar";
-                        if (v.TargetArchitecture == Cpp.ArchitectureType.armv7a)
+                        if (v.Compiler == Cpp.CompilerType.gcc)
                         {
-                            DefaultAR = "arm-linux-gnueabihf-ar";
+                            if (v.TargetArchitecture == Cpp.ArchitectureType.armv7a)
+                            {
+                                DefaultAR = "arm-linux-gnueabihf-ar";
+                            }
+                            else if (v.TargetArchitecture == Cpp.ArchitectureType.arm64)
+                            {
+                                DefaultAR = "aarch64-linux-gnu-ar";
+                            }
                         }
-                        else if (v.TargetArchitecture == Cpp.ArchitectureType.arm64)
+                        else if (v.Compiler == Cpp.CompilerType.clang)
                         {
-                            DefaultAR = "aarch64-linux-gnu-ar";
+                            DefaultAR = "llvm-ar";
                         }
                         v.AR = Shell.RequireEnvironmentVariable(Memory, "AR", new Shell.EnvironmentVariableReadOptions { Quiet = Quiet, DefaultValue = DefaultAR, OnInteraction = OnInteraction });
                     }

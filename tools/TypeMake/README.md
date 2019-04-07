@@ -20,6 +20,7 @@ Target Operating System vs Building Operating System
 | :----------------------------: | :----------------: | :----------------: | :----------------: |
 |  Windows x86/x64/armv7a/arm64  |       VS2017       |                    |                    |
 |          Linux x86/x64         |    WSL+Ninja+gcc   |      Ninja+gcc     |                    |
+|            Linux x64           |   WSL+Ninja+clang  |     Ninja+clang    |                    |
 |          Linux x86/x64         |    WSL+CMake+gcc   |      CMake+gcc     |                    |
 |       Linux armv7a/arm64       |    WSL+Ninja+gcc   |      Ninja+gcc     |                    |
 |            MacOS x64           |                    |                    |        XCode       |
@@ -36,7 +37,11 @@ Windows: VS2017
 
 Linux(openSUSE 15): \[cmake(>=3.3.2)\] gcc-c++(7.3.1) \[gcc-c++-32bit(7.3.1)\] mono-devel(5.x) glibc(develop 2.18/runtime 2.14)
 
-Linux(Ubuntu 18.04): \[cmake(>=3.3.2)\] g++(7.3.0) \[g++-multilib(7.3.0)\] \[g++-arm-linux-gnueabihf(7.3.0)\] \[g++-aarch64-linux-gnu(7.3.0)\] mono-devel(5.x) glibc(develop 2.18/runtime 2.14)
+Linux(Ubuntu 18.04): \[cmake(>=3.3.2)\] g++(7.3.0) \[g++-multilib(7.3.0)\] mono-devel(5.x) glibc(develop 2.18/runtime 2.14)
+
+Linux(Ubuntu 18.04) for armv7a/arm64: g++-arm-linux-gnueabihf(7.3.0) g++-aarch64-linux-gnu(7.3.0)
+
+Linux(Ubuntu 18.04) with clang: clang-7 libc++-7-dev libc++abi-7-dev llvm-7-tools (CC=clang-7 CXX=clang++-7 AR=llvm-ar-7)
 
 Mac: XCode(10.0) mono(5.x)
 

@@ -124,7 +124,7 @@ namespace TypeMake.Cpp
                 }
 
                 var FilePath = File.Path.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix);
-                var ObjectFilePath = Project.Name.AsPath() / (File.Path.FullPath.RelativeTo(InputDirectory).ToString(PathStringStyle.Unix).Replace("..", "__") + ".o");
+                var ObjectFilePath = (Project.Name.AsPath() / (File.Path.FullPath.RelativeTo(InputDirectory).ToString(PathStringStyle.Unix).Replace("..", "__") + ".o")).ToString(PathStringStyle.Unix);
                 if (File.Type == FileType.CSource)
                 {
                     yield return $"build {NinjaEscape(ObjectFilePath)}: cc {NinjaEscape(FilePath)}";

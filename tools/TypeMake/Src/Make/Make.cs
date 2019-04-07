@@ -659,7 +659,13 @@ namespace TypeMake
                 {
                     MatchingCompilers = new List<CompilerType> { CompilerType.clang },
                     CppFlags = ParseFlags("-stdlib=libc++"),
-                    LinkerFlags = ParseFlags("-stdlib=libc++ -static-libstdc++")
+                    LinkerFlags = ParseFlags("-stdlib=libc++")
+                },
+                new Configuration
+                {
+                    MatchingCompilers = new List<CompilerType> { CompilerType.clang },
+                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Android },
+                    LinkerFlags = ParseFlags("-static-libstdc++")
                 },
                 new Configuration
                 {
