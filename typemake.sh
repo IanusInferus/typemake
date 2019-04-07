@@ -1,3 +1,4 @@
+#!/bin/bash
 set -e
 
 [ -f tools/TypeMake/Bin/TypeMake.exe ] || {
@@ -12,6 +13,7 @@ command -v mono >/dev/null 2>&1 || {
   echo openSUSE: sudo zypper install mono-devel
   echo CentOS: sudo yum install mono-devel
   echo Ubuntu: sudo apt install mono-devel
+  echo Apine: su; apk add mono \(add edge/testing in /etc/apk/repositories\)
   echo MacOS: brew install mono
   exit 1
 }
