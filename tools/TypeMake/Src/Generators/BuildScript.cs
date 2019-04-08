@@ -116,7 +116,7 @@ namespace TypeMake
             var BuildPath = BuildDirectory / $"build_{TargetArchitecture}_{Configuration}.cmd";
             TextFile.WriteToFile(BuildPath, String.Join("\r\n", Lines), System.Text.Encoding.Default, !ForceRegenerate);
         }
-        private static void GenerateBuildScriptLinux(Cpp.ToolchainType Toolchain, Cpp.OperatingSystemType HostOperatingSystem, PathString BuildDirectory, Cpp.ConfigurationType Configuration, PathString CMake, PathString Make, PathString Ninja, bool ForceRegenerate)
+        private static void GenerateBuildScriptLinux(String TargetOperatingSystemDistribution, Cpp.ToolchainType Toolchain, Cpp.OperatingSystemType HostOperatingSystem, PathString BuildDirectory, Cpp.ConfigurationType Configuration, PathString CMake, PathString Make, PathString Ninja, bool ForceRegenerate)
         {
             if (Toolchain == Cpp.ToolchainType.CMake)
             {
@@ -139,8 +139,8 @@ namespace TypeMake
                     Lines.Add("exit /b %EXIT_CODE%");
                     Lines.Add("");
                     Lines.Add(":main");
-                    Lines.Add("wsl " + Shell.EscapeArgumentForShell(CMake, Shell.ShellArgumentStyle.CMD) + " " + String.Join(" ", CMakeArguments.Select(a => Shell.EscapeArgumentForShell(a, Shell.ShellArgumentStyle.CMD))) + " || exit /b 1");
-                    Lines.Add("wsl " + Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.CMD) + " -j" + Environment.ProcessorCount.ToString() + " || exit /b 1");
+                    Lines.Add("wsl -d " + Shell.EscapeArgumentForShell(TargetOperatingSystemDistribution, Shell.ShellArgumentStyle.CMD) + " " + Shell.EscapeArgumentForShell(CMake, Shell.ShellArgumentStyle.CMD) + " " + String.Join(" ", CMakeArguments.Select(a => Shell.EscapeArgumentForShell(a, Shell.ShellArgumentStyle.CMD))) + " || exit /b 1");
+                    Lines.Add("wsl -d " + Shell.EscapeArgumentForShell(TargetOperatingSystemDistribution, Shell.ShellArgumentStyle.CMD) + " " + Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.CMD) + " -j" + Environment.ProcessorCount.ToString() + " || exit /b 1");
                     Lines.Add("");
                     var BuildPath = BuildDirectory / "build.cmd";
                     TextFile.WriteToFile(BuildPath, String.Join("\r\n", Lines), System.Text.Encoding.Default, !ForceRegenerate);
@@ -175,7 +175,7 @@ namespace TypeMake
                     Lines.Add("exit /b %EXIT_CODE%");
                     Lines.Add("");
                     Lines.Add(":main");
-                    Lines.Add("wsl " + Shell.EscapeArgumentForShell(Ninja.RelativeTo(BuildDirectory).ToString(PathStringStyle.Unix), Shell.ShellArgumentStyle.CMD) + " -j" + Environment.ProcessorCount.ToString() + " -C projects -f build.ninja || exit /b 1");
+                    Lines.Add("wsl -d " + Shell.EscapeArgumentForShell(TargetOperatingSystemDistribution, Shell.ShellArgumentStyle.CMD) + " " + Shell.EscapeArgumentForShell(Ninja.RelativeTo(BuildDirectory).ToString(PathStringStyle.Unix), Shell.ShellArgumentStyle.CMD) + " -j" + Environment.ProcessorCount.ToString() + " -C projects -f build.ninja || exit /b 1");
                     Lines.Add("");
                     var BuildPath = BuildDirectory / "build.cmd";
                     TextFile.WriteToFile(BuildPath, String.Join("\r\n", Lines), System.Text.Encoding.Default, !ForceRegenerate);

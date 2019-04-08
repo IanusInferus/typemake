@@ -195,6 +195,32 @@ namespace TypeMake
                 return new KeyValuePair<int, String>(p.ExitCode, sb.ToString());
             }
         }
+        public static KeyValuePair<int, String> ExecuteAndGetOutput(String ProgramPath, Encoding Encoding, params String[] Arguments)
+        {
+            var psi = CreateExecuteStartInfo(ProgramPath, Arguments);
+            psi.RedirectStandardOutput = true;
+            psi.StandardOutputEncoding = Encoding;
+            var Style = OperatingSystem == OperatingSystemType.Windows ? ShellArgumentStyle.CMD : ShellArgumentStyle.Bash;
+            var CommandLine = Arguments.Length == 0 ? EscapeArgumentForShell(ProgramPath, Style) : EscapeArgumentForShell(ProgramPath, Style) + " " + String.Join(" ", Arguments.Select(a => EscapeArgumentForShell(a, Style)));
+            Console.WriteLine(CommandLine);
+            var p = Process.Start(psi);
+            using (var Reader = p.StandardOutput)
+            {
+                var sb = new StringBuilder();
+                var Buffer = new Char[256];
+                while (true)
+                {
+                    var Count = Reader.Read(Buffer, 0, Buffer.Length);
+                    if (Count == 0)
+                    {
+                        break;
+                    }
+                    sb.Append(Buffer, 0, Count);
+                }
+                p.WaitForExit();
+                return new KeyValuePair<int, String>(p.ExitCode, sb.ToString());
+            }
+        }
         public static ProcessStartInfo CreateExecuteStartInfo(String ProgramPath, params String[] Arguments)
         {
             return CreateExecuteLineStartInfo(ProgramPath, String.Join(" ", Arguments.Select(arg => EscapeArgument(arg))));

@@ -139,7 +139,7 @@ namespace TypeMake
             }
             else if (v.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
             {
-                GenerateBuildScriptLinux(v.Toolchain, v.HostOperatingSystem, v.BuildDirectory, v.Configuration.Value, v.CMake, v.Make, v.Ninja, v.ForceRegenerate);
+                GenerateBuildScriptLinux(v.TargetOperatingSystemDistribution, v.Toolchain, v.HostOperatingSystem, v.BuildDirectory, v.Configuration.Value, v.CMake, v.Make, v.Ninja, v.ForceRegenerate);
                 if (v.BuildNow)
                 {
                     using (var d = Shell.PushDirectory(v.BuildDirectory))

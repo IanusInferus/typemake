@@ -10,6 +10,7 @@ namespace TypeMake
         public Cpp.OperatingSystemType HostOperatingSystem;
         public Cpp.ArchitectureType HostArchitecture;
         public Cpp.OperatingSystemType TargetOperatingSystem;
+        public String TargetOperatingSystemDistribution;
         public Cpp.ArchitectureType? TargetArchitecture;
         public Cpp.ToolchainType Toolchain;
         public Cpp.CompilerType Compiler;
@@ -85,6 +86,18 @@ namespace TypeMake
             vc.AddVariableFetch((Action OnInteraction) =>
             {
                 v.TargetOperatingSystem = Shell.RequireEnvironmentVariableEnum<Cpp.OperatingSystemType>(Memory, "TargetOperatingSystem", Quiet, v.HostOperatingSystem, Options => Options.OnInteraction = OnInteraction);
+            });
+
+            vc.AddVariableFetch((Action OnInteraction) =>
+            {
+                if ((v.HostOperatingSystem == Cpp.OperatingSystemType.Windows) && (v.TargetOperatingSystem == Cpp.OperatingSystemType.Linux))
+                {
+                    var p = Shell.ExecuteAndGetOutput("wslconfig", System.Text.Encoding.Unicode, "/list");
+                    if (p.Key != 0) { throw new InvalidOperationException("WslConfigFailed"); }
+                    var Distributions = new HashSet<String>(p.Value.Replace("\r", "").Split('\n').Skip(1).Where(Line => Line.Trim(' ') != "").Select(Line => Line.Split(' ').First()).ToArray());
+                    var DefaultDistribution = Distributions.Count > 0 ? Distributions.First() : "";
+                    v.TargetOperatingSystemDistribution = Shell.RequireEnvironmentVariableSelection(Memory, "TargetOperatingSystemDistribution", Quiet, Distributions, DefaultDistribution, Options => Options.OnInteraction = OnInteraction);
+                }
             });
 
             vc.AddVariableFetch((Action OnInteraction) =>
