@@ -277,6 +277,13 @@ namespace TypeMake
                         },
                         new Configuration
                         {
+                            MatchingCompilers = new List<CompilerType> { CompilerType.gcc, CompilerType.clang },
+                            MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Linux, OperatingSystemType.Android },
+                            MatchingTargetTypes = new List<TargetType> { TargetType.DynamicLibrary },
+                            LinkerFlags = new List<string> { "-Wl,--version-script=" + (SourceDirectory / "products/export.version").RelativeTo(BuildDirectory / "projects").ToString(PathStringStyle.Unix) }
+                        },
+                        new Configuration
+                        {
                             MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Mac, OperatingSystemType.iOS },
                             MatchingTargetTypes = new List<TargetType> { TargetType.MacApplication, TargetType.MacBundle, TargetType.iOSApplication, TargetType.iOSStaticFramework, TargetType.iOSSharedFramework },
                             Options = new Dictionary<String, String>
@@ -633,6 +640,13 @@ namespace TypeMake
                 {
                     MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Android },
                     Libs = new List<PathString> { "log" }
+                },
+                new Configuration
+                {
+                    MatchingCompilers = new List<CompilerType> { CompilerType.gcc, CompilerType.clang },
+                    CommonFlags = ParseFlags("-fsigned-char -Werror=return-type -Werror=address -Werror=sequence-point -Wformat -Werror=format-security -Wuninitialized -Winit-self -Wpointer-arith -Wno-unused-function -Wno-comment -fvisibility=hidden"),
+                    CFlags = ParseFlags("-Wstrict-prototypes -Werror=implicit-function-declaration"),
+                    CppFlags = ParseFlags("-std=c++17 -Wsign-promo -fvisibility-inlines-hidden")
                 },
                 new Configuration
                 {
