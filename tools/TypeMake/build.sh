@@ -11,4 +11,13 @@ command -v xbuild >/dev/null 2>&1 || {
   echo MacOS: brew install mono
   exit 1
 }
-xbuild TypeMake.sln
+if [ "$1" == "--quiet" ]
+then
+  xbuild TypeMake.sln > /dev/null 2>&1 || error=1
+  if [ "$error" == "1" ]
+  then
+    xbuild TypeMake.sln
+  fi
+else
+  xbuild TypeMake.sln
+fi
