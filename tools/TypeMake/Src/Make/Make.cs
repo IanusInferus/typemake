@@ -236,9 +236,9 @@ namespace TypeMake
                     }
                 }
                 var IsTargetOperatingSystemMatched = IsOperatingSystemMatchExtensions(Extensions, TargetOperatingSystem);
-                if (ProductTargetType == TargetType.iOSApplication)
+                if ((ProductTargetType == TargetType.Executable) && (TargetOperatingSystem == OperatingSystemType.iOS))
                 {
-                    IsTargetOperatingSystemMatched = IsOperatingSystemMatchExtensions(Extensions, TargetOperatingSystem, true);
+                    IsTargetOperatingSystemMatched = false;
                 }
                 if (IsTargetOperatingSystemMatched || EnableNonTargetingOperatingSystemDummy)
                 {
