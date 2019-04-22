@@ -296,17 +296,22 @@ namespace TypeMake
         public enum ShellArgumentStyle
         {
             CMD,
+            CMD_Interactive,
             Bash
         }
-        private static Regex rCmdComplexChars = new Regex(@"[%^&<>|]", RegexOptions.ExplicitCapture);
         public static String EscapeArgumentForShell(String Argument, ShellArgumentStyle ShellArgumentStyle)
         {
             //\0 \r \n can not be escaped
             if (Argument.Any(c => c == '\0' || c == '\r' || c == '\n')) { throw new ArgumentException("InvalidChar"); }
             if (ShellArgumentStyle == ShellArgumentStyle.CMD)
             {
-                //CMD style(without EnableDelayedExpansion)
-                return rCmdComplexChars.Replace(EscapeArgument(Argument, ArgumentStyle.Windows), s => "^" + s.Value);
+                //CMD style(batch, without EnableDelayedExpansion)
+                return EscapeArgument(Argument, ArgumentStyle.Windows).Replace("%", "%%");
+            }
+            else if (ShellArgumentStyle == ShellArgumentStyle.CMD_Interactive)
+            {
+                //CMD terminal window
+                return Regex.Replace(EscapeArgument(Argument, ArgumentStyle.Windows), @"[%]+", s => "\"" + String.Join("", s.Value.Select(c => "^" + c)) + "\"");
             }
             else if (ShellArgumentStyle == ShellArgumentStyle.Bash)
             {
