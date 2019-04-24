@@ -47,7 +47,7 @@ Linux(Alpine 3.9): g++(8.2.0) bash mono-devel(5.x, in edge/testing repo) ("CC=gc
 
 Mac: XCode(10.0) mono(5.x)
 
-Android: JDK(8.x) AndroidSDK(build-tools:28.0.3 platforms:android-27) AndroidNDK(r19c) \[Gradle(4.4)\] \[CMake(>=3.3.2)\]
+Android: JDK(8.x) AndroidSDK(build-tools:28.0.3 platforms:android-28) AndroidNDK(r19c) \[Gradle(4.4)\] \[CMake(>=3.3.2)\]
 
 iOS: XCode(10.0)
 
