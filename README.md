@@ -21,15 +21,17 @@ Target Operating System vs Building Operating System
 |  Windows x86/x64/armv7a/arm64  |       VS2017       |                    |                    |
 |          Linux x86/x64         |    WSL+Ninja+gcc   |      Ninja+gcc     |                    |
 |            Linux x64           |   WSL+Ninja+clang  |     Ninja+clang    |                    |
-|          Linux x86/x64         |    WSL+CMake+gcc   |      CMake+gcc     |                    |
+|          Linux x86/x64         |   WSL+CMake+gcc *  |     CMake+gcc *    |                    |
 |       Linux armv7a/arm64       |    WSL+Ninja+gcc   |      Ninja+gcc     |                    |
 |            MacOS x64           |                    |                    |        XCode       |
 |  Android x86/x64/armv7a/arm64  |     NDK+Ninja      |     NDK+Ninja      |     NDK+Ninja      |
 |  Android x86/x64/armv7a/arm64  |  NDK+Ninja+Gradle  |  NDK+Ninja+Gradle  |  NDK+Ninja+Gradle  |
-|  Android x86/x64/armv7a/arm64  |  NDK+CMake+Gradle  |  NDK+CMake+Gradle  |  NDK+CMake+Gradle  |
+|  Android x86/x64/armv7a/arm64  | NDK+CMake+Gradle * | NDK+CMake+Gradle * | NDK+CMake+Gradle * |
 |        iOS armv7a/arm64        |                    |                    |        XCode       |
 
 Different OSs use different ABIs on the same CPU architecture.
+
+\* CMake is supported as a compatibility solution. (Ex. Integration with other projects.)
 
 ## Dependencies
 
