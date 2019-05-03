@@ -89,22 +89,32 @@ namespace TypeMake
             }
 
             var Quiet = options.ContainsKey("quiet");
-            var Memory = new Shell.EnvironmentVariableMemory();
-            var v = VariableCollection.Execute(Memory, Quiet);
+            Generate(Quiet);
+            Console.WriteLine("TypeMake successful.");
+            return 0;
+        }
 
-            GenerateRetypemakeScript(v.HostOperatingSystem, v.SourceDirectory, v.BuildDirectory, Memory, v.OverwriteRetypemakeScript);
+        private static void Generate(bool Quiet)
+        {
+            var Memory = new Shell.EnvironmentVariableMemory();
+            var VariablesAndVariableItems = VariableCollection.GetVariableItems();
+            var vc = new ConsoleVariableCollector(Memory, Quiet, VariablesAndVariableItems.Value);
+            vc.Execute();
+            var v = VariablesAndVariableItems.Key;
+
+            BuildScript.GenerateRetypemakeScript(v.HostOperatingSystem, v.SourceDirectory, v.BuildDirectory, Memory, v.OverwriteRetypemakeScript);
             var r = v.m.Execute(v.SelectedProjects);
 
             if (v.TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
             {
-                GenerateBuildScriptWindows(v.BuildDirectory, r.SolutionName, Cpp.ArchitectureType.x86, Cpp.ConfigurationType.Debug, v.VSDir, v.VSVersion, v.ForceRegenerate);
-                GenerateBuildScriptWindows(v.BuildDirectory, r.SolutionName, Cpp.ArchitectureType.x86, Cpp.ConfigurationType.Release, v.VSDir, v.VSVersion, v.ForceRegenerate);
-                GenerateBuildScriptWindows(v.BuildDirectory, r.SolutionName, Cpp.ArchitectureType.x64, Cpp.ConfigurationType.Debug, v.VSDir, v.VSVersion, v.ForceRegenerate);
-                GenerateBuildScriptWindows(v.BuildDirectory, r.SolutionName, Cpp.ArchitectureType.x64, Cpp.ConfigurationType.Release, v.VSDir, v.VSVersion, v.ForceRegenerate);
-                GenerateBuildScriptWindows(v.BuildDirectory, r.SolutionName, Cpp.ArchitectureType.armv7a, Cpp.ConfigurationType.Debug, v.VSDir, v.VSVersion, v.ForceRegenerate);
-                GenerateBuildScriptWindows(v.BuildDirectory, r.SolutionName, Cpp.ArchitectureType.armv7a, Cpp.ConfigurationType.Release, v.VSDir, v.VSVersion, v.ForceRegenerate);
-                GenerateBuildScriptWindows(v.BuildDirectory, r.SolutionName, Cpp.ArchitectureType.arm64, Cpp.ConfigurationType.Debug, v.VSDir, v.VSVersion, v.ForceRegenerate);
-                GenerateBuildScriptWindows(v.BuildDirectory, r.SolutionName, Cpp.ArchitectureType.arm64, Cpp.ConfigurationType.Release, v.VSDir, v.VSVersion, v.ForceRegenerate);
+                BuildScript.GenerateBuildScriptWindows(v.BuildDirectory, r.SolutionName, Cpp.ArchitectureType.x86, Cpp.ConfigurationType.Debug, v.VSDir, v.VSVersion, v.ForceRegenerate);
+                BuildScript.GenerateBuildScriptWindows(v.BuildDirectory, r.SolutionName, Cpp.ArchitectureType.x86, Cpp.ConfigurationType.Release, v.VSDir, v.VSVersion, v.ForceRegenerate);
+                BuildScript.GenerateBuildScriptWindows(v.BuildDirectory, r.SolutionName, Cpp.ArchitectureType.x64, Cpp.ConfigurationType.Debug, v.VSDir, v.VSVersion, v.ForceRegenerate);
+                BuildScript.GenerateBuildScriptWindows(v.BuildDirectory, r.SolutionName, Cpp.ArchitectureType.x64, Cpp.ConfigurationType.Release, v.VSDir, v.VSVersion, v.ForceRegenerate);
+                BuildScript.GenerateBuildScriptWindows(v.BuildDirectory, r.SolutionName, Cpp.ArchitectureType.armv7a, Cpp.ConfigurationType.Debug, v.VSDir, v.VSVersion, v.ForceRegenerate);
+                BuildScript.GenerateBuildScriptWindows(v.BuildDirectory, r.SolutionName, Cpp.ArchitectureType.armv7a, Cpp.ConfigurationType.Release, v.VSDir, v.VSVersion, v.ForceRegenerate);
+                BuildScript.GenerateBuildScriptWindows(v.BuildDirectory, r.SolutionName, Cpp.ArchitectureType.arm64, Cpp.ConfigurationType.Debug, v.VSDir, v.VSVersion, v.ForceRegenerate);
+                BuildScript.GenerateBuildScriptWindows(v.BuildDirectory, r.SolutionName, Cpp.ArchitectureType.arm64, Cpp.ConfigurationType.Release, v.VSDir, v.VSVersion, v.ForceRegenerate);
                 if (v.BuildNow)
                 {
                     if (v.HostOperatingSystem == Cpp.OperatingSystemType.Windows)
@@ -128,7 +138,10 @@ namespace TypeMake
                         }
                         using (var d = Shell.PushDirectory(v.BuildDirectory))
                         {
-                            MergeExitCode(Shell.Execute($"build_{ArchitectureName}_{v.Configuration}.cmd"));
+                            if (Shell.Execute($"build_{ArchitectureName}_{v.Configuration}.cmd") != 0)
+                            {
+                                throw new InvalidOperationException("ErrorInExecution: " + $"build_{ArchitectureName}_{v.Configuration}.cmd");
+                            }
                         }
                     }
                     else
@@ -139,18 +152,24 @@ namespace TypeMake
             }
             else if (v.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
             {
-                GenerateBuildScriptLinux(v.TargetOperatingSystemDistribution, v.Toolchain, v.HostOperatingSystem, v.BuildDirectory, v.Configuration.Value, v.CMake, v.Make, v.Ninja, v.ForceRegenerate);
+                BuildScript.GenerateBuildScriptLinux(v.TargetOperatingSystemDistribution, v.Toolchain, v.HostOperatingSystem, v.BuildDirectory, v.Configuration.Value, v.CMake, v.Make, v.Ninja, v.ForceRegenerate);
                 if (v.BuildNow)
                 {
                     using (var d = Shell.PushDirectory(v.BuildDirectory))
                     {
                         if (v.HostOperatingSystem == Cpp.OperatingSystemType.Windows)
                         {
-                            MergeExitCode(Shell.Execute(@".\build.cmd"));
+                            if (Shell.Execute(@".\build.cmd") != 0)
+                            {
+                                throw new InvalidOperationException("ErrorInExecution: " + @".\build.cmd");
+                            }
                         }
                         else if (v.HostOperatingSystem == Cpp.OperatingSystemType.Linux)
                         {
-                            MergeExitCode(Shell.Execute("./build.sh"));
+                            if (Shell.Execute("./build.sh") != 0)
+                            {
+                                throw new InvalidOperationException("ErrorInExecution: ./build.sh");
+                            }
                         }
                         else
                         {
@@ -161,14 +180,17 @@ namespace TypeMake
             }
             else if (v.TargetOperatingSystem == Cpp.OperatingSystemType.Mac)
             {
-                GenerateBuildScriptXCode(v.HostOperatingSystem, v.BuildDirectory, r, v.ForceRegenerate);
+                BuildScript.GenerateBuildScriptXCode(v.HostOperatingSystem, v.BuildDirectory, r, v.ForceRegenerate);
                 if (v.BuildNow)
                 {
                     using (var d = Shell.PushDirectory(v.BuildDirectory))
                     {
                         if (v.HostOperatingSystem == Cpp.OperatingSystemType.Mac)
                         {
-                            MergeExitCode(Shell.Execute("./build.sh"));
+                            if (Shell.Execute("./build.sh") != 0)
+                            {
+                                throw new InvalidOperationException("ErrorInExecution: ./build.sh");
+                            }
                         }
                         else
                         {
@@ -179,14 +201,17 @@ namespace TypeMake
             }
             else if (v.TargetOperatingSystem == Cpp.OperatingSystemType.iOS)
             {
-                GenerateBuildScriptXCode(v.HostOperatingSystem, v.BuildDirectory, r, v.ForceRegenerate);
+                BuildScript.GenerateBuildScriptXCode(v.HostOperatingSystem, v.BuildDirectory, r, v.ForceRegenerate);
                 if (v.BuildNow)
                 {
                     using (var d = Shell.PushDirectory(v.BuildDirectory))
                     {
                         if (v.HostOperatingSystem == Cpp.OperatingSystemType.Mac)
                         {
-                            MergeExitCode(Shell.Execute("./build.sh"));
+                            if (Shell.Execute("./build.sh") != 0)
+                            {
+                                throw new InvalidOperationException("ErrorInExecution: ./build.sh");
+                            }
                         }
                         else
                         {
@@ -201,18 +226,24 @@ namespace TypeMake
                 {
                     TextFile.WriteToFile(v.BuildDirectory / "gradle/local.properties", $"sdk.dir={v.AndroidSdk.ToString(PathStringStyle.Unix)}", new System.Text.UTF8Encoding(false), !v.ForceRegenerate);
                 }
-                GenerateBuildScriptAndroid(v.SelectedProjects.Values.Where(p =>(p.Definition.TargetType == Cpp.TargetType.GradleApplication) || (p.Definition.TargetType == Cpp.TargetType.GradleLibrary)).Select(p => p.Reference).ToList(), v.Toolchain, v.HostOperatingSystem, v.BuildDirectory, v.TargetArchitecture.Value, v.Configuration.Value, v.AndroidNdk, v.CMake, v.Make, v.Ninja, 17, v.ForceRegenerate);
+                BuildScript.GenerateBuildScriptAndroid(v.SelectedProjects.Values.Where(p => (p.Definition.TargetType == Cpp.TargetType.GradleApplication) || (p.Definition.TargetType == Cpp.TargetType.GradleLibrary)).Select(p => p.Reference).ToList(), v.Toolchain, v.HostOperatingSystem, v.BuildDirectory, v.TargetArchitecture.Value, v.Configuration.Value, v.AndroidNdk, v.CMake, v.Make, v.Ninja, 17, v.ForceRegenerate);
                 if (v.BuildNow)
                 {
                     using (var d = Shell.PushDirectory(v.BuildDirectory))
                     {
                         if (v.HostOperatingSystem == Cpp.OperatingSystemType.Windows)
                         {
-                            MergeExitCode(Shell.Execute(@".\build.cmd"));
+                            if (Shell.Execute(@".\build.cmd") != 0)
+                            {
+                                throw new InvalidOperationException("ErrorInExecution: " + @".\build.cmd");
+                            }
                         }
                         else if ((v.HostOperatingSystem == Cpp.OperatingSystemType.Linux) || (v.HostOperatingSystem == Cpp.OperatingSystemType.Mac))
                         {
-                            MergeExitCode(Shell.Execute("./build.sh"));
+                            if (Shell.Execute("./build.sh") != 0)
+                            {
+                                throw new InvalidOperationException("ErrorInExecution: ./build.sh");
+                            }
                         }
                         else
                         {
@@ -223,21 +254,10 @@ namespace TypeMake
             }
             else
             {
-                DisplayInfo();
-                return 1;
+                throw new InvalidOperationException();
             }
-            Console.WriteLine("TypeMake successful.");
-            return ExitCode;
         }
 
-        public static int ExitCode = 0;
-        public static void MergeExitCode(int Code)
-        {
-            if (Code != 0)
-            {
-                ExitCode = Code;
-            }
-        }
         public static void WriteLineError(String Line)
         {
             Shell.SetForegroundColor(ConsoleColor.Red);

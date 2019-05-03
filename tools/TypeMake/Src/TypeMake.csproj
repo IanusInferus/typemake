@@ -64,30 +64,30 @@
     <Compile Include="Make\Program.cs" />
     <Compile Include="Base\PathString.cs" />
     <Compile Include="Make\VariableCollection.cs" />
+    <Compile Include="Make\Variables.cs" />
+    <Compile Include="Schema\Variable.cs" />
     <Compile Include="Shell\Shell.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Schema\Common.cs" />
     <Compile Include="Schema\Cpp.cs" />
-    <Compile Include="Shell\VariableCollector.cs" />
+    <Compile Include="Make\ConsoleVariableCollector.cs" />
     <Compile Include="Templates\Resource.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Templates\vc15\Default.sln" />
     <EmbeddedResource Include="Templates\vc15\Default.vcxproj.filters" />
     <EmbeddedResource Include="Templates\vc15\Default.vcxproj" />
+    <EmbeddedResource Include="Templates\vc16\Default.sln" />
+    <EmbeddedResource Include="Templates\vc16\Default.vcxproj.filters" />
+    <EmbeddedResource Include="Templates\vc16\Default.vcxproj" />
     <None Include="Templates\gradle\**">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <EmbeddedResource Include="Templates\gradle_application\build.gradle" />
     <EmbeddedResource Include="Templates\gradle_library\build.gradle" />
-    <EmbeddedResource Include="Templates\vc16\Default.vcxproj" />
     <None Include="Templates\xcode9\Default.xcodeproj\ConvertToXml.sh" />
     <EmbeddedResource Include="Templates\xcode9\Default.xcodeproj\project.pbxproj" />
     <None Include="Templates\xcode9\Dummy.m" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Templates\vc16\Default.sln" />
-    <EmbeddedResource Include="Templates\vc16\Default.vcxproj.filters" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -5,9 +5,9 @@ using System.IO;
 
 namespace TypeMake
 {
-    public partial class Program
+    public static class BuildScript
     {
-        private static void GenerateRetypemakeScript(Cpp.OperatingSystemType HostOperatingSystem, PathString SourceDirectory, PathString BuildDirectory, Shell.EnvironmentVariableMemory Memory, bool OverwriteRetypemakeScript)
+        public static void GenerateRetypemakeScript(Cpp.OperatingSystemType HostOperatingSystem, PathString SourceDirectory, PathString BuildDirectory, Shell.EnvironmentVariableMemory Memory, bool OverwriteRetypemakeScript)
         {
             if (HostOperatingSystem == Cpp.OperatingSystemType.Windows)
             {
@@ -87,7 +87,10 @@ namespace TypeMake
                 if (OverwriteRetypemakeScript || !File.Exists(RetypemakePath))
                 {
                     TextFile.WriteToFile(RetypemakePath, String.Join("\n", Lines), new System.Text.UTF8Encoding(false), false);
-                    MergeExitCode(Shell.Execute("chmod", "+x", RetypemakePath));
+                    if (Shell.Execute("chmod", "+x", RetypemakePath) != 0)
+                    {
+                        throw new InvalidOperationException("ErrorInExecution: chmod");
+                    }
                 }
                 else
                 {
@@ -95,7 +98,7 @@ namespace TypeMake
                 }
             }
         }
-        private static void GenerateBuildScriptWindows(PathString BuildDirectory, String SolutionName, Cpp.ArchitectureType TargetArchitecture, Cpp.ConfigurationType Configuration, PathString VSDir, int VSVersion, bool ForceRegenerate)
+        public static void GenerateBuildScriptWindows(PathString BuildDirectory, String SolutionName, Cpp.ArchitectureType TargetArchitecture, Cpp.ConfigurationType Configuration, PathString VSDir, int VSVersion, bool ForceRegenerate)
         {
             var MSBuildVersion = VSVersion == 2019 ? "Current" : "15.0";
             var Lines = new List<String>();
@@ -116,7 +119,7 @@ namespace TypeMake
             var BuildPath = BuildDirectory / $"build_{TargetArchitecture}_{Configuration}.cmd";
             TextFile.WriteToFile(BuildPath, String.Join("\r\n", Lines), System.Text.Encoding.Default, !ForceRegenerate);
         }
-        private static void GenerateBuildScriptLinux(String TargetOperatingSystemDistribution, Cpp.ToolchainType Toolchain, Cpp.OperatingSystemType HostOperatingSystem, PathString BuildDirectory, Cpp.ConfigurationType Configuration, PathString CMake, PathString Make, PathString Ninja, bool ForceRegenerate)
+        public static void GenerateBuildScriptLinux(String TargetOperatingSystemDistribution, Cpp.ToolchainType Toolchain, Cpp.OperatingSystemType HostOperatingSystem, PathString BuildDirectory, Cpp.ConfigurationType Configuration, PathString CMake, PathString Make, PathString Ninja, bool ForceRegenerate)
         {
             if (Toolchain == Cpp.ToolchainType.CMake)
             {
@@ -155,7 +158,10 @@ namespace TypeMake
                     Lines.Add("");
                     var BuildPath = BuildDirectory / "build.sh";
                     TextFile.WriteToFile(BuildPath, String.Join("\n", Lines), new System.Text.UTF8Encoding(false), !ForceRegenerate);
-                    MergeExitCode(Shell.Execute("chmod", "+x", BuildPath));
+                    if (Shell.Execute("chmod", "+x", BuildPath) != 0)
+                    {
+                        throw new InvalidOperationException("ErrorInExecution: chmod");
+                    }
                 }
             }
             else if (Toolchain == Cpp.ToolchainType.Ninja)
@@ -189,11 +195,14 @@ namespace TypeMake
                     Lines.Add("");
                     var BuildPath = BuildDirectory / "build.sh";
                     TextFile.WriteToFile(BuildPath, String.Join("\n", Lines), new System.Text.UTF8Encoding(false), !ForceRegenerate);
-                    MergeExitCode(Shell.Execute("chmod", "+x", BuildPath));
+                    if (Shell.Execute("chmod", "+x", BuildPath) != 0)
+                    {
+                        throw new InvalidOperationException("ErrorInExecution: chmod");
+                    }
                 }
             }
         }
-        private static void GenerateBuildScriptXCode(Cpp.OperatingSystemType HostOperatingSystem, PathString BuildDirectory, Make.Result Result, bool ForceRegenerate)
+        public static void GenerateBuildScriptXCode(Cpp.OperatingSystemType HostOperatingSystem, PathString BuildDirectory, Make.Result Result, bool ForceRegenerate)
         {
             var Lines = new List<String>();
             Lines.Add("#!/bin/bash");
@@ -207,10 +216,13 @@ namespace TypeMake
             TextFile.WriteToFile(BuildPath, String.Join("\n", Lines), new System.Text.UTF8Encoding(false), !ForceRegenerate);
             if (HostOperatingSystem != Cpp.OperatingSystemType.Windows)
             {
-                MergeExitCode(Shell.Execute("chmod", "+x", BuildPath));
+                if (Shell.Execute("chmod", "+x", BuildPath) != 0)
+                {
+                    throw new InvalidOperationException("ErrorInExecution: chmod");
+                }
             }
         }
-        private static void GenerateBuildScriptAndroid(List<ProjectReference> GradleProjects, Cpp.ToolchainType Toolchain, Cpp.OperatingSystemType HostOperatingSystem, PathString BuildDirectory, Cpp.ArchitectureType TargetArchitecture, Cpp.ConfigurationType Configuration, PathString AndroidNdk, PathString CMake, PathString Make, PathString Ninja, int ApiLevel, bool ForceRegenerate)
+        public static void GenerateBuildScriptAndroid(List<ProjectReference> GradleProjects, Cpp.ToolchainType Toolchain, Cpp.OperatingSystemType HostOperatingSystem, PathString BuildDirectory, Cpp.ArchitectureType TargetArchitecture, Cpp.ConfigurationType Configuration, PathString AndroidNdk, PathString CMake, PathString Make, PathString Ninja, int ApiLevel, bool ForceRegenerate)
         {
             if (Toolchain == Cpp.ToolchainType.Gradle_CMake)
             {
@@ -267,7 +279,10 @@ namespace TypeMake
                     Lines.Add("");
                     var BuildPath = BuildDirectory / "build.sh";
                     TextFile.WriteToFile(BuildPath, String.Join("\n", Lines), new System.Text.UTF8Encoding(false), !ForceRegenerate);
-                    MergeExitCode(Shell.Execute("chmod", "+x", BuildPath));
+                    if (Shell.Execute("chmod", "+x", BuildPath) != 0)
+                    {
+                        throw new InvalidOperationException("ErrorInExecution: chmod");
+                    }
                 }
             }
             else if ((Toolchain == Cpp.ToolchainType.Gradle_Ninja) || (Toolchain == Cpp.ToolchainType.Ninja))
@@ -335,9 +350,19 @@ namespace TypeMake
                     Lines.Add("");
                     var BuildPath = BuildDirectory / "build.sh";
                     TextFile.WriteToFile(BuildPath, String.Join("\n", Lines), new System.Text.UTF8Encoding(false), !ForceRegenerate);
-                    MergeExitCode(Shell.Execute("chmod", "+x", BuildPath));
+                    if (Shell.Execute("chmod", "+x", BuildPath) != 0)
+                    {
+                        throw new InvalidOperationException("ErrorInExecution: chmod");
+                    }
                 }
             }
+        }
+
+        private static void WriteLineError(String Line)
+        {
+            Shell.SetForegroundColor(ConsoleColor.Red);
+            Console.Error.WriteLine(Line);
+            Shell.ResetColor();
         }
     }
 }
