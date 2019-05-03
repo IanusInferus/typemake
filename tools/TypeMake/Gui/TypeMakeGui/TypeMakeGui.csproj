@@ -1,0 +1,21 @@
+﻿<Project>
+
+  <PropertyGroup>
+    <TargetFramework>net461</TargetFramework>
+    <RootNamespace>TypeMakeGui</RootNamespace>
+    <PackageVersion>1.0</PackageVersion>
+    <Title>TypeMakeGui</Title>
+    <Copyright>Copyright © 2019</Copyright>
+    <Description>TypeMakeGui</Description>
+    <BaseIntermediateOutputPath>..\..\Obj\$(MSBuildProjectName)</BaseIntermediateOutputPath>
+    <OutputPath>..\..\Bin\</OutputPath>
+  </PropertyGroup>
+
+  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+
+  <ItemGroup>
+    <PackageReference Include="Eto.Forms" Version="2.4.1" />
+  </ItemGroup>
+
+</Project>

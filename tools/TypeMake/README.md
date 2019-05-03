@@ -10,7 +10,10 @@ The objective of TypeMake is not to implement a general-purpose C++ build tool, 
 
 ## Usage
 
-TypeMake --help
+Windows: typemake.cmd
+Windows GUI: typemakegui.cmd
+Linux/Mac: ./typemake.sh
+Linux/Mac GUI: ./typemakegui.sh
 
 ## Support matrix
 

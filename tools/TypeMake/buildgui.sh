@@ -13,7 +13,7 @@ command -v msbuild >/dev/null 2>&1 || {
 }
 if [ "$1" == "--quiet" ]
 then
-  msbuild TypeMake.sln /t:Build /p:Configuration=Release /nologo /consoleloggerparameters:ErrorsOnly
+  msbuild TypeMakeGui.sln /restore /t:Build /p:Configuration=Release /nologo /consoleloggerparameters:ErrorsOnly
 else
-  msbuild TypeMake.sln /t:Rebuild /p:Configuration=Release
+  msbuild TypeMakeGui.sln /restore /t:Rebuild /p:Configuration=Release
 fi
