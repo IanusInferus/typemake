@@ -280,7 +280,7 @@ namespace TypeMake
                             MatchingCompilers = new List<CompilerType> { CompilerType.gcc, CompilerType.clang },
                             MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Linux, OperatingSystemType.Android },
                             MatchingTargetTypes = new List<TargetType> { TargetType.DynamicLibrary },
-                            LinkerFlags = new List<string> { "-Wl,--version-script=" + (SourceDirectory / "products/export.version").RelativeTo(BuildDirectory / "projects").ToString(PathStringStyle.Unix) }
+                            LinkerFlags = new List<string> { "-Wl,--version-script=" + (SourceDirectory / "products/export.version").RelativeTo((Toolchain == ToolchainType.CMake) || (Toolchain == ToolchainType.Gradle_CMake) ? BuildDirectory / "projects" / GetProjectFileName(ProductName) : BuildDirectory / "projects").ToString(PathStringStyle.Unix) }
                         },
                         new Configuration
                         {
