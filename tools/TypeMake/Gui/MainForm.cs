@@ -60,7 +60,10 @@ namespace TypeMakeGui
             {
                 Location = new Point((int)(Screen.WorkingArea.Width - Content.Size.Width) / 2, (int)(Screen.WorkingArea.Height - Content.Size.Height) / 2);
             }
-            base.OnShown(e);
+            else if ((Width < 64) || (Height < 64))
+            {
+                Maximize();
+            }            base.OnShown(e);
         }
 
         private void RebuildView()
