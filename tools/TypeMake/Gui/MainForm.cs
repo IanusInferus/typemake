@@ -63,7 +63,8 @@ namespace TypeMakeGui
             else if ((Width < 64) || (Height < 64))
             {
                 Maximize();
-            }            base.OnShown(e);
+            }
+            base.OnShown(e);
         }
 
         private void RebuildView()
