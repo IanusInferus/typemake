@@ -441,7 +441,6 @@ namespace TypeMakeGui
                 if (ManualSet || !IsDefaultValue)
                 {
                     var Value = GetVariableValueString(v);
-                    if (Value == "") { Value = "_EMPTY_"; }
                     if (Memory.Variables.ContainsKey(i.VariableName))
                     {
                         Updated = Memory.Variables[i.VariableName] != Value;
