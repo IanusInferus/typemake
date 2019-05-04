@@ -17,8 +17,6 @@ namespace TypeMakeGui
         public MainForm()
         {
             Title = "TypeMake";
-            Resizable = false;
-            Maximizable = false;
 
             var VariablesAndVariableItems = VariableCollection.GetVariableItems();
             Variables = VariablesAndVariableItems.Key;
@@ -99,15 +97,20 @@ namespace TypeMakeGui
             var Button_Generate = new Button { Text = "&Generate", Enabled = SortedVariableItems.Select(i => i.VariableName).Except(ValidatedVariableNames).Count() == 0 };
             Button_Generate.Click += (sender, e) => Generate();
 
-            Content = new StackLayout
+            Content = new Scrollable
             {
-                Padding = 10,
-                HorizontalContentAlignment = HorizontalAlignment.Center,
-                Items =
+                ExpandContentWidth = true,
+                ExpandContentHeight = true,
+                Content = new StackLayout
                 {
-                    Button_Load,
-                    TableLayout_VariableGrid,
-                    Button_Generate
+                    Padding = 10,
+                    HorizontalContentAlignment = HorizontalAlignment.Center,
+                    Items =
+                    {
+                        Button_Load,
+                        TableLayout_VariableGrid,
+                        Button_Generate
+                    }
                 }
             };
         }
