@@ -250,7 +250,8 @@ namespace TypeMake
                     return VariableSpec.CreatePath(new PathStringSpec
                     {
                         DefaultValue = null,
-                        IsDirectory = true
+                        IsDirectory = true,
+                        Validator = p => Directory.Exists(p / "modules") && Directory.Exists(p / "products") ? new KeyValuePair<bool, String>(true, "") : new KeyValuePair<bool, string>(false, "modules or products not exist.")
                     });
                 },
                 SetVariableValue = v => Variables.SourceDirectory = v.Path
@@ -259,29 +260,29 @@ namespace TypeMake
             l.Add(new VariableItem
             {
                 VariableName = nameof(Variables.BuildDirectory),
-                DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.Toolchain), nameof(Variables.Compiler), nameof(Variables.TargetArchitecture), nameof(Variables.Configuration) },
+                DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.Toolchain), nameof(Variables.Compiler), nameof(Variables.TargetArchitecture), nameof(Variables.Configuration), nameof(Variables.SourceDirectory) },
                 GetVariableSpec = () =>
                 {
                     String DefaultBuildDir = null;
                     if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
                     {
-                        DefaultBuildDir = "build/windows";
+                        DefaultBuildDir = Variables.SourceDirectory / "build/windows";
                     }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
                     {
-                        DefaultBuildDir = $"build/linux_{Variables.Toolchain}_{Variables.Compiler}_{Variables.TargetArchitecture}_{Variables.Configuration}";
+                        DefaultBuildDir = Variables.SourceDirectory / $"build/linux_{Variables.Toolchain}_{Variables.Compiler}_{Variables.TargetArchitecture}_{Variables.Configuration}";
                     }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Mac)
                     {
-                        DefaultBuildDir = "build/mac";
+                        DefaultBuildDir = Variables.SourceDirectory / "build/mac";
                     }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.iOS)
                     {
-                        DefaultBuildDir = "build/ios";
+                        DefaultBuildDir = Variables.SourceDirectory / "build/ios";
                     }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
                     {
-                        DefaultBuildDir = $"build/android_{Variables.Toolchain.ToString().Replace("Gradle_", "G")}_{Variables.TargetArchitecture}_{Variables.Configuration}";
+                        DefaultBuildDir = Variables.SourceDirectory / $"build/android_{Variables.Toolchain.ToString().Replace("Gradle_", "G")}_{Variables.TargetArchitecture}_{Variables.Configuration}";
                     }
                     else
                     {

@@ -20,35 +20,35 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="..\Src\Templates\vc15\Default.sln">
-      <LogicalName>$(RootNamespace).Templates.vc15.Default.sln</LogicalName>
+      <LogicalName>TypeMake.Templates.vc15.Default.sln</LogicalName>
     </EmbeddedResource>
     <EmbeddedResource Include="..\Src\Templates\vc15\Default.vcxproj.filters">
-      <LogicalName>$(RootNamespace).Templates.vc15.Default.vcxproj.filters</LogicalName>
+      <LogicalName>TypeMake.Templates.vc15.Default.vcxproj.filters</LogicalName>
     </EmbeddedResource>
     <EmbeddedResource Include="..\Src\Templates\vc15\Default.vcxproj">
-      <LogicalName>$(RootNamespace).Templates.vc15.Default.vcxproj</LogicalName>
+      <LogicalName>TypeMake.Templates.vc15.Default.vcxproj</LogicalName>
     </EmbeddedResource>
     <EmbeddedResource Include="..\Src\Templates\vc16\Default.sln">
-      <LogicalName>$(RootNamespace).Templates.vc16.Default.sln</LogicalName>
+      <LogicalName>TypeMake.Templates.vc16.Default.sln</LogicalName>
     </EmbeddedResource>
     <EmbeddedResource Include="..\Src\Templates\vc16\Default.vcxproj.filters">
-      <LogicalName>$(RootNamespace).Templates.vc16.Default.vcxproj.filters</LogicalName>
+      <LogicalName>TypeMake.Templates.vc16.Default.vcxproj.filters</LogicalName>
     </EmbeddedResource>
     <EmbeddedResource Include="..\Src\Templates\vc16\Default.vcxproj">
-      <LogicalName>$(RootNamespace).Templates.vc16.Default.vcxproj</LogicalName>
+      <LogicalName>TypeMake.Templates.vc16.Default.vcxproj</LogicalName>
     </EmbeddedResource>
     <None Include="..\Src\Templates\gradle\**">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <EmbeddedResource Include="..\Src\Templates\gradle_application\build.gradle">
-      <LogicalName>$(RootNamespace).Templates.gradle_application.build.gradle</LogicalName>
+      <LogicalName>TypeMake.Templates.gradle_application.build.gradle</LogicalName>
     </EmbeddedResource>
     <EmbeddedResource Include="..\Src\Templates\gradle_library\build.gradle">
-      <LogicalName>$(RootNamespace).Templates.gradle_library.build.gradle</LogicalName>
+      <LogicalName>TypeMake.Templates.gradle_library.build.gradle</LogicalName>
     </EmbeddedResource>
     <None Include="..\Src\Templates\xcode9\Default.xcodeproj\ConvertToXml.sh" />
     <EmbeddedResource Include="..\Src\Templates\xcode9\Default.xcodeproj\project.pbxproj">
-      <LogicalName>$(RootNamespace).Templates.xcode9.Default.xcodeproj.project.pbxproj</LogicalName>
+      <LogicalName>TypeMake.Templates.xcode9.Default.xcodeproj.project.pbxproj</LogicalName>
     </EmbeddedResource>
     <None Include="..\Src\Templates\xcode9\Dummy.m" />
   </ItemGroup>

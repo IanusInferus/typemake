@@ -8,19 +8,17 @@ namespace TypeMake
     {
         private Shell.EnvironmentVariableMemory Memory;
         private bool Quiet;
-        private List<VariableItem> Items;
-        private Dictionary<String, VariableItem> Dict;
+        private List<VariableItem> SortedItems;
         public ConsoleVariableCollector(Shell.EnvironmentVariableMemory Memory, bool Quiet, List<VariableItem> Items)
         {
             this.Memory = Memory;
             this.Quiet = Quiet;
-            this.Items = Items;
             var DuplicateVariableNames = Items.Select(i => i.VariableName).GroupBy(n => n).Where(g => g.Count() > 1).Select(g => g.Key).ToList();
             if (DuplicateVariableNames.Count > 0)
             {
                 throw new ArgumentException("DuplicateVariableNames: " + String.Join(" ", DuplicateVariableNames));
             }
-            this.Dict = Items.ToDictionary(i => i.VariableName);
+            var Dict = Items.ToDictionary(i => i.VariableName);
             foreach (var i in Items)
             {
                 foreach (var d in i.DependentVariableNames)
@@ -31,11 +29,10 @@ namespace TypeMake
                     }
                 }
             }
+            this.SortedItems = Items.PartialOrderBy(i => i.DependentVariableNames.Select(n => Dict[n])).ToList();
         }
         public void Execute()
         {
-            var SortedItems = Items.PartialOrderBy(i => i.DependentVariableNames.Select(n => Dict[n])).ToList();
-
             var PreviousFetchWithUserInteraction = new Stack<Tuple<int, int, Shell.ConsolePositionState>>();
             var Index = 0;
             while (Index < SortedItems.Count)

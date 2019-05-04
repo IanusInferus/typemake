@@ -10,7 +10,7 @@ namespace TypeMake
 {
     public class Make
     {
-        private const String SolutionName = "TypeMakeSample";
+        public const String SolutionName = "TypeMakeSample";
 
         private ToolchainType Toolchain;
         private CompilerType Compiler;
