@@ -54,8 +54,14 @@ namespace TypeMake
                 Environment.SetEnvironmentVariable(p[0], p[1]);
             }
 
+            var Memory = new Shell.EnvironmentVariableMemory();
             var Quiet = options.ContainsKey("quiet");
-            Generation.Run(Quiet);
+            var VariablesAndVariableItems = VariableCollection.GetVariableItems();
+            var vc = new ConsoleVariableCollector(Memory, Quiet, VariablesAndVariableItems.Value);
+            vc.Execute();
+
+            Generation.Run(Memory, Quiet, VariablesAndVariableItems.Key);
+
             Console.WriteLine("TypeMake successful.");
             return 0;
         }

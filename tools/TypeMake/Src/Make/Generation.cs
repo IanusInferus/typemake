@@ -6,14 +6,8 @@ namespace TypeMake
 {
     public static class Generation
     {
-        public static void Run(bool Quiet)
+        public static void Run(Shell.EnvironmentVariableMemory Memory, bool Quiet, Variables v)
         {
-            var Memory = new Shell.EnvironmentVariableMemory();
-            var VariablesAndVariableItems = VariableCollection.GetVariableItems();
-            var vc = new ConsoleVariableCollector(Memory, Quiet, VariablesAndVariableItems.Value);
-            vc.Execute();
-            var v = VariablesAndVariableItems.Key;
-
             BuildScript.GenerateRetypemakeScript(v.HostOperatingSystem, v.SourceDirectory, v.BuildDirectory, Memory, v.OverwriteRetypemakeScript);
             var r = v.m.Execute(v.SelectedProjects);
 
