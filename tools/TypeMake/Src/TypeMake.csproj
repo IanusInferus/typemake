@@ -62,6 +62,7 @@
     <Compile Include="Generators\BuildScript.cs" />
     <Compile Include="Make\Generation.cs" />
     <Compile Include="Make\Make.cs" />
+    <Compile Include="Make\RetypemakeScriptReader.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Base\PathString.cs" />
     <Compile Include="Make\VariableCollection.cs" />
