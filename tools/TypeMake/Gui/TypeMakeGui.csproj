@@ -1,0 +1,63 @@
+﻿<Project>
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net461</TargetFramework>
+    <BaseIntermediateOutputPath>..\Obj\$(MSBuildProjectName)</BaseIntermediateOutputPath>
+    <OutputPath>..\Bin\</OutputPath>
+  </PropertyGroup>
+
+  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+
+  <ItemGroup>
+    <Compile Include="..\Src\Base\**\*.cs" />
+    <Compile Include="..\Src\Generators\**\*.cs" />
+    <Compile Include="..\Src\Make\**\*.cs" />
+    <Compile Include="..\Src\Schema\**\*.cs" />
+    <Compile Include="..\Src\Shell\**\*.cs" />
+    <Compile Include="..\Src\Templates\**\*.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="..\Src\Templates\vc15\Default.sln">
+      <LogicalName>$(RootNamespace).Templates.vc15.Default.sln</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\Src\Templates\vc15\Default.vcxproj.filters">
+      <LogicalName>$(RootNamespace).Templates.vc15.Default.vcxproj.filters</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\Src\Templates\vc15\Default.vcxproj">
+      <LogicalName>$(RootNamespace).Templates.vc15.Default.vcxproj</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\Src\Templates\vc16\Default.sln">
+      <LogicalName>$(RootNamespace).Templates.vc16.Default.sln</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\Src\Templates\vc16\Default.vcxproj.filters">
+      <LogicalName>$(RootNamespace).Templates.vc16.Default.vcxproj.filters</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\Src\Templates\vc16\Default.vcxproj">
+      <LogicalName>$(RootNamespace).Templates.vc16.Default.vcxproj</LogicalName>
+    </EmbeddedResource>
+    <None Include="..\Src\Templates\gradle\**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <EmbeddedResource Include="..\Src\Templates\gradle_application\build.gradle">
+      <LogicalName>$(RootNamespace).Templates.gradle_application.build.gradle</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\Src\Templates\gradle_library\build.gradle">
+      <LogicalName>$(RootNamespace).Templates.gradle_library.build.gradle</LogicalName>
+    </EmbeddedResource>
+    <None Include="..\Src\Templates\xcode9\Default.xcodeproj\ConvertToXml.sh" />
+    <EmbeddedResource Include="..\Src\Templates\xcode9\Default.xcodeproj\project.pbxproj">
+      <LogicalName>$(RootNamespace).Templates.xcode9.Default.xcodeproj.project.pbxproj</LogicalName>
+    </EmbeddedResource>
+    <None Include="..\Src\Templates\xcode9\Dummy.m" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Eto.Forms" Version="2.4.1" />
+    <PackageReference Include="Eto.Platform.Wpf" Version="2.4.1" />
+    <PackageReference Include="Eto.Platform.Gtk" Version="2.4.1" />
+    <PackageReference Include="Eto.Platform.Mac64" Version="2.4.1" />
+  </ItemGroup>
+
+</Project>

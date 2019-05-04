@@ -8,4 +8,4 @@ echo building TypeMake finished.
 popd
 
 export SourceDirectory=.
-nohup mono tools/TypeMake/Bin/net461/TypeMakeGui.Desktop.exe >/dev/null 2>/dev/null &
+nohup mono tools/TypeMake/Bin/net461/TypeMakeGui.exe >/dev/null 2>/dev/null &

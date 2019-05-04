@@ -2,7 +2,7 @@
 using Eto.Forms;
 using Eto.Drawing;
 
-namespace TypeMakeGui.Desktop
+namespace TypeMakeGui
 {
     class Program
     {

@@ -5,11 +5,9 @@ VisualStudioVersion = 16.0.28729.10
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TypeMake", "Src\TypeMake.csproj", "{565C4358-6D10-45B2-80B6-3CD5489C086D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TypeMakeTest", "Test\TypeMakeTest.csproj", "{F1701F16-A3D8-4156-87B5-F8030D364231}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TypeMakeTest", "Test\TypeMakeTest.csproj", "{F1701F16-A3D8-4156-87B5-F8030D364231}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TypeMakeGui", "Gui\TypeMakeGui\TypeMakeGui.csproj", "{28094108-C8D1-4828-9274-2B83771623C9}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TypeMakeGui.Desktop", "Gui\TypeMakeGui.Desktop\TypeMakeGui.Desktop.csproj", "{E63D532F-35B6-419D-BD73-A7F858138334}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TypeMakeGui", "Gui\TypeMakeGui.csproj", "{BDECCB35-6054-49A5-B252-28C06E73394E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -25,14 +23,10 @@ Global
 		{F1701F16-A3D8-4156-87B5-F8030D364231}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F1701F16-A3D8-4156-87B5-F8030D364231}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F1701F16-A3D8-4156-87B5-F8030D364231}.Release|Any CPU.Build.0 = Release|Any CPU
-		{28094108-C8D1-4828-9274-2B83771623C9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{28094108-C8D1-4828-9274-2B83771623C9}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{28094108-C8D1-4828-9274-2B83771623C9}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{28094108-C8D1-4828-9274-2B83771623C9}.Release|Any CPU.Build.0 = Release|Any CPU
-		{E63D532F-35B6-419D-BD73-A7F858138334}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E63D532F-35B6-419D-BD73-A7F858138334}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E63D532F-35B6-419D-BD73-A7F858138334}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E63D532F-35B6-419D-BD73-A7F858138334}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BDECCB35-6054-49A5-B252-28C06E73394E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BDECCB35-6054-49A5-B252-28C06E73394E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BDECCB35-6054-49A5-B252-28C06E73394E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BDECCB35-6054-49A5-B252-28C06E73394E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

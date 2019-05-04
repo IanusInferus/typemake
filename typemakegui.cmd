@@ -17,5 +17,5 @@ echo building TypeMake finished.
 popd
 
 set SourceDirectory=.
-start tools\TypeMake\Bin\net461\TypeMakeGui.Desktop.exe || exit /b 1
+start tools\TypeMake\Bin\net461\TypeMakeGui.exe || exit /b 1
 set NO_PAUSE_SYMBOL=1
