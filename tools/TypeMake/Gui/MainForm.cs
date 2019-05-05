@@ -9,7 +9,8 @@ namespace TypeMakeGui
 {
     public partial class MainForm : Form
     {
-        private Shell.EnvironmentVariableMemory Memory;
+        private Shell.EnvironmentVariableMemory ManualMemory;
+        private Shell.EnvironmentVariableMemory FullMemory;
         private Variables Variables;
         private List<VariableItem> SortedVariableItems;
         private HashSet<String> ValidatedVariableNames;
@@ -22,7 +23,8 @@ namespace TypeMakeGui
             Variables = VariablesAndVariableItems.Key;
             SortedVariableItems = GetSortedVariableItems(VariablesAndVariableItems.Value);
 
-            Memory = new Shell.EnvironmentVariableMemory();
+            ManualMemory = new Shell.EnvironmentVariableMemory();
+            FullMemory = new Shell.EnvironmentVariableMemory();
             ValidatedVariableNames = new HashSet<String>();
 
             RebuildView();
@@ -60,7 +62,7 @@ namespace TypeMakeGui
             {
                 Location = new Point((int)(Screen.WorkingArea.Width - Content.Size.Width) / 2, (int)(Screen.WorkingArea.Height - Content.Size.Height) / 2);
             }
-            else if ((Width < 64) || (Height < 64))
+            if ((Width < 64) || (Height < 64) || (Location.X < 0) || (Location.Y < 0))
             {
                 Maximize();
             }
@@ -69,6 +71,12 @@ namespace TypeMakeGui
 
         private void RebuildView()
         {
+            Point? ScrollPosition = null;
+            if (Content != null)
+            {
+                ScrollPosition = ((Scrollable)Content).ScrollPosition;
+            }
+
             var Button_Load = new Button { Text = "&Load" };
             Button_Load.Click += (sender, e) =>
             {
@@ -79,7 +87,8 @@ namespace TypeMakeGui
                 {
                     RetypemakeScriptReader.Read(ofd.FileName);
 
-                    Memory = new Shell.EnvironmentVariableMemory();
+                    ManualMemory = new Shell.EnvironmentVariableMemory();
+                    FullMemory = new Shell.EnvironmentVariableMemory();
                     ValidatedVariableNames = new HashSet<String>();
 
                     RebuildView();
@@ -117,9 +126,14 @@ namespace TypeMakeGui
                     }
                 }
             };
+
+            if (ScrollPosition != null)
+            {
+                ((Scrollable)Content).ScrollPosition = ScrollPosition.Value;
+            }
         }
 
-        private static readonly int TextBoxWidth = 800;
+        private static readonly int TextBoxWidth = 1400;
         private bool RebuildVariableRow(VariableItem i, TableLayout tl, TableRow r)
         {
             r.Cells.Clear();
@@ -283,9 +297,9 @@ namespace TypeMakeGui
         private void ReadVariables(VariableItem i, VariableSpec s, TableRow r)
         {
             String v = null;
-            if (Memory.Variables.ContainsKey(i.VariableName))
+            if (ManualMemory.Variables.ContainsKey(i.VariableName))
             {
-                v = Memory.Variables[i.VariableName];
+                v = ManualMemory.Variables[i.VariableName];
             }
             else
             {
@@ -439,26 +453,45 @@ namespace TypeMakeGui
                     || (s.OnSelection && v.OnString && (s.Selection.DefaultValue == v.String))
                     || (s.OnPath && v.OnPath && (s.Path.DefaultValue == v.Path))
                     || (s.OnMultiSelection && v.OnStringSet && (String.Join(" ", s.MultiSelection.DefaultValues) == String.Join(" ", v.StringSet)));
-                if (ManualSet || !IsDefaultValue)
+                var Value = GetVariableValueString(v);
+                if (FullMemory.Variables.ContainsKey(i.VariableName))
                 {
-                    var Value = GetVariableValueString(v);
-                    if (Memory.Variables.ContainsKey(i.VariableName))
+                    Updated = FullMemory.Variables[i.VariableName] != Value;
+                }
+                else
+                {
+                    Updated = true;
+                }
+                if (ManualSet)
+                {
+                    if (IsDefaultValue)
                     {
-                        Updated = Memory.Variables[i.VariableName] != Value;
+                        if (ManualMemory.Variables.ContainsKey(i.VariableName))
+                        {
+                            ManualMemory.Variables.Remove(i.VariableName);
+                        }
                     }
                     else
                     {
-                        Updated = true;
+                        ManualMemory.Variables[i.VariableName] = Value;
                     }
-                    Memory.Variables[i.VariableName] = Value;
-                    if (s.OnSelection)
-                    {
-                        Memory.VariableSelections[i.VariableName] = s.Selection.Selections.ToList();
-                    }
-                    else if (s.OnMultiSelection)
-                    {
-                        Memory.VariableMultipleSelections[i.VariableName] = s.MultiSelection.Selections.ToList();
-                    }
+                }
+                if (s.OnSelection)
+                {
+                    ManualMemory.VariableSelections[i.VariableName] = s.Selection.Selections.ToList();
+                }
+                else if (s.OnMultiSelection)
+                {
+                    ManualMemory.VariableMultipleSelections[i.VariableName] = s.MultiSelection.Selections.ToList();
+                }
+                FullMemory.Variables[i.VariableName] = Value;
+                if (s.OnSelection)
+                {
+                    FullMemory.VariableSelections[i.VariableName] = s.Selection.Selections.ToList();
+                }
+                else if (s.OnMultiSelection)
+                {
+                    FullMemory.VariableMultipleSelections[i.VariableName] = s.MultiSelection.Selections.ToList();
                 }
             }
 
@@ -501,7 +534,7 @@ namespace TypeMakeGui
         private void Generate()
         {
             if (SortedVariableItems.Select(i => i.VariableName).Except(ValidatedVariableNames).Count() > 0) { return; }
-            Generation.Run(Memory, false, Variables);
+            Generation.Run(FullMemory, false, Variables);
             if ((Variables.HostOperatingSystem == TypeMake.Cpp.OperatingSystemType.Windows) && (Variables.TargetOperatingSystem == TypeMake.Cpp.OperatingSystemType.Windows))
             {
                 if (MessageBox.Show("Generation finished. Open project now?", "Generate", MessageBoxButtons.YesNo, MessageBoxType.Question) == DialogResult.Yes)
