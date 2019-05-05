@@ -163,6 +163,7 @@ namespace TypeMake
         public static int Execute(String ProgramPath, params String[] Arguments)
         {
             var psi = CreateExecuteStartInfo(ProgramPath, Arguments);
+            psi.CreateNoWindow = true;
             var Style = OperatingSystem == OperatingSystemType.Windows ? ShellArgumentStyle.CMD : ShellArgumentStyle.Bash;
             var CommandLine = Arguments.Length == 0 ? EscapeArgumentForShell(ProgramPath, Style) : EscapeArgumentForShell(ProgramPath, Style) + " " + String.Join(" ", Arguments.Select(a => EscapeArgumentForShell(a, Style)));
             Console.WriteLine(CommandLine);
@@ -173,6 +174,7 @@ namespace TypeMake
         public static KeyValuePair<int, String> ExecuteAndGetOutput(String ProgramPath, params String[] Arguments)
         {
             var psi = CreateExecuteStartInfo(ProgramPath, Arguments);
+            psi.CreateNoWindow = true;
             psi.RedirectStandardOutput = true;
             var Style = OperatingSystem == OperatingSystemType.Windows ? ShellArgumentStyle.CMD : ShellArgumentStyle.Bash;
             var CommandLine = Arguments.Length == 0 ? EscapeArgumentForShell(ProgramPath, Style) : EscapeArgumentForShell(ProgramPath, Style) + " " + String.Join(" ", Arguments.Select(a => EscapeArgumentForShell(a, Style)));
@@ -198,6 +200,7 @@ namespace TypeMake
         public static KeyValuePair<int, String> ExecuteAndGetOutput(String ProgramPath, Encoding Encoding, params String[] Arguments)
         {
             var psi = CreateExecuteStartInfo(ProgramPath, Arguments);
+            psi.CreateNoWindow = true;
             psi.RedirectStandardOutput = true;
             psi.StandardOutputEncoding = Encoding;
             var Style = OperatingSystem == OperatingSystemType.Windows ? ShellArgumentStyle.CMD : ShellArgumentStyle.Bash;
