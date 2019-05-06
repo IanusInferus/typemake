@@ -209,7 +209,7 @@ namespace TypeMakeGui
             }
             else if (s.OnPath)
             {
-                var tb = new TextBox { Text = s.Path.DefaultValue?.ToString() };
+                var tb = new TextBox { Text = s.Path.DefaultValue?.FullPath?.ToString() };
                 tb.LostFocus += (sender, e) => RebuildDepedeningVariableItems(i, s, tl, r);
                 tb.MouseLeave += (sender, e) => RebuildDepedeningVariableItems(i, s, tl, r);
                 r.Cells.Add(tb);
@@ -339,7 +339,7 @@ namespace TypeMakeGui
             }
             else if (s.OnPath)
             {
-                ((TextBox)(r.Cells[1].Control)).Text = v;
+                ((TextBox)(r.Cells[1].Control)).Text = v == "" ? v : v.AsPath().FullPath.ToString();
             }
             else if (s.OnMultiSelection)
             {
@@ -396,7 +396,7 @@ namespace TypeMakeGui
                 }
                 else
                 {
-                    var Value = Text.AsPath();
+                    var Value = Text.AsPath().FullPath;
                     if (s.Path.Validator != null)
                     {
                         ValidateResult = s.Path.Validator(Value);
@@ -451,7 +451,7 @@ namespace TypeMakeGui
                     || (s.OnInteger && v.OnInteger && (s.Integer.DefaultValue == v.Integer))
                     || (s.OnString && v.OnString && (s.String.DefaultValue == v.String))
                     || (s.OnSelection && v.OnString && (s.Selection.DefaultValue == v.String))
-                    || (s.OnPath && v.OnPath && (s.Path.DefaultValue == v.Path))
+                    || (s.OnPath && v.OnPath && (s.Path.DefaultValue?.FullPath == v.Path?.FullPath))
                     || (s.OnMultiSelection && v.OnStringSet && (String.Join(" ", s.MultiSelection.DefaultValues) == String.Join(" ", v.StringSet)));
                 var Value = GetVariableValueString(v);
                 if (FullMemory.Variables.ContainsKey(i.VariableName))
