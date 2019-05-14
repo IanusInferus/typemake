@@ -77,6 +77,13 @@ namespace TypeMake.Cpp
 
             var Lines = GenerateLines(BuildBatchPath, BaseDirPath).ToList();
             TextFile.WriteToFile(BuildBatchPath, String.Join(HostOperatingSystem == OperatingSystemType.Windows ? "\r\n" : "\n", Lines), new UTF8Encoding(false), !ForceRegenerate);
+            if (HostOperatingSystem != OperatingSystemType.Windows)
+            {
+                if (Shell.Execute("chmod", "+x", BuildBatchPath) != 0)
+                {
+                    throw new InvalidOperationException("ErrorInExecution: chmod");
+                }
+            }
         }
 
         private IEnumerable<String> GenerateLines(String BuildBatchPath, String BaseDirPath)
