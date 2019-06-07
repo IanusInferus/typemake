@@ -260,7 +260,7 @@ namespace TypeMake
                     Lines.Add(Shell.EscapeArgumentForShell(CMake, Shell.ShellArgumentStyle.CMD) + " " + String.Join(" ", CMakeArguments.Select(a => Shell.EscapeArgumentForShell(a, Shell.ShellArgumentStyle.CMD))) + " || exit /b 1");
                     Lines.Add(Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.CMD) + " -j" + Environment.ProcessorCount.ToString() + " || exit /b 1");
                     Lines.Add("pushd gradle || exit /b 1");
-                    Lines.Add($@"call .\gradlew.bat assemble{Configuration} || exit /b 1");
+                    Lines.Add($@"call .\gradlew.bat --no-daemon assemble{Configuration} || exit /b 1");
                     Lines.Add("popd");
                     Lines.Add("");
                     var BuildPath = BuildDirectory / "build.cmd";
@@ -274,7 +274,7 @@ namespace TypeMake
                     Lines.Add(Shell.EscapeArgumentForShell(CMake, Shell.ShellArgumentStyle.Bash) + " " + String.Join(" ", CMakeArguments.Select(a => Shell.EscapeArgumentForShell(a, Shell.ShellArgumentStyle.Bash))));
                     Lines.Add(Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.Bash) + " -j" + Environment.ProcessorCount.ToString());
                     Lines.Add("pushd gradle");
-                    Lines.Add($@"./gradlew assemble{Configuration}");
+                    Lines.Add($@"./gradlew --no-daemon assemble{Configuration}");
                     Lines.Add("popd");
                     Lines.Add("");
                     var BuildPath = BuildDirectory / "build.sh";
@@ -306,7 +306,7 @@ namespace TypeMake
                     if (Toolchain == Cpp.ToolchainType.Gradle_Ninja)
                     {
                         Lines.Add("pushd gradle || exit /b 1");
-                        Lines.Add($@"call .\gradlew.bat assemble{Configuration} || exit /b 1");
+                        Lines.Add($@"call .\gradlew.bat --no-daemon assemble{Configuration} || exit /b 1");
                         Lines.Add("popd");
                         Lines.Add("echo To debug a APK, open gradle directory in Android Studio, select Run - Edit Configurations - Debugger - Debug type, and change its value to Dual");
                     }
@@ -333,7 +333,7 @@ namespace TypeMake
                     if (Toolchain == Cpp.ToolchainType.Gradle_Ninja)
                     {
                         Lines.Add("pushd gradle");
-                        Lines.Add($@"./gradlew assemble{Configuration}");
+                        Lines.Add($@"./gradlew --no-daemon assemble{Configuration}");
                         Lines.Add("popd");
                         Lines.Add("echo To debug a APK, open gradle directory in Android Studio, select Run - Edit Configurations - Debugger - Debug type, and change its value to Dual");
                     }
