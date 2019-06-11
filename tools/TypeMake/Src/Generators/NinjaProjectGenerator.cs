@@ -70,6 +70,7 @@ namespace TypeMake.Cpp
                 if (Project.TargetType == TargetType.DynamicLibrary)
                 {
                     LinkerFlags.Add("-shared");
+                    LinkerFlags.Add("-Wl,-soname=" + "lib" + (Project.TargetName ?? Project.Name) + ".so");
                 }
                 var LibrarySearchPath = (OutputDirectory / ".." / $"{TargetArchitectureType}_{ConfigurationType}").RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix);
                 LinkerFlags.Add($"-L{LibrarySearchPath}");
