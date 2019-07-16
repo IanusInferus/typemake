@@ -584,6 +584,13 @@ namespace TypeMake
             else if ((Toolchain == ToolchainType.Gradle_CMake) || (Toolchain == ToolchainType.Gradle_Ninja))
             {
                 FileUtils.CopyDirectory(System.Reflection.Assembly.GetEntryAssembly().Location.AsPath().Parent / "Templates/gradle", BuildDirectory / "gradle", !ForceRegenerate);
+                if (HostOperatingSystem != Cpp.OperatingSystemType.Windows)
+                {
+                    if (Shell.Execute("chmod", "+x", BuildDirectory / "gradle/gradlew") != 0)
+                    {
+                        throw new InvalidOperationException("ErrorInExecution: chmod");
+                    }
+                }
                 if (Toolchain == ToolchainType.Gradle_CMake)
                 {
                     var g = new CMakeSolutionGenerator(SolutionName, SortedProjects, BuildDirectory);
