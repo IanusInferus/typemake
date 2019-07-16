@@ -645,8 +645,24 @@ namespace TypeMake
                 },
                 new Configuration
                 {
+                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Mac },
+                    Options = new Dictionary<String, String>
+                    {
+                        ["xcode.target.VALID_ARCHS"] = "x86_64"
+                    }
+                },
+                new Configuration
+                {
                     MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Android },
                     Libs = new List<PathString> { "log" }
+                },
+                new Configuration
+                {
+                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.iOS },
+                    Options = new Dictionary<String, String>
+                    {
+                        ["xcode.target.VALID_ARCHS"] = "arm64"
+                    }
                 },
                 new Configuration
                 {
