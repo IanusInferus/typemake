@@ -606,7 +606,7 @@ namespace TypeMake
                 {
                     return DefaultValue;
                 }
-                return v;
+                return vConfirmed;
             };
         }
         private static Func<String, int, bool, bool, String> GetCaseInsensitiveSelectionSuggester(IEnumerable<String> Selections)
