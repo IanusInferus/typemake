@@ -90,7 +90,10 @@ namespace TypeMake
                 }
                 s.ProjectConfigurationsSection.Add(conf);
 
-                NestedProjects.Properties.SetValue("{" + Project.Id + "}", "{" + Filters[Dir] + "}");
+                if (Dir != ".")
+                {
+                    NestedProjects.Properties.SetValue("{" + Project.Id + "}", "{" + Filters[Dir] + "}");
+                }
             }
 
             foreach (var f in Filters)
