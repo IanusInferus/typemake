@@ -624,8 +624,32 @@ namespace TypeMake
                 new Configuration
                 {
                     MatchingCompilers = new List<CompilerType> { CompilerType.VisualC },
+                    Options = new Dictionary<String, String>
+                    {
+                        ["vc.ClCompile.LanguageStandard"] = "stdcpp17"
+                    }
+                },
+                new Configuration
+                {
+                    MatchingCompilers = new List<CompilerType> { CompilerType.gcc, CompilerType.clang },
+                    CppFlags = ParseFlags("-std=c++17")
+                },
+                new Configuration
+                {
+                    MatchingCompilers = new List<CompilerType> { CompilerType.VisualC },
                     Defines = ParseDefines("_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS"),
-                    CommonFlags = new List<String> { "/bigobj" }
+                    CommonFlags = ParseFlags("/bigobj /JMC"),
+                    Options = new Dictionary<String, String>
+                    {
+                        ["vc.UseNativeEnvironment"] = "true"
+                    }
+                },
+                new Configuration
+                {
+                    MatchingCompilers = new List<CompilerType> { CompilerType.gcc, CompilerType.clang },
+                    CommonFlags = ParseFlags("-fsigned-char -Werror=return-type -Werror=address -Werror=sequence-point -Wformat -Werror=format-security -Werror=return-stack-address -Wuninitialized -Winit-self -Wpointer-arith -Wno-unused-function -Wno-comment -fvisibility=hidden"),
+                    CFlags = ParseFlags("-Wstrict-prototypes -Werror=implicit-function-declaration"),
+                    CppFlags = ParseFlags("-Wsign-promo -fvisibility-inlines-hidden")
                 },
                 new Configuration
                 {
@@ -666,28 +690,6 @@ namespace TypeMake
                 },
                 new Configuration
                 {
-                    MatchingCompilers = new List<CompilerType> { CompilerType.gcc, CompilerType.clang },
-                    CommonFlags = ParseFlags("-fsigned-char -Werror=return-type -Werror=address -Werror=sequence-point -Wformat -Werror=format-security -Wuninitialized -Winit-self -Wpointer-arith -Wno-unused-function -Wno-comment -fvisibility=hidden"),
-                    CFlags = ParseFlags("-Wstrict-prototypes -Werror=implicit-function-declaration"),
-                    CppFlags = ParseFlags("-std=c++17 -Wsign-promo -fvisibility-inlines-hidden")
-                },
-                new Configuration
-                {
-                    MatchingConfigurationTypes = new List<ConfigurationType> { Cpp.ConfigurationType.Debug },
-                    Defines = ParseDefines("_DEBUG;DEBUG=1")
-                },
-                new Configuration
-                {
-                    MatchingConfigurationTypes = new List<ConfigurationType> { Cpp.ConfigurationType.Release },
-                    Defines = ParseDefines("NDEBUG")
-                },
-                new Configuration
-                {
-                    MatchingCompilers = new List<CompilerType> { CompilerType.gcc, CompilerType.clang },
-                    CppFlags = ParseFlags("-std=c++14")
-                },
-                new Configuration
-                {
                     MatchingCompilers = new List<CompilerType> { CompilerType.gcc },
                     LinkerFlags = ParseFlags("-static-libgcc -static-libstdc++"),
                     Libs = new List<PathString> { "rt" }
@@ -706,6 +708,16 @@ namespace TypeMake
                 },
                 new Configuration
                 {
+                    MatchingConfigurationTypes = new List<ConfigurationType> { Cpp.ConfigurationType.Debug },
+                    Defines = ParseDefines("_DEBUG;DEBUG=1")
+                },
+                new Configuration
+                {
+                    MatchingConfigurationTypes = new List<ConfigurationType> { Cpp.ConfigurationType.Release },
+                    Defines = ParseDefines("NDEBUG")
+                },
+                new Configuration
+                {
                     MatchingCompilers = new List<CompilerType> { CompilerType.gcc, CompilerType.clang },
                     MatchingConfigurationTypes = new List<ConfigurationType> { Cpp.ConfigurationType.Debug },
                     CommonFlags = ParseFlags("-O0 -g")
@@ -714,7 +726,6 @@ namespace TypeMake
                 {
                     MatchingCompilers = new List<CompilerType> { CompilerType.gcc, CompilerType.clang },
                     MatchingConfigurationTypes = new List<ConfigurationType> { Cpp.ConfigurationType.Release },
-                    Defines = ParseDefines("NDEBUG"),
                     CommonFlags = ParseFlags("-O2 -g")
                 },
                 new Configuration
