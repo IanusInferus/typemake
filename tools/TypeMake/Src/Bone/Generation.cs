@@ -86,7 +86,7 @@ namespace TypeMake
             }
             else if (v.TargetOperatingSystem == Cpp.OperatingSystemType.Mac)
             {
-                BuildScript.GenerateBuildScriptXCode(v.HostOperatingSystem, v.BuildDirectory, r, v.ForceRegenerate);
+                BuildScript.GenerateBuildScriptXCode(v.HostOperatingSystem, v.BuildDirectory, r.SortedProjects, v.ForceRegenerate);
                 if (v.BuildNow)
                 {
                     using (var d = Shell.PushDirectory(v.BuildDirectory))
@@ -107,7 +107,7 @@ namespace TypeMake
             }
             else if (v.TargetOperatingSystem == Cpp.OperatingSystemType.iOS)
             {
-                BuildScript.GenerateBuildScriptXCode(v.HostOperatingSystem, v.BuildDirectory, r, v.ForceRegenerate);
+                BuildScript.GenerateBuildScriptXCode(v.HostOperatingSystem, v.BuildDirectory, r.SortedProjects, v.ForceRegenerate);
                 if (v.BuildNow)
                 {
                     using (var d = Shell.PushDirectory(v.BuildDirectory))
