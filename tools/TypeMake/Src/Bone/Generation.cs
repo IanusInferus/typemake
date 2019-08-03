@@ -9,7 +9,7 @@ namespace TypeMake
         public static void Run(Shell.EnvironmentVariableMemory Memory, bool Quiet, Variables v)
         {
             BuildScript.GenerateRetypemakeScript(v.HostOperatingSystem, v.SourceDirectory, v.BuildDirectory, Memory, v.OverwriteRetypemakeScript);
-            var r = v.m.Execute(v.SelectedProjects);
+            var r = v.g();
 
             if (v.TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
             {

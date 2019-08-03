@@ -901,6 +901,23 @@ namespace TypeMake
 
             l.Add(new VariableItem
             {
+                VariableName = "g",
+                DependentVariableNames = new List<String> { nameof(Variables.SelectedProjects) },
+                IsHidden = true,
+                GetVariableSpec = () =>
+                {
+                    Variables.g = () =>
+                    {
+                        return Variables.m.Execute(Variables.SelectedProjects);
+                    };
+
+                    return VariableSpec.CreateNotApply(VariableValue.CreateBoolean(false));
+                },
+                SetVariableValue = v => { }
+            });
+
+            l.Add(new VariableItem
+            {
                 VariableName = nameof(Variables.BuildNow),
                 DependentVariableNames = new List<String> { },
                 GetVariableSpec = () =>

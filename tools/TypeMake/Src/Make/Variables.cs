@@ -33,6 +33,7 @@ namespace TypeMake
         public String AR;
 
         public Make m;
+        public Func<Make.Result> g;
         public Dictionary<String, Make.ProjectDescription> SelectedProjects;
 
         public bool BuildNow;
