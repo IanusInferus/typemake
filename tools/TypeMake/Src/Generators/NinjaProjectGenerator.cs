@@ -120,7 +120,7 @@ namespace TypeMake.Cpp
             var ObjectFilePaths = new List<String>();
             foreach (var File in conf.Files)
             {
-                if ((File.Type != FileType.CSource) && (File.Type != FileType.CppSource)) { continue; }
+                if ((File.Type != FileType.CSource) && (File.Type != FileType.CppSource) && (File.Type != FileType.ObjectiveCSource) && (File.Type != FileType.ObjectiveCppSource)) { continue; }
 
                 var FileConf = File.Configurations.Merged(Project.TargetType, Toolchain, Compiler, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitectureType, ConfigurationType);
 
@@ -128,22 +128,22 @@ namespace TypeMake.Cpp
                 FileFlags.AddRange(FileConf.Defines.Select(d => "-D" + d.Key + (d.Value == null ? "" : "=" + d.Value)));
                 FileFlags.AddRange(FileConf.CommonFlags);
 
-                if (File.Type == FileType.CSource)
+                if ((File.Type == FileType.CSource) || (File.Type == FileType.ObjectiveCSource))
                 {
                     FileFlags.AddRange(FileConf.CFlags);
                 }
-                else if (File.Type == FileType.CppSource)
+                else if ((File.Type == FileType.CppSource) || (File.Type == FileType.ObjectiveCppSource))
                 {
                     FileFlags.AddRange(FileConf.CppFlags);
                 }
 
                 var FilePath = File.Path.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix);
                 var ObjectFilePath = (Project.Name.AsPath() / (File.Path.FullPath.RelativeTo(InputDirectory).ToString(PathStringStyle.Unix).Replace("..", "__") + ".o")).ToString(PathStringStyle.Unix);
-                if (File.Type == FileType.CSource)
+                if ((File.Type == FileType.CSource) || (File.Type == FileType.ObjectiveCSource))
                 {
                     yield return $"build {NinjaEscape(ObjectFilePath)}: cc {NinjaEscape(FilePath)}";
                 }
-                else if (File.Type == FileType.CppSource)
+                else if ((File.Type == FileType.CppSource) || (File.Type == FileType.ObjectiveCppSource))
                 {
                     yield return $"build {NinjaEscape(ObjectFilePath)}: cxx {NinjaEscape(FilePath)}";
                 }
