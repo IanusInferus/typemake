@@ -203,7 +203,14 @@ namespace TypeMake.Cpp
                     }
                     else
                     {
-                        PostObjectFileLinkerFlags.Add("\"-Wl,--as-needed " + Lib.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix) + " -Wl,--no-as-needed\""); //bypass CMake limitation with the order of linker flags and the addition of '-l' before library with a relative or absolute path
+                        if (TargetOperatingSystem == OperatingSystemType.Mac)
+                        {
+                            PostObjectFileLinkerFlags.Add("\"-Wl,-pie " + Lib.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix) + " -Wl,-pie\""); //bypass CMake limitation with the order of linker flags and the addition of '-l' before library with a relative or absolute path
+                        }
+                        else
+                        {
+                            PostObjectFileLinkerFlags.Add("\"-Wl,--as-needed " + Lib.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix) + " -Wl,--no-as-needed\""); //bypass CMake limitation with the order of linker flags and the addition of '-l' before library with a relative or absolute path
+                        }
                     }
                 }
                 foreach (var p in ProjectReferences)
