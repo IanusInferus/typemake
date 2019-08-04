@@ -114,11 +114,11 @@ namespace TypeMake
                     }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Mac)
                     {
-                        return VariableSpec.CreateNotApply(VariableValue.CreateString(null));
+                        return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.ArchitectureType.x64.ToString()));
                     }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.iOS)
                     {
-                        return VariableSpec.CreateNotApply(VariableValue.CreateString(null));
+                        return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.ArchitectureType.arm64.ToString()));
                     }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
                     {
@@ -155,7 +155,7 @@ namespace TypeMake
                     }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Mac)
                     {
-                        return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.ToolchainType.Mac_XCode.ToString()));
+                        return VariableSpecCreateEnumSelection(Cpp.ToolchainType.Mac_XCode, new HashSet<Cpp.ToolchainType> { Cpp.ToolchainType.Mac_XCode, Cpp.ToolchainType.Ninja, Cpp.ToolchainType.CMake });
                     }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.iOS)
                     {
@@ -210,7 +210,7 @@ namespace TypeMake
             l.Add(new VariableItem
             {
                 VariableName = nameof(Variables.Configuration),
-                DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem) },
+                DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.Toolchain) },
                 GetVariableSpec = () =>
                 {
                     if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
@@ -223,7 +223,14 @@ namespace TypeMake
                     }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Mac)
                     {
-                        return VariableSpec.CreateNotApply(VariableValue.CreateString(null));
+                        if (Variables.Toolchain == Cpp.ToolchainType.Mac_XCode)
+                        {
+                            return VariableSpec.CreateNotApply(VariableValue.CreateString(null));
+                        }
+                        else
+                        {
+                            return VariableSpecCreateEnumSelection(Cpp.ConfigurationType.Debug);
+                        }
                     }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.iOS)
                     {
@@ -274,7 +281,14 @@ namespace TypeMake
                     }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Mac)
                     {
-                        DefaultBuildDir = Variables.SourceDirectory / "build/mac";
+                        if (Variables.Toolchain == Cpp.ToolchainType.Mac_XCode)
+                        {
+                            DefaultBuildDir = Variables.SourceDirectory / "build/mac";
+                        }
+                        else
+                        {
+                            DefaultBuildDir = Variables.SourceDirectory / $"build/mac_{Variables.Toolchain}_{Variables.Configuration}";
+                        }
                     }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.iOS)
                     {
@@ -357,10 +371,10 @@ namespace TypeMake
             l.Add(new VariableItem
             {
                 VariableName = nameof(Variables.DevelopmentTeam),
-                DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem) },
+                DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.Toolchain) },
                 GetVariableSpec = () =>
                 {
-                    if ((Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Mac) || (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.iOS))
+                    if (((Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Mac) && (Variables.Toolchain == Cpp.ToolchainType.Mac_XCode)) || (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.iOS))
                     {
                         return VariableSpec.CreateString(new StringSpec
                         {
@@ -552,6 +566,17 @@ namespace TypeMake
                             }
                         }
                     }
+                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Mac)
+                    {
+                        if (Variables.Toolchain == Cpp.ToolchainType.CMake)
+                        {
+                            return VariableSpec.CreatePath(new PathStringSpec
+                            {
+                                DefaultValue = Shell.TryLocate("cmake") ?? null,
+                                Validator = PathValidator
+                            });
+                        }
+                    }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
                     {
                         if (Variables.Toolchain == Cpp.ToolchainType.Gradle_CMake)
@@ -606,6 +631,17 @@ namespace TypeMake
                             }
                         }
                     }
+                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Mac)
+                    {
+                        if (Variables.Toolchain == Cpp.ToolchainType.CMake)
+                        {
+                            return VariableSpec.CreatePath(new PathStringSpec
+                            {
+                                DefaultValue = Shell.TryLocate("make") ?? null,
+                                Validator = PathValidator
+                            });
+                        }
+                    }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
                     {
                         if (Variables.Toolchain == Cpp.ToolchainType.Gradle_CMake)
@@ -643,7 +679,7 @@ namespace TypeMake
                 DependentVariableNames = new List<String> { nameof(Variables.HostOperatingSystem), nameof(Variables.TargetOperatingSystem), nameof(Variables.Toolchain), nameof(Variables.SourceDirectory) },
                 GetVariableSpec = () =>
                 {
-                    if ((Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Linux) || (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android))
+                    if ((Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Linux) || (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Mac) || (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android))
                     {
                         if ((Variables.Toolchain == Cpp.ToolchainType.Ninja) || (Variables.Toolchain == Cpp.ToolchainType.Gradle_Ninja))
                         {
@@ -774,6 +810,14 @@ namespace TypeMake
                                 DefaultValue = DefaultCC
                             });
                         }
+                        else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Mac)
+                        {
+                            var DefaultCC = "clang";
+                            return VariableSpec.CreateString(new StringSpec
+                            {
+                                DefaultValue = DefaultCC
+                            });
+                        }
                         else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
                         {
                             return VariableSpec.CreateFixed(VariableValue.CreateString($"{ToolchainPath / "bin/clang"}{ExeSuffix} --target={TargetPrefix}-linux-androideabi{ApiLevel} --sysroot={ToolchainPath / "sysroot"}"));
@@ -816,6 +860,14 @@ namespace TypeMake
                                 DefaultValue = DefaultCXX
                             });
                         }
+                        else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Mac)
+                        {
+                            var DefaultCXX = "clang++";
+                            return VariableSpec.CreateString(new StringSpec
+                            {
+                                DefaultValue = DefaultCXX
+                            });
+                        }
                         else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
                         {
                             return VariableSpec.CreateFixed(VariableValue.CreateString($"{ToolchainPath / "bin/clang++"}{ExeSuffix} --target={TargetPrefix}-linux-androideabi{ApiLevel} --sysroot={ToolchainPath / "sysroot"}"));
@@ -852,6 +904,14 @@ namespace TypeMake
                             {
                                 DefaultAR = "llvm-ar";
                             }
+                            return VariableSpec.CreateString(new StringSpec
+                            {
+                                DefaultValue = DefaultAR
+                            });
+                        }
+                        else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Mac)
+                        {
+                            var DefaultAR = "ar";
                             return VariableSpec.CreateString(new StringSpec
                             {
                                 DefaultValue = DefaultAR

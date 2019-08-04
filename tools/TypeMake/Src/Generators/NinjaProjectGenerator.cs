@@ -70,13 +70,23 @@ namespace TypeMake.Cpp
                 if (Project.TargetType == TargetType.DynamicLibrary)
                 {
                     LinkerFlags.Add("-shared");
-                    LinkerFlags.Add("-Wl,-soname=" + "lib" + (Project.TargetName ?? Project.Name) + ".so");
+                    if (ExecutingOperatingSystem == OperatingSystemType.Mac)
+                    {
+                        LinkerFlags.Add("-Wl,-install_name," + "lib" + (Project.TargetName ?? Project.Name) + ".dylib");
+                    }
+                    else
+                    {
+                        LinkerFlags.Add("-Wl,-soname=" + "lib" + (Project.TargetName ?? Project.Name) + ".so");
+                    }
                 }
                 var LibrarySearchPath = (OutputDirectory / ".." / $"{TargetArchitectureType}_{ConfigurationType}").RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix);
                 LinkerFlags.Add($"-L{LibrarySearchPath}");
                 LinkerFlags.AddRange(conf.LibDirectories.Select(d => d.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix)).Select(d => "-L" + (d.Contains(" ") ? "\"" + d + "\"" : d)));
                 LinkerFlags.AddRange(conf.LinkerFlags);
-                Libs.Add("-Wl,--start-group");
+                if (ExecutingOperatingSystem != OperatingSystemType.Mac)
+                {
+                    Libs.Add("-Wl,--start-group");
+                }
                 foreach (var Lib in conf.Libs)
                 {
                     if (Lib.Parts.Count == 1)
@@ -93,7 +103,10 @@ namespace TypeMake.Cpp
                     Libs.Add("-l" + p.Name);
                     Dependencies.Add((LibrarySearchPath.AsPath() / "lib" + p.Name + ".a").ToString(PathStringStyle.Unix));
                 }
-                Libs.Add("-Wl,--end-group");
+                if (ExecutingOperatingSystem != OperatingSystemType.Mac)
+                {
+                    Libs.Add("-Wl,--end-group");
+                }
             }
 
             yield return "commonflags  = " + String.Join(" ", CommonFlags.Select(f => CommandArgumentEscape(f)));

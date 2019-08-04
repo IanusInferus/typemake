@@ -86,7 +86,14 @@ namespace TypeMake
             }
             else if (v.TargetOperatingSystem == Cpp.OperatingSystemType.Mac)
             {
-                BuildScript.GenerateBuildScriptXCode(v.HostOperatingSystem, v.BuildDirectory, r.SortedProjects, v.ForceRegenerate);
+                if (v.Toolchain == Cpp.ToolchainType.Mac_XCode)
+                {
+                    BuildScript.GenerateBuildScriptXCode(v.HostOperatingSystem, v.BuildDirectory, r.SortedProjects, v.ForceRegenerate);
+                }
+                else
+                {
+                    BuildScript.GenerateBuildScriptLinux("Mac", v.Toolchain, v.HostOperatingSystem, v.BuildDirectory, v.Configuration.Value, v.CMake, v.Make, v.Ninja, v.ForceRegenerate);
+                }
                 if (v.BuildNow)
                 {
                     using (var d = Shell.PushDirectory(v.BuildDirectory))

@@ -213,10 +213,14 @@ namespace TypeMake.Cpp
 
                 if (PostObjectFileLinkerFlags.Count > 0)
                 {
+                    var ExecutingOperatingSystem = (HostOperatingSystem == OperatingSystemType.Windows) && (TargetOperatingSystem == OperatingSystemType.Linux) ? TargetOperatingSystem : HostOperatingSystem;
                     yield return @"target_link_libraries(${PROJECT_NAME} PRIVATE";
                     if ((Compiler == CompilerType.gcc) || (Compiler == CompilerType.clang))
                     {
-                        yield return @"  -Wl,--start-group";
+                        if (ExecutingOperatingSystem != OperatingSystemType.Mac)
+                        {
+                            yield return @"  -Wl,--start-group";
+                        }
                     }
                     foreach (var f in PostObjectFileLinkerFlags)
                     {
@@ -224,7 +228,10 @@ namespace TypeMake.Cpp
                     }
                     if ((Compiler == CompilerType.gcc) || (Compiler == CompilerType.clang))
                     {
-                        yield return @"  -Wl,--end-group";
+                        if (ExecutingOperatingSystem != OperatingSystemType.Mac)
+                        {
+                            yield return @"  -Wl,--end-group";
+                        }
                     }
                     yield return @")";
                 }

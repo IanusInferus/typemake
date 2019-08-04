@@ -236,6 +236,10 @@ namespace TypeMake
                     }
                 }
                 var IsTargetOperatingSystemMatched = IsOperatingSystemMatchExtensions(Extensions, TargetOperatingSystem);
+                if ((ProductTargetType == TargetType.MacApplication) && (Toolchain != ToolchainType.Mac_XCode))
+                {
+                    IsTargetOperatingSystemMatched = false;
+                }
                 if ((ProductTargetType == TargetType.Executable) && (TargetOperatingSystem == OperatingSystemType.iOS))
                 {
                     IsTargetOperatingSystemMatched = false;
@@ -315,7 +319,7 @@ namespace TypeMake
                             DependentProjectToRequirement = DependentModuleToRequirement
                         });
                     }
-                    if ((TargetOperatingSystem == OperatingSystemType.Mac) && (ProductTargetType == TargetType.DynamicLibrary))
+                    if ((TargetOperatingSystem == OperatingSystemType.Mac) && (Toolchain == ToolchainType.Mac_XCode) && (ProductTargetType == TargetType.DynamicLibrary))
                     {
                         var BundleName = ProductName + ".bundle";
                         Projects.Add(new ProjectDescription
