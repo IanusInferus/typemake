@@ -47,9 +47,9 @@ Linux(openSUSE 15): \[cmake(>=3.3.2)\] gcc-c++(7.3.1) \[gcc-c++-32bit(7.3.1)\] m
 
 Linux(Ubuntu 18.04): \[cmake(>=3.3.2)\] g++(7.3.0) \[g++-multilib(7.3.0)\] mono-devel(5.x) glibc(runtime 2.14)
 
-Linux(Ubuntu 18.04) for armv7a/arm64: g++-arm-linux-gnueabihf(7.3.0) g++-aarch64-linux-gnu(7.3.0)
-
 Linux(Ubuntu 18.04) with clang: clang-7 libc++-7-dev libc++abi-7-dev llvm-7-tools (CC=clang-7 CXX=clang++-7 AR=llvm-ar-7)
+
+Linux(Ubuntu 18.04) with musl(x86/x64/armv7a/arm64): musl-cross-make ("CC=xxx-linux-musl-gcc -static -Wl,-static" "CXX=xxx-linux-musl-g++ -static -Wl,-static" AR=xxx-linux-musl-ar)
 
 Linux(Alpine 3.9): g++(8.2.0) bash mono-devel(5.x, in edge/testing repo) ("CC=gcc -static -Wl,-static" "CXX=g++ -static -Wl,-static" AR=ar)
 
@@ -70,3 +70,9 @@ You need to set Configuration - Debugger - Debug type to Native/Dual to debug C+
 To use this repo in a project, just copy 'tools' directory to the project repo.
 
 You may need to customize some code to cope with your project, mainly in directory 'Make' and 'Templates'.
+
+To build a program statically for Linux/Android on x64/arm64/... without libc(glibc/bionic) dependency, you can build [musl-cross-make](https://github.com/richfelker/musl-cross-make) and then build your program for Linux with static options(-static -Wl,-static). For example, to build for arm64, you can use the following options.
+
+> "CC=/opt/musl-cross-make/output/bin/aarch64-linux-musl-gcc -static -Wl,-static"  
+> "CXX=/opt/musl-cross-make/output/bin/aarch64-linux-musl-g++ -static -Wl,-static"  
+> AR=/opt/musl-cross-make/output/bin/aarch64-linux-musl-ar
