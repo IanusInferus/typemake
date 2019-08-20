@@ -71,7 +71,7 @@ To use this repo in a project, just copy 'tools' directory to the project repo.
 
 You may need to customize some code to cope with your project, mainly in directory 'Make' and 'Templates'.
 
-To build a program statically for Linux/Android on x64/arm64/... without libc(glibc/bionic) dependency, you can build [musl-cross-make](https://github.com/richfelker/musl-cross-make) and then build your program for Linux with static options(-static -Wl,-static). For example, to build for arm64, you can use the following options.
+To build a program statically for Linux/Android on x64/arm64/... without libc(glibc/bionic) dependency, you can build [musl-cross-make](https://github.com/richfelker/musl-cross-make) with ([GCC_CONFIG += --enable-default-pie](https://github.com/richfelker/musl-cross-make/issues/47)) and then build your program for Linux with static options(-static -Wl,-static). For example, to build for arm64, you can use the following options.
 
 > "CC=/opt/musl-cross-make/output/bin/aarch64-linux-musl-gcc -static -Wl,-static"  
 > "CXX=/opt/musl-cross-make/output/bin/aarch64-linux-musl-g++ -static -Wl,-static"  
