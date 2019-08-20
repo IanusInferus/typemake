@@ -263,24 +263,23 @@ namespace TypeMake.Cpp
                     }
                     foreach (var File in gConf.SelectMany(conf => conf.Files))
                     {
-                        var RelativePath = File.Path.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Windows);
+                        var RelativePath = File.Path.FullPath.RelativeTo(BaseDirPath);
+                        var RelativePathStr = RelativePath.ToString(PathStringStyle.Windows);
                         XElement x;
                         if (File.Type == FileType.Header)
                         {
-                            x = new XElement(xn + "ClInclude", new XAttribute("Include", RelativePath));
+                            x = new XElement(xn + "ClInclude", new XAttribute("Include", RelativePathStr));
                         }
-                        else if (File.Type == FileType.CSource)
+                        else if ((File.Type == FileType.CSource) || (File.Type == FileType.CppSource))
                         {
-                            x = new XElement(xn + "ClCompile", new XAttribute("Include", RelativePath));
-                        }
-                        else if (File.Type == FileType.CppSource)
-                        {
-                            x = new XElement(xn + "ClCompile", new XAttribute("Include", RelativePath));
-                            x.Add(new XElement(xn + "ObjectFileName", "$(IntDir)" + RelativePath.Replace("..", "__") + ".obj"));
+                            x = new XElement(xn + "ClCompile", new XAttribute("Include", RelativePathStr));
+                            //x.Add(new XElement(xn + "ObjectFileName", "$(IntDir)" + RelativePath.Replace("..", "__") + ".obj"));
+                            // workaround Visual Studio bug which slows build https://developercommunity.visualstudio.com/idea/586584/vs2017-cc-multi-processor-compilation-does-not-wor.html
+                            x.Add(new XElement(xn + "ObjectFileName", "$(IntDir)" + RelativePath.Parent.ToString(PathStringStyle.Windows).Replace("..", "__") + "\\"));
                         }
                         else
                         {
-                            x = new XElement(xn + "None", new XAttribute("Include", RelativePath));
+                            x = new XElement(xn + "None", new XAttribute("Include", RelativePathStr));
                         }
                         if ((File.Type == FileType.CSource) || (File.Type == FileType.CppSource))
                         {
