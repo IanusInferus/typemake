@@ -22,6 +22,7 @@ namespace TypeMake
         public String DevelopmentTeam;
         public PathString VSDir;
         public int VSVersion;
+        public PathString LLVM;
         public PathString CMake;
         public PathString Make;
         public PathString Ninja;

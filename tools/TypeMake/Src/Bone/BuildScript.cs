@@ -98,26 +98,49 @@ namespace TypeMake
                 }
             }
         }
-        public static void GenerateBuildScriptWindows(PathString BuildDirectory, String SolutionName, Cpp.ArchitectureType TargetArchitecture, Cpp.ConfigurationType Configuration, PathString VSDir, int VSVersion, bool ForceRegenerate)
+        public static void GenerateBuildScriptWindows(Cpp.ToolchainType Toolchain, PathString BuildDirectory, String SolutionName, Cpp.ArchitectureType TargetArchitecture, Cpp.ConfigurationType Configuration, PathString VSDir, int VSVersion, PathString Ninja, bool ForceRegenerate)
         {
-            var MSBuildVersion = VSVersion == 2019 ? "Current" : "15.0";
-            var Lines = new List<String>();
-            Lines.Add("@echo off");
-            Lines.Add("");
-            Lines.Add("setlocal");
-            Lines.Add("if \"%SUB_NO_PAUSE_SYMBOL%\"==\"1\" set NO_PAUSE_SYMBOL=1");
-            Lines.Add("if /I \"%COMSPEC%\" == %CMDCMDLINE% set NO_PAUSE_SYMBOL=1");
-            Lines.Add("set SUB_NO_PAUSE_SYMBOL=1");
-            Lines.Add("call :main");
-            Lines.Add("set EXIT_CODE=%ERRORLEVEL%");
-            Lines.Add("if not \"%NO_PAUSE_SYMBOL%\"==\"1\" pause");
-            Lines.Add("exit /b %EXIT_CODE%");
-            Lines.Add("");
-            Lines.Add(":main");
-            Lines.Add($@"""{VSDir.ToString(PathStringStyle.Windows)}\MSBuild\{MSBuildVersion}\Bin\MSBuild.exe"" {SolutionName}.sln /p:Configuration={Configuration} /p:Platform={SlnGenerator.GetArchitectureString(TargetArchitecture)} /m:{Environment.ProcessorCount.ToString()} || exit /b 1");
-            Lines.Add("");
-            var BuildPath = BuildDirectory / $"build_{TargetArchitecture}_{Configuration}.cmd";
-            TextFile.WriteToFile(BuildPath, String.Join("\r\n", Lines), System.Text.Encoding.Default, !ForceRegenerate);
+            if (Toolchain == Cpp.ToolchainType.VisualStudio)
+            {
+                var MSBuildVersion = VSVersion == 2019 ? "Current" : "15.0";
+                var Lines = new List<String>();
+                Lines.Add("@echo off");
+                Lines.Add("");
+                Lines.Add("setlocal");
+                Lines.Add("if \"%SUB_NO_PAUSE_SYMBOL%\"==\"1\" set NO_PAUSE_SYMBOL=1");
+                Lines.Add("if /I \"%COMSPEC%\" == %CMDCMDLINE% set NO_PAUSE_SYMBOL=1");
+                Lines.Add("set SUB_NO_PAUSE_SYMBOL=1");
+                Lines.Add("call :main");
+                Lines.Add("set EXIT_CODE=%ERRORLEVEL%");
+                Lines.Add("if not \"%NO_PAUSE_SYMBOL%\"==\"1\" pause");
+                Lines.Add("exit /b %EXIT_CODE%");
+                Lines.Add("");
+                Lines.Add(":main");
+                Lines.Add($@"""{VSDir.ToString(PathStringStyle.Windows)}\MSBuild\{MSBuildVersion}\Bin\MSBuild.exe"" {SolutionName}.sln /p:Configuration={Configuration} /p:Platform={SlnGenerator.GetArchitectureString(TargetArchitecture)} /m:{Environment.ProcessorCount.ToString()} || exit /b 1");
+                Lines.Add("");
+                var BuildPath = BuildDirectory / $"build_{TargetArchitecture}_{Configuration}.cmd";
+                TextFile.WriteToFile(BuildPath, String.Join("\r\n", Lines), System.Text.Encoding.Default, !ForceRegenerate);
+            }
+            else if (Toolchain == Cpp.ToolchainType.Ninja)
+            {
+                var Lines = new List<String>();
+                Lines.Add("@echo off");
+                Lines.Add("");
+                Lines.Add("setlocal");
+                Lines.Add("if \"%SUB_NO_PAUSE_SYMBOL%\"==\"1\" set NO_PAUSE_SYMBOL=1");
+                Lines.Add("if /I \"%COMSPEC%\" == %CMDCMDLINE% set NO_PAUSE_SYMBOL=1");
+                Lines.Add("set SUB_NO_PAUSE_SYMBOL=1");
+                Lines.Add("call :main");
+                Lines.Add("set EXIT_CODE=%ERRORLEVEL%");
+                Lines.Add("if not \"%NO_PAUSE_SYMBOL%\"==\"1\" pause");
+                Lines.Add("exit /b %EXIT_CODE%");
+                Lines.Add("");
+                Lines.Add(":main");
+                Lines.Add(Shell.EscapeArgumentForShell(Ninja.RelativeTo(BuildDirectory).ToString(PathStringStyle.Windows), Shell.ShellArgumentStyle.CMD) + " -j" + Environment.ProcessorCount.ToString() + " -C projects -f build.ninja || exit /b 1");
+                Lines.Add("");
+                var BuildPath = BuildDirectory / "build.cmd";
+                TextFile.WriteToFile(BuildPath, String.Join("\r\n", Lines), System.Text.Encoding.Default, !ForceRegenerate);
+            }
         }
         public static void GenerateBuildScriptLinux(String TargetOperatingSystemDistribution, Cpp.ToolchainType Toolchain, Cpp.OperatingSystemType HostOperatingSystem, PathString BuildDirectory, Cpp.ConfigurationType Configuration, PathString CMake, PathString Make, PathString Ninja, bool ForceRegenerate)
         {

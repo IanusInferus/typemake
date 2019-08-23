@@ -55,8 +55,10 @@ namespace TypeMake.Cpp
             var CommandArgumentEscape = ExecutingOperatingSystem == OperatingSystemType.Windows ? (Func<String, String>)(arg => Shell.EscapeArgument(arg, Shell.ArgumentStyle.Windows)) : (Func<String, String>)(arg => Shell.EscapeArgumentForShell(arg, Shell.ShellArgumentStyle.Bash));
             Func<String, String> NinjaEscape = s => s.Replace("$", "$$").Replace(":", "$:").Replace(" ", "$ ");
 
+            var PathStyle = ExecutingOperatingSystem == OperatingSystemType.Windows ? PathStringStyle.Windows : PathStringStyle.Unix;
+
             var CommonFlags = new List<String>();
-            CommonFlags.AddRange(conf.IncludeDirectories.Select(d => d.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix)).Select(d => "-I" + d));
+            CommonFlags.AddRange(conf.IncludeDirectories.Select(d => d.FullPath.RelativeTo(BaseDirPath).ToString(PathStyle)).Select(d => "-I" + d));
             CommonFlags.AddRange(conf.Defines.Select(d => "-D" + d.Key + (d.Value == null ? "" : "=" + d.Value)));
             CommonFlags.AddRange(conf.CommonFlags);
 
@@ -70,20 +72,20 @@ namespace TypeMake.Cpp
                 if (Project.TargetType == TargetType.DynamicLibrary)
                 {
                     LinkerFlags.Add("-shared");
-                    if (ExecutingOperatingSystem == OperatingSystemType.Mac)
+                    if (TargetOperatingSystem == OperatingSystemType.Mac)
                     {
                         LinkerFlags.Add("-Wl,-install_name," + "lib" + (Project.TargetName ?? Project.Name) + ".dylib");
                     }
-                    else
+                    else if ((TargetOperatingSystem == OperatingSystemType.Linux) || (TargetOperatingSystem == OperatingSystemType.Android))
                     {
                         LinkerFlags.Add("-Wl,-soname=" + "lib" + (Project.TargetName ?? Project.Name) + ".so");
                     }
                 }
-                var LibrarySearchPath = (OutputDirectory / ".." / $"{TargetArchitectureType}_{ConfigurationType}").RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix);
+                var LibrarySearchPath = (OutputDirectory / ".." / $"{TargetArchitectureType}_{ConfigurationType}").RelativeTo(BaseDirPath).ToString(PathStyle);
                 LinkerFlags.Add($"-L{LibrarySearchPath}");
-                LinkerFlags.AddRange(conf.LibDirectories.Select(d => d.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix)).Select(d => "-L" + (d.Contains(" ") ? "\"" + d + "\"" : d)));
+                LinkerFlags.AddRange(conf.LibDirectories.Select(d => d.FullPath.RelativeTo(BaseDirPath).ToString(PathStyle)).Select(d => "-L" + (d.Contains(" ") ? "\"" + d + "\"" : d)));
                 LinkerFlags.AddRange(conf.LinkerFlags);
-                if (ExecutingOperatingSystem != OperatingSystemType.Mac)
+                if ((TargetOperatingSystem == OperatingSystemType.Linux) || (TargetOperatingSystem == OperatingSystemType.Android))
                 {
                     Libs.Add("-Wl,--start-group");
                 }
@@ -91,19 +93,26 @@ namespace TypeMake.Cpp
                 {
                     if (Lib.Parts.Count == 1)
                     {
-                        Libs.Add("-l" + Lib.ToString(PathStringStyle.Unix));
+                        Libs.Add("-l" + Lib.ToString(PathStyle));
                     }
                     else
                     {
-                        Libs.Add(Lib.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix));
+                        Libs.Add(Lib.RelativeTo(BaseDirPath).ToString(PathStyle));
                     }
                 }
                 foreach (var p in ProjectReferences)
                 {
                     Libs.Add("-l" + p.Name);
-                    Dependencies.Add((LibrarySearchPath.AsPath() / "lib" + p.Name + ".a").ToString(PathStringStyle.Unix));
+                    if (TargetOperatingSystem == OperatingSystemType.Windows)
+                    {
+                        Dependencies.Add((LibrarySearchPath.AsPath() / p.Name + ".lib").ToString(PathStyle));
+                    }
+                    else
+                    {
+                        Dependencies.Add((LibrarySearchPath.AsPath() / "lib" + p.Name + ".a").ToString(PathStyle));
+                    }
                 }
-                if (ExecutingOperatingSystem != OperatingSystemType.Mac)
+                if ((TargetOperatingSystem == OperatingSystemType.Linux) || (TargetOperatingSystem == OperatingSystemType.Android))
                 {
                     Libs.Add("-Wl,--end-group");
                 }
@@ -137,8 +146,8 @@ namespace TypeMake.Cpp
                     FileFlags.AddRange(FileConf.CppFlags);
                 }
 
-                var FilePath = File.Path.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix);
-                var ObjectFilePath = (Project.Name.AsPath() / (File.Path.FullPath.RelativeTo(InputDirectory).ToString(PathStringStyle.Unix).Replace("..", "__") + ".o")).ToString(PathStringStyle.Unix);
+                var FilePath = File.Path.FullPath.RelativeTo(BaseDirPath).ToString(PathStyle);
+                var ObjectFilePath = (Project.Name.AsPath() / (File.Path.FullPath.RelativeTo(InputDirectory).ToString(PathStyle).Replace("..", "__") + ".o")).ToString(PathStyle);
                 if ((File.Type == FileType.CSource) || (File.Type == FileType.ObjectiveCSource))
                 {
                     yield return $"build {NinjaEscape(ObjectFilePath)}: cc {NinjaEscape(FilePath)}";
@@ -159,17 +168,42 @@ namespace TypeMake.Cpp
             var RuleName = "";
             if (Project.TargetType == TargetType.Executable)
             {
-                TargetName = Project.TargetName ?? Project.Name;
+                if (TargetOperatingSystem == OperatingSystemType.Windows)
+                {
+                    TargetName = (Project.TargetName ?? Project.Name) + ".exe";
+                }
+                else
+                {
+                    TargetName = Project.TargetName ?? Project.Name;
+                }
                 RuleName = "link";
             }
             else if (Project.TargetType == TargetType.StaticLibrary)
             {
-                TargetName = "lib" + (Project.TargetName ?? Project.Name) + ".a";
+                if (TargetOperatingSystem == OperatingSystemType.Windows)
+                {
+                    TargetName = (Project.TargetName ?? Project.Name) + ".lib";
+                }
+                else
+                {
+                    TargetName = "lib" + (Project.TargetName ?? Project.Name) + ".a";
+                }
                 RuleName = "ar";
             }
             else if (Project.TargetType == TargetType.DynamicLibrary)
             {
-                TargetName = "lib" + (Project.TargetName ?? Project.Name) + ".so";
+                if (TargetOperatingSystem == OperatingSystemType.Windows)
+                {
+                    TargetName = (Project.TargetName ?? Project.Name) + ".dll";
+                }
+                else if ((TargetOperatingSystem == OperatingSystemType.Mac) || (TargetOperatingSystem == OperatingSystemType.iOS))
+                {
+                    TargetName = "lib" + (Project.TargetName ?? Project.Name) + ".dylib";
+                }
+                else
+                {
+                    TargetName = "lib" + (Project.TargetName ?? Project.Name) + ".so";
+                }
                 RuleName = "link";
             }
             else
@@ -179,7 +213,7 @@ namespace TypeMake.Cpp
 
             yield return "";
 
-            var TargetPath = ((conf.OutputDirectory != null ? conf.OutputDirectory : (OutputDirectory / ".." / $"{TargetArchitectureType}_{ConfigurationType}")) / TargetName).RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix);
+            var TargetPath = ((conf.OutputDirectory != null ? conf.OutputDirectory : (OutputDirectory / ".." / $"{TargetArchitectureType}_{ConfigurationType}")) / TargetName).RelativeTo(BaseDirPath).ToString(PathStyle);
 
             yield return $"build {NinjaEscape(TargetPath)}: {RuleName} {String.Join(" ", ObjectFilePaths.Select(p => NinjaEscape(p)))}" + (Dependencies.Count > 0 ? " | " + String.Join(" ", Dependencies.Select(p => NinjaEscape(p))) : "");
 

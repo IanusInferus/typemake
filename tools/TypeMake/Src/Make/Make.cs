@@ -711,6 +711,7 @@ namespace TypeMake
                 new Configuration
                 {
                     MatchingCompilers = new List<CompilerType> { CompilerType.clang },
+                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Linux, OperatingSystemType.Mac, OperatingSystemType.Android, OperatingSystemType.iOS },
                     CppFlags = ParseFlags("-stdlib=libc++"),
                     LinkerFlags = ParseFlags("-stdlib=libc++")
                 },
@@ -723,12 +724,31 @@ namespace TypeMake
                 new Configuration
                 {
                     MatchingConfigurationTypes = new List<ConfigurationType> { Cpp.ConfigurationType.Debug },
-                    Defines = ParseDefines("_DEBUG;DEBUG=1")
+                    Defines = ParseDefines("DEBUG=1")
                 },
                 new Configuration
                 {
                     MatchingConfigurationTypes = new List<ConfigurationType> { Cpp.ConfigurationType.Release },
                     Defines = ParseDefines("NDEBUG")
+                },
+                new Configuration
+                {
+                    MatchingCompilers = new List<CompilerType> { CompilerType.clang },
+                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Windows },
+                    MatchingConfigurationTypes = new List<ConfigurationType> { Cpp.ConfigurationType.Debug },
+                    Defines = ParseDefines("_DEBUG;_MT;_DLL"),
+                    CommonFlags = ParseFlags("-gcodeview-ghash"),
+                    LinkerFlags = ParseFlags("-Wl,/debug -Wl,/nodefaultlib:libucrt"), //workaround llvm bug choosing UCRT, https://docs.microsoft.com/en-us/cpp/c-runtime-library/crt-library-features?view=vs-2019
+                    Libs = new List<PathString> { "ucrtd" }
+                },
+                new Configuration
+                {
+                    MatchingCompilers = new List<CompilerType> { CompilerType.clang },
+                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Windows },
+                    MatchingConfigurationTypes = new List<ConfigurationType> { Cpp.ConfigurationType.Release },
+                    Defines = ParseDefines("_MT"),
+                    CommonFlags = ParseFlags("-gcodeview-ghash"),
+                    LinkerFlags = ParseFlags("-Wl,/debug")
                 },
                 new Configuration
                 {

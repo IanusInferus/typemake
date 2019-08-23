@@ -140,7 +140,14 @@ namespace TypeMake
                 {
                     if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
                     {
-                        return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.ToolchainType.VisualStudio.ToString()));
+                        if ((Variables.TargetArchitecture == Cpp.ArchitectureType.x86) || (Variables.TargetArchitecture == Cpp.ArchitectureType.x64))
+                        {
+                            return VariableSpecCreateEnumSelection(Cpp.ToolchainType.VisualStudio, new HashSet<Cpp.ToolchainType> { Cpp.ToolchainType.VisualStudio, Cpp.ToolchainType.Ninja });
+                        }
+                        else
+                        {
+                            return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.ToolchainType.VisualStudio.ToString()));
+                        }
                     }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
                     {
@@ -181,7 +188,18 @@ namespace TypeMake
                 {
                     if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
                     {
-                        return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.CompilerType.VisualCpp.ToString()));
+                        if (Variables.Toolchain == Cpp.ToolchainType.VisualStudio)
+                        {
+                            return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.CompilerType.VisualCpp.ToString()));
+                        }
+                        else if (Variables.Toolchain == Cpp.ToolchainType.Ninja)
+                        {
+                            return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.CompilerType.clang.ToString()));
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException();
+                        }
                     }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
                     {
@@ -273,7 +291,14 @@ namespace TypeMake
                     String DefaultBuildDir = null;
                     if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
                     {
-                        DefaultBuildDir = Variables.SourceDirectory / "build/windows";
+                        if (Variables.Toolchain == Cpp.ToolchainType.VisualStudio)
+                        {
+                            DefaultBuildDir = Variables.SourceDirectory / "build/windows";
+                        }
+                        else
+                        {
+                            DefaultBuildDir = Variables.SourceDirectory / $"build/windows_{Variables.Toolchain}_{Variables.Compiler}_{Variables.TargetArchitecture}_{Variables.Configuration}";
+                        }
                     }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
                     {
@@ -415,7 +440,7 @@ namespace TypeMake
                         if (Variables.HostOperatingSystem == Cpp.OperatingSystemType.Windows)
                         {
                             var ProgramFiles = Environment.GetEnvironmentVariable("ProgramFiles(x86)");
-                            if (ProgramFiles != null)
+                            if (ProgramFiles != "")
                             {
                                 foreach (var Version in new int[] { 2019, 2018 })
                                 {
@@ -444,6 +469,35 @@ namespace TypeMake
                     }
                 },
                 SetVariableValue = v => Variables.VSDir = v.Path
+            });
+
+            l.Add(new VariableItem
+            {
+                VariableName = nameof(Variables.LLVM),
+                DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.Toolchain), nameof(PathValidator) },
+                GetVariableSpec = () =>
+                {
+                    if ((Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Windows) && (Variables.Toolchain == Cpp.ToolchainType.Ninja))
+                    {
+                        String DefaultLLVMDir = "";
+                        if (Variables.HostOperatingSystem == Cpp.OperatingSystemType.Windows)
+                        {
+                            var ProgramFiles = Environment.GetEnvironmentVariable("ProgramFiles");
+                            DefaultLLVMDir = ProgramFiles.AsPath() / "LLVM/bin";
+                        }
+                        return VariableSpec.CreatePath(new PathStringSpec
+                        {
+                            DefaultValue = DefaultLLVMDir,
+                            IsDirectory = true,
+                            Validator = PathValidator
+                        });
+                    }
+                    else
+                    {
+                        return VariableSpec.CreateNotApply(VariableValue.CreatePath(null));
+                    }
+                },
+                SetVariableValue = v => Variables.LLVM = v.Path
             });
 
             l.Add(new VariableItem
@@ -679,33 +733,30 @@ namespace TypeMake
                 DependentVariableNames = new List<String> { nameof(Variables.HostOperatingSystem), nameof(Variables.TargetOperatingSystem), nameof(Variables.Toolchain), nameof(Variables.SourceDirectory) },
                 GetVariableSpec = () =>
                 {
-                    if ((Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Linux) || (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Mac) || (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android))
+                    if ((Variables.Toolchain == Cpp.ToolchainType.Ninja) || (Variables.Toolchain == Cpp.ToolchainType.Gradle_Ninja))
                     {
-                        if ((Variables.Toolchain == Cpp.ToolchainType.Ninja) || (Variables.Toolchain == Cpp.ToolchainType.Gradle_Ninja))
+                        if (Variables.HostOperatingSystem == Cpp.OperatingSystemType.Windows)
                         {
-                            if (Variables.HostOperatingSystem == Cpp.OperatingSystemType.Windows)
-                            {
-                                if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
-                                {
-                                    return VariableSpec.CreateFixed(VariableValue.CreatePath(Variables.SourceDirectory / "tools/Ninja/ninja-linux/ninja"));
-                                }
-                                else
-                                {
-                                    return VariableSpec.CreateFixed(VariableValue.CreatePath(Variables.SourceDirectory / "tools/Ninja/ninja-win/ninja.exe"));
-                                }
-                            }
-                            else if (Variables.HostOperatingSystem == Cpp.OperatingSystemType.Linux)
+                            if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
                             {
                                 return VariableSpec.CreateFixed(VariableValue.CreatePath(Variables.SourceDirectory / "tools/Ninja/ninja-linux/ninja"));
                             }
-                            else if (Variables.HostOperatingSystem == Cpp.OperatingSystemType.Mac)
-                            {
-                                return VariableSpec.CreateFixed(VariableValue.CreatePath(Variables.SourceDirectory / "tools/Ninja/ninja-mac/ninja"));
-                            }
                             else
                             {
-                                throw new InvalidOperationException("HostOperatingSystemNotSupported");
+                                return VariableSpec.CreateFixed(VariableValue.CreatePath(Variables.SourceDirectory / "tools/Ninja/ninja-win/ninja.exe"));
                             }
+                        }
+                        else if (Variables.HostOperatingSystem == Cpp.OperatingSystemType.Linux)
+                        {
+                            return VariableSpec.CreateFixed(VariableValue.CreatePath(Variables.SourceDirectory / "tools/Ninja/ninja-linux/ninja"));
+                        }
+                        else if (Variables.HostOperatingSystem == Cpp.OperatingSystemType.Mac)
+                        {
+                            return VariableSpec.CreateFixed(VariableValue.CreatePath(Variables.SourceDirectory / "tools/Ninja/ninja-mac/ninja"));
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException("HostOperatingSystemNotSupported");
                         }
                     }
                     return VariableSpec.CreateNotApply(VariableValue.CreatePath(null));
@@ -781,12 +832,19 @@ namespace TypeMake
             l.Add(new VariableItem
             {
                 VariableName = nameof(Variables.CC),
-                DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.TargetArchitecture), nameof(Variables.Toolchain), nameof(Variables.Compiler), "AndroidVariables" },
+                DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.TargetArchitecture), nameof(Variables.Toolchain), nameof(Variables.Compiler), nameof(Variables.LLVM), "AndroidVariables" },
                 GetVariableSpec = () =>
                 {
                     if ((Variables.Toolchain == Cpp.ToolchainType.Ninja) || (Variables.Toolchain == Cpp.ToolchainType.Gradle_Ninja))
                     {
-                        if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
+                        if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
+                        {
+                            return VariableSpec.CreateString(new StringSpec
+                            {
+                                DefaultValue = Variables.LLVM / "clang.exe"
+                            });
+                        }
+                        else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
                         {
                             var DefaultCC = "gcc";
                             if (Variables.Compiler == Cpp.CompilerType.gcc)
@@ -831,12 +889,19 @@ namespace TypeMake
             l.Add(new VariableItem
             {
                 VariableName = nameof(Variables.CXX),
-                DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.TargetArchitecture), nameof(Variables.Toolchain), nameof(Variables.Compiler), "AndroidVariables" },
+                DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.TargetArchitecture), nameof(Variables.Toolchain), nameof(Variables.Compiler), nameof(Variables.LLVM), "AndroidVariables" },
                 GetVariableSpec = () =>
                 {
                     if ((Variables.Toolchain == Cpp.ToolchainType.Ninja) || (Variables.Toolchain == Cpp.ToolchainType.Gradle_Ninja))
                     {
-                        if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
+                        if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
+                        {
+                            return VariableSpec.CreateString(new StringSpec
+                            {
+                                DefaultValue = Variables.LLVM / "clang++.exe"
+                            });
+                        }
+                        else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
                         {
                             var DefaultCXX = "g++";
                             if (Variables.Compiler == Cpp.CompilerType.gcc)
@@ -881,12 +946,19 @@ namespace TypeMake
             l.Add(new VariableItem
             {
                 VariableName = nameof(Variables.AR),
-                DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.TargetArchitecture), nameof(Variables.Toolchain), nameof(Variables.Compiler), "AndroidVariables" },
+                DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.TargetArchitecture), nameof(Variables.Toolchain), nameof(Variables.Compiler), nameof(Variables.LLVM), "AndroidVariables" },
                 GetVariableSpec = () =>
                 {
                     if ((Variables.Toolchain == Cpp.ToolchainType.Ninja) || (Variables.Toolchain == Cpp.ToolchainType.Gradle_Ninja))
                     {
-                        if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
+                        if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
+                        {
+                            return VariableSpec.CreateString(new StringSpec
+                            {
+                                DefaultValue = Variables.LLVM / "llvm-ar.exe"
+                            });
+                        }
+                        else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
                         {
                             var DefaultAR = "ar";
                             if (Variables.Compiler == Cpp.CompilerType.gcc)

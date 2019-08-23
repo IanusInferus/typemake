@@ -23,6 +23,7 @@ Target Operating System vs Building Operating System
 |                                |   Windows 10 x64   |      Linux x64     |      MacOS x64     |
 | :----------------------------: | :----------------: | :----------------: | :----------------: |
 |  Windows x86/x64/armv7a/arm64  |         VS         |                    |                    |
+|         Windows x86/x64        |     Ninja+clang    |                    |                    |
 |          Linux x86/x64         |    WSL+Ninja+gcc   |      Ninja+gcc     |                    |
 |            Linux x64           |   WSL+Ninja+clang  |     Ninja+clang    |                    |
 |          Linux x86/x64         |   WSL+CMake+gcc *  |     CMake+gcc *    |                    |
@@ -41,7 +42,7 @@ Different OSs use different ABIs on the same CPU architecture.
 
 ## Dependencies
 
-Windows: VS2017/VS2019
+Windows: VS2017/VS2019, LLVM9
 
 Linux(openSUSE 15): \[cmake(>=3.3.2)\] gcc-c++(7.3.1) \[gcc-c++-32bit(7.3.1)\] mono-devel(5.x) glibc(runtime 2.14)
 
