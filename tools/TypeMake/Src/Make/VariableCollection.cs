@@ -140,7 +140,7 @@ namespace TypeMake
                 {
                     if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
                     {
-                        return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.ToolchainType.Windows_VisualC.ToString()));
+                        return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.ToolchainType.VisualStudio.ToString()));
                     }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
                     {
@@ -155,11 +155,11 @@ namespace TypeMake
                     }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Mac)
                     {
-                        return VariableSpecCreateEnumSelection(Cpp.ToolchainType.Mac_XCode, new HashSet<Cpp.ToolchainType> { Cpp.ToolchainType.Mac_XCode, Cpp.ToolchainType.Ninja, Cpp.ToolchainType.CMake });
+                        return VariableSpecCreateEnumSelection(Cpp.ToolchainType.XCode, new HashSet<Cpp.ToolchainType> { Cpp.ToolchainType.XCode, Cpp.ToolchainType.Ninja, Cpp.ToolchainType.CMake });
                     }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.iOS)
                     {
-                        return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.ToolchainType.Mac_XCode.ToString()));
+                        return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.ToolchainType.XCode.ToString()));
                     }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
                     {
@@ -181,7 +181,7 @@ namespace TypeMake
                 {
                     if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
                     {
-                        return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.CompilerType.VisualC.ToString()));
+                        return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.CompilerType.VisualCpp.ToString()));
                     }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
                     {
@@ -223,7 +223,7 @@ namespace TypeMake
                     }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Mac)
                     {
-                        if (Variables.Toolchain == Cpp.ToolchainType.Mac_XCode)
+                        if (Variables.Toolchain == Cpp.ToolchainType.XCode)
                         {
                             return VariableSpec.CreateNotApply(VariableValue.CreateString(null));
                         }
@@ -281,7 +281,7 @@ namespace TypeMake
                     }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Mac)
                     {
-                        if (Variables.Toolchain == Cpp.ToolchainType.Mac_XCode)
+                        if (Variables.Toolchain == Cpp.ToolchainType.XCode)
                         {
                             DefaultBuildDir = Variables.SourceDirectory / "build/mac";
                         }
@@ -374,7 +374,7 @@ namespace TypeMake
                 DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.Toolchain) },
                 GetVariableSpec = () =>
                 {
-                    if (((Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Mac) && (Variables.Toolchain == Cpp.ToolchainType.Mac_XCode)) || (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.iOS))
+                    if (((Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Mac) && (Variables.Toolchain == Cpp.ToolchainType.XCode)) || (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.iOS))
                     {
                         return VariableSpec.CreateString(new StringSpec
                         {

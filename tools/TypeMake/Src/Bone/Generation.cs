@@ -86,7 +86,7 @@ namespace TypeMake
             }
             else if (v.TargetOperatingSystem == Cpp.OperatingSystemType.Mac)
             {
-                if (v.Toolchain == Cpp.ToolchainType.Mac_XCode)
+                if (v.Toolchain == Cpp.ToolchainType.XCode)
                 {
                     BuildScript.GenerateBuildScriptXCode(v.HostOperatingSystem, v.BuildDirectory, r.SortedProjects, v.ForceRegenerate);
                 }

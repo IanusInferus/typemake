@@ -236,7 +236,7 @@ namespace TypeMake
                     }
                 }
                 var IsTargetOperatingSystemMatched = IsOperatingSystemMatchExtensions(Extensions, TargetOperatingSystem);
-                if ((ProductTargetType == TargetType.MacApplication) && (Toolchain != ToolchainType.Mac_XCode))
+                if ((ProductTargetType == TargetType.MacApplication) && (Toolchain != ToolchainType.XCode))
                 {
                     IsTargetOperatingSystemMatched = false;
                 }
@@ -319,7 +319,7 @@ namespace TypeMake
                             DependentProjectToRequirement = DependentModuleToRequirement
                         });
                     }
-                    if ((TargetOperatingSystem == OperatingSystemType.Mac) && (Toolchain == ToolchainType.Mac_XCode) && (ProductTargetType == TargetType.DynamicLibrary))
+                    if ((TargetOperatingSystem == OperatingSystemType.Mac) && (Toolchain == ToolchainType.XCode) && (ProductTargetType == TargetType.DynamicLibrary))
                     {
                         var BundleName = ProductName + ".bundle";
                         Projects.Add(new ProjectDescription
@@ -475,14 +475,14 @@ namespace TypeMake
                 var InputDirectory = Project.PhysicalPath;
                 var OutputDirectory = Project.Reference.FilePath.Parent;
                 var ProjectTargetType = Project.Definition.TargetType;
-                if (Toolchain == ToolchainType.Windows_VisualC)
+                if (Toolchain == ToolchainType.VisualStudio)
                 {
                     var VcxprojTemplateText = Resource.GetResourceText(VSVersion == 2019 ? @"Templates\vc16\Default.vcxproj" : @"Templates\vc15\Default.vcxproj");
                     var VcxprojFilterTemplateText = Resource.GetResourceText(VSVersion == 2019 ? @"Templates\vc16\Default.vcxproj.filters" : @"Templates\vc15\Default.vcxproj.filters");
                     var g = new VcxprojGenerator(p, ProjectReference.Id, ProjectReferences, InputDirectory, OutputDirectory, VcxprojTemplateText, VcxprojFilterTemplateText, HostOperatingSystem, HostArchitecture, TargetOperatingSystem);
                     g.Generate(ForceRegenerate);
                 }
-                else if (Toolchain == ToolchainType.Mac_XCode)
+                else if (Toolchain == ToolchainType.XCode)
                 {
                     var PbxprojTemplateText = Resource.GetResourceText(@"Templates\xcode9\Default.xcodeproj\project.pbxproj");
                     var g = new PbxprojGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, PbxprojTemplateText, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, XCodeDevelopmentTeam);
@@ -563,13 +563,13 @@ namespace TypeMake
             var ProjectDict = Projects.ToDictionary(p => p.Key.Name, p => p.Key);
             var ProjectDependencies = Projects.ToDictionary(p => ProjectDict[p.Key.Name], p => p.Value.Select(n => ProjectDict[n.Name]).ToList());
             var SortedProjects = Projects.Select(p => p.Key).PartialOrderBy(p => ProjectDependencies.ContainsKey(p) ? ProjectDependencies[p] : null).ToList();
-            if (Toolchain == ToolchainType.Windows_VisualC)
+            if (Toolchain == ToolchainType.VisualStudio)
             {
                 var SlnTemplateText = Resource.GetResourceText(VSVersion == 2019 ? @"Templates\vc16\Default.sln" : @"Templates\vc15\Default.sln");
                 var g = new SlnGenerator(SolutionName, GetIdForProject(SolutionName + ".solution"), Projects.Select(p => p.Key).ToList(), BuildDirectory, SlnTemplateText);
                 g.Generate(ForceRegenerate);
             }
-            else if (Toolchain == ToolchainType.Mac_XCode)
+            else if (Toolchain == ToolchainType.XCode)
             {
                 var PbxprojTemplateText = Resource.GetResourceText(@"Templates\xcode9\Default.xcodeproj\project.pbxproj");
                 var g = new PbxprojSolutionGenerator(SolutionName, Projects.Select(p => p.Key).ToList(), BuildDirectory, PbxprojTemplateText);
@@ -627,7 +627,7 @@ namespace TypeMake
             {
                 new Configuration
                 {
-                    MatchingCompilers = new List<CompilerType> { CompilerType.VisualC },
+                    MatchingCompilers = new List<CompilerType> { CompilerType.VisualCpp },
                     Options = new Dictionary<String, String>
                     {
                         ["vc.ClCompile.LanguageStandard"] = "stdcpp17"
@@ -640,7 +640,7 @@ namespace TypeMake
                 },
                 new Configuration
                 {
-                    MatchingCompilers = new List<CompilerType> { CompilerType.VisualC },
+                    MatchingCompilers = new List<CompilerType> { CompilerType.VisualCpp },
                     Defines = ParseDefines("_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS"),
                     CommonFlags = ParseFlags("/bigobj /JMC"),
                     Options = new Dictionary<String, String>
@@ -779,7 +779,7 @@ namespace TypeMake
 
                     Configurations.Add(new Configuration
                     {
-                        MatchingCompilers = new List<CompilerType> { CompilerType.VisualC },
+                        MatchingCompilers = new List<CompilerType> { CompilerType.VisualCpp },
                         MatchingTargetArchitectures = new List<ArchitectureType> { Architecture },
                         MatchingConfigurationTypes = new List<ConfigurationType> { ConfigurationType },
                         LibDirectories = new List<PathString> { BuildDirectory / $"{Architecture}_{ConfigurationType}" }
@@ -889,13 +889,13 @@ namespace TypeMake
             {
                 return ProjectIds[ProjectName];
             }
-            if (Toolchain == ToolchainType.Windows_VisualC)
+            if (Toolchain == ToolchainType.VisualStudio)
             {
                 var g = Guid.ParseExact(Hash.GetHashForPath(ProjectName, 32), "N").ToString().ToUpper();
                 ProjectIds.Add(ProjectName, g);
                 return g;
             }
-            else if (Toolchain == ToolchainType.Mac_XCode)
+            else if (Toolchain == ToolchainType.XCode)
             {
                 var g = Hash.GetHashForPath(ProjectName, 24);
                 ProjectIds.Add(ProjectName, g);
@@ -945,11 +945,11 @@ namespace TypeMake
         }
         private String GetProjectFileName(String ProjectName)
         {
-            if (Toolchain == ToolchainType.Windows_VisualC)
+            if (Toolchain == ToolchainType.VisualStudio)
             {
                 return ProjectName + ".vcxproj";
             }
-            else if (Toolchain == ToolchainType.Mac_XCode)
+            else if (Toolchain == ToolchainType.XCode)
             {
                 return ProjectName + ".xcodeproj";
             }

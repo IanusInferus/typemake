@@ -19,8 +19,8 @@ namespace TypeMake.Cpp
     }
     public enum ToolchainType
     {
-        Windows_VisualC,
-        Mac_XCode,
+        VisualStudio,
+        XCode,
         CMake,
         Ninja,
         Gradle_CMake,
@@ -28,7 +28,7 @@ namespace TypeMake.Cpp
     }
     public enum CompilerType
     {
-        VisualC,
+        VisualCpp,
         gcc,
         clang
     }

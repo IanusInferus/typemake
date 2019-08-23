@@ -112,7 +112,7 @@ namespace TypeMake.Cpp
                 var Architecture = Pair.Key.Value;
                 var Name = Pair.Value;
 
-                var conf = Project.Configurations.Merged(Project.TargetType, ToolchainType.Windows_VisualC, CompilerType.VisualC, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, Architecture, ConfigurationType);
+                var conf = Project.Configurations.Merged(Project.TargetType, ToolchainType.VisualStudio, CompilerType.VisualCpp, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, Architecture, ConfigurationType);
 
                 var PropertyGroup = xVcxproj.Elements(xn + "PropertyGroup").Where(e => (e.Attribute("Condition") != null) && (e.Attribute("Condition").Value == "'$(Configuration)|$(Platform)'=='" + Name + "'")).LastOrDefault();
                 if (PropertyGroup == null)
@@ -239,7 +239,7 @@ namespace TypeMake.Cpp
 
             var Import = xVcxproj.Elements(xn + "Import").LastOrDefault();
 
-            foreach (var gConf in Project.Configurations.Matches(Project.TargetType, ToolchainType.Windows_VisualC, CompilerType.VisualC, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, null, null).GroupBy(conf => Tuple.Create(conf.MatchingConfigurationTypes, conf.MatchingTargetArchitectures), new ConfigurationTypesAndArchitecturesComparer()))
+            foreach (var gConf in Project.Configurations.Matches(Project.TargetType, ToolchainType.VisualStudio, CompilerType.VisualCpp, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, null, null).GroupBy(conf => Tuple.Create(conf.MatchingConfigurationTypes, conf.MatchingTargetArchitectures), new ConfigurationTypesAndArchitecturesComparer()))
             {
                 var MatchingConfigurationTypes = gConf.Key.Item1;
                 var MatchingTargetArchitectures = gConf.Key.Item2;
@@ -283,7 +283,7 @@ namespace TypeMake.Cpp
                         }
                         if ((File.Type == FileType.CSource) || (File.Type == FileType.CppSource))
                         {
-                            var fileConfs = File.Configurations.Matches(Project.TargetType, ToolchainType.Windows_VisualC, CompilerType.VisualC, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, null, null);
+                            var fileConfs = File.Configurations.Matches(Project.TargetType, ToolchainType.VisualStudio, CompilerType.VisualCpp, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, null, null);
 
                             foreach (var conf in fileConfs)
                             {
@@ -432,7 +432,7 @@ namespace TypeMake.Cpp
 
             var Files = new HashSet<String>(StringComparer.OrdinalIgnoreCase);
             var Filters = new HashSet<String>(StringComparer.OrdinalIgnoreCase);
-            foreach (var conf in Project.Configurations.Matches(Project.TargetType, ToolchainType.Windows_VisualC, CompilerType.VisualC, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, null, null))
+            foreach (var conf in Project.Configurations.Matches(Project.TargetType, ToolchainType.VisualStudio, CompilerType.VisualCpp, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, null, null))
             {
                 foreach (var f in conf.Files)
                 {
