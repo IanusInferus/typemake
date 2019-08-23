@@ -11,12 +11,9 @@
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
 
   <ItemGroup>
-    <Compile Include="..\Src\Base\**\*.cs" />
-    <Compile Include="..\Src\Generators\**\*.cs" />
-    <Compile Include="..\Src\Make\**\*.cs" />
-    <Compile Include="..\Src\Schema\**\*.cs" />
-    <Compile Include="..\Src\Shell\**\*.cs" />
-    <Compile Include="..\Src\Templates\**\*.cs" />
+    <Compile Include="..\Src\**\*.cs" />
+    <Compile Remove="..\Src\Properties\AssemblyInfo.cs" />
+    <Compile Remove="..\Src\Bone\Program.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="..\Src\Templates\vc15\Default.sln">
