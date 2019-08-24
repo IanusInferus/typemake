@@ -738,8 +738,8 @@ namespace TypeMake
                     MatchingConfigurationTypes = new List<ConfigurationType> { Cpp.ConfigurationType.Debug },
                     Defines = ParseDefines("_DEBUG;_MT;_DLL"),
                     CommonFlags = ParseFlags("-gcodeview-ghash"),
-                    LinkerFlags = ParseFlags("-Wl,/debug -Wl,/nodefaultlib:libucrt"), //workaround llvm bug choosing UCRT, https://docs.microsoft.com/en-us/cpp/c-runtime-library/crt-library-features?view=vs-2019
-                    Libs = new List<PathString> { "ucrtd" }
+                    LinkerFlags = ParseFlags("-Wl,/debug -Wl,/nodefaultlib:libucrt -Wl,/nodefaultlib:libvcruntime -Wl,/nodefaultlib:libcmt"), //workaround llvm bug choosing C runtime, https://docs.microsoft.com/en-us/cpp/c-runtime-library/crt-library-features?view=vs-2019
+                    Libs = new List<PathString> { "ucrtd", "vcruntimed", "msvcrtd" }
                 },
                 new Configuration
                 {
