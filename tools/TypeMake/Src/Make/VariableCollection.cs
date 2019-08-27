@@ -882,7 +882,10 @@ namespace TypeMake
                         }
                         else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
                         {
-                            return VariableSpec.CreateFixed(VariableValue.CreateString($"{ToolchainPath / "bin/clang"}{ExeSuffix} --target={TargetPrefix}-linux-androideabi{ApiLevel} --sysroot={ToolchainPath / "sysroot"}"));
+                            return VariableSpec.CreateString(new StringSpec
+                            {
+                                DefaultValue = $"{ToolchainPath / "bin/clang"}{ExeSuffix} --target={TargetPrefix}-linux-androideabi{ApiLevel} --sysroot={ToolchainPath / "sysroot"}"
+                            });
                         }
                     }
                     return VariableSpec.CreateNotApply(VariableValue.CreateString(null));
@@ -939,7 +942,10 @@ namespace TypeMake
                         }
                         else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
                         {
-                            return VariableSpec.CreateFixed(VariableValue.CreateString($"{ToolchainPath / "bin/clang++"}{ExeSuffix} --target={TargetPrefix}-linux-androideabi{ApiLevel} --sysroot={ToolchainPath / "sysroot"}"));
+                            return VariableSpec.CreateString(new StringSpec
+                            {
+                                DefaultValue = $"{ToolchainPath / "bin/clang++"}{ExeSuffix} --target={TargetPrefix}-linux-androideabi{ApiLevel} --sysroot={ToolchainPath / "sysroot"}"
+                            });
                         }
                     }
                     return VariableSpec.CreateNotApply(VariableValue.CreateString(null));
@@ -995,7 +1001,10 @@ namespace TypeMake
                         }
                         else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
                         {
-                            return VariableSpec.CreateFixed(VariableValue.CreateString($"{ToolchainPath / "bin/llvm-ar"}{ExeSuffix}"));
+                            return VariableSpec.CreateString(new StringSpec
+                            {
+                                DefaultValue = $"{ToolchainPath / "bin/llvm-ar"}{ExeSuffix}"
+                            });
                         }
                     }
                     return VariableSpec.CreateNotApply(VariableValue.CreateString(null));
