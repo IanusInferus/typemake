@@ -134,30 +134,38 @@ namespace TypeMake
         }
         private static PathString ResolvePathFromSystem(PathString p)
         {
-            var Remaining = new LinkedList<String>(p.Parts);
-            if (Remaining.Count == 0) { return p; }
-            var CurrentPath = Remaining.First.Value.AsPath();
-            Remaining.RemoveFirst();
-            while (Remaining.Count > 0)
+            //do resolving only on Windows, as other operating systems are mostly case-sensitive and have problems when lacking permissions
+            if (OperatingSystem == OperatingSystemType.Windows)
             {
-                var l = Directory.GetFileSystemEntries(CurrentPath, Remaining.First.Value);
-                if (l.Length == 0)
+                var Remaining = new LinkedList<String>(p.Parts);
+                if (Remaining.Count == 0) { return p; }
+                var CurrentPath = Remaining.First.Value.AsPath();
+                Remaining.RemoveFirst();
+                while (Remaining.Count > 0)
                 {
-                    break;
+                    var l = Directory.GetFileSystemEntries(CurrentPath, Remaining.First.Value);
+                    if (l.Length == 0)
+                    {
+                        break;
+                    }
+                    CurrentPath = l.First();
+                    Remaining.RemoveFirst();
                 }
-                CurrentPath = l.First();
-                Remaining.RemoveFirst();
+                while (Remaining.Count > 0)
+                {
+                    CurrentPath /= Remaining.First.Value;
+                    Remaining.RemoveFirst();
+                }
+                if (!String.Equals(CurrentPath, p, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new ArgumentException();
+                }
+                return CurrentPath;
             }
-            while (Remaining.Count > 0)
+            else
             {
-                CurrentPath /= Remaining.First.Value;
-                Remaining.RemoveFirst();
+                return p;
             }
-            if (!String.Equals(CurrentPath, p, StringComparison.OrdinalIgnoreCase))
-            {
-                throw new ArgumentException();
-            }
-            return CurrentPath;
         }
 
         public static int Execute(String ProgramPath, params String[] Arguments)
