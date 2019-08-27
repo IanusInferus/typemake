@@ -748,7 +748,11 @@ namespace TypeMake
                         }
                         else if (Variables.HostOperatingSystem == Cpp.OperatingSystemType.Linux)
                         {
-                            return VariableSpec.CreateFixed(VariableValue.CreatePath(Variables.SourceDirectory / "tools/Ninja/ninja-linux/ninja"));
+                            var Ninja = Shell.TryLocate("ninja") ?? Variables.SourceDirectory / "tools/Ninja/ninja-linux/ninja";
+                            return VariableSpec.CreatePath(new PathStringSpec
+                            {
+                                DefaultValue = Ninja
+                            });
                         }
                         else if (Variables.HostOperatingSystem == Cpp.OperatingSystemType.Mac)
                         {
