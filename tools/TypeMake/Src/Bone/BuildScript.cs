@@ -245,7 +245,7 @@ namespace TypeMake
                 }
             }
         }
-        public static void GenerateBuildScriptAndroid(List<ProjectReference> GradleProjects, Cpp.ToolchainType Toolchain, Cpp.OperatingSystemType HostOperatingSystem, PathString BuildDirectory, Cpp.ArchitectureType TargetArchitecture, Cpp.ConfigurationType Configuration, PathString AndroidNdk, PathString CMake, PathString Make, PathString Ninja, int ApiLevel, bool ForceRegenerate)
+        public static void GenerateBuildScriptAndroid(List<ProjectReference> GradleProjects, Cpp.ToolchainType Toolchain, Cpp.OperatingSystemType HostOperatingSystem, PathString BuildDirectory, Cpp.ArchitectureType TargetArchitecture, Cpp.ConfigurationType Configuration, PathString AndroidNdk, PathString CMake, PathString Make, PathString Ninja, int ApiLevel, bool ForceRegenerate, bool EnableJava)
         {
             if (Toolchain == Cpp.ToolchainType.Gradle_CMake)
             {
@@ -282,9 +282,12 @@ namespace TypeMake
                     Lines.Add(":main");
                     Lines.Add(Shell.EscapeArgumentForShell(CMake, Shell.ShellArgumentStyle.CMD) + " " + String.Join(" ", CMakeArguments.Select(a => Shell.EscapeArgumentForShell(a, Shell.ShellArgumentStyle.CMD))) + " || exit /b 1");
                     Lines.Add(Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.CMD) + " -j" + Environment.ProcessorCount.ToString() + " || exit /b 1");
-                    Lines.Add("pushd gradle || exit /b 1");
-                    Lines.Add($@"call .\gradlew.bat --no-daemon assemble{Configuration} || exit /b 1");
-                    Lines.Add("popd");
+                    if (EnableJava)
+                    {
+                        Lines.Add("pushd gradle || exit /b 1");
+                        Lines.Add($@"call .\gradlew.bat --no-daemon assemble{Configuration} || exit /b 1");
+                        Lines.Add("popd");
+                    }
                     Lines.Add("");
                     var BuildPath = BuildDirectory / "build.cmd";
                     TextFile.WriteToFile(BuildPath, String.Join("\r\n", Lines), System.Text.Encoding.Default, !ForceRegenerate);
@@ -296,9 +299,12 @@ namespace TypeMake
                     Lines.Add("set -e");
                     Lines.Add(Shell.EscapeArgumentForShell(CMake, Shell.ShellArgumentStyle.Bash) + " " + String.Join(" ", CMakeArguments.Select(a => Shell.EscapeArgumentForShell(a, Shell.ShellArgumentStyle.Bash))));
                     Lines.Add(Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.Bash) + " -j" + Environment.ProcessorCount.ToString());
-                    Lines.Add("pushd gradle");
-                    Lines.Add($@"./gradlew --no-daemon assemble{Configuration}");
-                    Lines.Add("popd");
+                    if (EnableJava)
+                    {
+                        Lines.Add("pushd gradle");
+                        Lines.Add($@"./gradlew --no-daemon assemble{Configuration}");
+                        Lines.Add("popd");
+                    }
                     Lines.Add("");
                     var BuildPath = BuildDirectory / "build.sh";
                     TextFile.WriteToFile(BuildPath, String.Join("\n", Lines), new System.Text.UTF8Encoding(false), !ForceRegenerate);
@@ -326,22 +332,25 @@ namespace TypeMake
                     Lines.Add("");
                     Lines.Add(":main");
                     Lines.Add(Shell.EscapeArgumentForShell(Ninja.RelativeTo(BuildDirectory).ToString(PathStringStyle.Windows), Shell.ShellArgumentStyle.CMD) + " -j" + Environment.ProcessorCount.ToString() + " -C projects -f build.ninja || exit /b 1");
-                    if (Toolchain == Cpp.ToolchainType.Gradle_Ninja)
+                    if (EnableJava)
                     {
-                        Lines.Add("pushd gradle || exit /b 1");
-                        Lines.Add($@"call .\gradlew.bat --no-daemon assemble{Configuration} || exit /b 1");
-                        Lines.Add("popd");
-                        Lines.Add("echo To debug a APK, open gradle directory in Android Studio, select Run - Edit Configurations - Debugger - Debug type, and change its value to Dual");
-                    }
-                    else
-                    {
-                        foreach (var p in GradleProjects)
+                        if (Toolchain == Cpp.ToolchainType.Gradle_Ninja)
                         {
-                            Lines.Add($"pushd batch\\{Shell.EscapeArgumentForShell(p.Name.Split(':').First(), Shell.ShellArgumentStyle.CMD)} || exit /b 1");
-                            Lines.Add("call build.cmd || exit /b 1");
+                            Lines.Add("pushd gradle || exit /b 1");
+                            Lines.Add($@"call .\gradlew.bat --no-daemon assemble{Configuration} || exit /b 1");
                             Lines.Add("popd");
+                            Lines.Add("echo To debug a APK, open gradle directory in Android Studio, select Run - Edit Configurations - Debugger - Debug type, and change its value to Dual");
                         }
-                        Lines.Add("echo To debug a APK, open Android Studio, select Profile or debug APK and select the generated APK, close Android Studio and copy the APK debug project under UserDirectory/ApkProjects to where the APK located(ensure the overwrite of APK), open the new project in Android Studio, add debug symbols for .so files, attach sources for Java files, select Run - Edit Configurations - Debugger - Debug type, and change its value to Dual");
+                        else
+                        {
+                            foreach (var p in GradleProjects)
+                            {
+                                Lines.Add($"pushd batch\\{Shell.EscapeArgumentForShell(p.Name.Split(':').First(), Shell.ShellArgumentStyle.CMD)} || exit /b 1");
+                                Lines.Add("call build.cmd || exit /b 1");
+                                Lines.Add("popd");
+                            }
+                            Lines.Add("echo To debug a APK, open Android Studio, select Profile or debug APK and select the generated APK, close Android Studio and copy the APK debug project under UserDirectory/ApkProjects to where the APK located(ensure the overwrite of APK), open the new project in Android Studio, add debug symbols for .so files, attach sources for Java files, select Run - Edit Configurations - Debugger - Debug type, and change its value to Dual");
+                        }
                     }
                     Lines.Add("");
                     var BuildPath = BuildDirectory / "build.cmd";
@@ -353,22 +362,25 @@ namespace TypeMake
                     Lines.Add("#!/bin/bash");
                     Lines.Add("set -e");
                     Lines.Add(Shell.EscapeArgumentForShell(Ninja.RelativeTo(BuildDirectory).ToString(PathStringStyle.Unix), Shell.ShellArgumentStyle.Bash) + " -j" + Environment.ProcessorCount.ToString() + " -C projects -f build.ninja");
-                    if (Toolchain == Cpp.ToolchainType.Gradle_Ninja)
+                    if (EnableJava)
                     {
-                        Lines.Add("pushd gradle");
-                        Lines.Add($@"./gradlew --no-daemon assemble{Configuration}");
-                        Lines.Add("popd");
-                        Lines.Add("echo To debug a APK, open gradle directory in Android Studio, select Run - Edit Configurations - Debugger - Debug type, and change its value to Dual");
-                    }
-                    else
-                    {
-                        foreach (var p in GradleProjects)
+                        if (Toolchain == Cpp.ToolchainType.Gradle_Ninja)
                         {
-                            Lines.Add($"pushd batch/{Shell.EscapeArgumentForShell(p.Name.Split(':').First(), Shell.ShellArgumentStyle.Bash)}");
-                            Lines.Add("./build.sh");
+                            Lines.Add("pushd gradle");
+                            Lines.Add($@"./gradlew --no-daemon assemble{Configuration}");
                             Lines.Add("popd");
+                            Lines.Add("echo To debug a APK, open gradle directory in Android Studio, select Run - Edit Configurations - Debugger - Debug type, and change its value to Dual");
                         }
-                        Lines.Add(@"echo To debug a APK, open Android Studio, select Profile or debug APK and select the generated APK, close Android Studio and copy the APK debug project under UserDirectory/ApkProjects to where the APK located\(ensure the overwrite of APK\), open the new project in Android Studio, add debug symbols for .so files, attach sources for Java files, select Run - Edit Configurations - Debugger - Debug type, and change its value to Dual");
+                        else
+                        {
+                            foreach (var p in GradleProjects)
+                            {
+                                Lines.Add($"pushd batch/{Shell.EscapeArgumentForShell(p.Name.Split(':').First(), Shell.ShellArgumentStyle.Bash)}");
+                                Lines.Add("./build.sh");
+                                Lines.Add("popd");
+                            }
+                            Lines.Add(@"echo To debug a APK, open Android Studio, select Profile or debug APK and select the generated APK, close Android Studio and copy the APK debug project under UserDirectory/ApkProjects to where the APK located\(ensure the overwrite of APK\), open the new project in Android Studio, add debug symbols for .so files, attach sources for Java files, select Run - Edit Configurations - Debugger - Debug type, and change its value to Dual");
+                        }
                     }
                     Lines.Add("");
                     var BuildPath = BuildDirectory / "build.sh";

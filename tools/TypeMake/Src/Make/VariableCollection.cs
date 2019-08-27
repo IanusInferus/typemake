@@ -122,7 +122,7 @@ namespace TypeMake
                     }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
                     {
-                        return VariableSpecCreateEnumSelection(Cpp.ArchitectureType.armv7a);
+                        return VariableSpecCreateEnumSelection(Cpp.ArchitectureType.arm64);
                     }
                     else
                     {
@@ -521,11 +521,32 @@ namespace TypeMake
 
             l.Add(new VariableItem
             {
-                VariableName = nameof(Variables.Jdk),
-                DependentVariableNames = new List<String> { nameof(Variables.HostOperatingSystem), nameof(Variables.TargetOperatingSystem), nameof(PathValidator) },
+                VariableName = nameof(Variables.EnableJava),
+                DependentVariableNames = new List<String> { nameof(Variables.HostOperatingSystem), nameof(Variables.TargetOperatingSystem) },
                 GetVariableSpec = () =>
                 {
                     if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
+                    {
+                        return VariableSpec.CreateBoolean(new BooleanSpec
+                        {
+                            DefaultValue = true
+                        });
+                    }
+                    else
+                    {
+                        return VariableSpec.CreateFixed(VariableValue.CreateBoolean(false));
+                    }
+                },
+                SetVariableValue = v => Variables.EnableJava = v.Boolean
+            });
+
+            l.Add(new VariableItem
+            {
+                VariableName = nameof(Variables.Jdk),
+                DependentVariableNames = new List<String> { nameof(Variables.HostOperatingSystem), nameof(Variables.TargetOperatingSystem), nameof(Variables.EnableJava), nameof(PathValidator) },
+                GetVariableSpec = () =>
+                {
+                    if (Variables.EnableJava && (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android))
                     {
                         var DefaultJdk = Environment.GetEnvironmentVariable("JAVA_HOME").AsPath();
                         if ((Variables.HostOperatingSystem != Cpp.OperatingSystemType.Windows) && String.IsNullOrEmpty(DefaultJdk))
@@ -550,14 +571,14 @@ namespace TypeMake
             l.Add(new VariableItem
             {
                 VariableName = nameof(Variables.AndroidSdk),
-                DependentVariableNames = new List<String> { nameof(Variables.HostOperatingSystem), nameof(Variables.TargetOperatingSystem), nameof(PathValidator) },
+                DependentVariableNames = new List<String> { nameof(Variables.HostOperatingSystem), nameof(Variables.TargetOperatingSystem), nameof(Variables.EnableJava), nameof(PathValidator) },
                 GetVariableSpec = () =>
                 {
-                    if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
+                    if (Variables.EnableJava && (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android))
                     {
                         return VariableSpec.CreatePath(new PathStringSpec
                         {
-                            DefaultValue = Variables.HostOperatingSystem == Cpp.OperatingSystemType.Windows ? (Environment.GetEnvironmentVariable("LocalAppData").AsPath() / "Android/sdk").ToString() : "",
+                            DefaultValue = Variables.HostOperatingSystem == Cpp.OperatingSystemType.Windows ? (Environment.GetEnvironmentVariable("LocalAppData").AsPath() / "Android/sdk") : "".AsPath(),
                             IsDirectory = true,
                             Validator = PathValidator ?? (p => Directory.Exists(p / "tools") ? new KeyValuePair<bool, String>(true, "") : new KeyValuePair<bool, String>(false, "No tools directory inside."))
                         });
@@ -580,7 +601,7 @@ namespace TypeMake
                     {
                         return VariableSpec.CreatePath(new PathStringSpec
                         {
-                            DefaultValue = Variables.AndroidSdk / "ndk-bundle",
+                            DefaultValue = Variables.AndroidSdk != null ? Variables.AndroidSdk / "ndk-bundle" : (Variables.HostOperatingSystem == Cpp.OperatingSystemType.Windows ? (Environment.GetEnvironmentVariable("LocalAppData").AsPath() / "Android/sdk/ndk-bundle") : "".AsPath()),
                             IsDirectory = true,
                             Validator = p => new KeyValuePair<bool, String>(true, "")
                         });
@@ -1019,7 +1040,7 @@ namespace TypeMake
                 DependentVariableNames = new List<String> { nameof(Variables.Toolchain), nameof(Variables.Compiler), nameof(Variables.HostOperatingSystem), nameof(Variables.HostArchitecture), nameof(Variables.TargetOperatingSystem), nameof(Variables.TargetArchitecture), nameof(Variables.Configuration), nameof(Variables.SourceDirectory), nameof(Variables.BuildDirectory), nameof(Variables.DevelopmentTeam), nameof(Variables.VSVersion), nameof(Variables.Jdk), nameof(Variables.AndroidSdk), nameof(Variables.AndroidNdk), nameof(Variables.CC), nameof(Variables.CXX), nameof(Variables.AR), nameof(Variables.ForceRegenerate), nameof(Variables.EnableNonTargetingOperatingSystemDummy) },
                 GetVariableSpec = () =>
                 {
-                    var m = new Make(Variables.Toolchain, Variables.Compiler, Variables.HostOperatingSystem, Variables.HostArchitecture, Variables.TargetOperatingSystem, Variables.TargetArchitecture, Variables.Configuration, Variables.SourceDirectory, Variables.BuildDirectory, Variables.DevelopmentTeam, Variables.VSVersion, Variables.Jdk, Variables.AndroidSdk, Variables.AndroidNdk, Variables.CC, Variables.CXX, Variables.AR, Variables.ForceRegenerate, Variables.EnableNonTargetingOperatingSystemDummy);
+                    var m = new Make(Variables.Toolchain, Variables.Compiler, Variables.HostOperatingSystem, Variables.HostArchitecture, Variables.TargetOperatingSystem, Variables.TargetArchitecture, Variables.Configuration, Variables.SourceDirectory, Variables.BuildDirectory, Variables.DevelopmentTeam, Variables.VSVersion, Variables.EnableJava, Variables.Jdk, Variables.AndroidSdk, Variables.AndroidNdk, Variables.CC, Variables.CXX, Variables.AR, Variables.ForceRegenerate, Variables.EnableNonTargetingOperatingSystemDummy);
                     Variables.m = m;
                     Projects = m.GetAvailableProjects();
                     var ProjectSet = new HashSet<String>(Projects.Values.Select(t => t.Definition.Name));

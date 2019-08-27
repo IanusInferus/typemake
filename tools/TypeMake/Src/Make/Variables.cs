@@ -26,6 +26,7 @@ namespace TypeMake
         public PathString CMake;
         public PathString Make;
         public PathString Ninja;
+        public bool EnableJava;
         public PathString Jdk;
         public PathString AndroidSdk;
         public PathString AndroidNdk;
