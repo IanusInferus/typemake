@@ -582,7 +582,7 @@ namespace TypeMake
                         {
                             DefaultValue = Variables.AndroidSdk / "ndk-bundle",
                             IsDirectory = true,
-                            Validator = PathValidator ?? (p => Directory.Exists(p / "build") ? new KeyValuePair<bool, String>(true, "") : new KeyValuePair<bool, String>(false, "No build directory inside."))
+                            Validator = p => new KeyValuePair<bool, String>(true, "")
                         });
                     }
                     else
