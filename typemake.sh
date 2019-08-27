@@ -8,4 +8,4 @@ echo building TypeMake finished.
 popd
 
 export SourceDirectory=.
-mono tools/TypeMake/Bin/TypeMake.exe "$@"
+mono --debug tools/TypeMake/Bin/TypeMake.exe "$@"
