@@ -20,21 +20,22 @@ Mac GUI: ./typemakegui.command
 
 Target Operating System vs Building Operating System
 
-|                                |   Windows 10 x64   |      Linux x64     |      MacOS x64     |
-| :----------------------------: | :----------------: | :----------------: | :----------------: |
-|  Windows x86/x64/armv7a/arm64  |         VS         |                    |                    |
-|         Windows x86/x64        |     Ninja+clang    |                    |                    |
-|          Linux x86/x64         |    WSL+Ninja+gcc   |      Ninja+gcc     |                    |
-|            Linux x64           |   WSL+Ninja+clang  |     Ninja+clang    |                    |
-|          Linux x86/x64         |   WSL+CMake+gcc *  |     CMake+gcc *    |                    |
-|       Linux armv7a/arm64       |    WSL+Ninja+gcc   |      Ninja+gcc     |                    |
-|            MacOS x64           |                    |                    |        XCode       |
-|            MacOS x64           |                    |                    |    Ninja+clang     |
-|            MacOS x64           |                    |                    |   CMake+clang *    |
-|  Android x86/x64/armv7a/arm64  |     NDK+Ninja      |     NDK+Ninja      |     NDK+Ninja      |
-|  Android x86/x64/armv7a/arm64  |  NDK+Ninja+Gradle  |  NDK+Ninja+Gradle  |  NDK+Ninja+Gradle  |
-|  Android x86/x64/armv7a/arm64  | NDK+CMake+Gradle * | NDK+CMake+Gradle * | NDK+CMake+Gradle * |
-|            iOS arm64           |                    |                    |        XCode       |
+|                                |   Windows 10 x64   |      Linux x64     |      MacOS x64     |   Android arm64    |
+| :----------------------------: | :----------------: | :----------------: | :----------------: | :----------------: |
+|  Windows x86/x64/armv7a/arm64  |         VS         |                    |                    |                    |
+|         Windows x86/x64        |     Ninja+clang    |                    |                    |                    |
+|          Linux x86/x64         |    WSL+Ninja+gcc   |      Ninja+gcc     |                    |                    |
+|            Linux x64           |   WSL+Ninja+clang  |     Ninja+clang    |                    |                    |
+|          Linux x86/x64         |   WSL+CMake+gcc *  |     CMake+gcc *    |                    |                    |
+|       Linux armv7a/arm64       |    WSL+Ninja+gcc   |      Ninja+gcc     |                    |                    |
+|            MacOS x64           |                    |                    |        XCode       |                    |
+|            MacOS x64           |                    |                    |    Ninja+clang     |                    |
+|            MacOS x64           |                    |                    |   CMake+clang *    |                    |
+|  Android x86/x64/armv7a/arm64  |     NDK+Ninja      |     NDK+Ninja      |     NDK+Ninja      |                    |
+|  Android x86/x64/armv7a/arm64  |  NDK+Ninja+Gradle  |  NDK+Ninja+Gradle  |  NDK+Ninja+Gradle  |                    |
+|  Android x86/x64/armv7a/arm64  | NDK+CMake+Gradle * | NDK+CMake+Gradle * | NDK+CMake+Gradle * |                    |
+|          Android arm64         |                    |                    |                    | Termux+Ninja+clang |
+|            iOS arm64           |                    |                    |        XCode       |                    |
 
 Different OSs use different ABIs on the same CPU architecture.
 
@@ -50,9 +51,9 @@ Linux(Ubuntu 18.04): \[cmake(>=3.3.2)\] g++(7.3.0) \[g++-multilib(7.3.0)\] mono-
 
 Linux(Ubuntu 18.04) with clang: clang-7 libc++-7-dev libc++abi-7-dev llvm-7-tools (CC=clang-7 CXX=clang++-7 AR=llvm-ar-7)
 
-Linux(Ubuntu 18.04) with musl(x86/x64/armv7a/arm64): musl-cross-make ("CC=xxx-linux-musl-gcc -static -Wl,-static" "CXX=xxx-linux-musl-g++ -static -Wl,-static" AR=xxx-linux-musl-ar)
+Linux(Ubuntu 18.04) with musl(x86/x64/armv7a/arm64): musl-cross-make (CC=xxx-linux-musl-gcc CXX=xxx-linux-musl-g++ AR=xxx-linux-musl-ar)
 
-Linux(Alpine 3.9): g++(8.2.0) bash mono-devel(5.x, in edge/testing repo) ("CC=gcc -static -Wl,-static" "CXX=g++ -static -Wl,-static" AR=ar)
+Linux(Alpine 3.9): g++(8.2.0) bash mono-devel(5.x, in edge/testing repo)
 
 Linux GUI: GTK
 
@@ -72,8 +73,6 @@ To use this repo in a project, just copy 'tools' directory to the project repo.
 
 You may need to customize some code to cope with your project, mainly in directory 'Make' and 'Templates'.
 
-To build a program statically for Linux/Android on x64/arm64/... without libc(glibc/bionic) dependency, you can build [musl-cross-make](https://github.com/richfelker/musl-cross-make) with ([GCC_CONFIG += --enable-default-pie](https://github.com/richfelker/musl-cross-make/issues/47)) and then build your program for Linux with static options(-static -Wl,-static). For example, to build for arm64, you can use the following options.
+To build a program statically for Linux/Android on x64/arm64/... without libc(glibc/bionic) dependency, you can build [musl-cross-make](https://github.com/richfelker/musl-cross-make) with ([GCC_CONFIG += --enable-default-pie](https://github.com/richfelker/musl-cross-make/issues/47)) and then build your program for Linux with static options(CLibrary=Static).
 
-> "CC=/opt/musl-cross-make/output/bin/aarch64-linux-musl-gcc -static -Wl,-static"  
-> "CXX=/opt/musl-cross-make/output/bin/aarch64-linux-musl-g++ -static -Wl,-static"  
-> AR=/opt/musl-cross-make/output/bin/aarch64-linux-musl-ar
+Android host support is limited. Java must be disabled as there is no complete Android SDK for Android host. Static libc++ is not supported by Termux.
