@@ -705,11 +705,6 @@ namespace TypeMake
                 },
                 new Configuration
                 {
-                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Android },
-                    Libs = new List<PathString> { "log" }
-                },
-                new Configuration
-                {
                     MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.iOS },
                     Options = new Dictionary<String, String>
                     {
