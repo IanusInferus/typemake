@@ -15,15 +15,19 @@ namespace TypeMake.Cpp
         private PathString OutputDirectory;
         private PathString SolutionOutputDirectory;
         private String BuildGradleTemplateText;
-        private ToolchainType Toolchain;
-        private CompilerType Compiler;
         private OperatingSystemType HostOperatingSystem;
         private ArchitectureType HostArchitecture;
         private OperatingSystemType TargetOperatingSystem;
         private ArchitectureType? TargetArchitectureType;
+        private ToolchainType Toolchain;
+        private CompilerType Compiler;
+        private CLibraryType CLibrary;
+        private CLibraryForm CLibraryForm;
+        private CppLibraryType CppLibrary;
+        private CppLibraryForm CppLibraryForm;
         private ConfigurationType? ConfigurationType;
 
-        public GradleProjectGenerator(String SolutionName, Project Project, List<ProjectReference> ProjectReferences, PathString InputDirectory, PathString OutputDirectory, PathString SolutionOutputDirectory, String BuildGradleTemplateText, ToolchainType Toolchain, CompilerType Compiler, OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType? TargetArchitectureType, ConfigurationType? ConfigurationType)
+        public GradleProjectGenerator(String SolutionName, Project Project, List<ProjectReference> ProjectReferences, PathString InputDirectory, PathString OutputDirectory, PathString SolutionOutputDirectory, String BuildGradleTemplateText, OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType? TargetArchitectureType, ToolchainType Toolchain, CompilerType Compiler, CLibraryType CLibrary, CLibraryForm CLibraryForm, CppLibraryType CppLibrary, CppLibraryForm CppLibraryForm, ConfigurationType? ConfigurationType)
         {
             this.SolutionName = SolutionName;
             this.ProjectName = Project.Name.Split(':').First();
@@ -33,8 +37,6 @@ namespace TypeMake.Cpp
             this.OutputDirectory = OutputDirectory.FullPath;
             this.SolutionOutputDirectory = SolutionOutputDirectory.FullPath;
             this.BuildGradleTemplateText = BuildGradleTemplateText;
-            this.Toolchain = Toolchain;
-            this.Compiler = Compiler;
             this.HostOperatingSystem = HostOperatingSystem;
             this.HostArchitecture = HostArchitecture;
             this.TargetOperatingSystem = TargetOperatingSystem;
@@ -43,6 +45,12 @@ namespace TypeMake.Cpp
             {
                 throw new NotSupportedException("ArchitectureTypeIsNull");
             }
+            this.Toolchain = Toolchain;
+            this.Compiler = Compiler;
+            this.CLibrary = CLibrary;
+            this.CLibraryForm = CLibraryForm;
+            this.CppLibrary = CppLibrary;
+            this.CppLibraryForm = CppLibraryForm;
             this.ConfigurationType = ConfigurationType;
         }
 
@@ -57,9 +65,9 @@ namespace TypeMake.Cpp
 
         private IEnumerable<String> GenerateLines(String BuildGradlePath, String BaseDirPath)
         {
-            var conf = Project.Configurations.Merged(Project.TargetType, Toolchain, Compiler, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitectureType, ConfigurationType);
-            var confDebug = Project.Configurations.Merged(Project.TargetType, Toolchain, Compiler, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitectureType, Cpp.ConfigurationType.Debug);
-            var confRelease = Project.Configurations.Merged(Project.TargetType, Toolchain, Compiler, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitectureType, Cpp.ConfigurationType.Release);
+            var conf = Project.Configurations.Merged(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitectureType, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType);
+            var confDebug = Project.Configurations.Merged(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitectureType, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, Cpp.ConfigurationType.Debug);
+            var confRelease = Project.Configurations.Merged(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitectureType, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, Cpp.ConfigurationType.Release);
 
             var Results = BuildGradleTemplateText.Replace("\r\n", "\n").Split('\n').AsEnumerable();
             var SolutionOutputDir = SolutionOutputDirectory.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix);

@@ -17,6 +17,21 @@ namespace TypeMake.Cpp
         iOSStaticFramework,
         iOSSharedFramework
     }
+    public enum OperatingSystemType
+    {
+        Windows,
+        Linux,
+        Mac,
+        Android,
+        iOS
+    }
+    public enum ArchitectureType
+    {
+        x86,
+        x64,
+        armv7a,
+        arm64
+    }
     public enum ToolchainType
     {
         VisualStudio,
@@ -32,25 +47,34 @@ namespace TypeMake.Cpp
         gcc,
         clang
     }
-    public enum OperatingSystemType
+    public enum CLibraryType
     {
-        Windows,
-        Linux,
-        Mac,
-        Android,
-        iOS
+        VisualCRuntime,
+        glibc,
+        musl,
+        libSystem,
+        Bionic
+    }
+    public enum CLibraryForm
+    {
+        Static,
+        Dynamic
+    }
+    public enum CppLibraryType
+    {
+        VisualCppRuntime,
+        libstdcxx,
+        libcxx
+    }
+    public enum CppLibraryForm
+    {
+        Static,
+        Dynamic
     }
     public enum ConfigurationType
     {
         Debug,
         Release
-    }
-    public enum ArchitectureType
-    {
-        x86,
-        x64,
-        armv7a,
-        arm64
     }
     public enum FileType
     {
@@ -66,12 +90,16 @@ namespace TypeMake.Cpp
     public class Configuration
     {
         public List<TargetType> MatchingTargetTypes = null;
-        public List<ToolchainType> MatchingToolchains = null;
-        public List<CompilerType> MatchingCompilers = null;
         public List<OperatingSystemType> MatchingHostOperatingSystems = null;
         public List<ArchitectureType> MatchingHostArchitectures = null;
         public List<OperatingSystemType> MatchingTargetOperatingSystems = null;
         public List<ArchitectureType> MatchingTargetArchitectures = null;
+        public List<ToolchainType> MatchingToolchains = null;
+        public List<CompilerType> MatchingCompilers = null;
+        public List<CLibraryType> MatchingCLibraries = null;
+        public List<CLibraryForm> MatchingCLibraryForms = null;
+        public List<CppLibraryType> MatchingCppLibraries = null;
+        public List<CppLibraryForm> MatchingCppLibraryForms = null;
         public List<ConfigurationType> MatchingConfigurationTypes = null;
 
         public List<PathString> IncludeDirectories = new List<PathString> { };

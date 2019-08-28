@@ -12,26 +12,34 @@ namespace TypeMake.Cpp
         private List<ProjectReference> ProjectReferences;
         private PathString InputDirectory;
         private PathString OutputDirectory;
-        private ToolchainType Toolchain;
-        private CompilerType Compiler;
         private OperatingSystemType HostOperatingSystem;
         private ArchitectureType HostArchitecture;
         private OperatingSystemType TargetOperatingSystem;
         private ArchitectureType TargetArchitectureType;
         private ConfigurationType ConfigurationType;
+        private ToolchainType Toolchain;
+        private CompilerType Compiler;
+        private CLibraryType CLibrary;
+        private CLibraryForm CLibraryForm;
+        private CppLibraryType CppLibrary;
+        private CppLibraryForm CppLibraryForm;
 
-        public NinjaProjectGenerator(Project Project, List<ProjectReference> ProjectReferences, PathString InputDirectory, PathString OutputDirectory, ToolchainType Toolchain, CompilerType Compiler, OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType TargetArchitectureType, ConfigurationType ConfigurationType)
+        public NinjaProjectGenerator(Project Project, List<ProjectReference> ProjectReferences, PathString InputDirectory, PathString OutputDirectory, OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType TargetArchitectureType, ToolchainType Toolchain, CompilerType Compiler, CLibraryType CLibrary, CLibraryForm CLibraryForm, CppLibraryType CppLibrary, CppLibraryForm CppLibraryForm, ConfigurationType ConfigurationType)
         {
             this.Project = Project;
             this.ProjectReferences = ProjectReferences;
             this.InputDirectory = InputDirectory.FullPath;
             this.OutputDirectory = OutputDirectory.FullPath;
-            this.Toolchain = Toolchain;
-            this.Compiler = Compiler;
             this.HostOperatingSystem = HostOperatingSystem;
             this.HostArchitecture = HostArchitecture;
             this.TargetOperatingSystem = TargetOperatingSystem;
             this.TargetArchitectureType = TargetArchitectureType;
+            this.Toolchain = Toolchain;
+            this.Compiler = Compiler;
+            this.CLibrary = CLibrary;
+            this.CLibraryForm = CLibraryForm;
+            this.CppLibrary = CppLibrary;
+            this.CppLibraryForm = CppLibraryForm;
             this.ConfigurationType = ConfigurationType;
         }
 
@@ -46,7 +54,7 @@ namespace TypeMake.Cpp
 
         private IEnumerable<String> GenerateLines(PathString NinjaScriptPath, PathString BaseDirPath)
         {
-            var conf = Project.Configurations.Merged(Project.TargetType, Toolchain, Compiler, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitectureType, ConfigurationType);
+            var conf = Project.Configurations.Merged(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitectureType, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType);
 
             yield return "ninja_required_version = 1.3";
             yield return "";
@@ -131,7 +139,7 @@ namespace TypeMake.Cpp
             {
                 if ((File.Type != FileType.CSource) && (File.Type != FileType.CppSource) && (File.Type != FileType.ObjectiveCSource) && (File.Type != FileType.ObjectiveCppSource)) { continue; }
 
-                var FileConf = File.Configurations.Merged(Project.TargetType, Toolchain, Compiler, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitectureType, ConfigurationType);
+                var FileConf = File.Configurations.Merged(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitectureType, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType);
 
                 var FileFlags = new List<String>();
                 FileFlags.AddRange(FileConf.Defines.Select(d => "-D" + d.Key + (d.Value == null ? "" : "=" + d.Value)));

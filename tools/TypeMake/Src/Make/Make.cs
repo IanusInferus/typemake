@@ -12,13 +12,17 @@ namespace TypeMake
     {
         public const String SolutionName = "TypeMakeSample";
 
-        private ToolchainType Toolchain;
-        private CompilerType Compiler;
         private OperatingSystemType HostOperatingSystem;
         private ArchitectureType HostArchitecture;
         private OperatingSystemType TargetOperatingSystem;
         private ArchitectureType? TargetArchitecture;
         private ConfigurationType? ConfigurationType;
+        private ToolchainType Toolchain;
+        private CompilerType Compiler;
+        private CLibraryType CLibrary;
+        private CLibraryForm CLibraryForm;
+        private CppLibraryType CppLibrary;
+        private CppLibraryForm CppLibraryForm;
         private PathString SourceDirectory;
         private PathString BuildDirectory;
         private String XCodeDevelopmentTeam;
@@ -35,14 +39,18 @@ namespace TypeMake
 
         private Dictionary<String, String> ProjectIds = new Dictionary<String, String>();
 
-        public Make(ToolchainType Toolchain, CompilerType Compiler, OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType? TargetArchitecture, ConfigurationType? ConfigurationType, PathString SourceDirectory, PathString BuildDirectory, String XCodeDevelopmentTeam, int VSVersion, bool EnableJava, PathString Jdk, PathString AndroidSdk, PathString AndroidNdk, String CCompiler, String CppCompiler, String Archiver, bool ForceRegenerate, bool EnableNonTargetingOperatingSystemDummy)
+        public Make(OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType? TargetArchitecture, ToolchainType Toolchain, CompilerType Compiler, CLibraryType CLibrary, CLibraryForm CLibraryForm, CppLibraryType CppLibrary, CppLibraryForm CppLibraryForm, ConfigurationType? ConfigurationType, PathString SourceDirectory, PathString BuildDirectory, String XCodeDevelopmentTeam, int VSVersion, bool EnableJava, PathString Jdk, PathString AndroidSdk, PathString AndroidNdk, String CCompiler, String CppCompiler, String Archiver, bool ForceRegenerate, bool EnableNonTargetingOperatingSystemDummy)
         {
-            this.Toolchain = Toolchain;
-            this.Compiler = Compiler;
             this.HostOperatingSystem = HostOperatingSystem;
             this.HostArchitecture = HostArchitecture;
             this.TargetOperatingSystem = TargetOperatingSystem;
             this.TargetArchitecture = TargetArchitecture;
+            this.Toolchain = Toolchain;
+            this.Compiler = Compiler;
+            this.CLibrary = CLibrary;
+            this.CLibraryForm = CLibraryForm;
+            this.CppLibrary = CppLibrary;
+            this.CppLibraryForm = CppLibraryForm;
             this.ConfigurationType = ConfigurationType;
             this.SourceDirectory = SourceDirectory.FullPath;
             this.BuildDirectory = BuildDirectory.FullPath;
@@ -481,23 +489,23 @@ namespace TypeMake
                 {
                     var VcxprojTemplateText = Resource.GetResourceText(VSVersion == 2019 ? @"Templates\vc16\Default.vcxproj" : @"Templates\vc15\Default.vcxproj");
                     var VcxprojFilterTemplateText = Resource.GetResourceText(VSVersion == 2019 ? @"Templates\vc16\Default.vcxproj.filters" : @"Templates\vc15\Default.vcxproj.filters");
-                    var g = new VcxprojGenerator(p, ProjectReference.Id, ProjectReferences, InputDirectory, OutputDirectory, VcxprojTemplateText, VcxprojFilterTemplateText, HostOperatingSystem, HostArchitecture, TargetOperatingSystem);
+                    var g = new VcxprojGenerator(p, ProjectReference.Id, ProjectReferences, InputDirectory, OutputDirectory, VcxprojTemplateText, VcxprojFilterTemplateText, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, CLibraryForm, CppLibraryForm);
                     g.Generate(ForceRegenerate);
                 }
                 else if (Toolchain == ToolchainType.XCode)
                 {
                     var PbxprojTemplateText = Resource.GetResourceText(@"Templates\xcode9\Default.xcodeproj\project.pbxproj");
-                    var g = new PbxprojGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, PbxprojTemplateText, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, XCodeDevelopmentTeam);
+                    var g = new PbxprojGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, PbxprojTemplateText, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, CppLibraryForm, XCodeDevelopmentTeam);
                     g.Generate(ForceRegenerate);
                 }
                 else if (Toolchain == ToolchainType.CMake)
                 {
-                    var g = new CMakeProjectGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, Toolchain, Compiler, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, ConfigurationType, false);
+                    var g = new CMakeProjectGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType, false);
                     g.Generate(ForceRegenerate);
                 }
                 else if ((Toolchain == ToolchainType.Ninja) && (TargetOperatingSystem != OperatingSystemType.Android))
                 {
-                    var g = new NinjaProjectGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, Toolchain, Compiler, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture.Value, ConfigurationType.Value);
+                    var g = new NinjaProjectGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture.Value, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType.Value);
                     g.Generate(ForceRegenerate);
                 }
                 else if ((Toolchain == ToolchainType.Gradle_CMake) || (Toolchain == ToolchainType.Gradle_Ninja) || (Toolchain == ToolchainType.Ninja))
@@ -509,13 +517,13 @@ namespace TypeMake
                             if (Toolchain == ToolchainType.Ninja)
                             {
                                 var Out = OutputDirectory.FileName == "gradle" ? OutputDirectory.Parent / "batch" : OutputDirectory;
-                                var gBatch = new AndroidBatchProjectGenerator(SolutionName, p, ProjectReferences, InputDirectory, Out, BuildDirectory, Toolchain, Compiler, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, ConfigurationType, Jdk, AndroidSdk, AndroidNdk, "28.0.3", 15, 28, Environment.GetFolderPath(Environment.SpecialFolder.UserProfile).AsPath() / ".android/debug.keystore", "android", "androiddebugkey", "android", true);
+                                var gBatch = new AndroidBatchProjectGenerator(SolutionName, p, ProjectReferences, InputDirectory, Out, BuildDirectory, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType, Jdk, AndroidSdk, AndroidNdk, "28.0.3", 15, 28, Environment.GetFolderPath(Environment.SpecialFolder.UserProfile).AsPath() / ".android/debug.keystore", "android", "androiddebugkey", "android", true);
                                 gBatch.Generate(ForceRegenerate);
                             }
                             else
                             {
                                 var BuildGradleTemplateText = Resource.GetResourceText(@"Templates\gradle_application\build.gradle");
-                                var gGradle = new GradleProjectGenerator(SolutionName, p, ProjectReferences, InputDirectory, OutputDirectory, BuildDirectory, BuildGradleTemplateText, Toolchain, Compiler, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, ConfigurationType);
+                                var gGradle = new GradleProjectGenerator(SolutionName, p, ProjectReferences, InputDirectory, OutputDirectory, BuildDirectory, BuildGradleTemplateText, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType);
                                 gGradle.Generate(ForceRegenerate);
                             }
                         }
@@ -528,13 +536,13 @@ namespace TypeMake
                             if (Toolchain == ToolchainType.Ninja)
                             {
                                 var Out = OutputDirectory.FileName == "gradle" ? OutputDirectory.Parent / "batch" : OutputDirectory;
-                                var gBatch = new AndroidBatchProjectGenerator(SolutionName, p, ProjectReferences, InputDirectory, Out, BuildDirectory, Toolchain, Compiler, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, ConfigurationType, Jdk, AndroidSdk, AndroidNdk, "28.0.3", 15, 28, Environment.GetFolderPath(Environment.SpecialFolder.UserProfile).AsPath() / ".android/debug.keystore", "android", "androiddebugkey", "android", true);
+                                var gBatch = new AndroidBatchProjectGenerator(SolutionName, p, ProjectReferences, InputDirectory, Out, BuildDirectory, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType, Jdk, AndroidSdk, AndroidNdk, "28.0.3", 15, 28, Environment.GetFolderPath(Environment.SpecialFolder.UserProfile).AsPath() / ".android/debug.keystore", "android", "androiddebugkey", "android", true);
                                 gBatch.Generate(ForceRegenerate);
                             }
                             else
                             {
                                 var BuildGradleTemplateText = Resource.GetResourceText(@"Templates\gradle_library\build.gradle");
-                                var gGradle = new GradleProjectGenerator(SolutionName, p, ProjectReferences, InputDirectory, OutputDirectory, BuildDirectory, BuildGradleTemplateText, Toolchain, Compiler, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, ConfigurationType);
+                                var gGradle = new GradleProjectGenerator(SolutionName, p, ProjectReferences, InputDirectory, OutputDirectory, BuildDirectory, BuildGradleTemplateText, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType);
                                 gGradle.Generate(ForceRegenerate);
                             }
                         }
@@ -544,17 +552,17 @@ namespace TypeMake
                     {
                         if (Toolchain == ToolchainType.Gradle_CMake)
                         {
-                            var g = new CMakeProjectGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, Toolchain, Compiler, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, ConfigurationType, HostOperatingSystem == OperatingSystemType.Windows);
+                            var g = new CMakeProjectGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType, HostOperatingSystem == OperatingSystemType.Windows);
                             g.Generate(ForceRegenerate);
                         }
                         else if (Toolchain == ToolchainType.Gradle_Ninja)
                         {
-                            var g = new NinjaProjectGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, Toolchain, Compiler, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture.Value, ConfigurationType.Value);
+                            var g = new NinjaProjectGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture.Value, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType.Value);
                             g.Generate(ForceRegenerate);
                         }
                         else if (Toolchain == ToolchainType.Ninja)
                         {
-                            var g = new NinjaProjectGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, Toolchain, Compiler, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture.Value, ConfigurationType.Value);
+                            var g = new NinjaProjectGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture.Value, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType.Value);
                             g.Generate(ForceRegenerate);
                         }
                     }
@@ -710,21 +718,73 @@ namespace TypeMake
                 },
                 new Configuration
                 {
-                    MatchingCompilers = new List<CompilerType> { CompilerType.gcc },
-                    LinkerFlags = ParseFlags("-static-libgcc -static-libstdc++"),
-                    Libs = new List<PathString> { "rt" }
-                },
-                new Configuration
-                {
                     MatchingCompilers = new List<CompilerType> { CompilerType.clang },
-                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Linux, OperatingSystemType.Mac, OperatingSystemType.Android, OperatingSystemType.iOS },
+                    MatchingCppLibraries = new List<CppLibraryType> { CppLibraryType.libcxx },
                     CppFlags = ParseFlags("-stdlib=libc++"),
                     LinkerFlags = ParseFlags("-stdlib=libc++")
                 },
                 new Configuration
                 {
-                    MatchingCompilers = new List<CompilerType> { CompilerType.clang },
-                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Android },
+                    MatchingCompilers = new List<CompilerType> { CompilerType.VisualCpp },
+                    MatchingCLibraryForms = new List<CLibraryForm> { CLibraryForm.Static },
+                    MatchingConfigurationTypes = new List<ConfigurationType> { Cpp.ConfigurationType.Debug },
+                    Options = new Dictionary<String, String>
+                    {
+                        ["vc.ClCompile.RuntimeLibrary"] = "MultiThreadedDebug",
+                    }
+                },
+                new Configuration
+                {
+                    MatchingCompilers = new List<CompilerType> { CompilerType.VisualCpp },
+                    MatchingCLibraryForms = new List<CLibraryForm> { CLibraryForm.Dynamic },
+                    MatchingConfigurationTypes = new List<ConfigurationType> { Cpp.ConfigurationType.Debug },
+                    Options = new Dictionary<String, String>
+                    {
+                        ["vc.ClCompile.RuntimeLibrary"] = "MultiThreadedDebugDLL",
+                    }
+                },
+                new Configuration
+                {
+                    MatchingCompilers = new List<CompilerType> { CompilerType.VisualCpp },
+                    MatchingCLibraryForms = new List<CLibraryForm> { CLibraryForm.Static },
+                    MatchingConfigurationTypes = new List<ConfigurationType> { Cpp.ConfigurationType.Release },
+                    Options = new Dictionary<String, String>
+                    {
+                        ["vc.ClCompile.RuntimeLibrary"] = "MultiThreaded",
+                    }
+                },
+                new Configuration
+                {
+                    MatchingCompilers = new List<CompilerType> { CompilerType.VisualCpp },
+                    MatchingCLibraryForms = new List<CLibraryForm> { CLibraryForm.Dynamic },
+                    MatchingConfigurationTypes = new List<ConfigurationType> { Cpp.ConfigurationType.Release },
+                    Options = new Dictionary<String, String>
+                    {
+                        ["vc.ClCompile.RuntimeLibrary"] = "MultiThreadedDLL",
+                    }
+                },
+                new Configuration
+                {
+                    MatchingCompilers = new List<CompilerType> { CompilerType.gcc, CompilerType.clang },
+                    MatchingCLibraries = new List<CLibraryType> { CLibraryType.musl },
+                    MatchingCppLibraryForms = new List<CppLibraryForm> { CppLibraryForm.Static },
+                    CommonFlags = ParseFlags("-static"),
+                    LinkerFlags = ParseFlags("-static -Wl,-static")
+                },
+                new Configuration
+                {
+                    MatchingCompilers = new List<CompilerType> { CompilerType.gcc },
+                    MatchingCppLibraryForms = new List<CppLibraryForm> { CppLibraryForm.Static },
+                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Linux, OperatingSystemType.Android },
+                    LinkerFlags = ParseFlags("-static-libgcc"),
+                    Libs = new List<PathString> { "rt" }
+                },
+                new Configuration
+                {
+                    MatchingCompilers = new List<CompilerType> { CompilerType.gcc, CompilerType.clang },
+                    MatchingCppLibraries = new List<CppLibraryType> { CppLibraryType.libstdcxx, CppLibraryType.libcxx },
+                    MatchingCppLibraryForms = new List<CppLibraryForm> { CppLibraryForm.Static },
+                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Linux, OperatingSystemType.Android },
                     LinkerFlags = ParseFlags("-static-libstdc++")
                 },
                 new Configuration
@@ -802,7 +862,6 @@ namespace TypeMake
             {
                 foreach (var ConfigurationType in Enum.GetValues(typeof(ConfigurationType)).Cast<ConfigurationType>())
                 {
-
                     Configurations.Add(new Configuration
                     {
                         MatchingCompilers = new List<CompilerType> { CompilerType.VisualCpp },

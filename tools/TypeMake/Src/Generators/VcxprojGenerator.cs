@@ -20,8 +20,10 @@ namespace TypeMake.Cpp
         private OperatingSystemType HostOperatingSystem;
         private ArchitectureType HostArchitecture;
         private OperatingSystemType TargetOperatingSystem;
+        private CLibraryForm CLibraryForm;
+        private CppLibraryForm CppLibraryForm;
 
-        public VcxprojGenerator(Project Project, String ProjectId, List<ProjectReference> ProjectReferences, PathString InputDirectory, PathString OutputDirectory, String VcxprojTemplateText, String VcxprojFilterTemplateText, OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem)
+        public VcxprojGenerator(Project Project, String ProjectId, List<ProjectReference> ProjectReferences, PathString InputDirectory, PathString OutputDirectory, String VcxprojTemplateText, String VcxprojFilterTemplateText, OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, CLibraryForm CLibraryForm, CppLibraryForm CppLibraryForm)
         {
             this.Project = Project;
             this.ProjectId = ProjectId;
@@ -33,6 +35,8 @@ namespace TypeMake.Cpp
             this.HostOperatingSystem = HostOperatingSystem;
             this.HostArchitecture = HostArchitecture;
             this.TargetOperatingSystem = TargetOperatingSystem;
+            this.CLibraryForm = CLibraryForm;
+            this.CppLibraryForm = CppLibraryForm;
         }
 
         public void Generate(bool ForceRegenerate)
@@ -112,7 +116,7 @@ namespace TypeMake.Cpp
                 var Architecture = Pair.Key.Value;
                 var Name = Pair.Value;
 
-                var conf = Project.Configurations.Merged(Project.TargetType, ToolchainType.VisualStudio, CompilerType.VisualCpp, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, Architecture, ConfigurationType);
+                var conf = Project.Configurations.Merged(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, Architecture, ToolchainType.VisualStudio, CompilerType.VisualCpp, CLibraryType.VisualCRuntime, CLibraryForm, CppLibraryType.VisualCppRuntime, CppLibraryForm, ConfigurationType);
 
                 var PropertyGroup = xVcxproj.Elements(xn + "PropertyGroup").Where(e => (e.Attribute("Condition") != null) && (e.Attribute("Condition").Value == "'$(Configuration)|$(Platform)'=='" + Name + "'")).LastOrDefault();
                 if (PropertyGroup == null)
@@ -239,7 +243,7 @@ namespace TypeMake.Cpp
 
             var Import = xVcxproj.Elements(xn + "Import").LastOrDefault();
 
-            foreach (var gConf in Project.Configurations.Matches(Project.TargetType, ToolchainType.VisualStudio, CompilerType.VisualCpp, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, null, null).GroupBy(conf => Tuple.Create(conf.MatchingConfigurationTypes, conf.MatchingTargetArchitectures), new ConfigurationTypesAndArchitecturesComparer()))
+            foreach (var gConf in Project.Configurations.Matches(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, null, ToolchainType.VisualStudio, CompilerType.VisualCpp, CLibraryType.VisualCRuntime, CLibraryForm, CppLibraryType.VisualCppRuntime, CppLibraryForm, null).GroupBy(conf => Tuple.Create(conf.MatchingConfigurationTypes, conf.MatchingTargetArchitectures), new ConfigurationTypesAndArchitecturesComparer()))
             {
                 var MatchingConfigurationTypes = gConf.Key.Item1;
                 var MatchingTargetArchitectures = gConf.Key.Item2;
@@ -283,7 +287,7 @@ namespace TypeMake.Cpp
                         }
                         if ((File.Type == FileType.CSource) || (File.Type == FileType.CppSource))
                         {
-                            var fileConfs = File.Configurations.Matches(Project.TargetType, ToolchainType.VisualStudio, CompilerType.VisualCpp, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, null, null);
+                            var fileConfs = File.Configurations.Matches(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, null, ToolchainType.VisualStudio, CompilerType.VisualCpp, CLibraryType.VisualCRuntime, CLibraryForm, CppLibraryType.VisualCppRuntime, CppLibraryForm, null);
 
                             foreach (var conf in fileConfs)
                             {
@@ -432,7 +436,7 @@ namespace TypeMake.Cpp
 
             var Files = new HashSet<String>(StringComparer.OrdinalIgnoreCase);
             var Filters = new HashSet<String>(StringComparer.OrdinalIgnoreCase);
-            foreach (var conf in Project.Configurations.Matches(Project.TargetType, ToolchainType.VisualStudio, CompilerType.VisualCpp, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, null, null))
+            foreach (var conf in Project.Configurations.Matches(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, null, ToolchainType.VisualStudio, CompilerType.VisualCpp, CLibraryType.VisualCRuntime, CLibraryForm, CppLibraryType.VisualCppRuntime, CppLibraryForm, null))
             {
                 foreach (var f in conf.Files)
                 {

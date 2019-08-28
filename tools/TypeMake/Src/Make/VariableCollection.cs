@@ -227,6 +227,128 @@ namespace TypeMake
 
             l.Add(new VariableItem
             {
+                VariableName = nameof(Variables.CLibrary),
+                DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.Toolchain) },
+                GetVariableSpec = () =>
+                {
+                    if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
+                    {
+                        return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.CLibraryType.VisualCRuntime.ToString()));
+                    }
+                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
+                    {
+                        return VariableSpecCreateEnumSelection(Cpp.CLibraryType.glibc, new HashSet<Cpp.CLibraryType> { Cpp.CLibraryType.glibc, Cpp.CLibraryType.musl });
+                    }
+                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Mac)
+                    {
+                        return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.CLibraryType.libSystem.ToString()));
+                    }
+                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.iOS)
+                    {
+                        return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.CLibraryType.libSystem.ToString()));
+                    }
+                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
+                    {
+                        return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.CLibraryType.Bionic.ToString()));
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException();
+                    }
+                },
+                SetVariableValue = v => Variables.CLibrary = UnwrapEnum<Cpp.CLibraryType>(v.String)
+            });
+
+            l.Add(new VariableItem
+            {
+                VariableName = nameof(Variables.CLibraryForm),
+                DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.Toolchain), nameof(Variables.CLibrary) },
+                GetVariableSpec = () =>
+                {
+                    if ((Variables.CLibrary == Cpp.CLibraryType.VisualCRuntime) || (Variables.CLibrary == Cpp.CLibraryType.musl))
+                    {
+                        return VariableSpecCreateEnumSelection(Cpp.CLibraryForm.Dynamic, new HashSet<Cpp.CLibraryForm> { Cpp.CLibraryForm.Static, Cpp.CLibraryForm.Dynamic });
+                    }
+                    else
+                    {
+                        return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.CLibraryForm.Dynamic.ToString()));
+                    }
+                },
+                SetVariableValue = v => Variables.CLibraryForm = UnwrapEnum<Cpp.CLibraryForm>(v.String)
+            });
+
+            l.Add(new VariableItem
+            {
+                VariableName = nameof(Variables.CppLibrary),
+                DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.Toolchain) },
+                GetVariableSpec = () =>
+                {
+                    if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
+                    {
+                        return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.CppLibraryType.VisualCppRuntime.ToString()));
+                    }
+                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
+                    {
+                        return VariableSpecCreateEnumSelection(Cpp.CppLibraryType.libstdcxx, new HashSet<Cpp.CppLibraryType> { Cpp.CppLibraryType.libstdcxx, Cpp.CppLibraryType.libcxx });
+                    }
+                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Mac)
+                    {
+                        return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.CppLibraryType.libcxx.ToString()));
+                    }
+                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.iOS)
+                    {
+                        return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.CppLibraryType.libcxx.ToString()));
+                    }
+                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
+                    {
+                        return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.CppLibraryType.libcxx.ToString()));
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException();
+                    }
+                },
+                SetVariableValue = v => Variables.CppLibrary = UnwrapEnum<Cpp.CppLibraryType>(v.String)
+            });
+
+            l.Add(new VariableItem
+            {
+                VariableName = nameof(Variables.CppLibraryForm),
+                DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.Toolchain), nameof(Variables.CLibrary), nameof(Variables.CLibraryForm), nameof(Variables.CppLibrary) },
+                GetVariableSpec = () =>
+                {
+                    if (Variables.CppLibrary == Cpp.CppLibraryType.VisualCppRuntime)
+                    {
+                        if (Variables.CLibraryForm == Cpp.CLibraryForm.Static)
+                        {
+                            return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.CppLibraryForm.Static.ToString()));
+                        }
+                        else
+                        {
+                            return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.CppLibraryForm.Dynamic.ToString()));
+                        }
+                    }
+                    else if ((Variables.CppLibrary == Cpp.CppLibraryType.libstdcxx) || (Variables.CppLibrary == Cpp.CppLibraryType.libcxx))
+                    {
+                        if ((Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Mac) || (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.iOS))
+                        {
+                            return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.CppLibraryForm.Dynamic.ToString()));
+                        }
+                        else
+                        {
+                            return VariableSpecCreateEnumSelection(Cpp.CppLibraryForm.Dynamic, new HashSet<Cpp.CppLibraryForm> { Cpp.CppLibraryForm.Static, Cpp.CppLibraryForm.Dynamic });
+                        }
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException();
+                    }
+                },
+                SetVariableValue = v => Variables.CppLibraryForm = UnwrapEnum<Cpp.CppLibraryForm>(v.String)
+            });
+
+            l.Add(new VariableItem
+            {
                 VariableName = nameof(Variables.Configuration),
                 DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.Toolchain) },
                 GetVariableSpec = () =>
@@ -285,7 +407,7 @@ namespace TypeMake
             l.Add(new VariableItem
             {
                 VariableName = nameof(Variables.BuildDirectory),
-                DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.Toolchain), nameof(Variables.Compiler), nameof(Variables.TargetArchitecture), nameof(Variables.Configuration), nameof(Variables.SourceDirectory) },
+                DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.TargetArchitecture), nameof(Variables.Toolchain), nameof(Variables.Compiler), nameof(Variables.Configuration), nameof(Variables.SourceDirectory) },
                 GetVariableSpec = () =>
                 {
                     String DefaultBuildDir = null;
@@ -297,12 +419,12 @@ namespace TypeMake
                         }
                         else
                         {
-                            DefaultBuildDir = Variables.SourceDirectory / $"build/windows_{Variables.Toolchain}_{Variables.Compiler}_{Variables.TargetArchitecture}_{Variables.Configuration}";
+                            DefaultBuildDir = Variables.SourceDirectory / $"build/windows_{Variables.TargetArchitecture}_{Variables.Toolchain}_{Variables.Compiler}_{Variables.Configuration}";
                         }
                     }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
                     {
-                        DefaultBuildDir = Variables.SourceDirectory / $"build/linux_{Variables.Toolchain}_{Variables.Compiler}_{Variables.TargetArchitecture}_{Variables.Configuration}";
+                        DefaultBuildDir = Variables.SourceDirectory / $"build/linux_{Variables.TargetArchitecture}_{Variables.Toolchain}_{Variables.Compiler}_{Variables.Configuration}";
                     }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Mac)
                     {
@@ -321,7 +443,7 @@ namespace TypeMake
                     }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
                     {
-                        DefaultBuildDir = Variables.SourceDirectory / $"build/android_{Variables.Toolchain.ToString().Replace("Gradle_", "G")}_{Variables.TargetArchitecture}_{Variables.Configuration}";
+                        DefaultBuildDir = Variables.SourceDirectory / $"build/android_{Variables.TargetArchitecture}_{Variables.Toolchain.ToString().Replace("Gradle_", "G")}_{Variables.Configuration}";
                     }
                     else
                     {
@@ -1037,10 +1159,10 @@ namespace TypeMake
             l.Add(new VariableItem
             {
                 VariableName = nameof(Variables.SelectedProjects),
-                DependentVariableNames = new List<String> { nameof(Variables.Toolchain), nameof(Variables.Compiler), nameof(Variables.HostOperatingSystem), nameof(Variables.HostArchitecture), nameof(Variables.TargetOperatingSystem), nameof(Variables.TargetArchitecture), nameof(Variables.Configuration), nameof(Variables.SourceDirectory), nameof(Variables.BuildDirectory), nameof(Variables.DevelopmentTeam), nameof(Variables.VSVersion), nameof(Variables.Jdk), nameof(Variables.AndroidSdk), nameof(Variables.AndroidNdk), nameof(Variables.CC), nameof(Variables.CXX), nameof(Variables.AR), nameof(Variables.ForceRegenerate), nameof(Variables.EnableNonTargetingOperatingSystemDummy) },
+                DependentVariableNames = new List<String> { nameof(Variables.HostOperatingSystem), nameof(Variables.HostArchitecture), nameof(Variables.TargetOperatingSystem), nameof(Variables.TargetArchitecture), nameof(Variables.Toolchain), nameof(Variables.Compiler), nameof(Variables.CLibrary), nameof(Variables.CLibraryForm), nameof(Variables.CppLibrary), nameof(Variables.CppLibraryForm), nameof(Variables.Configuration), nameof(Variables.SourceDirectory), nameof(Variables.BuildDirectory), nameof(Variables.DevelopmentTeam), nameof(Variables.VSVersion), nameof(Variables.Jdk), nameof(Variables.AndroidSdk), nameof(Variables.AndroidNdk), nameof(Variables.CC), nameof(Variables.CXX), nameof(Variables.AR), nameof(Variables.ForceRegenerate), nameof(Variables.EnableNonTargetingOperatingSystemDummy) },
                 GetVariableSpec = () =>
                 {
-                    var m = new Make(Variables.Toolchain, Variables.Compiler, Variables.HostOperatingSystem, Variables.HostArchitecture, Variables.TargetOperatingSystem, Variables.TargetArchitecture, Variables.Configuration, Variables.SourceDirectory, Variables.BuildDirectory, Variables.DevelopmentTeam, Variables.VSVersion, Variables.EnableJava, Variables.Jdk, Variables.AndroidSdk, Variables.AndroidNdk, Variables.CC, Variables.CXX, Variables.AR, Variables.ForceRegenerate, Variables.EnableNonTargetingOperatingSystemDummy);
+                    var m = new Make(Variables.HostOperatingSystem, Variables.HostArchitecture, Variables.TargetOperatingSystem, Variables.TargetArchitecture, Variables.Toolchain, Variables.Compiler, Variables.CLibrary, Variables.CLibraryForm, Variables.CppLibrary, Variables.CppLibraryForm, Variables.Configuration, Variables.SourceDirectory, Variables.BuildDirectory, Variables.DevelopmentTeam, Variables.VSVersion, Variables.EnableJava, Variables.Jdk, Variables.AndroidSdk, Variables.AndroidNdk, Variables.CC, Variables.CXX, Variables.AR, Variables.ForceRegenerate, Variables.EnableNonTargetingOperatingSystemDummy);
                     Variables.m = m;
                     Projects = m.GetAvailableProjects();
                     var ProjectSet = new HashSet<String>(Projects.Values.Select(t => t.Definition.Name));

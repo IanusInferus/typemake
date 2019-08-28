@@ -13,27 +13,35 @@ namespace TypeMake.Cpp
         private List<ProjectReference> ProjectReferences;
         private PathString InputDirectory;
         private PathString OutputDirectory;
-        private ToolchainType Toolchain;
-        private CompilerType Compiler;
         private OperatingSystemType HostOperatingSystem;
         private ArchitectureType HostArchitecture;
         private OperatingSystemType TargetOperatingSystem;
         private ArchitectureType? TargetArchitectureType;
         private ConfigurationType? ConfigurationType;
+        private ToolchainType Toolchain;
+        private CompilerType Compiler;
+        private CLibraryType CLibrary;
+        private CLibraryForm CLibraryForm;
+        private CppLibraryType CppLibrary;
+        private CppLibraryForm CppLibraryForm;
         private bool EnableAbsolutePath;
 
-        public CMakeProjectGenerator(Project Project, List<ProjectReference> ProjectReferences, PathString InputDirectory, PathString OutputDirectory, ToolchainType Toolchain, CompilerType Compiler, OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType? TargetArchitectureType, ConfigurationType? ConfigurationType, bool EnableAbsolutePath)
+        public CMakeProjectGenerator(Project Project, List<ProjectReference> ProjectReferences, PathString InputDirectory, PathString OutputDirectory, OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType? TargetArchitectureType, ToolchainType Toolchain, CompilerType Compiler, CLibraryType CLibrary, CLibraryForm CLibraryForm, CppLibraryType CppLibrary, CppLibraryForm CppLibraryForm, ConfigurationType? ConfigurationType, bool EnableAbsolutePath)
         {
             this.Project = Project;
             this.ProjectReferences = ProjectReferences;
             this.InputDirectory = InputDirectory.FullPath;
             this.OutputDirectory = OutputDirectory.FullPath;
-            this.Toolchain = Toolchain;
-            this.Compiler = Compiler;
             this.HostOperatingSystem = HostOperatingSystem;
             this.HostArchitecture = HostArchitecture;
             this.TargetOperatingSystem = TargetOperatingSystem;
             this.TargetArchitectureType = TargetArchitectureType;
+            this.Toolchain = Toolchain;
+            this.Compiler = Compiler;
+            this.CLibrary = CLibrary;
+            this.CLibraryForm = CLibraryForm;
+            this.CppLibrary = CppLibrary;
+            this.CppLibraryForm = CppLibraryForm;
             this.ConfigurationType = ConfigurationType;
             this.EnableAbsolutePath = EnableAbsolutePath;
         }
@@ -49,7 +57,7 @@ namespace TypeMake.Cpp
 
         private IEnumerable<String> GenerateLines(PathString CMakeListsPath, PathString BaseDirPath)
         {
-            var conf = Project.Configurations.Merged(Project.TargetType, Toolchain, Compiler, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitectureType, ConfigurationType);
+            var conf = Project.Configurations.Merged(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitectureType, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType);
 
             yield return @"cmake_minimum_required(VERSION 3.3.2)";
             yield return $@"project({Project.Name})";
@@ -133,7 +141,7 @@ namespace TypeMake.Cpp
             foreach (var f in conf.Files)
             {
                 var FilePath = f.Path.FullPath.RelativeTo(BaseDirPath, EnableAbsolutePath).ToString(PathStringStyle.Unix);
-                var FileConf = f.Configurations.Merged(Project.TargetType, Toolchain, Compiler, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitectureType, ConfigurationType);
+                var FileConf = f.Configurations.Merged(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitectureType, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType);
                 var FileDefines = FileConf.Defines;
                 if (FileDefines.Count != 0)
                 {

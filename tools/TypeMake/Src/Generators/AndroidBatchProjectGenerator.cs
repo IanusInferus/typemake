@@ -14,13 +14,17 @@ namespace TypeMake.Cpp
         private PathString InputDirectory;
         private PathString OutputDirectory;
         private PathString SolutionOutputDirectory;
-        private ToolchainType Toolchain;
-        private CompilerType Compiler;
         private OperatingSystemType HostOperatingSystem;
         private ArchitectureType HostArchitecture;
         private OperatingSystemType TargetOperatingSystem;
         private ArchitectureType TargetArchitectureType;
         private ConfigurationType ConfigurationType;
+        private ToolchainType Toolchain;
+        private CompilerType Compiler;
+        private CLibraryType CLibrary;
+        private CLibraryForm CLibraryForm;
+        private CppLibraryType CppLibrary;
+        private CppLibraryForm CppLibraryForm;
         private PathString Jdk;
         private PathString AndroidSdk;
         private PathString AndroidNdk;
@@ -33,7 +37,7 @@ namespace TypeMake.Cpp
         private String KeyPass;
         private bool IsDebug;
 
-        public AndroidBatchProjectGenerator(String SolutionName, Project Project, List<ProjectReference> ProjectReferences, PathString InputDirectory, PathString OutputDirectory, PathString SolutionOutputDirectory, ToolchainType Toolchain, CompilerType Compiler, OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType? TargetArchitectureType, ConfigurationType? ConfigurationType, PathString Jdk, PathString AndroidSdk, PathString AndroidNdk, String BuildToolVersion, int MinSdkVersion, int TargetSdkVersion, PathString KeyStore, String KeyStorePass, String KeyAlias, String KeyPass, bool IsDebug)
+        public AndroidBatchProjectGenerator(String SolutionName, Project Project, List<ProjectReference> ProjectReferences, PathString InputDirectory, PathString OutputDirectory, PathString SolutionOutputDirectory, OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType? TargetArchitectureType, ToolchainType Toolchain, CompilerType Compiler, CLibraryType CLibrary, CLibraryForm CLibraryForm, CppLibraryType CppLibrary, CppLibraryForm CppLibraryForm, ConfigurationType? ConfigurationType, PathString Jdk, PathString AndroidSdk, PathString AndroidNdk, String BuildToolVersion, int MinSdkVersion, int TargetSdkVersion, PathString KeyStore, String KeyStorePass, String KeyAlias, String KeyPass, bool IsDebug)
         {
             this.SolutionName = SolutionName;
             this.ProjectName = Project.Name.Split(':').First();
@@ -42,8 +46,6 @@ namespace TypeMake.Cpp
             this.InputDirectory = InputDirectory.FullPath;
             this.OutputDirectory = OutputDirectory.FullPath;
             this.SolutionOutputDirectory = SolutionOutputDirectory.FullPath;
-            this.Toolchain = Toolchain;
-            this.Compiler = Compiler;
             this.HostOperatingSystem = HostOperatingSystem;
             this.HostArchitecture = HostArchitecture;
             this.TargetOperatingSystem = TargetOperatingSystem;
@@ -56,6 +58,12 @@ namespace TypeMake.Cpp
             {
                 throw new NotSupportedException("ConfigurationTypeIsNull");
             }
+            this.Toolchain = Toolchain;
+            this.Compiler = Compiler;
+            this.CLibrary = CLibrary;
+            this.CLibraryForm = CLibraryForm;
+            this.CppLibrary = CppLibrary;
+            this.CppLibraryForm = CppLibraryForm;
             this.ConfigurationType = ConfigurationType.Value;
             this.Jdk = Jdk;
             this.AndroidSdk = AndroidSdk;
@@ -88,7 +96,7 @@ namespace TypeMake.Cpp
 
         private IEnumerable<String> GenerateLines(String BuildBatchPath, String BaseDirPath)
         {
-            var conf = Project.Configurations.Merged(Project.TargetType, Toolchain, Compiler, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitectureType, ConfigurationType);
+            var conf = Project.Configurations.Merged(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitectureType, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType);
 
             var Abi = GetArchitectureString(TargetArchitectureType);
             var ProjectTargetName = Project.TargetName ?? ProjectName;

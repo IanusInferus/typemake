@@ -18,9 +18,10 @@ namespace TypeMake.Cpp
         private ArchitectureType HostArchitecture;
         private OperatingSystemType TargetOperatingSystem;
         private ArchitectureType TargetArchitectureType;
+        private CppLibraryForm CppLibraryForm; //static libc++ requires a custom build
         private String DevelopmentTeam;
 
-        public PbxprojGenerator(Project Project, List<ProjectReference> ProjectReferences, PathString InputDirectory, PathString OutputDirectory, String PbxprojTemplateText, OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, String DevelopmentTeam = null)
+        public PbxprojGenerator(Project Project, List<ProjectReference> ProjectReferences, PathString InputDirectory, PathString OutputDirectory, String PbxprojTemplateText, OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, CppLibraryForm CppLibraryForm, String DevelopmentTeam = null)
         {
             this.Project = Project;
             this.ProjectReferences = ProjectReferences;
@@ -31,6 +32,7 @@ namespace TypeMake.Cpp
             this.HostArchitecture = HostArchitecture;
             this.TargetOperatingSystem = TargetOperatingSystem;
             this.TargetArchitectureType = TargetOperatingSystem == OperatingSystemType.iOS ? ArchitectureType.arm64 : ArchitectureType.x64;
+            this.CppLibraryForm = CppLibraryForm;
             this.DevelopmentTeam = DevelopmentTeam;
         }
 
@@ -86,7 +88,7 @@ namespace TypeMake.Cpp
             ObjectReferenceValidityTest(Objects, RootObjectKey);
 
             var RelativePathToObjects = new Dictionary<String, String>();
-            foreach (var conf in Project.Configurations.Matches(Project.TargetType, ToolchainType.XCode, CompilerType.clang, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitectureType, null))
+            foreach (var conf in Project.Configurations.Matches(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitectureType, ToolchainType.XCode, CompilerType.clang, CLibraryType.libSystem, CLibraryForm.Dynamic, CppLibraryType.libcxx, CppLibraryForm, null))
             {
                 foreach (var f in conf.Files)
                 {
@@ -116,7 +118,7 @@ namespace TypeMake.Cpp
                     var BuildConfiguration = Objects[BuildConfigurationKey.String].Dict;
                     var ConfigurationType = (ConfigurationType)(Enum.Parse(typeof(ConfigurationType), BuildConfiguration["name"].String));
                     var BuildSettings = BuildConfiguration["buildSettings"].Dict;
-                    var conf = Project.Configurations.Merged(Project.TargetType, ToolchainType.XCode, CompilerType.clang, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitectureType, ConfigurationType);
+                    var conf = Project.Configurations.Merged(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitectureType, ToolchainType.XCode, CompilerType.clang, CLibraryType.libSystem, CLibraryForm.Dynamic, CppLibraryType.libcxx, CppLibraryForm, ConfigurationType);
 
                     BuildSettings["PRODUCT_NAME"] = Value.CreateString(ProductName);
                     if ((Project.TargetType == TargetType.MacApplication) || (Project.TargetType == TargetType.MacBundle) || (Project.TargetType == TargetType.iOSApplication) || (Project.TargetType == TargetType.iOSStaticFramework) || (Project.TargetType == TargetType.iOSSharedFramework))
@@ -199,7 +201,7 @@ namespace TypeMake.Cpp
                     }
                 }
 
-                var confF = Project.Configurations.Merged(Project.TargetType, ToolchainType.XCode, CompilerType.clang, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitectureType, null);
+                var confF = Project.Configurations.Merged(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitectureType, ToolchainType.XCode, CompilerType.clang, CLibraryType.libSystem, CLibraryForm.Dynamic, CppLibraryType.libcxx, CppLibraryForm, null);
                 foreach (var PhaseKey in Target["buildPhases"].Array)
                 {
                     var Phase = Objects[PhaseKey.String].Dict;
@@ -216,7 +218,7 @@ namespace TypeMake.Cpp
                                 File.Add("fileRef", Value.CreateString(RelativePathToObjects[RelativePath]));
                                 File.Add("isa", Value.CreateString("PBXBuildFile"));
 
-                                var FileConf = f.Configurations.Merged(Project.TargetType, ToolchainType.XCode, CompilerType.clang, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitectureType, null);
+                                var FileConf = f.Configurations.Merged(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitectureType, ToolchainType.XCode, CompilerType.clang, CLibraryType.libSystem, CLibraryForm.Dynamic, CppLibraryType.libcxx, CppLibraryForm, null);
 
                                 var FileFlags = FileConf.CommonFlags;
                                 if ((f.Type == FileType.CSource) || (f.Type == FileType.ObjectiveCSource))
@@ -351,7 +353,7 @@ namespace TypeMake.Cpp
                 var ConfigurationType = (ConfigurationType)(Enum.Parse(typeof(ConfigurationType), BuildConfiguration["name"].String));
                 var BuildSettings = BuildConfiguration["buildSettings"].Dict;
 
-                var conf = Project.Configurations.Merged(Project.TargetType, ToolchainType.XCode, CompilerType.clang, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitectureType, ConfigurationType);
+                var conf = Project.Configurations.Merged(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitectureType, ToolchainType.XCode, CompilerType.clang, CLibraryType.libSystem, CLibraryForm.Dynamic, CppLibraryType.libcxx, CppLibraryForm, ConfigurationType);
 
                 var IncludeDirectories = conf.IncludeDirectories.Select(d => d.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix)).ToList();
                 if (IncludeDirectories.Count != 0)
