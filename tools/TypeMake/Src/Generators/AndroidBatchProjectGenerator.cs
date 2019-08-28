@@ -18,13 +18,13 @@ namespace TypeMake.Cpp
         private ArchitectureType HostArchitecture;
         private OperatingSystemType TargetOperatingSystem;
         private ArchitectureType TargetArchitectureType;
-        private ConfigurationType ConfigurationType;
         private ToolchainType Toolchain;
         private CompilerType Compiler;
         private CLibraryType CLibrary;
         private CLibraryForm CLibraryForm;
         private CppLibraryType CppLibrary;
         private CppLibraryForm CppLibraryForm;
+        private ConfigurationType ConfigurationType;
         private PathString Jdk;
         private PathString AndroidSdk;
         private PathString AndroidNdk;
@@ -142,7 +142,8 @@ namespace TypeMake.Cpp
                 var ZipAlign = AndroidSdk / "build-tools" / BuildToolVersion / "zipalign.exe";
                 var ApkSigner = AndroidSdk / "build-tools" / BuildToolVersion / "apksigner.bat";
                 var AndroidJar = AndroidSdk / $"platforms/android-{TargetSdkVersion}" / "android.jar";
-                var Strip = AndroidNdk / "toolchains/llvm/prebuilt/windows-x86_64/bin/llvm-strip.exe";
+                var Strip = AndroidNdk / $"toolchains/llvm/prebuilt/{GetHostArchitectureString(HostOperatingSystem, HostArchitecture)}/bin/llvm-strip.exe";
+                var LibcxxSo = AndroidNdk / $"toolchains/llvm/prebuilt/{GetHostArchitectureString(HostOperatingSystem, HostArchitecture)}/sysroot/usr/lib/{GetTargetTripletString(TargetArchitectureType)}/libc++_shared.so";
 
                 yield return @"@echo off";
                 yield return @"setlocal";
@@ -162,6 +163,10 @@ namespace TypeMake.Cpp
                 yield return @"";
                 yield return @":: strip debug symbols";
                 yield return $@"md {JniLibs}\{Abi} || exit /b 1";
+                if ((CppLibrary == CppLibraryType.libcxx) && (CppLibraryForm == CppLibraryForm.Dynamic))
+                {
+                    yield return $@"copy {e(LibcxxSo)} {JniLibs}\{Abi}\ || exit /b 1";
+                }
                 foreach (var LibPath in SoLibraryPaths)
                 {
                     yield return $@"{e(Strip)} {e(LibPath)} -o {e(JniLibs.AsPath() / Abi / LibPath.FileName)} -discard-all -strip-all || exit /b 1";
@@ -246,7 +251,8 @@ namespace TypeMake.Cpp
                 var ZipAlign = AndroidSdk / "build-tools" / BuildToolVersion / "zipalign";
                 var ApkSigner = AndroidSdk / "build-tools" / BuildToolVersion / "apksigner";
                 var AndroidJar = AndroidSdk / $"platforms/android-{TargetSdkVersion}" / "android.jar";
-                var Strip = AndroidNdk / $"toolchains/llvm/prebuilt/{(HostOperatingSystem == OperatingSystemType.Mac ? "darwin" : "linux")}-x86_64/bin/llvm-strip";
+                var Strip = AndroidNdk / $"toolchains/llvm/prebuilt/{GetHostArchitectureString(HostOperatingSystem, HostArchitecture)}-x86_64/bin/llvm-strip";
+                var LibcxxSo = AndroidNdk / $"toolchains/llvm/prebuilt/{GetHostArchitectureString(HostOperatingSystem, HostArchitecture)}-x86_64/sysroot/usr/lib/{GetTargetTripletString(TargetArchitectureType)}/libc++_shared.so";
 
                 yield return @"#!/bin/bash";
                 yield return @"set -e";
@@ -257,6 +263,10 @@ namespace TypeMake.Cpp
                 yield return @"";
                 yield return @"# strip debug symbols";
                 yield return $@"mkdir -p {JniLibs}/{Abi}";
+                if ((CppLibrary == CppLibraryType.libcxx) && (CppLibraryForm == CppLibraryForm.Dynamic))
+                {
+                    yield return $@"cp {e(LibcxxSo)} {JniLibs}/{Abi}/";
+                }
                 foreach (var LibPath in SoLibraryPaths)
                 {
                     yield return $@"{e(Strip)} {e(LibPath)} -o {e(JniLibs.AsPath() / Abi / LibPath.FileName)} -discard-all -strip-all";
@@ -349,6 +359,48 @@ namespace TypeMake.Cpp
             else if (Architecture == Cpp.ArchitectureType.arm64)
             {
                 return "arm64-v8a";
+            }
+            else
+            {
+                throw new NotSupportedException("NotSupportedArchitecture: " + Architecture.ToString());
+            }
+        }
+        public static String GetHostArchitectureString(OperatingSystemType OperatingSystem, ArchitectureType Architecture)
+        {
+            if ((OperatingSystem == OperatingSystemType.Windows) && (Architecture == ArchitectureType.x64))
+            {
+                return "windows-x86_64";
+            }
+            if ((OperatingSystem == OperatingSystemType.Linux) && (Architecture == ArchitectureType.x64))
+            {
+                return "linux-x86_64";
+            }
+            if ((OperatingSystem == OperatingSystemType.Mac) && (Architecture == ArchitectureType.x64))
+            {
+                return "darwin-x86_64";
+            }
+            else
+            {
+                throw new NotSupportedException("NotSupportedHost: " + OperatingSystem.ToString() + " " + Architecture.ToString());
+            }
+        }
+        public static String GetTargetTripletString(ArchitectureType Architecture)
+        {
+            if (Architecture == Cpp.ArchitectureType.x86)
+            {
+                return "i686-linux-android";
+            }
+            else if (Architecture == Cpp.ArchitectureType.x64)
+            {
+                return "x86_64-linux-android";
+            }
+            else if (Architecture == Cpp.ArchitectureType.armv7a)
+            {
+                return "arm-linux-androideabi";
+            }
+            else if (Architecture == Cpp.ArchitectureType.arm64)
+            {
+                return "aarch64-linux-android";
             }
             else
             {

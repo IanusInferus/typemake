@@ -26,8 +26,9 @@ namespace TypeMake.Cpp
         private CppLibraryType CppLibrary;
         private CppLibraryForm CppLibraryForm;
         private ConfigurationType? ConfigurationType;
+        private PathString AndroidNdk;
 
-        public GradleProjectGenerator(String SolutionName, Project Project, List<ProjectReference> ProjectReferences, PathString InputDirectory, PathString OutputDirectory, PathString SolutionOutputDirectory, String BuildGradleTemplateText, OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType? TargetArchitectureType, ToolchainType Toolchain, CompilerType Compiler, CLibraryType CLibrary, CLibraryForm CLibraryForm, CppLibraryType CppLibrary, CppLibraryForm CppLibraryForm, ConfigurationType? ConfigurationType)
+        public GradleProjectGenerator(String SolutionName, Project Project, List<ProjectReference> ProjectReferences, PathString InputDirectory, PathString OutputDirectory, PathString SolutionOutputDirectory, String BuildGradleTemplateText, OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType? TargetArchitectureType, ToolchainType Toolchain, CompilerType Compiler, CLibraryType CLibrary, CLibraryForm CLibraryForm, CppLibraryType CppLibrary, CppLibraryForm CppLibraryForm, ConfigurationType? ConfigurationType, PathString AndroidNdk)
         {
             this.SolutionName = SolutionName;
             this.ProjectName = Project.Name.Split(':').First();
@@ -52,6 +53,7 @@ namespace TypeMake.Cpp
             this.CppLibrary = CppLibrary;
             this.CppLibraryForm = CppLibraryForm;
             this.ConfigurationType = ConfigurationType;
+            this.AndroidNdk = AndroidNdk;
         }
 
         public void Generate(bool ForceRegenerate)
@@ -132,6 +134,12 @@ namespace TypeMake.Cpp
                     SoLibraryPathsRelease.Add(SolutionOutputDirectory / $"{ArchitectureType}_Release" / Lib);
                 }
             }
+            if ((CppLibrary == CppLibraryType.libcxx) && (CppLibraryForm == CppLibraryForm.Dynamic))
+            {
+                var LibcxxSo = AndroidNdk / $"toolchains/llvm/prebuilt/{GetHostArchitectureString(HostOperatingSystem, HostArchitecture)}-x86_64/sysroot/usr/lib/{GetTargetTripletString(TargetArchitectureType.Value)}/libc++_shared.so";
+                SoLibraryPathsDebug.Add(LibcxxSo);
+                SoLibraryPathsRelease.Add(LibcxxSo);
+            }
             var LibsDebug = String.Join(", ", SoLibraryPathsDebug.Select(p => "'" + p.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix) + "'"));
             var LibsRelease = String.Join(", ", SoLibraryPathsRelease.Select(p => "'" + p.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix) + "'"));
             Results = Results.Select(Line => Line.Replace("${ApplicationId}", ApplicationId));
@@ -166,6 +174,48 @@ namespace TypeMake.Cpp
             else if (Architecture == Cpp.ArchitectureType.arm64)
             {
                 return "arm64-v8a";
+            }
+            else
+            {
+                throw new NotSupportedException("NotSupportedArchitecture: " + Architecture.ToString());
+            }
+        }
+        public static String GetHostArchitectureString(OperatingSystemType OperatingSystem, ArchitectureType Architecture)
+        {
+            if ((OperatingSystem == OperatingSystemType.Windows) && (Architecture == ArchitectureType.x64))
+            {
+                return "windows-x86_64";
+            }
+            if ((OperatingSystem == OperatingSystemType.Linux) && (Architecture == ArchitectureType.x64))
+            {
+                return "linux-x86_64";
+            }
+            if ((OperatingSystem == OperatingSystemType.Mac) && (Architecture == ArchitectureType.x64))
+            {
+                return "darwin-x86_64";
+            }
+            else
+            {
+                throw new NotSupportedException("NotSupportedHost: " + OperatingSystem.ToString() + " " + Architecture.ToString());
+            }
+        }
+        public static String GetTargetTripletString(ArchitectureType Architecture)
+        {
+            if (Architecture == Cpp.ArchitectureType.x86)
+            {
+                return "i686-linux-android";
+            }
+            else if (Architecture == Cpp.ArchitectureType.x64)
+            {
+                return "x86_64-linux-android";
+            }
+            else if (Architecture == Cpp.ArchitectureType.armv7a)
+            {
+                return "arm-linux-androideabi";
+            }
+            else if (Architecture == Cpp.ArchitectureType.arm64)
+            {
+                return "aarch64-linux-android";
             }
             else
             {
