@@ -832,7 +832,7 @@ namespace TypeMake
                 {
                     MatchingCompilers = new List<CompilerType> { CompilerType.gcc, CompilerType.clang },
                     MatchingConfigurationTypes = new List<ConfigurationType> { Cpp.ConfigurationType.Release },
-                    CommonFlags = ParseFlags("-O2 -g")
+                    CommonFlags = ParseFlags("-O3 -g")
                 },
                 new Configuration
                 {
@@ -848,6 +848,13 @@ namespace TypeMake
                     MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Android },
                     CommonFlags = ParseFlags("-fno-addrsig -fPIE -fPIC -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -Wa,--noexecstack"),
                     LinkerFlags = ParseFlags("-Wl,--build-id -Wl,--warn-shared-textrel -Wl,--fatal-warnings -Wl,--no-undefined -Wl,-z,noexecstack -Wl,-z,relro -Wl,-z,now")
+                },
+                new Configuration
+                {
+                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Linux, OperatingSystemType.Android },
+                    MatchingCompilers = new List<CompilerType> { CompilerType.gcc, CompilerType.clang },
+                    MatchingConfigurationTypes = new List<ConfigurationType> { Cpp.ConfigurationType.Release },
+                    LinkerFlags = ParseFlags("-Wl,--gc-sections")
                 },
                 new Configuration
                 {
