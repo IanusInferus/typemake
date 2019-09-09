@@ -665,9 +665,20 @@ namespace TypeMake
                 new Configuration
                 {
                     MatchingCompilers = new List<CompilerType> { CompilerType.gcc, CompilerType.clang },
-                    CommonFlags = ParseFlags("-fsigned-char -Werror=return-type -Werror=address -Werror=sequence-point -Wformat -Werror=format-security -Wuninitialized -Winit-self -Wpointer-arith -Wno-unused-function -Wno-comment -fvisibility=hidden"),
-                    CFlags = ParseFlags("-Wstrict-prototypes -Werror=implicit-function-declaration"),
-                    CppFlags = ParseFlags("-Wsign-promo -fvisibility-inlines-hidden")
+                    CommonFlags = ParseFlags("-fsigned-char -fvisibility=hidden"),
+                    CppFlags = ParseFlags("-fvisibility-inlines-hidden")
+                },
+                new Configuration
+                {
+                    MatchingCompilers = new List<CompilerType> { CompilerType.VisualCpp },
+                    CommonFlags = ParseFlags("/we4172 /we4715")
+                },
+                new Configuration
+                {
+                    MatchingCompilers = new List<CompilerType> { CompilerType.gcc, CompilerType.clang },
+                    CommonFlags = ParseFlags("-Werror=return-type -Werror=address -Werror=sequence-point -Wformat -Werror=format-security -Wuninitialized -Winit-self -Wpointer-arith -Wno-unused-function -Wno-comment"),
+                    CFlags = ParseFlags("-Wstrict-prototypes -Wimplicit-function-declaration"),
+                    CppFlags = ParseFlags("-Wsign-promo")
                 },
                 new Configuration
                 {
