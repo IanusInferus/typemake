@@ -676,7 +676,7 @@ namespace TypeMake
                 new Configuration
                 {
                     MatchingCompilers = new List<CompilerType> { CompilerType.gcc, CompilerType.clang },
-                    CommonFlags = ParseFlags("-Werror=return-type -Werror=address -Werror=sequence-point -Wformat -Werror=format-security -Wuninitialized -Winit-self -Wpointer-arith -Wno-unused-function -Wno-comment"),
+                    CommonFlags = ParseFlags("-Werror=return-type -Werror=address -Werror=sequence-point -Werror=format-security -Wformat -Wuninitialized -Winit-self -Wpointer-arith -Wundef"),
                     CFlags = ParseFlags("-Wstrict-prototypes -Wimplicit-function-declaration"),
                     CppFlags = ParseFlags("-Wsign-promo")
                 },
@@ -688,7 +688,7 @@ namespace TypeMake
                 new Configuration
                 {
                     MatchingCompilers = new List<CompilerType> { CompilerType.clang },
-                    CommonFlags = ParseFlags("-Werror=return-stack-address"),
+                    CommonFlags = ParseFlags("-Werror=return-stack-address -Werror=incomplete-implementation -Werror=mismatched-return-types"),
                 },
                 new Configuration
                 {
