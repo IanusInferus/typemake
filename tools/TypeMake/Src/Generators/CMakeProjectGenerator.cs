@@ -207,6 +207,17 @@ namespace TypeMake.Cpp
                 {
                     PostObjectFileLinkerFlags.Add(p.Name);
                 }
+                Func<String, String> WrapLinkerFlag = f =>
+                {
+                    if (TargetOperatingSystem == OperatingSystemType.Mac)
+                    {
+                        return "\"-Wl,-pie " + f + " -Wl,-pie\""; //bypass CMake limitation with the order of linker flags and the addition of '-l' before library with a relative or absolute path
+                    }
+                    else
+                    {
+                        return "\"-Wl,--as-needed " + f + " -Wl,--no-as-needed\""; //bypass CMake limitation with the order of linker flags and the addition of '-l' before library with a relative or absolute path
+                    }
+                };
                 foreach (var Lib in conf.Libs)
                 {
                     if (Lib.Parts.Count == 1)
@@ -215,17 +226,10 @@ namespace TypeMake.Cpp
                     }
                     else
                     {
-                        if (TargetOperatingSystem == OperatingSystemType.Mac)
-                        {
-                            PostObjectFileLinkerFlags.Add("\"-Wl,-pie " + Lib.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix) + " -Wl,-pie\""); //bypass CMake limitation with the order of linker flags and the addition of '-l' before library with a relative or absolute path
-                        }
-                        else
-                        {
-                            PostObjectFileLinkerFlags.Add("\"-Wl,--as-needed " + Lib.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix) + " -Wl,--no-as-needed\""); //bypass CMake limitation with the order of linker flags and the addition of '-l' before library with a relative or absolute path
-                        }
+                        PostObjectFileLinkerFlags.Add(WrapLinkerFlag(Lib.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix)));
                     }
                 }
-                PostObjectFileLinkerFlags.AddRange(conf.PostLinkerFlags);
+                PostObjectFileLinkerFlags.AddRange(conf.PostLinkerFlags.Select(f => WrapLinkerFlag(f)));
 
                 if (PostObjectFileLinkerFlags.Count > 0)
                 {
