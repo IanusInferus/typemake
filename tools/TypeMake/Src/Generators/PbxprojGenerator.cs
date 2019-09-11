@@ -383,10 +383,10 @@ namespace TypeMake.Cpp
                     {
                         BuildSettings["LIBRARY_SEARCH_PATHS"] = Value.CreateArray(LibDirectories.Concat(new List<String> { "$(inherited)" }).Select(d => Value.CreateString(d)).ToList());
                     }
-                    var LinkerFlags = conf.Libs.Select(Lib => Lib.Parts.Count == 1 ? Lib.ToString(PathStringStyle.Unix) : Lib.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix)).Concat(conf.LinkerFlags).ToList();
+                    var LinkerFlags = conf.LinkerFlags.Concat(conf.Libs.Select(Lib => Lib.Parts.Count == 1 ? Lib.ToString(PathStringStyle.Unix) : Lib.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix))).Concat(conf.PostLinkerFlags).ToList();
                     if (LinkerFlags.Count != 0)
                     {
-                        BuildSettings["OTHER_LDFLAGS"] = Value.CreateArray(LinkerFlags.Concat(new List<String> { "$(inherited)" }).Select(d => Value.CreateString(d)).ToList());
+                        BuildSettings["OTHER_LDFLAGS"] = Value.CreateArray(new List<String> { "$(inherited)" }.Concat(LinkerFlags).Select(d => Value.CreateString(d)).ToList());
                     }
                 }
 

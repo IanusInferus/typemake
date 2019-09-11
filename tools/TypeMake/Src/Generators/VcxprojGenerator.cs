@@ -224,10 +224,11 @@ namespace TypeMake.Cpp
                     {
                         Link.SetElementValue(xn + "AdditionalDependencies", String.Join(";", Libs) + ";%(AdditionalDependencies)");
                     }
-                    var LinkerFlags = conf.LinkerFlags.ToList();
-                    if (LinkerFlags.Count != 0)
+                    var LinkerFlags = conf.LinkerFlags.Select(f => (f == null ? "" : Regex.IsMatch(f, @"^[0-9]+$") ? f : "\"" + f.Replace("\"", "\"\"") + "\"")).ToList();
+                    var PostLinkerFlags = conf.PostLinkerFlags.Select(f => (f == null ? "" : Regex.IsMatch(f, @"^[0-9]+$") ? f : "\"" + f.Replace("\"", "\"\"") + "\"")).ToList();
+                    if (LinkerFlags.Count + PostLinkerFlags.Count != 0)
                     {
-                        Link.SetElementValue(xn + "AdditionalOptions", "%(AdditionalOptions) " + String.Join(" ", LinkerFlags.Select(f => (f == null ? "" : Regex.IsMatch(f, @"^[0-9]+$") ? f : "\"" + f.Replace("\"", "\"\"") + "\""))));
+                        Link.SetElementValue(xn + "AdditionalOptions", String.Join(" ", LinkerFlags.Concat(new List<String> { "%(AdditionalOptions)" }).Concat(PostLinkerFlags)));
                     }
 
                     foreach (var o in conf.Options)

@@ -203,6 +203,10 @@ namespace TypeMake.Cpp
                 }
 
                 var PostObjectFileLinkerFlags = new List<String>();
+                foreach (var p in ProjectReferences)
+                {
+                    PostObjectFileLinkerFlags.Add(p.Name);
+                }
                 foreach (var Lib in conf.Libs)
                 {
                     if (Lib.Parts.Count == 1)
@@ -221,10 +225,7 @@ namespace TypeMake.Cpp
                         }
                     }
                 }
-                foreach (var p in ProjectReferences)
-                {
-                    PostObjectFileLinkerFlags.Add(p.Name);
-                }
+                PostObjectFileLinkerFlags.AddRange(conf.PostLinkerFlags);
 
                 if (PostObjectFileLinkerFlags.Count > 0)
                 {

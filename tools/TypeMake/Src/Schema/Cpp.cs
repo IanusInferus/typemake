@@ -112,6 +112,7 @@ namespace TypeMake.Cpp
         public List<PathString> LibDirectories = new List<PathString> { };
         public List<PathString> Libs = new List<PathString> { };
         public List<String> LinkerFlags = new List<String> { };
+        public List<String> PostLinkerFlags = new List<String> { };
 
         public List<File> Files = new List<File> { };
 

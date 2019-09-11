@@ -66,6 +66,7 @@ namespace TypeMake.Cpp
                 LibDirectories = Matched.SelectMany(c => c.LibDirectories).Distinct().ToList(),
                 Libs = Matched.SelectMany(c => c.Libs).Distinct().ToList(),
                 LinkerFlags = Matched.SelectMany(c => c.LinkerFlags).ToList(),
+                PostLinkerFlags = Matched.SelectMany(c => c.PostLinkerFlags).ToList(),
                 Files = Matched.SelectMany(c => c.Files).ToList(),
                 OutputDirectory = Matched.Select(c => c.OutputDirectory).Where(v => v != null).LastOrDefault()
             };
