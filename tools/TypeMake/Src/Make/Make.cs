@@ -848,7 +848,7 @@ namespace TypeMake
                     MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Android },
                     CommonFlags = ParseFlags("-fno-addrsig -fPIE -fPIC -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -Wa,--noexecstack"),
                     // https://android.googlesource.com/platform/ndk/+/master/docs/BuildSystemMaintainers.md#Unwinding
-                    LinkerFlags = ParseFlags("-Wl,--exclude-libs,libgcc.a -Wl,--exclude-libs,libatomic.a -Wl,--build-id -Wl,--warn-shared-textrel -Wl,--fatal-warnings -Wl,--no-undefined -Wl,-z,noexecstack -Wl,-z,relro -Wl,-z,now")
+                    LinkerFlags = ParseFlags("-Wl,--exclude-libs,libgcc.a -Wl,--exclude-libs,libatomic.a -Wl,--build-id=sha1 -Wl,--warn-shared-textrel -Wl,--fatal-warnings -Wl,--no-undefined -Wl,-z,noexecstack -Wl,-z,relro -Wl,-z,now")
                 },
                 new Configuration
                 {
