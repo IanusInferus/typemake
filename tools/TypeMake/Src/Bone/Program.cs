@@ -73,7 +73,7 @@ namespace TypeMake
             Console.WriteLine(@"TypeMake [<RetypemakeScript>] <Variable>* [--quiet] [--help]");
             Console.WriteLine(@"RetypemakeScript batch or bash file to get environment variables for diagnostics");
             Console.WriteLine(@"Variable <Key>=<Value> additional environment variables that only take effect in the call");
-            Console.WriteLine(@"--quiet no interactive variable input, all variables must be input from environment variables");
+            Console.WriteLine(@"--quiet no interactive variable input, all variables will be input from environment variables or use default values");
         }
     }
 }

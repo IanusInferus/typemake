@@ -372,6 +372,10 @@ namespace TypeMake
             {
                 v = "";
             }
+            if ((v == null) && Options.Quiet)
+            {
+                v = Options.DefaultValue;
+            }
             if (v == null)
             {
                 if (Options.Quiet) { throw new InvalidOperationException("Variable '" + Name + "' not exist."); }
