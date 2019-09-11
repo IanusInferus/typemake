@@ -676,7 +676,7 @@ namespace TypeMake
                 new Configuration
                 {
                     MatchingCompilers = new List<CompilerType> { CompilerType.gcc, CompilerType.clang },
-                    CommonFlags = ParseFlags("-Werror=return-type -Werror=address -Werror=sequence-point -Werror=format-security -Wformat -Wuninitialized -Winit-self -Wpointer-arith -Wundef"),
+                    CommonFlags = ParseFlags("-Werror=return-type -Werror=address -Werror=sequence-point -Werror=format-security -Werror=int-to-pointer-cast -Werror=pointer-to-int-cast -Wformat -Wuninitialized -Winit-self -Wpointer-arith -Wundef"),
                     CFlags = ParseFlags("-Wstrict-prototypes -Wimplicit-function-declaration"),
                     CppFlags = ParseFlags("-Wsign-promo")
                 },
