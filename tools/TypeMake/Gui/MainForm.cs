@@ -27,7 +27,7 @@ namespace TypeMakeGui
             FullMemory = new Shell.EnvironmentVariableMemory();
             ValidatedVariableNames = new HashSet<String>();
 
-            RebuildView();
+            RebuildView(true);
 
             if (Platform.IsWpf)
             {
@@ -69,7 +69,7 @@ namespace TypeMakeGui
             base.OnShown(e);
         }
 
-        private void RebuildView()
+        private void RebuildView(bool UseEnvironmentVariables)
         {
             Point? ScrollPosition = null;
             if (Content != null)
@@ -91,7 +91,7 @@ namespace TypeMakeGui
                     FullMemory = new Shell.EnvironmentVariableMemory();
                     ValidatedVariableNames = new HashSet<String>();
 
-                    RebuildView();
+                    RebuildView(true);
                 }
                 ofd.Dispose();
             };
@@ -101,7 +101,7 @@ namespace TypeMakeGui
             foreach (var i in SortedVariableItems)
             {
                 var r = new TableRow();
-                if (RebuildVariableRow(i, TableLayout_VariableGrid, r))
+                if (RebuildVariableRow(i, TableLayout_VariableGrid, r, UseEnvironmentVariables))
                 {
                     TableLayout_VariableGrid.Rows.Add(r);
                 }
@@ -134,7 +134,7 @@ namespace TypeMakeGui
         }
 
         private static readonly int TextBoxWidth = 1400;
-        private bool RebuildVariableRow(VariableItem i, TableLayout tl, TableRow r)
+        private bool RebuildVariableRow(VariableItem i, TableLayout tl, TableRow r, bool UseEnvironmentVariables)
         {
             r.Cells.Clear();
             r.Cells.Add(new Label { Text = i.VariableName, VerticalAlignment = VerticalAlignment.Center, Height = 24 });
@@ -260,7 +260,7 @@ namespace TypeMakeGui
                 throw new InvalidOperationException();
             }
 
-            ReadVariables(i, s, r);
+            ReadVariables(i, s, r, UseEnvironmentVariables);
             SyncVariableValue(i, s, r, false);
 
             return !i.IsHidden;
@@ -294,22 +294,22 @@ namespace TypeMakeGui
             }
         }
 
-        private void ReadVariables(VariableItem i, VariableSpec s, TableRow r)
+        private void ReadVariables(VariableItem i, VariableSpec s, TableRow r, bool UseEnvironmentVariables)
         {
             String v = null;
             if (ManualMemory.Variables.ContainsKey(i.VariableName))
             {
                 v = ManualMemory.Variables[i.VariableName];
             }
-            else
+            else if (UseEnvironmentVariables)
             {
                 v = Environment.GetEnvironmentVariable(i.VariableName);
                 if (v == "_EMPTY_")
                 {
                     v = "";
                 }
-                if (v == null) { return; }
             }
+            if (v == null) { return; }
             if (s.OnBoolean)
             {
                 bool Value;
@@ -527,7 +527,7 @@ namespace TypeMakeGui
                 //        RebuildVariableRow(Dict[VariableName], tl, Row);
                 //    }
                 //}
-                RebuildView(); //workaround Eto.Forms bug that controls disappear in partial update
+                RebuildView(false); //workaround Eto.Forms bug that controls disappear in partial update
             }
         }
 
