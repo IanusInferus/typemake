@@ -168,10 +168,26 @@ namespace TypeMake
             }
         }
 
+        private static long NewWindowSuppressionValue = 0;
+        public static bool NewWindowSuppression
+        {
+            get
+            {
+                return System.Threading.Interlocked.Read(ref NewWindowSuppressionValue) != 0;
+            }
+            set
+            {
+                System.Threading.Interlocked.Exchange(ref NewWindowSuppressionValue, value ? 1 : 0);
+            }
+        }
+
         public static int Execute(String ProgramPath, params String[] Arguments)
         {
             var psi = CreateExecuteStartInfo(ProgramPath, Arguments);
-            psi.CreateNoWindow = true;
+            if (NewWindowSuppression)
+            {
+                psi.CreateNoWindow = true;
+            }
             var Style = OperatingSystem == OperatingSystemType.Windows ? ShellArgumentStyle.CMD : ShellArgumentStyle.Bash;
             var CommandLine = Arguments.Length == 0 ? EscapeArgumentForShell(ProgramPath, Style) : EscapeArgumentForShell(ProgramPath, Style) + " " + String.Join(" ", Arguments.Select(a => EscapeArgumentForShell(a, Style)));
             Console.WriteLine(CommandLine);
@@ -182,7 +198,10 @@ namespace TypeMake
         public static KeyValuePair<int, String> ExecuteAndGetOutput(String ProgramPath, params String[] Arguments)
         {
             var psi = CreateExecuteStartInfo(ProgramPath, Arguments);
-            psi.CreateNoWindow = true;
+            if (NewWindowSuppression)
+            {
+                psi.CreateNoWindow = true;
+            }
             psi.RedirectStandardOutput = true;
             var Style = OperatingSystem == OperatingSystemType.Windows ? ShellArgumentStyle.CMD : ShellArgumentStyle.Bash;
             var CommandLine = Arguments.Length == 0 ? EscapeArgumentForShell(ProgramPath, Style) : EscapeArgumentForShell(ProgramPath, Style) + " " + String.Join(" ", Arguments.Select(a => EscapeArgumentForShell(a, Style)));
@@ -208,7 +227,10 @@ namespace TypeMake
         public static KeyValuePair<int, String> ExecuteAndGetOutput(String ProgramPath, Encoding Encoding, params String[] Arguments)
         {
             var psi = CreateExecuteStartInfo(ProgramPath, Arguments);
-            psi.CreateNoWindow = true;
+            if (NewWindowSuppression)
+            {
+                psi.CreateNoWindow = true;
+            }
             psi.RedirectStandardOutput = true;
             psi.StandardOutputEncoding = Encoding;
             var Style = OperatingSystem == OperatingSystemType.Windows ? ShellArgumentStyle.CMD : ShellArgumentStyle.Bash;

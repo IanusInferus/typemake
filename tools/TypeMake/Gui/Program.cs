@@ -9,6 +9,7 @@ namespace TypeMakeGui
         [STAThread]
         static void Main(string[] args)
         {
+            TypeMake.Shell.NewWindowSuppression = true;
             foreach (var p in args.Where(arg => arg.Contains("=")).Select(arg => arg.Split('=')))
             {
                 Environment.SetEnvironmentVariable(p[0], p[1]);
