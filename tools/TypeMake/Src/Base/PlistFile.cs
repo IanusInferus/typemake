@@ -247,6 +247,7 @@ namespace TypeMake
             {
                 foreach (var p in v.Dict)
                 {
+                    if (p.Key == "remoteGlobalIDString") { continue; }
                     ObjectReferenceValidityTestInner(Objects, p.Value, InvalidReferences, UsedReferences);
                 }
             }

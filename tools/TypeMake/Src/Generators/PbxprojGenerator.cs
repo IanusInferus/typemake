@@ -102,11 +102,48 @@ namespace TypeMake.Cpp
                 }
             }
 
+            var ProjectDependencies = new List<Value>();
             foreach (var Project in ProjectReferences)
             {
                 var VirtualPath = ("Frameworks/" + Project.Name).AsPath();
                 AddProjectReference(Objects, RootObject["mainGroup"].String, "", VirtualPath, Project, RelativePathToObjects);
+
+                if (this.Project.TargetType == TargetType.iOSStaticFramework)
+                {
+                    var TargetFileProxyHash = GetHashOfPath("PBXReferenceProxy:PBXContainerItemProxy:" + Project.Name);
+                    var TargetFileProxy = new Dictionary<String, Value>();
+                    TargetFileProxy["isa"] = Value.CreateString("PBXContainerItemProxy");
+                    TargetFileProxy["containerPortal"] = Value.CreateString(GetHashOfPath(VirtualPath.ToString(PathStringStyle.Unix)));
+                    TargetFileProxy["proxyType"] = Value.CreateString("2");
+                    TargetFileProxy["remoteGlobalIDString"] = Value.CreateString(Objects[Targets.First().String].Dict["productReference"].String);
+                    TargetFileProxy["remoteInfo"] = Value.CreateString(Project.Name);
+                    Objects.Add(TargetFileProxyHash, Value.CreateDict(TargetFileProxy));
+
+                    var FileHash = GetHashOfPath("PBXReferenceProxy:" + VirtualPath.ToString(PathStringStyle.Unix));
+                    var FileObject = new Dictionary<string, Value>();
+                    FileObject.Add("isa", Value.CreateString("PBXReferenceProxy"));
+                    FileObject.Add("fileType", Value.CreateString("archive.ar"));
+                    FileObject.Add("path", Value.CreateString("lib" + Project.Name + ".a"));
+                    FileObject.Add("remoteRef", Value.CreateString(TargetFileProxyHash));
+                    FileObject.Add("sourceTree", Value.CreateString("BUILT_PRODUCTS_DIR"));
+                    Objects.Add(FileHash, Value.CreateDict(FileObject));
+
+                    var ProductsHash = GetHashOfPath("Products:" + Project.Name);
+                    var Products = new Dictionary<String, Value>();
+                    Products["isa"] = Value.CreateString("PBXGroup");
+                    Products["children"] = Value.CreateArray(new List<Value> { Value.CreateString(FileHash) });
+                    Products["name"] = Value.CreateString("Products");
+                    Products["sourceTree"] = Value.CreateString("<group>");
+                    Objects.Add(ProductsHash, Value.CreateDict(Products));
+
+                    ProjectDependencies.Add(Value.CreateDict(new Dictionary<String, Value>
+                    {
+                        ["ProductGroup"] = Value.CreateString(ProductsHash),
+                        ["ProjectRef"] = Value.CreateString(GetHashOfPath(VirtualPath.ToString(PathStringStyle.Unix)))
+                    }));
+                }
             }
+            RootObject["projectReferences"] = Value.CreateArray(ProjectDependencies);
 
             foreach (var TargetKey in Targets)
             {
@@ -168,6 +205,9 @@ namespace TypeMake.Cpp
                         {
                             BuildSettings["MACH_O_TYPE"] = Value.CreateString("staticlib");
                             BuildSettings["GENERATE_MASTER_OBJECT_FILE"] = Value.CreateString("YES");
+
+                            var LinkerFlags = new List<String> { "-L\"$BUILT_PRODUCTS_DIR\"" }.Concat(conf.LibDirectories.Select(d => "-L" + d.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix))).Concat(ProjectReferences.Select(r => "-l" + r.Name)).Concat(conf.Libs.Select(Lib => Lib.Parts.Count == 1 ? "-l" + Lib.ToString(PathStringStyle.Unix) : Lib.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix))).ToList();
+                            BuildSettings["PRELINK_FLAGS"] = Value.CreateString(String.Join(" ", LinkerFlags));
                         }
                         else if (Project.TargetType == TargetType.iOSSharedFramework)
                         {
@@ -244,7 +284,7 @@ namespace TypeMake.Cpp
                     }
                     else if (Type == "PBXFrameworksBuildPhase")
                     {
-                        if ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary) || (Project.TargetType == TargetType.MacApplication) || (Project.TargetType == TargetType.MacBundle) || (Project.TargetType == TargetType.iOSApplication) || (Project.TargetType == TargetType.iOSStaticFramework) || (Project.TargetType == TargetType.iOSSharedFramework))
+                        if ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary) || (Project.TargetType == TargetType.MacApplication) || (Project.TargetType == TargetType.MacBundle) || (Project.TargetType == TargetType.iOSApplication) || (Project.TargetType == TargetType.iOSSharedFramework))
                         {
                             var Files = Phase["files"];
                             foreach (var Project in ProjectReferences)
@@ -295,6 +335,34 @@ namespace TypeMake.Cpp
                         }
                     }
                 }
+
+                var TargetDependencies = new List<Value>();
+                foreach (var Project in ProjectReferences)
+                {
+                    if (this.Project.TargetType == TargetType.iOSStaticFramework)
+                    {
+                        var VirtualPath = ("Frameworks/" + Project.Name).AsPath();
+
+                        var TargetProxyHash = GetHashOfPath(Target + ":PBXTargetDependency:PBXContainerItemProxy:" + Project.Name);
+                        var TargetProxy = new Dictionary<String, Value>();
+                        TargetProxy["isa"] = Value.CreateString("PBXContainerItemProxy");
+                        TargetProxy["containerPortal"] = Value.CreateString(GetHashOfPath(VirtualPath.ToString(PathStringStyle.Unix)));
+                        TargetProxy["proxyType"] = Value.CreateString("1");
+                        TargetProxy["remoteGlobalIDString"] = Value.CreateString(Targets.First().String);
+                        TargetProxy["remoteInfo"] = Value.CreateString(Project.Name);
+                        Objects.Add(TargetProxyHash, Value.CreateDict(TargetProxy));
+
+                        var TargetDependencyHash = GetHashOfPath(Target + ":PBXTargetDependency:" + Project.Name);
+                        TargetDependencies.Add(Value.CreateString(TargetDependencyHash));
+                        var TargetDependency = new Dictionary<String, Value>();
+                        TargetDependency["isa"] = Value.CreateString("PBXTargetDependency");
+                        TargetDependency["name"] = Value.CreateString(Project.Name);
+                        TargetDependency["targetProxy"] = Value.CreateString(TargetProxyHash);
+                        Objects.Add(TargetDependencyHash, Value.CreateDict(TargetDependency));
+                    }
+                }
+                Target["dependencies"] = Value.CreateArray(TargetDependencies);
+
                 Target["name"] = Value.CreateString(Project.Name);
                 Target["productName"] = Value.CreateString(ProductName);
                 var TargetFile = Objects[Target["productReference"].String];
@@ -376,14 +444,14 @@ namespace TypeMake.Cpp
                     BuildSettings["OTHER_CPLUSPLUSFLAGS"] = Value.CreateArray(CppFlags.Concat(new List<String> { "$(inherited)" }).Select(d => Value.CreateString(d)).ToList());
                 }
 
-                if ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary) || (Project.TargetType == TargetType.MacApplication) || (Project.TargetType == TargetType.MacBundle) || (Project.TargetType == TargetType.iOSApplication) || (Project.TargetType == TargetType.iOSStaticFramework) || (Project.TargetType == TargetType.iOSSharedFramework))
+                if ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary) || (Project.TargetType == TargetType.MacApplication) || (Project.TargetType == TargetType.MacBundle) || (Project.TargetType == TargetType.iOSApplication) || (Project.TargetType == TargetType.iOSSharedFramework))
                 {
                     var LibDirectories = conf.LibDirectories.Select(d => d.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix)).ToList();
                     if (LibDirectories.Count != 0)
                     {
                         BuildSettings["LIBRARY_SEARCH_PATHS"] = Value.CreateArray(LibDirectories.Concat(new List<String> { "$(inherited)" }).Select(d => Value.CreateString(d)).ToList());
                     }
-                    var LinkerFlags = conf.LinkerFlags.Concat(conf.Libs.Select(Lib => Lib.Parts.Count == 1 ? Lib.ToString(PathStringStyle.Unix) : Lib.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix))).Concat(conf.PostLinkerFlags).ToList();
+                    var LinkerFlags = conf.LinkerFlags.Concat(conf.Libs.Select(Lib => Lib.Parts.Count == 1 ? "-l" + Lib.ToString(PathStringStyle.Unix) : Lib.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix))).Concat(conf.PostLinkerFlags).ToList();
                     if (LinkerFlags.Count != 0)
                     {
                         BuildSettings["OTHER_LDFLAGS"] = Value.CreateArray(new List<String> { "$(inherited)" }.Concat(LinkerFlags).Select(d => Value.CreateString(d)).ToList());
@@ -593,10 +661,20 @@ namespace TypeMake.Cpp
                 var Hash = GetHashOfPath(ProjectVirtualPath.ToString(PathStringStyle.Unix));
 
                 var FileObject = new Dictionary<string, Value>();
-                FileObject.Add("isa", Value.CreateString("PBXFileReference"));
-                FileObject.Add("explicitFileType", Value.CreateString("archive.ar"));
-                FileObject.Add("path", Value.CreateString("lib" + Project.Name + ".a"));
-                FileObject.Add("sourceTree", Value.CreateString("BUILT_PRODUCTS_DIR"));
+                if (this.Project.TargetType == TargetType.iOSStaticFramework)
+                {
+                    FileObject.Add("isa", Value.CreateString("PBXFileReference"));
+                    FileObject.Add("explicitFileType", Value.CreateString("wrapper.pb-project"));
+                    FileObject.Add("path", Value.CreateString(Project.Name + ".xcodeproj"));
+                    FileObject.Add("sourceTree", Value.CreateString("<group>"));
+                }
+                else
+                {
+                    FileObject.Add("isa", Value.CreateString("PBXFileReference"));
+                    FileObject.Add("explicitFileType", Value.CreateString("archive.ar"));
+                    FileObject.Add("path", Value.CreateString("lib" + Project.Name + ".a"));
+                    FileObject.Add("sourceTree", Value.CreateString("BUILT_PRODUCTS_DIR"));
+                }
                 Objects.Add(Hash, Value.CreateDict(FileObject));
                 RelativePathToFileObjectKey.Add(ProjectVirtualPath.ToString(PathStringStyle.Unix), Hash);
 
