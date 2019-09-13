@@ -20,8 +20,9 @@ namespace TypeMake.Cpp
         private ArchitectureType TargetArchitectureType;
         private CppLibraryForm CppLibraryForm; //static libc++ requires a custom build
         private String DevelopmentTeam;
+        private String ProvisioningProfileSpecifier;
 
-        public PbxprojGenerator(Project Project, List<ProjectReference> ProjectReferences, PathString InputDirectory, PathString OutputDirectory, String PbxprojTemplateText, OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, CppLibraryForm CppLibraryForm, String DevelopmentTeam = null)
+        public PbxprojGenerator(Project Project, List<ProjectReference> ProjectReferences, PathString InputDirectory, PathString OutputDirectory, String PbxprojTemplateText, OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, CppLibraryForm CppLibraryForm, String DevelopmentTeam = null, String ProvisioningProfileSpecifier = null)
         {
             this.Project = Project;
             this.ProjectReferences = ProjectReferences;
@@ -34,6 +35,7 @@ namespace TypeMake.Cpp
             this.TargetArchitectureType = TargetOperatingSystem == OperatingSystemType.iOS ? ArchitectureType.arm64 : ArchitectureType.x64;
             this.CppLibraryForm = CppLibraryForm;
             this.DevelopmentTeam = DevelopmentTeam;
+            this.ProvisioningProfileSpecifier = ProvisioningProfileSpecifier;
         }
 
         public void Generate(bool ForceRegenerate)
@@ -160,18 +162,54 @@ namespace TypeMake.Cpp
                     BuildSettings["PRODUCT_NAME"] = Value.CreateString(ProductName);
                     if ((Project.TargetType == TargetType.MacApplication) || (Project.TargetType == TargetType.MacBundle) || (Project.TargetType == TargetType.iOSApplication) || (Project.TargetType == TargetType.iOSStaticFramework) || (Project.TargetType == TargetType.iOSSharedFramework))
                     {
+                        //bundle and frameworks don't need to be signed https://stackoverflow.com/questions/30963294/creating-ios-osx-frameworks-is-it-necessary-to-codesign-them-before-distributin
                         if (TargetOperatingSystem == OperatingSystemType.Mac)
                         {
-                            BuildSettings["CODE_SIGN_IDENTITY"] = Value.CreateString("Mac Developer");
+                            if ((Project.TargetType == TargetType.MacApplication) || (Project.TargetType == TargetType.iOSApplication))
+                            {
+                                BuildSettings["CODE_SIGN_IDENTITY"] = Value.CreateString("Mac Developer");
+                            }
+                            else
+                            {
+                                //https://github.com/Carthage/Carthage/issues/399#issuecomment-86089516
+                                BuildSettings["CODE_SIGN_IDENTITY"] = Value.CreateString("");
+                            }
                         }
                         else if (TargetOperatingSystem == OperatingSystemType.iOS)
                         {
                             BuildSettings["CODE_SIGN_IDENTITY"] = Value.CreateString("iPhone Developer");
                         }
+                        if ((Project.TargetType == TargetType.MacApplication) || (Project.TargetType == TargetType.iOSApplication))
+                        {
+                            if (String.IsNullOrEmpty(ProvisioningProfileSpecifier))
+                            {
+                                BuildSettings["CODE_SIGN_STYLE"] = Value.CreateString("Automatic");
+                                BuildSettings["DEVELOPMENT_TEAM"] = Value.CreateString(DevelopmentTeam);
+                                BuildSettings["PROVISIONING_PROFILE_SPECIFIER"] = Value.CreateString("");
+                            }
+                            else
+                            {
+                                BuildSettings["CODE_SIGN_STYLE"] = Value.CreateString("Manual");
+                                BuildSettings["DEVELOPMENT_TEAM"] = Value.CreateString(DevelopmentTeam);
+                                BuildSettings["PROVISIONING_PROFILE_SPECIFIER"] = Value.CreateString(ProvisioningProfileSpecifier);
+                            }
+                        }
+                        else
+                        {
+                            BuildSettings["CODE_SIGN_STYLE"] = Value.CreateString("Automatic");
+                            BuildSettings["DEVELOPMENT_TEAM"] = Value.CreateString("");
+                            BuildSettings["PROVISIONING_PROFILE_SPECIFIER"] = Value.CreateString("");
+                        }
+                    }
+                    else
+                    {
+                        BuildSettings["CODE_SIGN_IDENTITY"] = Value.CreateString("");
                         BuildSettings["CODE_SIGN_STYLE"] = Value.CreateString("Automatic");
-                        BuildSettings["DEVELOPMENT_TEAM"] = Value.CreateString(DevelopmentTeam);
+                        BuildSettings["DEVELOPMENT_TEAM"] = Value.CreateString("");
                         BuildSettings["PROVISIONING_PROFILE_SPECIFIER"] = Value.CreateString("");
-
+                    }
+                    if ((Project.TargetType == TargetType.MacApplication) || (Project.TargetType == TargetType.MacBundle) || (Project.TargetType == TargetType.iOSApplication) || (Project.TargetType == TargetType.iOSStaticFramework) || (Project.TargetType == TargetType.iOSSharedFramework))
+                    {
                         var InfoPlistPath = InputDirectory / "Info.plist";
                         if (System.IO.File.Exists(InfoPlistPath))
                         {

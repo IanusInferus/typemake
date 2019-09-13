@@ -517,7 +517,7 @@ namespace TypeMake
 
             l.Add(new VariableItem
             {
-                VariableName = nameof(Variables.DevelopmentTeam),
+                VariableName = nameof(Variables.XCodeDevelopmentTeam),
                 DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.Toolchain) },
                 GetVariableSpec = () =>
                 {
@@ -533,7 +533,28 @@ namespace TypeMake
                         return VariableSpec.CreateNotApply(VariableValue.CreateString(null));
                     }
                 },
-                SetVariableValue = v => Variables.DevelopmentTeam = v.String
+                SetVariableValue = v => Variables.XCodeDevelopmentTeam = v.String
+            });
+
+            l.Add(new VariableItem
+            {
+                VariableName = nameof(Variables.XCodeProvisioningProfileSpecifier),
+                DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.Toolchain) },
+                GetVariableSpec = () =>
+                {
+                    if (((Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Mac) && (Variables.Toolchain == Cpp.ToolchainType.XCode)) || (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.iOS))
+                    {
+                        return VariableSpec.CreateString(new StringSpec
+                        {
+                            InputDisplay = "(optional)"
+                        });
+                    }
+                    else
+                    {
+                        return VariableSpec.CreateNotApply(VariableValue.CreateString(null));
+                    }
+                },
+                SetVariableValue = v => Variables.XCodeProvisioningProfileSpecifier = v.String
             });
 
             Func<PathString, KeyValuePair<bool, String>> PathValidator = null;
@@ -1159,10 +1180,10 @@ namespace TypeMake
             l.Add(new VariableItem
             {
                 VariableName = nameof(Variables.SelectedProjects),
-                DependentVariableNames = new List<String> { nameof(Variables.HostOperatingSystem), nameof(Variables.HostArchitecture), nameof(Variables.TargetOperatingSystem), nameof(Variables.TargetArchitecture), nameof(Variables.Toolchain), nameof(Variables.Compiler), nameof(Variables.CLibrary), nameof(Variables.CLibraryForm), nameof(Variables.CppLibrary), nameof(Variables.CppLibraryForm), nameof(Variables.Configuration), nameof(Variables.SourceDirectory), nameof(Variables.BuildDirectory), nameof(Variables.DevelopmentTeam), nameof(Variables.VSVersion), nameof(Variables.Jdk), nameof(Variables.AndroidSdk), nameof(Variables.AndroidNdk), nameof(Variables.CC), nameof(Variables.CXX), nameof(Variables.AR), nameof(Variables.ForceRegenerate), nameof(Variables.EnableNonTargetingOperatingSystemDummy) },
+                DependentVariableNames = new List<String> { nameof(Variables.HostOperatingSystem), nameof(Variables.HostArchitecture), nameof(Variables.TargetOperatingSystem), nameof(Variables.TargetArchitecture), nameof(Variables.Toolchain), nameof(Variables.Compiler), nameof(Variables.CLibrary), nameof(Variables.CLibraryForm), nameof(Variables.CppLibrary), nameof(Variables.CppLibraryForm), nameof(Variables.Configuration), nameof(Variables.SourceDirectory), nameof(Variables.BuildDirectory), nameof(Variables.XCodeDevelopmentTeam), nameof(Variables.XCodeProvisioningProfileSpecifier), nameof(Variables.VSVersion), nameof(Variables.Jdk), nameof(Variables.AndroidSdk), nameof(Variables.AndroidNdk), nameof(Variables.CC), nameof(Variables.CXX), nameof(Variables.AR), nameof(Variables.ForceRegenerate), nameof(Variables.EnableNonTargetingOperatingSystemDummy) },
                 GetVariableSpec = () =>
                 {
-                    var m = new Make(Variables.HostOperatingSystem, Variables.HostArchitecture, Variables.TargetOperatingSystem, Variables.TargetArchitecture, Variables.Toolchain, Variables.Compiler, Variables.CLibrary, Variables.CLibraryForm, Variables.CppLibrary, Variables.CppLibraryForm, Variables.Configuration, Variables.SourceDirectory, Variables.BuildDirectory, Variables.DevelopmentTeam, Variables.VSVersion, Variables.EnableJava, Variables.Jdk, Variables.AndroidSdk, Variables.AndroidNdk, Variables.CC, Variables.CXX, Variables.AR, Variables.ForceRegenerate, Variables.EnableNonTargetingOperatingSystemDummy);
+                    var m = new Make(Variables.HostOperatingSystem, Variables.HostArchitecture, Variables.TargetOperatingSystem, Variables.TargetArchitecture, Variables.Toolchain, Variables.Compiler, Variables.CLibrary, Variables.CLibraryForm, Variables.CppLibrary, Variables.CppLibraryForm, Variables.Configuration, Variables.SourceDirectory, Variables.BuildDirectory, Variables.XCodeDevelopmentTeam, Variables.XCodeProvisioningProfileSpecifier, Variables.VSVersion, Variables.EnableJava, Variables.Jdk, Variables.AndroidSdk, Variables.AndroidNdk, Variables.CC, Variables.CXX, Variables.AR, Variables.ForceRegenerate, Variables.EnableNonTargetingOperatingSystemDummy);
                     Variables.m = m;
                     Projects = m.GetAvailableProjects();
                     var ProjectSet = new HashSet<String>(Projects.Values.Select(t => t.Definition.Name));

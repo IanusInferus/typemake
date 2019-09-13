@@ -23,7 +23,8 @@ namespace TypeMake
         public bool EnableNonTargetingOperatingSystemDummy;
         public PathString SourceDirectory;
         public PathString BuildDirectory;
-        public String DevelopmentTeam;
+        public String XCodeDevelopmentTeam;
+        public String XCodeProvisioningProfileSpecifier;
         public PathString VSDir;
         public int VSVersion;
         public PathString LLVM;

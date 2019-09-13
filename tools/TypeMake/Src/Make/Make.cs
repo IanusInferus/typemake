@@ -26,6 +26,7 @@ namespace TypeMake
         private PathString SourceDirectory;
         private PathString BuildDirectory;
         private String XCodeDevelopmentTeam;
+        private String XCodeProvisioningProfileSpecifier;
         private int VSVersion;
         private bool EnableJava;
         private PathString Jdk;
@@ -39,7 +40,7 @@ namespace TypeMake
 
         private Dictionary<String, String> ProjectIds = new Dictionary<String, String>();
 
-        public Make(OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType? TargetArchitecture, ToolchainType Toolchain, CompilerType Compiler, CLibraryType CLibrary, CLibraryForm CLibraryForm, CppLibraryType CppLibrary, CppLibraryForm CppLibraryForm, ConfigurationType? ConfigurationType, PathString SourceDirectory, PathString BuildDirectory, String XCodeDevelopmentTeam, int VSVersion, bool EnableJava, PathString Jdk, PathString AndroidSdk, PathString AndroidNdk, String CCompiler, String CppCompiler, String Archiver, bool ForceRegenerate, bool EnableNonTargetingOperatingSystemDummy)
+        public Make(OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType? TargetArchitecture, ToolchainType Toolchain, CompilerType Compiler, CLibraryType CLibrary, CLibraryForm CLibraryForm, CppLibraryType CppLibrary, CppLibraryForm CppLibraryForm, ConfigurationType? ConfigurationType, PathString SourceDirectory, PathString BuildDirectory, String XCodeDevelopmentTeam, String XCodeProvisioningProfileSpecifier, int VSVersion, bool EnableJava, PathString Jdk, PathString AndroidSdk, PathString AndroidNdk, String CCompiler, String CppCompiler, String Archiver, bool ForceRegenerate, bool EnableNonTargetingOperatingSystemDummy)
         {
             this.HostOperatingSystem = HostOperatingSystem;
             this.HostArchitecture = HostArchitecture;
@@ -55,6 +56,7 @@ namespace TypeMake
             this.SourceDirectory = SourceDirectory.FullPath;
             this.BuildDirectory = BuildDirectory.FullPath;
             this.XCodeDevelopmentTeam = XCodeDevelopmentTeam;
+            this.XCodeProvisioningProfileSpecifier = XCodeProvisioningProfileSpecifier;
             this.VSVersion = VSVersion;
             this.EnableJava = EnableJava;
             this.Jdk = Jdk;
@@ -495,7 +497,7 @@ namespace TypeMake
                 else if (Toolchain == ToolchainType.XCode)
                 {
                     var PbxprojTemplateText = Resource.GetResourceText(@"Templates\xcode9\Default.xcodeproj\project.pbxproj");
-                    var g = new PbxprojGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, PbxprojTemplateText, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, CppLibraryForm, XCodeDevelopmentTeam);
+                    var g = new PbxprojGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, PbxprojTemplateText, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, CppLibraryForm, XCodeDevelopmentTeam, XCodeProvisioningProfileSpecifier);
                     g.Generate(ForceRegenerate);
                 }
                 else if (Toolchain == ToolchainType.CMake)
