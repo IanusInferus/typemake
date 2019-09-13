@@ -585,8 +585,7 @@ namespace TypeMake
             }
             else if (Toolchain == ToolchainType.XCode)
             {
-                var PbxprojTemplateText = Resource.GetResourceText(@"Templates\xcode9\Default.xcodeproj\project.pbxproj");
-                var g = new PbxprojSolutionGenerator(SolutionName, Projects.Select(p => p.Key).ToList(), BuildDirectory, PbxprojTemplateText);
+                var g = new XcworkspaceGenerator(SolutionName, Projects.Select(p => p.Key).ToList(), BuildDirectory);
                 g.Generate(ForceRegenerate);
             }
             else if (Toolchain == ToolchainType.CMake)
