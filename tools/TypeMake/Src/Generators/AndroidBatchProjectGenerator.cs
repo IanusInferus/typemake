@@ -251,8 +251,8 @@ namespace TypeMake.Cpp
                 var ZipAlign = AndroidSdk / "build-tools" / BuildToolVersion / "zipalign";
                 var ApkSigner = AndroidSdk / "build-tools" / BuildToolVersion / "apksigner";
                 var AndroidJar = AndroidSdk / $"platforms/android-{TargetSdkVersion}" / "android.jar";
-                var Strip = AndroidNdk / $"toolchains/llvm/prebuilt/{GetHostArchitectureString(HostOperatingSystem, HostArchitecture)}-x86_64/bin/llvm-strip";
-                var LibcxxSo = AndroidNdk / $"toolchains/llvm/prebuilt/{GetHostArchitectureString(HostOperatingSystem, HostArchitecture)}-x86_64/sysroot/usr/lib/{GetTargetTripletString(TargetArchitectureType)}/libc++_shared.so";
+                var Strip = AndroidNdk / $"toolchains/llvm/prebuilt/{GetHostArchitectureString(HostOperatingSystem, HostArchitecture)}/bin/llvm-strip";
+                var LibcxxSo = AndroidNdk / $"toolchains/llvm/prebuilt/{GetHostArchitectureString(HostOperatingSystem, HostArchitecture)}/sysroot/usr/lib/{GetTargetTripletString(TargetArchitectureType)}/libc++_shared.so";
 
                 yield return @"#!/bin/bash";
                 yield return @"set -e";
