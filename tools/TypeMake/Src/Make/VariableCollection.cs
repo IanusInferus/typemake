@@ -546,6 +546,7 @@ namespace TypeMake
                     {
                         return VariableSpec.CreateString(new StringSpec
                         {
+                            DefaultValue = "",
                             InputDisplay = "(optional)"
                         });
                     }
