@@ -165,9 +165,17 @@ namespace TypeMake.Cpp
                         //bundle and frameworks don't need to be signed https://stackoverflow.com/questions/30963294/creating-ios-osx-frameworks-is-it-necessary-to-codesign-them-before-distributin
                         if (TargetOperatingSystem == OperatingSystemType.Mac)
                         {
-                            if ((Project.TargetType == TargetType.MacApplication) || (Project.TargetType == TargetType.iOSApplication))
+                            if (Project.TargetType == TargetType.MacApplication)
                             {
-                                BuildSettings["CODE_SIGN_IDENTITY"] = Value.CreateString("Mac Developer");
+                                if (String.IsNullOrEmpty(DevelopmentTeam))
+                                {
+                                    //Ad Hoc
+                                    BuildSettings["CODE_SIGN_IDENTITY"] = Value.CreateString("-");
+                                }
+                                else
+                                {
+                                    BuildSettings["CODE_SIGN_IDENTITY"] = Value.CreateString("Mac Developer");
+                                }
                             }
                             else
                             {
@@ -177,6 +185,7 @@ namespace TypeMake.Cpp
                         }
                         else if (TargetOperatingSystem == OperatingSystemType.iOS)
                         {
+                            //https://github.com/Carthage/Carthage/issues/399#issuecomment-86089516
                             BuildSettings["CODE_SIGN_IDENTITY"] = Value.CreateString("iPhone Developer");
                         }
                         if ((Project.TargetType == TargetType.MacApplication) || (Project.TargetType == TargetType.iOSApplication))
