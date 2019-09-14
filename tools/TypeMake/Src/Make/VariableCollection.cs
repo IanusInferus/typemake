@@ -586,7 +586,7 @@ namespace TypeMake
                             var ProgramFiles = Environment.GetEnvironmentVariable("ProgramFiles(x86)");
                             if (ProgramFiles != "")
                             {
-                                foreach (var Version in new int[] { 2019, 2018 })
+                                foreach (var Version in new int[] { 2019, 2017 })
                                 {
                                     foreach (var d in new String[] { "Enterprise", "Professional", "Community", "BuildTools" })
                                     {
