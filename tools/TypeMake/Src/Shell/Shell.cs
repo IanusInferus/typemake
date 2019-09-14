@@ -386,8 +386,8 @@ namespace TypeMake
         public static String RequireEnvironmentVariable(EnvironmentVariableMemory Memory, String Name, EnvironmentVariableReadOptions Options)
         {
             var OriginalForegroundColor = GetForegroundColor();
-            var Top = Console.CursorTop;
-            var cps = GetConsolePositionState();
+            var Top = Options.Quiet ? -1 : Console.CursorTop;
+            var cps = Options.Quiet ? null : GetConsolePositionState();
             var d = Options.InputDisplay ?? (!String.IsNullOrEmpty(Options.DefaultValue) ? "[" + Options.DefaultValue + "]" : "");
             var v = Environment.GetEnvironmentVariable(Name);
             if (v == "_EMPTY_")

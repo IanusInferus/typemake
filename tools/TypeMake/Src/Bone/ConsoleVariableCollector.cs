@@ -40,7 +40,7 @@ namespace TypeMake
                 var IsLast = Index == SortedItems.Count - 1;
                 try
                 {
-                    var Current = Tuple.Create(Index, Console.CursorTop, Shell.GetConsolePositionState());
+                    var Current = Quiet ? null : Tuple.Create(Index, Console.CursorTop, Shell.GetConsolePositionState());
                     var i = SortedItems[Index];
                     bool Interactive = false;
                     var s = i.GetVariableSpec();
@@ -146,7 +146,7 @@ namespace TypeMake
                     {
                         throw new InvalidOperationException();
                     }
-                    if (Interactive)
+                    if (Interactive && (Current != null))
                     {
                         PreviousFetchWithUserInteraction.Push(Current);
                     }
