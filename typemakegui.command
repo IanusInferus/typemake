@@ -1,13 +1,11 @@
 #!/bin/bash
 set -e
 
-cd "$(dirname "$0")"
-
-pushd tools/TypeMake
+pushd "$(dirname "$0")/tools/TypeMake"
 echo building TypeMake...
 ./buildgui.sh --quiet
 echo building TypeMake finished.
 popd
 
-export SourceDirectory="$(pwd)"
-open tools/TypeMake/Bin/net461/TypeMakeGui.app --args "SourceDirectory=$SourceDirectory"
+export SourceDirectory="$(dirname "$0")"
+open "$(dirname "$0")/tools/TypeMake/Bin/net461/TypeMakeGui.app" --args "SourceDirectory=$SourceDirectory"
