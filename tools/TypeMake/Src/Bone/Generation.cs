@@ -58,7 +58,7 @@ namespace TypeMake
             }
             else if (v.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
             {
-                BuildScript.GenerateBuildScriptLinux(v.TargetOperatingSystemDistribution, v.Toolchain, v.HostOperatingSystem, v.BuildDirectory, v.Configuration.Value, v.CMake, v.Make, v.Ninja, v.ForceRegenerate);
+                BuildScript.GenerateBuildScriptLinux(v.TargetOperatingSystemDistribution, v.Toolchain, v.HostOperatingSystem, v.BuildDirectory, v.Configuration.Value, v.CMake, v.Make, v.Ninja, v.ForceRegenerate, r.NeedInstallStrip);
                 if (v.BuildNow)
                 {
                     using (var d = Shell.PushDirectory(v.BuildDirectory))
@@ -92,7 +92,7 @@ namespace TypeMake
                 }
                 else
                 {
-                    BuildScript.GenerateBuildScriptLinux("Mac", v.Toolchain, v.HostOperatingSystem, v.BuildDirectory, v.Configuration.Value, v.CMake, v.Make, v.Ninja, v.ForceRegenerate);
+                    BuildScript.GenerateBuildScriptLinux("Mac", v.Toolchain, v.HostOperatingSystem, v.BuildDirectory, v.Configuration.Value, v.CMake, v.Make, v.Ninja, v.ForceRegenerate, r.NeedInstallStrip);
                 }
                 if (v.BuildNow)
                 {
@@ -139,7 +139,7 @@ namespace TypeMake
                 {
                     TextFile.WriteToFile(v.BuildDirectory / "gradle/local.properties", $"sdk.dir={v.AndroidSdk.ToString(PathStringStyle.Unix)}", new System.Text.UTF8Encoding(false), !v.ForceRegenerate);
                 }
-                BuildScript.GenerateBuildScriptAndroid(v.SelectedProjects.Values.Where(p => (p.Definition.TargetType == Cpp.TargetType.GradleApplication) || (p.Definition.TargetType == Cpp.TargetType.GradleLibrary)).Select(p => p.Reference).ToList(), v.Toolchain, v.HostOperatingSystem, v.BuildDirectory, v.TargetArchitecture.Value, v.Configuration.Value, v.AndroidNdk, v.CMake, v.Make, v.Ninja, 17, v.ForceRegenerate, v.EnableJava);
+                BuildScript.GenerateBuildScriptAndroid(v.SelectedProjects.Values.Where(p => (p.Definition.TargetType == Cpp.TargetType.GradleApplication) || (p.Definition.TargetType == Cpp.TargetType.GradleLibrary)).Select(p => p.Reference).ToList(), v.Toolchain, v.HostOperatingSystem, v.BuildDirectory, v.TargetArchitecture.Value, v.Configuration.Value, v.AndroidNdk, v.CMake, v.Make, v.Ninja, 17, v.ForceRegenerate, v.EnableJava, r.NeedInstallStrip);
                 if (v.BuildNow)
                 {
                     using (var d = Shell.PushDirectory(v.BuildDirectory))

@@ -13,15 +13,17 @@ namespace TypeMake
         private String CC;
         private String CXX;
         private String AR;
+        private String STRIP;
 
-        public NinjaSolutionGenerator(String SolutionName, List<ProjectReference> ProjectReferences, PathString ProjectOutputDirectory, String CCompiler, String CppCompiler, String Archiver)
+        public NinjaSolutionGenerator(String SolutionName, List<ProjectReference> ProjectReferences, PathString ProjectOutputDirectory, String CC, String CXX, String AR, String STRIP)
         {
             this.SolutionName = SolutionName;
             this.ProjectReferences = ProjectReferences;
             this.ProjectOutputDirectory = ProjectOutputDirectory.FullPath;
-            this.CC = CCompiler;
-            this.CXX = CppCompiler;
-            this.AR = Archiver;
+            this.CC = CC;
+            this.CXX = CXX;
+            this.AR = AR;
+            this.STRIP = STRIP;
         }
 
         public void Generate(bool ForceRegenerate)
@@ -39,6 +41,7 @@ namespace TypeMake
             yield return "cc = " + CC;
             yield return "cxx = " + CXX;
             yield return "ar = " + AR;
+            yield return "strip = " + STRIP;
             yield return "fileflags = ";
             yield return "";
             yield return "rule cc";
@@ -61,6 +64,13 @@ namespace TypeMake
             yield return "  command = $cxx $ldflags -o $out $in $libs";
             yield return "  description = LINK $out";
             yield return "";
+            if (!String.IsNullOrEmpty(STRIP))
+            {
+                yield return "rule strip";
+                yield return "  command = $strip -o $out $in";
+                yield return "  description = STRIP $out";
+                yield return "";
+            }
             foreach (var p in ProjectReferences)
             {
                 yield return @"subninja " + p.FilePath.FullPath.RelativeTo(ProjectOutputDirectory).ToString(PathStringStyle.Unix) + ".ninja";

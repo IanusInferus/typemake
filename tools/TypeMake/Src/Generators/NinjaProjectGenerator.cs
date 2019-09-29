@@ -222,8 +222,16 @@ namespace TypeMake.Cpp
             yield return "";
 
             var TargetPath = ((conf.OutputDirectory != null ? conf.OutputDirectory : (OutputDirectory / ".." / $"{TargetArchitectureType}_{ConfigurationType}")) / TargetName).RelativeTo(BaseDirPath).ToString(PathStyle);
-
-            yield return $"build {NinjaEscape(TargetPath)}: {RuleName} {String.Join(" ", ObjectFilePaths.Select(p => NinjaEscape(p)))}" + (Dependencies.Count > 0 ? " | " + String.Join(" ", Dependencies.Select(p => NinjaEscape(p))) : "");
+            if (((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary)) && (ConfigurationType == ConfigurationType.Release) && ((TargetOperatingSystem == OperatingSystemType.Linux) || (TargetOperatingSystem == OperatingSystemType.Mac) || (TargetOperatingSystem == OperatingSystemType.Android)))
+            {
+                var SymbolPath = (((conf.OutputDirectory != null ? conf.OutputDirectory : (OutputDirectory / ".." / $"{TargetArchitectureType}_{ConfigurationType}")) + "_symbol") / TargetName).RelativeTo(BaseDirPath).ToString(PathStyle);
+                yield return $"build {NinjaEscape(SymbolPath)}: {RuleName} {String.Join(" ", ObjectFilePaths.Select(p => NinjaEscape(p)))}" + (Dependencies.Count > 0 ? " | " + String.Join(" ", Dependencies.Select(p => NinjaEscape(p))) : "");
+                yield return $"build {NinjaEscape(TargetPath)}: strip {NinjaEscape(SymbolPath)}";
+            }
+            else
+            {
+                yield return $"build {NinjaEscape(TargetPath)}: {RuleName} {String.Join(" ", ObjectFilePaths.Select(p => NinjaEscape(p)))}" + (Dependencies.Count > 0 ? " | " + String.Join(" ", Dependencies.Select(p => NinjaEscape(p))) : "");
+            }
 
             yield return "";
         }

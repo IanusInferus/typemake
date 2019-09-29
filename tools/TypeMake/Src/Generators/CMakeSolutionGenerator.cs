@@ -28,7 +28,7 @@ namespace TypeMake
 
         private IEnumerable<String> GenerateLines(PathString CMakeListsPath)
         {
-            yield return @"cmake_minimum_required(VERSION 3.0.2)";
+            yield return @"cmake_minimum_required(VERSION 3.3.2)";
             yield return $@"project({SolutionName})";
             foreach (var p in ProjectReferences)
             {

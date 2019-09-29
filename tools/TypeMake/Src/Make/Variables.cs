@@ -38,6 +38,7 @@ namespace TypeMake
         public String CC;
         public String CXX;
         public String AR;
+        public String STRIP;
 
         public Make m;
         public Func<Make.Result> g;

@@ -46,13 +46,14 @@ namespace TypeMake.Cpp
             this.EnableAbsolutePath = EnableAbsolutePath;
         }
 
-        public void Generate(bool ForceRegenerate)
+        public void Generate(bool ForceRegenerate, out bool NeedInstallStrip)
         {
             var CMakeListsPath = OutputDirectory / Project.Name / "CMakeLists.txt";
             var BaseDirPath = CMakeListsPath.Parent;
 
             var Lines = GenerateLines(CMakeListsPath, BaseDirPath).ToList();
             TextFile.WriteToFile(CMakeListsPath, String.Join("\n", Lines), new UTF8Encoding(false), !ForceRegenerate);
+            NeedInstallStrip = ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary)) && (ConfigurationType == Cpp.ConfigurationType.Release) && ((TargetOperatingSystem == OperatingSystemType.Linux) || (TargetOperatingSystem == OperatingSystemType.Mac) || (TargetOperatingSystem == OperatingSystemType.Android));
         }
 
         private IEnumerable<String> GenerateLines(PathString CMakeListsPath, PathString BaseDirPath)
@@ -96,25 +97,34 @@ namespace TypeMake.Cpp
             {
                 yield return $@"set_property(TARGET ${{PROJECT_NAME}} PROPERTY OUTPUT_NAME {Project.TargetName})";
             }
+            String OutDir;
             if (conf.OutputDirectory != null)
             {
-                var OutDir = conf.OutputDirectory.RelativeTo(BaseDirPath, EnableAbsolutePath).ToString(PathStringStyle.Unix);
-                yield return $@"set_property(TARGET ${{PROJECT_NAME}} PROPERTY ARCHIVE_OUTPUT_DIRECTORY {OutDir})";
-                yield return $@"set_property(TARGET ${{PROJECT_NAME}} PROPERTY LIBRARY_OUTPUT_DIRECTORY {OutDir})";
-                yield return $@"set_property(TARGET ${{PROJECT_NAME}} PROPERTY RUNTIME_OUTPUT_DIRECTORY {OutDir})";
+                OutDir = conf.OutputDirectory.RelativeTo(BaseDirPath, EnableAbsolutePath).ToString(PathStringStyle.Unix);
             }
             else if (TargetArchitectureType.HasValue)
             {
                 var Architecture = TargetArchitectureType.Value;
-                yield return $@"set_property(TARGET ${{PROJECT_NAME}} PROPERTY ARCHIVE_OUTPUT_DIRECTORY ${{CMAKE_CURRENT_BINARY_DIR}}/../../{Architecture}_${{CMAKE_BUILD_TYPE}})";
-                yield return $@"set_property(TARGET ${{PROJECT_NAME}} PROPERTY LIBRARY_OUTPUT_DIRECTORY ${{CMAKE_CURRENT_BINARY_DIR}}/../../{Architecture}_${{CMAKE_BUILD_TYPE}})";
-                yield return $@"set_property(TARGET ${{PROJECT_NAME}} PROPERTY RUNTIME_OUTPUT_DIRECTORY ${{CMAKE_CURRENT_BINARY_DIR}}/../../{Architecture}_${{CMAKE_BUILD_TYPE}})";
+                OutDir = $@"${{CMAKE_CURRENT_BINARY_DIR}}/../../{Architecture}_${{CMAKE_BUILD_TYPE}}";
             }
             else
             {
-                yield return $@"set_property(TARGET ${{PROJECT_NAME}} PROPERTY ARCHIVE_OUTPUT_DIRECTORY ${{CMAKE_CURRENT_BINARY_DIR}}/../../${{CMAKE_BUILD_TYPE}})";
-                yield return $@"set_property(TARGET ${{PROJECT_NAME}} PROPERTY LIBRARY_OUTPUT_DIRECTORY ${{CMAKE_CURRENT_BINARY_DIR}}/../../${{CMAKE_BUILD_TYPE}})";
-                yield return $@"set_property(TARGET ${{PROJECT_NAME}} PROPERTY RUNTIME_OUTPUT_DIRECTORY ${{CMAKE_CURRENT_BINARY_DIR}}/../../${{CMAKE_BUILD_TYPE}})";
+                OutDir = $@"${{CMAKE_CURRENT_BINARY_DIR}}/../../${{CMAKE_BUILD_TYPE}}";
+            }
+            if (((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary)) && (ConfigurationType == Cpp.ConfigurationType.Release) && ((TargetOperatingSystem == OperatingSystemType.Linux) || (TargetOperatingSystem == OperatingSystemType.Mac) || (TargetOperatingSystem == OperatingSystemType.Android)))
+            {
+                yield return $@"set_property(TARGET ${{PROJECT_NAME}} PROPERTY ARCHIVE_OUTPUT_DIRECTORY {OutDir}_symbol)";
+                yield return $@"set_property(TARGET ${{PROJECT_NAME}} PROPERTY LIBRARY_OUTPUT_DIRECTORY {OutDir}_symbol)";
+                yield return $@"set_property(TARGET ${{PROJECT_NAME}} PROPERTY RUNTIME_OUTPUT_DIRECTORY {OutDir}_symbol)";
+                yield return $@"install(TARGETS ${{PROJECT_NAME}}";
+                yield return $@"  DESTINATION {OutDir}";
+                yield return $@")";
+            }
+            else
+            {
+                yield return $@"set_property(TARGET ${{PROJECT_NAME}} PROPERTY ARCHIVE_OUTPUT_DIRECTORY {OutDir})";
+                yield return $@"set_property(TARGET ${{PROJECT_NAME}} PROPERTY LIBRARY_OUTPUT_DIRECTORY {OutDir})";
+                yield return $@"set_property(TARGET ${{PROJECT_NAME}} PROPERTY RUNTIME_OUTPUT_DIRECTORY {OutDir})";
             }
 
             yield return @"target_sources(${PROJECT_NAME} PRIVATE";

@@ -32,15 +32,16 @@ namespace TypeMake
         private PathString Jdk;
         private PathString AndroidSdk;
         private PathString AndroidNdk;
-        private String CCompiler;
-        private String CppCompiler;
-        private String Archiver;
+        private String CC;
+        private String CXX;
+        private String AR;
+        private String STRIP;
         private bool ForceRegenerate;
         private bool EnableNonTargetingOperatingSystemDummy;
 
         private Dictionary<String, String> ProjectIds = new Dictionary<String, String>();
 
-        public Make(OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType? TargetArchitecture, ToolchainType Toolchain, CompilerType Compiler, CLibraryType CLibrary, CLibraryForm CLibraryForm, CppLibraryType CppLibrary, CppLibraryForm CppLibraryForm, ConfigurationType? ConfigurationType, PathString SourceDirectory, PathString BuildDirectory, String XCodeDevelopmentTeam, String XCodeProvisioningProfileSpecifier, int VSVersion, bool EnableJava, PathString Jdk, PathString AndroidSdk, PathString AndroidNdk, String CCompiler, String CppCompiler, String Archiver, bool ForceRegenerate, bool EnableNonTargetingOperatingSystemDummy)
+        public Make(OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType? TargetArchitecture, ToolchainType Toolchain, CompilerType Compiler, CLibraryType CLibrary, CLibraryForm CLibraryForm, CppLibraryType CppLibrary, CppLibraryForm CppLibraryForm, ConfigurationType? ConfigurationType, PathString SourceDirectory, PathString BuildDirectory, String XCodeDevelopmentTeam, String XCodeProvisioningProfileSpecifier, int VSVersion, bool EnableJava, PathString Jdk, PathString AndroidSdk, PathString AndroidNdk, String CC, String CXX, String AR, String STRIP, bool ForceRegenerate, bool EnableNonTargetingOperatingSystemDummy)
         {
             this.HostOperatingSystem = HostOperatingSystem;
             this.HostArchitecture = HostArchitecture;
@@ -62,9 +63,10 @@ namespace TypeMake
             this.Jdk = Jdk;
             this.AndroidSdk = AndroidSdk;
             this.AndroidNdk = AndroidNdk;
-            this.CCompiler = CCompiler;
-            this.CppCompiler = CppCompiler;
-            this.Archiver = Archiver;
+            this.CC = CC;
+            this.CXX = CXX;
+            this.AR = AR;
+            this.STRIP = STRIP;
             this.ForceRegenerate = ForceRegenerate;
             this.EnableNonTargetingOperatingSystemDummy = EnableNonTargetingOperatingSystemDummy;
         }
@@ -461,12 +463,14 @@ namespace TypeMake
             public String SolutionName;
             public List<KeyValuePair<ProjectReference, List<ProjectReference>>> Projects;
             public List<ProjectReference> SortedProjects;
+            public bool NeedInstallStrip;
         }
         public Result Execute(Dictionary<String, ProjectDescription> SelectedProjects)
         {
             var Dependencies = SelectedProjects.Values.ToDictionary(p => p.Definition.Name, p => p.DependentProjectToRequirement);
             var ProjectNameToDependencies = SelectedProjects.Values.Select(p => p.Reference).ToDictionary(p => p.Name);
             var Projects = new List<KeyValuePair<ProjectReference, List<ProjectReference>>>();
+            var NeedInstallStrip = false;
             foreach (var Project in SelectedProjects.Values)
             {
                 var FullDependentProjectNames = GetFullProjectDependencies(Project.Definition.Name, Dependencies, out var Unresovled);
@@ -503,7 +507,9 @@ namespace TypeMake
                 else if (Toolchain == ToolchainType.CMake)
                 {
                     var g = new CMakeProjectGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType, false);
-                    g.Generate(ForceRegenerate);
+                    var ProjectNeedInstallStrip = false;
+                    g.Generate(ForceRegenerate, out ProjectNeedInstallStrip);
+                    NeedInstallStrip = NeedInstallStrip || ProjectNeedInstallStrip;
                 }
                 else if ((Toolchain == ToolchainType.Ninja) && (TargetOperatingSystem != OperatingSystemType.Android))
                 {
@@ -555,7 +561,9 @@ namespace TypeMake
                         if (Toolchain == ToolchainType.Gradle_CMake)
                         {
                             var g = new CMakeProjectGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType, HostOperatingSystem == OperatingSystemType.Windows);
-                            g.Generate(ForceRegenerate);
+                            var ProjectNeedInstallStrip = false;
+                            g.Generate(ForceRegenerate, out ProjectNeedInstallStrip);
+                            NeedInstallStrip = NeedInstallStrip || ProjectNeedInstallStrip;
                         }
                         else if (Toolchain == ToolchainType.Gradle_Ninja)
                         {
@@ -597,7 +605,7 @@ namespace TypeMake
             }
             else if (Toolchain == ToolchainType.Ninja)
             {
-                var g = new NinjaSolutionGenerator(SolutionName, SortedProjects, BuildDirectory / "projects", CCompiler, CppCompiler, Archiver);
+                var g = new NinjaSolutionGenerator(SolutionName, SortedProjects, BuildDirectory / "projects", CC, CXX, AR, STRIP);
                 g.Generate(ForceRegenerate);
             }
             else if ((Toolchain == ToolchainType.Gradle_CMake) || (Toolchain == ToolchainType.Gradle_Ninja))
@@ -617,7 +625,7 @@ namespace TypeMake
                 }
                 else if (Toolchain == ToolchainType.Gradle_Ninja)
                 {
-                    var g = new NinjaSolutionGenerator(SolutionName, SortedProjects, BuildDirectory / "projects", CCompiler, CppCompiler, Archiver);
+                    var g = new NinjaSolutionGenerator(SolutionName, SortedProjects, BuildDirectory / "projects", CC, CXX, AR, STRIP);
                     g.Generate(ForceRegenerate);
                 }
                 if (GradleProjectNames.Count > 0)
@@ -633,7 +641,7 @@ namespace TypeMake
             {
                 throw new NotSupportedException();
             }
-            return new Result { SolutionName = SolutionName, Projects = Projects, SortedProjects = SortedProjects };
+            return new Result { SolutionName = SolutionName, Projects = Projects, SortedProjects = SortedProjects, NeedInstallStrip = NeedInstallStrip };
         }
 
         private List<Configuration> GetCommonConfigurations()

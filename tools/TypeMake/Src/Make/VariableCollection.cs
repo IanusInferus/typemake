@@ -1177,14 +1177,70 @@ namespace TypeMake
                 SetVariableValue = v => Variables.AR = v.String
             });
 
+            l.Add(new VariableItem
+            {
+                VariableName = nameof(Variables.STRIP),
+                DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.TargetArchitecture), nameof(Variables.Toolchain), nameof(Variables.Compiler), nameof(Variables.LLVM), "AndroidVariables" },
+                GetVariableSpec = () =>
+                {
+                    if ((Variables.Toolchain == Cpp.ToolchainType.Ninja) || (Variables.Toolchain == Cpp.ToolchainType.Gradle_Ninja))
+                    {
+                        if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
+                        {
+                            return VariableSpec.CreateNotApply(VariableValue.CreateString(""));
+                        }
+                        else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
+                        {
+                            var DefaultAR = "strip";
+                            if (Variables.Compiler == Cpp.CompilerType.gcc)
+                            {
+                                if (Variables.TargetArchitecture == Cpp.ArchitectureType.armv7a)
+                                {
+                                    DefaultAR = "arm-linux-gnueabihf-strip";
+                                }
+                                else if (Variables.TargetArchitecture == Cpp.ArchitectureType.arm64)
+                                {
+                                    DefaultAR = "aarch64-linux-gnu-strip";
+                                }
+                            }
+                            else if (Variables.Compiler == Cpp.CompilerType.clang)
+                            {
+                                DefaultAR = "llvm-strip";
+                            }
+                            return VariableSpec.CreateString(new StringSpec
+                            {
+                                DefaultValue = DefaultAR
+                            });
+                        }
+                        else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Mac)
+                        {
+                            var DefaultAR = "strip";
+                            return VariableSpec.CreateString(new StringSpec
+                            {
+                                DefaultValue = DefaultAR
+                            });
+                        }
+                        else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
+                        {
+                            return VariableSpec.CreateString(new StringSpec
+                            {
+                                DefaultValue = $"{ToolchainPath / "bin/llvm-strip"}{ExeSuffix}"
+                            });
+                        }
+                    }
+                    return VariableSpec.CreateNotApply(VariableValue.CreateString(null));
+                },
+                SetVariableValue = v => Variables.STRIP = v.String
+            });
+
             Dictionary<String, Make.ProjectDescription> Projects = null;
             l.Add(new VariableItem
             {
                 VariableName = nameof(Variables.SelectedProjects),
-                DependentVariableNames = new List<String> { nameof(Variables.HostOperatingSystem), nameof(Variables.HostArchitecture), nameof(Variables.TargetOperatingSystem), nameof(Variables.TargetArchitecture), nameof(Variables.Toolchain), nameof(Variables.Compiler), nameof(Variables.CLibrary), nameof(Variables.CLibraryForm), nameof(Variables.CppLibrary), nameof(Variables.CppLibraryForm), nameof(Variables.Configuration), nameof(Variables.SourceDirectory), nameof(Variables.BuildDirectory), nameof(Variables.XCodeDevelopmentTeam), nameof(Variables.XCodeProvisioningProfileSpecifier), nameof(Variables.VSVersion), nameof(Variables.Jdk), nameof(Variables.AndroidSdk), nameof(Variables.AndroidNdk), nameof(Variables.CC), nameof(Variables.CXX), nameof(Variables.AR), nameof(Variables.ForceRegenerate), nameof(Variables.EnableNonTargetingOperatingSystemDummy) },
+                DependentVariableNames = new List<String> { nameof(Variables.HostOperatingSystem), nameof(Variables.HostArchitecture), nameof(Variables.TargetOperatingSystem), nameof(Variables.TargetArchitecture), nameof(Variables.Toolchain), nameof(Variables.Compiler), nameof(Variables.CLibrary), nameof(Variables.CLibraryForm), nameof(Variables.CppLibrary), nameof(Variables.CppLibraryForm), nameof(Variables.Configuration), nameof(Variables.SourceDirectory), nameof(Variables.BuildDirectory), nameof(Variables.XCodeDevelopmentTeam), nameof(Variables.XCodeProvisioningProfileSpecifier), nameof(Variables.VSVersion), nameof(Variables.Jdk), nameof(Variables.AndroidSdk), nameof(Variables.AndroidNdk), nameof(Variables.CC), nameof(Variables.CXX), nameof(Variables.AR), nameof(Variables.STRIP), nameof(Variables.ForceRegenerate), nameof(Variables.EnableNonTargetingOperatingSystemDummy) },
                 GetVariableSpec = () =>
                 {
-                    var m = new Make(Variables.HostOperatingSystem, Variables.HostArchitecture, Variables.TargetOperatingSystem, Variables.TargetArchitecture, Variables.Toolchain, Variables.Compiler, Variables.CLibrary, Variables.CLibraryForm, Variables.CppLibrary, Variables.CppLibraryForm, Variables.Configuration, Variables.SourceDirectory, Variables.BuildDirectory, Variables.XCodeDevelopmentTeam, Variables.XCodeProvisioningProfileSpecifier, Variables.VSVersion, Variables.EnableJava, Variables.Jdk, Variables.AndroidSdk, Variables.AndroidNdk, Variables.CC, Variables.CXX, Variables.AR, Variables.ForceRegenerate, Variables.EnableNonTargetingOperatingSystemDummy);
+                    var m = new Make(Variables.HostOperatingSystem, Variables.HostArchitecture, Variables.TargetOperatingSystem, Variables.TargetArchitecture, Variables.Toolchain, Variables.Compiler, Variables.CLibrary, Variables.CLibraryForm, Variables.CppLibrary, Variables.CppLibraryForm, Variables.Configuration, Variables.SourceDirectory, Variables.BuildDirectory, Variables.XCodeDevelopmentTeam, Variables.XCodeProvisioningProfileSpecifier, Variables.VSVersion, Variables.EnableJava, Variables.Jdk, Variables.AndroidSdk, Variables.AndroidNdk, Variables.CC, Variables.CXX, Variables.AR, Variables.STRIP, Variables.ForceRegenerate, Variables.EnableNonTargetingOperatingSystemDummy);
                     Variables.m = m;
                     Projects = m.GetAvailableProjects();
                     var ProjectSet = new HashSet<String>(Projects.Values.Select(t => t.Definition.Name));
