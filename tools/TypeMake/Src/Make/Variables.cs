@@ -9,14 +9,14 @@ namespace TypeMake
         public Cpp.ArchitectureType HostArchitecture;
         public Cpp.OperatingSystemType TargetOperatingSystem;
         public String TargetOperatingSystemDistribution;
-        public Cpp.ArchitectureType? TargetArchitecture;
+        public Cpp.ArchitectureType TargetArchitecture;
         public Cpp.ToolchainType Toolchain;
         public Cpp.CompilerType Compiler;
         public Cpp.CLibraryType CLibrary;
         public Cpp.CLibraryForm CLibraryForm;
         public Cpp.CppLibraryType CppLibrary;
         public Cpp.CppLibraryForm CppLibraryForm;
-        public Cpp.ConfigurationType? Configuration;
+        public Cpp.ConfigurationType Configuration;
         public bool OverwriteRetypemakeScript;
         public bool ForceRegenerate;
         public bool EnablePathCheck;

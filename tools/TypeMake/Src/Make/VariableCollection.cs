@@ -129,7 +129,7 @@ namespace TypeMake
                         throw new InvalidOperationException();
                     }
                 },
-                SetVariableValue = v => Variables.TargetArchitecture = UnwrapNullableEnum<Cpp.ArchitectureType>(v.String)
+                SetVariableValue = v => Variables.TargetArchitecture = UnwrapEnum<Cpp.ArchitectureType>(v.String)
             });
 
             l.Add(new VariableItem
@@ -353,39 +353,9 @@ namespace TypeMake
                 DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.Toolchain) },
                 GetVariableSpec = () =>
                 {
-                    if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
-                    {
-                        return VariableSpecCreateEnumSelection(Cpp.ConfigurationType.Debug);
-                    }
-                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
-                    {
-                        return VariableSpecCreateEnumSelection(Cpp.ConfigurationType.Debug);
-                    }
-                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Mac)
-                    {
-                        if (Variables.Toolchain == Cpp.ToolchainType.XCode)
-                        {
-                            return VariableSpec.CreateNotApply(VariableValue.CreateString(null));
-                        }
-                        else
-                        {
-                            return VariableSpecCreateEnumSelection(Cpp.ConfigurationType.Debug);
-                        }
-                    }
-                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.iOS)
-                    {
-                        return VariableSpec.CreateNotApply(VariableValue.CreateString(null));
-                    }
-                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
-                    {
-                        return VariableSpecCreateEnumSelection(Cpp.ConfigurationType.Debug);
-                    }
-                    else
-                    {
-                        throw new InvalidOperationException();
-                    }
+                    return VariableSpecCreateEnumSelection(Cpp.ConfigurationType.Debug);
                 },
-                SetVariableValue = v => Variables.Configuration = UnwrapNullableEnum<Cpp.ConfigurationType>(v.String)
+                SetVariableValue = v => Variables.Configuration = UnwrapEnum<Cpp.ConfigurationType>(v.String)
             });
 
             l.Add(new VariableItem

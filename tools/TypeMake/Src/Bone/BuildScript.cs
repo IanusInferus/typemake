@@ -225,14 +225,14 @@ namespace TypeMake
                 }
             }
         }
-        public static void GenerateBuildScriptXCode(Cpp.OperatingSystemType HostOperatingSystem, PathString BuildDirectory, List<ProjectReference> SortedProjects, bool ForceRegenerate)
+        public static void GenerateBuildScriptXCode(Cpp.OperatingSystemType HostOperatingSystem, PathString BuildDirectory, Cpp.ConfigurationType Configuration, List<ProjectReference> SortedProjects, bool ForceRegenerate)
         {
             var Lines = new List<String>();
             Lines.Add("#!/bin/bash");
             Lines.Add("set -e");
             foreach (var p in SortedProjects)
             {
-                Lines.Add($"xcodebuild -project projects/{p.Name}.xcodeproj");
+                Lines.Add($"xcodebuild -project projects/{p.Name}.xcodeproj -configuration {Configuration}");
             }
             Lines.Add("");
             var BuildPath = BuildDirectory / "build.sh";
