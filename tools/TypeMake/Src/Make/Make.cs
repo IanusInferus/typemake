@@ -733,6 +733,12 @@ namespace TypeMake
                 },
                 new Configuration
                 {
+                    MatchingCompilers = new List<CompilerType> { CompilerType.gcc, CompilerType.clang },
+                    MatchingTargetArchitectures = new List<ArchitectureType> { ArchitectureType.armv7a },
+                    CommonFlags = ParseFlags("-mthumb -mfpu=neon")
+                },
+                new Configuration
+                {
                     MatchingCompilers = new List<CompilerType> { CompilerType.clang },
                     MatchingCppLibraries = new List<CppLibraryType> { CppLibraryType.libcxx },
                     CppFlags = ParseFlags("-stdlib=libc++"),
