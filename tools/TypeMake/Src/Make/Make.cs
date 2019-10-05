@@ -859,6 +859,22 @@ namespace TypeMake
                 },
                 new Configuration
                 {
+                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Mac },
+                    Options = new Dictionary<String, String>
+                    {
+                        ["xcode.project.MACOSX_DEPLOYMENT_TARGET"] = "10.10"
+                    }
+                },
+                new Configuration
+                {
+                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.iOS },
+                    Options = new Dictionary<String, String>
+                    {
+                        ["xcode.target.IPHONEOS_DEPLOYMENT_TARGET"] = "8.0"
+                    }
+                },
+                new Configuration
+                {
                     MatchingToolchains = new List<ToolchainType> { ToolchainType.Ninja, ToolchainType.Gradle_Ninja },
                     MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Android },
                     CommonFlags = ParseFlags("-fno-addrsig -fPIE -fPIC -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -Wa,--noexecstack"),
