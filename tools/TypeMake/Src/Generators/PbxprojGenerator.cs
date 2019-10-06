@@ -217,6 +217,12 @@ namespace TypeMake.Cpp
                         BuildSettings["DEVELOPMENT_TEAM"] = Value.CreateString("");
                         BuildSettings["PROVISIONING_PROFILE_SPECIFIER"] = Value.CreateString("");
                     }
+                    if ((ConfigurationType == ConfigurationType.Release) && ((Project.TargetType == TargetType.DynamicLibrary) || (Project.TargetType == TargetType.MacApplication) || (Project.TargetType == TargetType.MacBundle) || (Project.TargetType == TargetType.iOSApplication) || (Project.TargetType == TargetType.iOSStaticFramework) || (Project.TargetType == TargetType.iOSSharedFramework)))
+                    {
+                        BuildSettings["DEPLOYMENT_POSTPROCESSING"] = Value.CreateString("YES");
+                        BuildSettings["COPY_PHASE_STRIP"] = Value.CreateString("YES");
+                        BuildSettings["STRIP_STYLE"] = Value.CreateString("non-global");
+                    }
                     if ((Project.TargetType == TargetType.MacApplication) || (Project.TargetType == TargetType.MacBundle) || (Project.TargetType == TargetType.iOSApplication) || (Project.TargetType == TargetType.iOSStaticFramework) || (Project.TargetType == TargetType.iOSSharedFramework))
                     {
                         var InfoPlistPath = InputDirectory / "Info.plist";
