@@ -84,7 +84,7 @@ namespace TypeMake
                     }
                 }
             }
-            else if (v.TargetOperatingSystem == Cpp.OperatingSystemType.Mac)
+            else if (v.TargetOperatingSystem == Cpp.OperatingSystemType.MacOS)
             {
                 if (v.Toolchain == Cpp.ToolchainType.XCode)
                 {
@@ -98,7 +98,7 @@ namespace TypeMake
                 {
                     using (var d = Shell.PushDirectory(v.BuildDirectory))
                     {
-                        if (v.HostOperatingSystem == Cpp.OperatingSystemType.Mac)
+                        if (v.HostOperatingSystem == Cpp.OperatingSystemType.MacOS)
                         {
                             if (Shell.Execute("./build.sh") != 0)
                             {
@@ -119,7 +119,7 @@ namespace TypeMake
                 {
                     using (var d = Shell.PushDirectory(v.BuildDirectory))
                     {
-                        if (v.HostOperatingSystem == Cpp.OperatingSystemType.Mac)
+                        if (v.HostOperatingSystem == Cpp.OperatingSystemType.MacOS)
                         {
                             if (Shell.Execute("./build.sh") != 0)
                             {
@@ -151,7 +151,7 @@ namespace TypeMake
                                 throw new InvalidOperationException("ErrorInExecution: " + @".\build.cmd");
                             }
                         }
-                        else if ((v.HostOperatingSystem == Cpp.OperatingSystemType.Linux) || (v.HostOperatingSystem == Cpp.OperatingSystemType.Mac))
+                        else if ((v.HostOperatingSystem == Cpp.OperatingSystemType.Linux) || (v.HostOperatingSystem == Cpp.OperatingSystemType.MacOS))
                         {
                             if (Shell.Execute("./build.sh") != 0)
                             {

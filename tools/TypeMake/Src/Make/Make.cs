@@ -231,7 +231,7 @@ namespace TypeMake
                 }
                 if ((ProductTargetType == TargetType.Executable) && System.IO.File.Exists(InputDirectory / "Info.plist"))
                 {
-                    if (TargetOperatingSystem == OperatingSystemType.Mac)
+                    if (TargetOperatingSystem == OperatingSystemType.MacOS)
                     {
                         ProductTargetType = TargetType.MacApplication;
                     }
@@ -305,7 +305,7 @@ namespace TypeMake
                         },
                         new Configuration
                         {
-                            MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Mac, OperatingSystemType.iOS },
+                            MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.MacOS, OperatingSystemType.iOS },
                             MatchingTargetTypes = new List<TargetType> { TargetType.MacApplication, TargetType.MacBundle, TargetType.iOSApplication, TargetType.iOSStaticFramework, TargetType.iOSSharedFramework },
                             Options = new Dictionary<String, String>
                             {
@@ -337,7 +337,7 @@ namespace TypeMake
                             DependentProjectToRequirement = DependentModuleToRequirement
                         });
                     }
-                    if ((TargetOperatingSystem == OperatingSystemType.Mac) && (Toolchain == ToolchainType.XCode) && (ProductTargetType == TargetType.DynamicLibrary))
+                    if ((TargetOperatingSystem == OperatingSystemType.MacOS) && (Toolchain == ToolchainType.XCode) && (ProductTargetType == TargetType.DynamicLibrary))
                     {
                         var BundleName = ProductName + ".bundle";
                         Projects.Add(new ProjectDescription
@@ -724,7 +724,7 @@ namespace TypeMake
                 },
                 new Configuration
                 {
-                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Mac },
+                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.MacOS },
                     Options = new Dictionary<String, String>
                     {
                         ["xcode.target.VALID_ARCHS"] = "x86_64"
@@ -871,7 +871,7 @@ namespace TypeMake
                 },
                 new Configuration
                 {
-                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Mac },
+                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.MacOS },
                     Options = new Dictionary<String, String>
                     {
                         ["xcode.project.MACOSX_DEPLOYMENT_TARGET"] = "10.10"
@@ -982,7 +982,7 @@ namespace TypeMake
             }
             else if (Ext == "m")
             {
-                if ((TargetOperatingSystem == OperatingSystemType.iOS) || (TargetOperatingSystem == OperatingSystemType.Mac))
+                if ((TargetOperatingSystem == OperatingSystemType.iOS) || (TargetOperatingSystem == OperatingSystemType.MacOS))
                 {
                     return new Cpp.File { Path = FilePath, Type = FileType.ObjectiveCSource };
                 }
@@ -993,7 +993,7 @@ namespace TypeMake
             }
             else if (Ext == "mm")
             {
-                if ((TargetOperatingSystem == OperatingSystemType.iOS) || (TargetOperatingSystem == OperatingSystemType.Mac))
+                if ((TargetOperatingSystem == OperatingSystemType.iOS) || (TargetOperatingSystem == OperatingSystemType.MacOS))
                 {
                     return new Cpp.File { Path = FilePath, Type = FileType.ObjectiveCppSource };
                 }

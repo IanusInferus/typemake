@@ -21,7 +21,7 @@ namespace TypeMake.Cpp
     {
         Windows,
         Linux,
-        Mac,
+        MacOS,
         Android,
         iOS
     }

@@ -375,7 +375,7 @@ namespace TypeMake.Cpp
             {
                 return "linux-x86_64";
             }
-            if ((OperatingSystem == OperatingSystemType.Mac) && (Architecture == ArchitectureType.x64))
+            if ((OperatingSystem == OperatingSystemType.MacOS) && (Architecture == ArchitectureType.x64))
             {
                 return "darwin-x86_64";
             }

@@ -26,9 +26,9 @@ namespace TypeMake
                     {
                         return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.OperatingSystemType.Linux.ToString()));
                     }
-                    else if (Shell.OperatingSystem == Shell.OperatingSystemType.Mac)
+                    else if (Shell.OperatingSystem == Shell.OperatingSystemType.MacOS)
                     {
-                        return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.OperatingSystemType.Mac.ToString()));
+                        return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.OperatingSystemType.MacOS.ToString()));
                     }
                     else
                     {
@@ -112,7 +112,7 @@ namespace TypeMake
                     {
                         return VariableSpecCreateEnumSelection(Cpp.ArchitectureType.x64);
                     }
-                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Mac)
+                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.MacOS)
                     {
                         return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.ArchitectureType.x64.ToString()));
                     }
@@ -160,7 +160,7 @@ namespace TypeMake
                             return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.ToolchainType.Ninja.ToString()));
                         }
                     }
-                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Mac)
+                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.MacOS)
                     {
                         return VariableSpecCreateEnumSelection(Cpp.ToolchainType.XCode, new HashSet<Cpp.ToolchainType> { Cpp.ToolchainType.XCode, Cpp.ToolchainType.Ninja, Cpp.ToolchainType.CMake });
                     }
@@ -205,7 +205,7 @@ namespace TypeMake
                     {
                         return VariableSpecCreateEnumSelection(Cpp.CompilerType.gcc, new HashSet<Cpp.CompilerType> { Cpp.CompilerType.gcc, Cpp.CompilerType.clang });
                     }
-                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Mac)
+                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.MacOS)
                     {
                         return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.CompilerType.clang.ToString()));
                     }
@@ -239,7 +239,7 @@ namespace TypeMake
                     {
                         return VariableSpecCreateEnumSelection(Cpp.CLibraryType.glibc, new HashSet<Cpp.CLibraryType> { Cpp.CLibraryType.glibc, Cpp.CLibraryType.musl });
                     }
-                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Mac)
+                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.MacOS)
                     {
                         return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.CLibraryType.libSystem.ToString()));
                     }
@@ -291,7 +291,7 @@ namespace TypeMake
                     {
                         return VariableSpecCreateEnumSelection(Cpp.CppLibraryType.libstdcxx, new HashSet<Cpp.CppLibraryType> { Cpp.CppLibraryType.libstdcxx, Cpp.CppLibraryType.libcxx });
                     }
-                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Mac)
+                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.MacOS)
                     {
                         return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.CppLibraryType.libcxx.ToString()));
                     }
@@ -330,7 +330,7 @@ namespace TypeMake
                     }
                     else if ((Variables.CppLibrary == Cpp.CppLibraryType.libstdcxx) || (Variables.CppLibrary == Cpp.CppLibraryType.libcxx))
                     {
-                        if ((Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Mac) || (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.iOS))
+                        if ((Variables.TargetOperatingSystem == Cpp.OperatingSystemType.MacOS) || (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.iOS))
                         {
                             return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.CppLibraryForm.Dynamic.ToString()));
                         }
@@ -396,7 +396,7 @@ namespace TypeMake
                     {
                         DefaultBuildDir = Variables.SourceDirectory / $"build/linux_{Variables.TargetArchitecture}_{Variables.Toolchain}_{Variables.Compiler}_{Variables.Configuration}";
                     }
-                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Mac)
+                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.MacOS)
                     {
                         if (Variables.Toolchain == Cpp.ToolchainType.XCode)
                         {
@@ -491,7 +491,7 @@ namespace TypeMake
                 DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.Toolchain) },
                 GetVariableSpec = () =>
                 {
-                    if (((Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Mac) && (Variables.Toolchain == Cpp.ToolchainType.XCode)) || (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.iOS))
+                    if (((Variables.TargetOperatingSystem == Cpp.OperatingSystemType.MacOS) && (Variables.Toolchain == Cpp.ToolchainType.XCode)) || (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.iOS))
                     {
                         return VariableSpec.CreateString(new StringSpec
                         {
@@ -512,7 +512,7 @@ namespace TypeMake
                 DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.Toolchain) },
                 GetVariableSpec = () =>
                 {
-                    if (((Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Mac) && (Variables.Toolchain == Cpp.ToolchainType.XCode)) || (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.iOS))
+                    if (((Variables.TargetOperatingSystem == Cpp.OperatingSystemType.MacOS) && (Variables.Toolchain == Cpp.ToolchainType.XCode)) || (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.iOS))
                     {
                         return VariableSpec.CreateString(new StringSpec
                         {
@@ -755,7 +755,7 @@ namespace TypeMake
                             }
                         }
                     }
-                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Mac)
+                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.MacOS)
                     {
                         if (Variables.Toolchain == Cpp.ToolchainType.CMake)
                         {
@@ -820,7 +820,7 @@ namespace TypeMake
                             }
                         }
                     }
-                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Mac)
+                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.MacOS)
                     {
                         if (Variables.Toolchain == Cpp.ToolchainType.CMake)
                         {
@@ -846,7 +846,7 @@ namespace TypeMake
                                 {
                                     DefaultMake = Variables.AndroidNdk / "prebuilt/linux-x86_64/bin/make";
                                 }
-                                else if (Variables.HostOperatingSystem == Cpp.OperatingSystemType.Mac)
+                                else if (Variables.HostOperatingSystem == Cpp.OperatingSystemType.MacOS)
                                 {
                                     DefaultMake = Variables.AndroidNdk / "prebuilt/darwin-x86_64/bin/make";
                                 }
@@ -889,7 +889,7 @@ namespace TypeMake
                                 DefaultValue = Ninja
                             });
                         }
-                        else if (Variables.HostOperatingSystem == Cpp.OperatingSystemType.Mac)
+                        else if (Variables.HostOperatingSystem == Cpp.OperatingSystemType.MacOS)
                         {
                             return VariableSpec.CreateFixed(VariableValue.CreatePath(Variables.SourceDirectory / "tools/Ninja/ninja-mac/ninja"));
                         }
@@ -928,7 +928,7 @@ namespace TypeMake
                             Host = "linux-x86_64";
                             ExeSuffix = "";
                         }
-                        else if (Variables.HostOperatingSystem == Cpp.OperatingSystemType.Mac)
+                        else if (Variables.HostOperatingSystem == Cpp.OperatingSystemType.MacOS)
                         {
                             Host = "darwin-x86_64";
                             ExeSuffix = "";
@@ -1007,7 +1007,7 @@ namespace TypeMake
                                 DefaultValue = DefaultCC
                             });
                         }
-                        else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Mac)
+                        else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.MacOS)
                         {
                             var DefaultCC = "clang";
                             return VariableSpec.CreateString(new StringSpec
@@ -1067,7 +1067,7 @@ namespace TypeMake
                                 DefaultValue = DefaultCXX
                             });
                         }
-                        else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Mac)
+                        else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.MacOS)
                         {
                             var DefaultCXX = "clang++";
                             return VariableSpec.CreateString(new StringSpec
@@ -1126,7 +1126,7 @@ namespace TypeMake
                                 DefaultValue = DefaultAR
                             });
                         }
-                        else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Mac)
+                        else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.MacOS)
                         {
                             var DefaultAR = "ar";
                             return VariableSpec.CreateString(new StringSpec
@@ -1182,7 +1182,7 @@ namespace TypeMake
                                 DefaultValue = DefaultAR
                             });
                         }
-                        else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Mac)
+                        else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.MacOS)
                         {
                             var DefaultAR = "strip";
                             return VariableSpec.CreateString(new StringSpec

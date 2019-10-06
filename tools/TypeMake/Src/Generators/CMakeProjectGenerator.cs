@@ -53,7 +53,7 @@ namespace TypeMake.Cpp
 
             var Lines = GenerateLines(CMakeListsPath, BaseDirPath).ToList();
             TextFile.WriteToFile(CMakeListsPath, String.Join("\n", Lines), new UTF8Encoding(false), !ForceRegenerate);
-            NeedInstallStrip = ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary)) && (ConfigurationType == Cpp.ConfigurationType.Release) && ((TargetOperatingSystem == OperatingSystemType.Linux) || (TargetOperatingSystem == OperatingSystemType.Mac) || (TargetOperatingSystem == OperatingSystemType.Android));
+            NeedInstallStrip = ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary)) && (ConfigurationType == Cpp.ConfigurationType.Release) && ((TargetOperatingSystem == OperatingSystemType.Linux) || (TargetOperatingSystem == OperatingSystemType.MacOS) || (TargetOperatingSystem == OperatingSystemType.Android));
         }
 
         private IEnumerable<String> GenerateLines(PathString CMakeListsPath, PathString BaseDirPath)
@@ -111,7 +111,7 @@ namespace TypeMake.Cpp
             {
                 OutDir = $@"${{CMAKE_CURRENT_BINARY_DIR}}/../../${{CMAKE_BUILD_TYPE}}";
             }
-            if (((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary)) && (ConfigurationType == Cpp.ConfigurationType.Release) && ((TargetOperatingSystem == OperatingSystemType.Linux) || (TargetOperatingSystem == OperatingSystemType.Mac) || (TargetOperatingSystem == OperatingSystemType.Android)))
+            if (((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary)) && (ConfigurationType == Cpp.ConfigurationType.Release) && ((TargetOperatingSystem == OperatingSystemType.Linux) || (TargetOperatingSystem == OperatingSystemType.MacOS) || (TargetOperatingSystem == OperatingSystemType.Android)))
             {
                 yield return $@"set_property(TARGET ${{PROJECT_NAME}} PROPERTY ARCHIVE_OUTPUT_DIRECTORY {OutDir}_symbol)";
                 yield return $@"set_property(TARGET ${{PROJECT_NAME}} PROPERTY LIBRARY_OUTPUT_DIRECTORY {OutDir}_symbol)";
@@ -219,7 +219,7 @@ namespace TypeMake.Cpp
                 }
                 Func<String, String> WrapLinkerFlag = f =>
                 {
-                    if (TargetOperatingSystem == OperatingSystemType.Mac)
+                    if (TargetOperatingSystem == OperatingSystemType.MacOS)
                     {
                         return "\"-Wl,-pie " + f + " -Wl,-pie\""; //bypass CMake limitation with the order of linker flags and the addition of '-l' before library with a relative or absolute path
                     }
@@ -247,7 +247,7 @@ namespace TypeMake.Cpp
                     yield return @"target_link_libraries(${PROJECT_NAME} PRIVATE";
                     if ((Compiler == CompilerType.gcc) || (Compiler == CompilerType.clang))
                     {
-                        if (ExecutingOperatingSystem != OperatingSystemType.Mac)
+                        if (ExecutingOperatingSystem != OperatingSystemType.MacOS)
                         {
                             yield return @"  -Wl,--start-group";
                         }
@@ -258,7 +258,7 @@ namespace TypeMake.Cpp
                     }
                     if ((Compiler == CompilerType.gcc) || (Compiler == CompilerType.clang))
                     {
-                        if (ExecutingOperatingSystem != OperatingSystemType.Mac)
+                        if (ExecutingOperatingSystem != OperatingSystemType.MacOS)
                         {
                             yield return @"  -Wl,--end-group";
                         }

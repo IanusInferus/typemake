@@ -80,7 +80,7 @@ namespace TypeMake.Cpp
                 if (Project.TargetType == TargetType.DynamicLibrary)
                 {
                     LinkerFlags.Add("-shared");
-                    if (TargetOperatingSystem == OperatingSystemType.Mac)
+                    if (TargetOperatingSystem == OperatingSystemType.MacOS)
                     {
                         LinkerFlags.Add("-Wl,-install_name," + "lib" + (Project.TargetName ?? Project.Name) + ".dylib");
                     }
@@ -204,7 +204,7 @@ namespace TypeMake.Cpp
                 {
                     TargetName = (Project.TargetName ?? Project.Name) + ".dll";
                 }
-                else if ((TargetOperatingSystem == OperatingSystemType.Mac) || (TargetOperatingSystem == OperatingSystemType.iOS))
+                else if ((TargetOperatingSystem == OperatingSystemType.MacOS) || (TargetOperatingSystem == OperatingSystemType.iOS))
                 {
                     TargetName = "lib" + (Project.TargetName ?? Project.Name) + ".dylib";
                 }
@@ -222,7 +222,7 @@ namespace TypeMake.Cpp
             yield return "";
 
             var TargetPath = ((conf.OutputDirectory != null ? conf.OutputDirectory : (OutputDirectory / ".." / $"{TargetArchitectureType}_{ConfigurationType}")) / TargetName).RelativeTo(BaseDirPath).ToString(PathStyle);
-            if (((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary)) && (ConfigurationType == ConfigurationType.Release) && ((TargetOperatingSystem == OperatingSystemType.Linux) || (TargetOperatingSystem == OperatingSystemType.Mac) || (TargetOperatingSystem == OperatingSystemType.Android)))
+            if (((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary)) && (ConfigurationType == ConfigurationType.Release) && ((TargetOperatingSystem == OperatingSystemType.Linux) || (TargetOperatingSystem == OperatingSystemType.MacOS) || (TargetOperatingSystem == OperatingSystemType.Android)))
             {
                 var SymbolPath = (((conf.OutputDirectory != null ? conf.OutputDirectory : (OutputDirectory / ".." / $"{TargetArchitectureType}_{ConfigurationType}")) + "_symbol") / TargetName).RelativeTo(BaseDirPath).ToString(PathStyle);
                 yield return $"build {NinjaEscape(SymbolPath)}: {RuleName} {String.Join(" ", ObjectFilePaths.Select(p => NinjaEscape(p)))}" + (Dependencies.Count > 0 ? " | " + String.Join(" ", Dependencies.Select(p => NinjaEscape(p))) : "");

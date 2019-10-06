@@ -163,7 +163,7 @@ namespace TypeMake.Cpp
                     if ((Project.TargetType == TargetType.MacApplication) || (Project.TargetType == TargetType.MacBundle) || (Project.TargetType == TargetType.iOSApplication) || (Project.TargetType == TargetType.iOSStaticFramework) || (Project.TargetType == TargetType.iOSSharedFramework))
                     {
                         //bundle and frameworks don't need to be signed https://stackoverflow.com/questions/30963294/creating-ios-osx-frameworks-is-it-necessary-to-codesign-them-before-distributin
-                        if (TargetOperatingSystem == OperatingSystemType.Mac)
+                        if (TargetOperatingSystem == OperatingSystemType.MacOS)
                         {
                             if (Project.TargetType == TargetType.MacApplication)
                             {
@@ -225,7 +225,7 @@ namespace TypeMake.Cpp
                             BuildSettings["INFOPLIST_FILE"] = Value.CreateString(InfoPlistPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix));
                         }
                     }
-                    if (TargetOperatingSystem == OperatingSystemType.Mac)
+                    if (TargetOperatingSystem == OperatingSystemType.MacOS)
                     {
                         if (Project.TargetType == TargetType.DynamicLibrary)
                         {
@@ -505,7 +505,7 @@ namespace TypeMake.Cpp
                     }
                 }
 
-                if (TargetOperatingSystem == OperatingSystemType.Mac)
+                if (TargetOperatingSystem == OperatingSystemType.MacOS)
                 {
                     BuildSettings["SDKROOT"] = Value.CreateString("macosx");
                 }

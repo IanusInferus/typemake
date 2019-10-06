@@ -30,7 +30,7 @@ namespace TypeMake
         {
             Windows,
             Linux,
-            Mac,
+            MacOS,
             Unknown
         }
         public enum OperatingSystemArchitectureType
@@ -59,7 +59,7 @@ namespace TypeMake
                         {
                             if (File.Exists("/usr/lib/libc.dylib"))
                             {
-                                OperatingSystemValue = OperatingSystemType.Mac;
+                                OperatingSystemValue = OperatingSystemType.MacOS;
                             }
                             else
                             {
@@ -68,7 +68,7 @@ namespace TypeMake
                         }
                         else if (p == PlatformID.MacOSX)
                         {
-                            OperatingSystemValue = OperatingSystemType.Mac;
+                            OperatingSystemValue = OperatingSystemType.MacOS;
                         }
                         else
                         {
