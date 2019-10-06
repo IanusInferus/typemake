@@ -697,7 +697,7 @@ namespace TypeMake
                 new Configuration
                 {
                     MatchingCompilers = new List<CompilerType> { CompilerType.clang },
-                    CommonFlags = ParseFlags("-Werror=return-stack-address -Werror=incomplete-implementation -Werror=mismatched-return-types"),
+                    CommonFlags = ParseFlags("-Werror=return-stack-address -Werror=incomplete-implementation -Werror=mismatched-return-types -Werror=unguarded-availability"),
                 },
                 new Configuration
                 {
