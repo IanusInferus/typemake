@@ -245,7 +245,7 @@ namespace TypeMake.Cpp
                             BuildSettings["DYLIB_CURRENT_VERSION"] = Value.CreateString("1");
                             BuildSettings["DYLIB_INSTALL_NAME_BASE"] = Value.CreateString("@rpath");
                             BuildSettings["INSTALL_PATH"] = Value.CreateString("$(LOCAL_LIBRARY_DIR)/Frameworks");
-                            BuildSettings["LD_RUNPATH_SEARCH_PATHS"] = Value.CreateString("$(inherited) @executable_path/Frameworks @loader_path/Frameworks");
+                            BuildSettings["LD_RUNPATH_SEARCH_PATHS"] = Value.CreateString("@executable_path/Frameworks @loader_path/Frameworks");
                             BuildSettings["SKIP_INSTALL"] = Value.CreateString("YES");
                         }
                         if (Project.TargetType == TargetType.iOSStaticFramework)
@@ -473,22 +473,22 @@ namespace TypeMake.Cpp
                 var IncludeDirectories = conf.IncludeDirectories.Select(d => d.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix)).ToList();
                 if (IncludeDirectories.Count != 0)
                 {
-                    BuildSettings["HEADER_SEARCH_PATHS"] = Value.CreateArray(IncludeDirectories.Concat(new List<String> { "$(inherited)" }).Select(d => Value.CreateString(d)).ToList());
+                    BuildSettings["HEADER_SEARCH_PATHS"] = Value.CreateArray(IncludeDirectories.Select(d => Value.CreateString(d)).ToList());
                 }
                 var Defines = conf.Defines;
                 if (Defines.Count != 0)
                 {
-                    BuildSettings["GCC_PREPROCESSOR_DEFINITIONS"] = Value.CreateArray(Defines.Select(d => d.Value == null ? d.Key : Regex.IsMatch(d.Value, @"^[A-Za-z0-9]+$") ? d.Key + "=" + d.Value : "'" + d.Key + "=" + d.Value + "'").Concat(new List<String> { "$(inherited)" }).Select(d => Value.CreateString(d)).ToList());
+                    BuildSettings["GCC_PREPROCESSOR_DEFINITIONS"] = Value.CreateArray(Defines.Select(d => d.Value == null ? d.Key : Regex.IsMatch(d.Value, @"^[A-Za-z0-9]+$") ? d.Key + "=" + d.Value : "'" + d.Key + "=" + d.Value + "'").Select(d => Value.CreateString(d)).ToList());
                 }
-                var CFlags = conf.CommonFlags.Concat(conf.CFlags).ToList(); ;
+                var CFlags = conf.CommonFlags.Concat(conf.CFlags).ToList();
                 if (CFlags.Count != 0)
                 {
-                    BuildSettings["OTHER_CFLAGS"] = Value.CreateArray(CFlags.Concat(new List<String> { "$(inherited)" }).Select(d => Value.CreateString(d)).ToList());
+                    BuildSettings["OTHER_CFLAGS"] = Value.CreateArray(CFlags.Select(d => Value.CreateString(d)).ToList());
                 }
                 var CppFlags = conf.CommonFlags.Concat(conf.CppFlags).ToList();
                 if (CppFlags.Count != 0)
                 {
-                    BuildSettings["OTHER_CPLUSPLUSFLAGS"] = Value.CreateArray(CppFlags.Concat(new List<String> { "$(inherited)" }).Select(d => Value.CreateString(d)).ToList());
+                    BuildSettings["OTHER_CPLUSPLUSFLAGS"] = Value.CreateArray(CppFlags.Select(d => Value.CreateString(d)).ToList());
                 }
 
                 if ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary) || (Project.TargetType == TargetType.MacApplication) || (Project.TargetType == TargetType.MacBundle) || (Project.TargetType == TargetType.iOSApplication) || (Project.TargetType == TargetType.iOSSharedFramework))
@@ -496,12 +496,12 @@ namespace TypeMake.Cpp
                     var LibDirectories = conf.LibDirectories.Select(d => d.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix)).ToList();
                     if (LibDirectories.Count != 0)
                     {
-                        BuildSettings["LIBRARY_SEARCH_PATHS"] = Value.CreateArray(LibDirectories.Concat(new List<String> { "$(inherited)" }).Select(d => Value.CreateString(d)).ToList());
+                        BuildSettings["LIBRARY_SEARCH_PATHS"] = Value.CreateArray(LibDirectories.Select(d => Value.CreateString(d)).ToList());
                     }
                     var LinkerFlags = conf.LinkerFlags.Concat(conf.Libs.Select(Lib => Lib.Parts.Count == 1 ? "-l" + Lib.ToString(PathStringStyle.Unix) : Lib.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix))).Concat(conf.PostLinkerFlags).ToList();
                     if (LinkerFlags.Count != 0)
                     {
-                        BuildSettings["OTHER_LDFLAGS"] = Value.CreateArray(new List<String> { "$(inherited)" }.Concat(LinkerFlags).Select(d => Value.CreateString(d)).ToList());
+                        BuildSettings["OTHER_LDFLAGS"] = Value.CreateArray(LinkerFlags.Select(d => Value.CreateString(d)).ToList());
                     }
                 }
 
