@@ -841,13 +841,18 @@ namespace TypeMake
                 {
                     MatchingCompilers = new List<CompilerType> { CompilerType.gcc, CompilerType.clang },
                     MatchingConfigurationTypes = new List<ConfigurationType> { Cpp.ConfigurationType.Debug },
-                    CommonFlags = ParseFlags("-O0 -g")
+                    CommonFlags = ParseFlags("-O0")
                 },
                 new Configuration
                 {
                     MatchingCompilers = new List<CompilerType> { CompilerType.gcc, CompilerType.clang },
                     MatchingConfigurationTypes = new List<ConfigurationType> { Cpp.ConfigurationType.Release },
-                    CommonFlags = ParseFlags("-O3 -g")
+                    CommonFlags = ParseFlags("-O3")
+                },
+                new Configuration
+                {
+                    MatchingCompilers = new List<CompilerType> { CompilerType.gcc, CompilerType.clang },
+                    CommonFlags = ParseFlags("-g")
                 },
                 new Configuration
                 {
