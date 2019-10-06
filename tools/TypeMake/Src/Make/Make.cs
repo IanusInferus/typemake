@@ -74,6 +74,7 @@ namespace TypeMake
         public class ProjectDescription
         {
             public Project Definition;
+            public List<Configuration> BaseConfigurations;
             public List<Configuration> ExportConfigurations;
             public ProjectReference Reference;
 
@@ -147,15 +148,16 @@ namespace TypeMake
                         {
                             Name = ModuleName,
                             TargetType = TargetType.StaticLibrary,
-                            Configurations = (new List<Configuration>
+                            Configurations = new List<Configuration>
                             {
                                 new Configuration
                                 {
                                     IncludeDirectories = new List<PathString> { InputDirectory / "include", InputDirectory / "src" },
                                     Files = new List<PathString> { InputDirectory / "include", InputDirectory / "src" }.SelectMany(d => GetFilesInDirectory(d, TargetOperatingSystem, IsTargetOperatingSystemMatched)).ToList()
                                 }
-                            }).Concat(GetCommonConfigurations()).ToList()
+                            }
                         },
+                        BaseConfigurations = GetCommonConfigurations(),
                         ExportConfigurations = new List<Configuration>
                         {
                             new Configuration
@@ -187,15 +189,16 @@ namespace TypeMake
                                 {
                                     Name = TestName,
                                     TargetType = TargetType.Executable,
-                                    Configurations = (new List<Configuration>
+                                    Configurations = new List<Configuration>
                                     {
                                         new Configuration
                                         {
                                             IncludeDirectories = new List<PathString> { InputDirectory / "include", InputDirectory / "src" },
                                             Files = new List<Cpp.File> { TestFile }
                                         }
-                                    }).Concat(GetCommonConfigurations()).ToList()
+                                    }
                                 },
+                                BaseConfigurations = GetCommonConfigurations(),
                                 ExportConfigurations = new List<Configuration> { },
                                 Reference = new ProjectReference
                                 {
@@ -319,8 +322,9 @@ namespace TypeMake
                                 Name = ProductName,
                                 TargetName = TargetName,
                                 TargetType = IsTargetOperatingSystemMatched ? ProductTargetType : TargetType.StaticLibrary,
-                                Configurations = Configurations.Concat(GetCommonConfigurations()).ToList()
+                                Configurations = Configurations
                             },
+                            BaseConfigurations = GetCommonConfigurations(),
                             ExportConfigurations = new List<Configuration> { },
                             Reference = new ProjectReference
                             {
@@ -343,8 +347,9 @@ namespace TypeMake
                                 Name = BundleName,
                                 TargetName = TargetName,
                                 TargetType = TargetType.MacBundle,
-                                Configurations = Configurations.Concat(GetCommonConfigurations()).ToList()
+                                Configurations = Configurations
                             },
+                            BaseConfigurations = GetCommonConfigurations(),
                             ExportConfigurations = new List<Configuration> { },
                             Reference = new ProjectReference
                             {
@@ -383,8 +388,9 @@ namespace TypeMake
                                     Name = FrameworkName,
                                     TargetName = TargetName,
                                     TargetType = FrameworkTargetType,
-                                    Configurations = Configurations.Concat(OutputDirConfigurations).Concat(GetCommonConfigurations()).ToList()
+                                    Configurations = Configurations.Concat(OutputDirConfigurations).ToList()
                                 },
+                                BaseConfigurations = GetCommonConfigurations(),
                                 ExportConfigurations = new List<Configuration> { },
                                 Reference = new ProjectReference
                                 {
@@ -420,6 +426,7 @@ namespace TypeMake
                                     }
                                 }
                             },
+                            BaseConfigurations = new List<Configuration> { },
                             ExportConfigurations = new List<Configuration> { },
                             Reference = new ProjectReference
                             {
@@ -486,7 +493,7 @@ namespace TypeMake
                     Name = Project.Definition.Name,
                     TargetName = Project.Definition.TargetName,
                     TargetType = Project.Definition.TargetType,
-                    Configurations = DependentProjectExportConfigurations.Concat(Project.Definition.Configurations).ToList()
+                    Configurations = Project.BaseConfigurations.Concat(DependentProjectExportConfigurations).Concat(Project.Definition.Configurations).ToList()
                 };
                 var InputDirectory = Project.PhysicalPath;
                 var OutputDirectory = Project.Reference.FilePath.Parent;
