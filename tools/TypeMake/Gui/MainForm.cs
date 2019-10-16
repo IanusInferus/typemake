@@ -542,7 +542,7 @@ namespace TypeMakeGui
                     System.Diagnostics.Process.Start(Variables.BuildDirectory / (Make.SolutionName + ".sln"));
                 }
             }
-            else if ((Variables.HostOperatingSystem == TypeMake.Cpp.OperatingSystemType.Mac) && ((Variables.TargetOperatingSystem == TypeMake.Cpp.OperatingSystemType.Mac) || (Variables.TargetOperatingSystem == TypeMake.Cpp.OperatingSystemType.iOS)))
+            else if ((Variables.HostOperatingSystem == TypeMake.Cpp.OperatingSystemType.MacOS) && ((Variables.TargetOperatingSystem == TypeMake.Cpp.OperatingSystemType.MacOS) || (Variables.TargetOperatingSystem == TypeMake.Cpp.OperatingSystemType.iOS)))
             {
                 if (MessageBox.Show("Generation finished. Open project now?", "Generate", MessageBoxButtons.YesNo, MessageBoxType.Question) == DialogResult.Yes)
                 {
