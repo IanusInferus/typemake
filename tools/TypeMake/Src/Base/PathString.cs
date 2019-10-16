@@ -28,6 +28,8 @@ namespace TypeMake
         {
             get
             {
+                var Parts = this.Parts;
+                if ((Parts.Count >= 1) && Parts.First().EndsWith(Slash)) { return this; }
                 return Path.GetFullPath(ToString()).AsPath();
             }
         }
@@ -157,6 +159,12 @@ namespace TypeMake
                 {
                     var ret = p;
                     p = "";
+                    return ret;
+                }
+                else if (DirectorySeparatorCharStart == 0)
+                {
+                    var ret = p.Substring(0, DirectorySeparatorCharStart + 1);
+                    p = p.Substring(DirectorySeparatorCharStart + 1);
                     return ret;
                 }
                 else

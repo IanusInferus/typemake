@@ -106,6 +106,8 @@ namespace TypeMakeTest
             Assert.AreEqual("/usr".AsPath().RelativeTo(@"/usr").ToString(PathStringStyle.Unix), ".");
             Assert.AreEqual("/usr/".AsPath().RelativeTo(@"/usr").ToString(PathStringStyle.Unix), ".");
             Assert.AreEqual("/usr".AsPath().RelativeTo(@"/usr/").ToString(PathStringStyle.Unix), ".");
+            Assert.AreEqual(@"C:\Windows".AsPath().RelativeTo(@"/usr").ToString(PathStringStyle.Windows), @"C:\Windows");
+            Assert.AreEqual(@"/usr".AsPath().RelativeTo(@"C:\Windows").ToString(PathStringStyle.Unix), @"/usr");
 
             Assert.AreEqual(@"C:\Windows\notepad.exe".AsPath().RelativeTo(@"C:\Windows").ToString(PathStringStyle.Windows), @"notepad.exe");
             Assert.AreEqual(@"C:\Windows\notepad.exe".AsPath().RelativeTo(@"C:\Windows\System32").ToString(PathStringStyle.Windows), @"..\notepad.exe");
@@ -117,6 +119,18 @@ namespace TypeMakeTest
             Assert.AreEqual("/home/test/1.txt".AsPath().RelativeTo(@"/home/test").ToString(PathStringStyle.Unix), "1.txt");
             Assert.AreEqual("/home/test/1.txt".AsPath().RelativeTo(@"/home").ToString(PathStringStyle.Unix), "test/1.txt");
             Assert.AreEqual("/home/test/1.txt".AsPath().RelativeTo(@"/mnt/sdcard").ToString(PathStringStyle.Unix), "../../home/test/1.txt");
+
+        }
+
+        [TestMethod]
+        public void TestFull()
+        {
+            Assert.AreEqual(@"C:\".AsPath().FullPath.ToString(PathStringStyle.Windows), @"C:\");
+            Assert.AreEqual(@"C:\Windows\".AsPath().FullPath.ToString(PathStringStyle.Windows), @"C:\Windows");
+            Assert.AreEqual(@"C:\Windows".AsPath().FullPath.ToString(PathStringStyle.Windows), @"C:\Windows");
+            Assert.AreEqual("/".AsPath().FullPath.ToString(PathStringStyle.Unix), "/");
+            Assert.AreEqual("/usr/".AsPath().FullPath.ToString(PathStringStyle.Unix), "/usr");
+            Assert.AreEqual("/usr".AsPath().FullPath.ToString(PathStringStyle.Unix), "/usr");
         }
 
         [TestMethod]
