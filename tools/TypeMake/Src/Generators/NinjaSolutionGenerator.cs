@@ -61,7 +61,7 @@ namespace TypeMake
             yield return "  description = AR $out";
             yield return "";
             yield return "rule link";
-            yield return "  command = $cxx $ldflags -o $out $in $libs";
+            yield return "  command = $cxx $ldflags -o $out $in $libs $post_ldflags";
             yield return "  description = LINK $out";
             yield return "";
             if (!String.IsNullOrEmpty(STRIP))

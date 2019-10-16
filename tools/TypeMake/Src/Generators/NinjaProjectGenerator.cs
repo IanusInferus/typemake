@@ -73,6 +73,7 @@ namespace TypeMake.Cpp
             var CFlags = conf.CFlags.ToList();
             var CppFlags = conf.CppFlags.ToList();
             var LinkerFlags = new List<String>();
+            var PostLinkerFlags = new List<String>();
             var Libs = new List<String>();
             var Dependencies = new List<String>();
             if ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary))
@@ -93,6 +94,7 @@ namespace TypeMake.Cpp
                 LinkerFlags.Add($"-L{LibrarySearchPath}");
                 LinkerFlags.AddRange(conf.LibDirectories.Select(d => d.FullPath.RelativeTo(BaseDirPath).ToString(PathStyle)).Select(d => "-L" + (d.Contains(" ") ? "\"" + d + "\"" : d)));
                 LinkerFlags.AddRange(conf.LinkerFlags);
+                PostLinkerFlags.AddRange(conf.PostLinkerFlags);
                 if ((TargetOperatingSystem == OperatingSystemType.Linux) || (TargetOperatingSystem == OperatingSystemType.Android))
                 {
                     Libs.Add("-Wl,--start-group");
@@ -130,6 +132,7 @@ namespace TypeMake.Cpp
             yield return "cflags  = " + String.Join(" ", CFlags.Select(f => CommandArgumentEscape(f)));
             yield return "cxxflags  = " + String.Join(" ", CppFlags.Select(f => CommandArgumentEscape(f)));
             yield return "ldflags  = " + String.Join(" ", LinkerFlags.Select(f => CommandArgumentEscape(f)));
+            yield return "post_ldflags  = " + String.Join(" ", PostLinkerFlags.Select(f => CommandArgumentEscape(f)));
             yield return "libs  = " + String.Join(" ", Libs.Select(f => CommandArgumentEscape(f)));
 
             yield return "";
