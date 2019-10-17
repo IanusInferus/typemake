@@ -660,12 +660,32 @@ namespace TypeMake
                 DependentVariableNames = new List<String> { nameof(Variables.HostOperatingSystem), nameof(Variables.TargetOperatingSystem), nameof(Variables.EnableJava), nameof(PathValidator) },
                 GetVariableSpec = () =>
                 {
-                    if (Variables.EnableJava && (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android))
+                    if (Variables.EnableJava && (Variables.TargetOperatingSystem != Cpp.OperatingSystemType.iOS))
                     {
                         var DefaultJdk = Environment.GetEnvironmentVariable("JAVA_HOME").AsPath();
-                        if ((Variables.HostOperatingSystem != Cpp.OperatingSystemType.Windows) && String.IsNullOrEmpty(DefaultJdk))
+                        if (Variables.HostOperatingSystem == Cpp.OperatingSystemType.MacOS)
+                        {
+                            var o = Shell.ExecuteAndGetOutput("/usr/libexec/java_home");
+                            if (o.Key == 0)
+                            {
+                                DefaultJdk = o.Value;
+                            }
+                            else
+                            {
+                                DefaultJdk = "/usr";
+                            }
+                        }
+                        else if ((Variables.HostOperatingSystem != Cpp.OperatingSystemType.Windows) && String.IsNullOrEmpty(DefaultJdk))
                         {
                             DefaultJdk = "/usr";
+                            try
+                            {
+                                var JavacPath = Shell.ExecuteAndGetOutput("which", "javac").Value.Trim('\r', '\n');
+                                DefaultJdk = Shell.ExecuteAndGetOutput("readlink", "-f", JavacPath).Value.Trim('\r', '\n').AsPath().Parent.Parent;
+                            }
+                            catch
+                            {
+                            }
                         }
                         return VariableSpec.CreatePath(new PathStringSpec
                         {
@@ -678,7 +698,7 @@ namespace TypeMake
                     {
                         return VariableSpec.CreateNotApply(VariableValue.CreatePath(null));
                     }
-                },
+               },
                 SetVariableValue = v => Variables.Jdk = v.Path
             });
 
