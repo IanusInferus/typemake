@@ -5,6 +5,7 @@ android {
     buildToolsVersion "28.0.3"
     defaultConfig {
         minSdkVersion 17
+        targetSdkVersion 28
         versionCode 1
         versionName "1.0"
     }
@@ -35,6 +36,10 @@ android {
 
 dependencies {
     implementation fileTree(dir: '${JarDirs}', include: ['*.jar'])
+}
+
+tasks.withType(JavaCompile) {
+    options.compilerArgs += ["-parameters"]
 }
 
 task copySoLibraryDebug(type: Sync) {

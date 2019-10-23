@@ -39,6 +39,10 @@ dependencies {
     implementation fileTree(dir: '${JarDirs}', include: ['*.jar'])
 }
 
+tasks.withType(JavaCompile) {
+    options.compilerArgs += ["-parameters"]
+}
+
 task copySoLibraryDebug(type: Sync) {
     from ${LibsDebug}
     into '${TempJniLibsDirDebug}/${AndroidAbi}'
