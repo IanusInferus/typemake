@@ -668,7 +668,7 @@ namespace TypeMake
                             var o = Shell.ExecuteAndGetOutput("/usr/libexec/java_home");
                             if (o.Key == 0)
                             {
-                                DefaultJdk = o.Value;
+                                DefaultJdk = o.Value.Trim('\r', '\n');
                             }
                             else
                             {
