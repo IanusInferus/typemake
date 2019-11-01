@@ -110,8 +110,38 @@ namespace TypeMake
                         var v = Shell.RequireEnvironmentVariableSelection(Memory, i.VariableName, Quiet, s.Selection.Selections, s.Selection.DefaultValue, Options =>
                         {
                             Options.InputDisplay = s.Selection.InputDisplay ?? Options.InputDisplay;
-                            Options.Validator = s.Selection.Validator;
-                            Options.PostMapper = s.Selection.PostMapper ?? Options.PostMapper;
+                            var OriginalValidator = Options.Validator;
+                            var OriginalPostMapper = Options.PostMapper;
+                            Options.Validator = str =>
+                            {
+                                if (OriginalValidator != null)
+                                {
+                                    var result = OriginalValidator(str);
+                                    if (!result.Key) { return result; }
+                                }
+                                if (OriginalPostMapper != null)
+                                {
+                                    str = OriginalPostMapper(str);
+                                }
+                                if (s.Selection.Validator != null)
+                                {
+                                    var result = s.Selection.Validator(str);
+                                    if (!result.Key) { return result; }
+                                }
+                                return new KeyValuePair<bool, String>(true, "");
+                            };
+                            Options.PostMapper = str =>
+                            {
+                                if (OriginalPostMapper != null)
+                                {
+                                    str = OriginalPostMapper(str);
+                                }
+                                if (s.Selection.PostMapper != null)
+                                {
+                                    str = s.Selection.PostMapper(str);
+                                }
+                                return str;
+                            };
                             Options.ForegroundColor = IsLast ? ConsoleColor.Cyan : (ConsoleColor?)null;
                             Options.OnInteraction = () => Interactive = true;
                         });

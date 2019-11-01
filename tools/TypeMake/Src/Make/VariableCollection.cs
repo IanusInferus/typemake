@@ -82,7 +82,7 @@ namespace TypeMake
                     {
                         var p = Shell.ExecuteAndGetOutput("wslconfig", System.Text.Encoding.Unicode, "/list");
                         if (p.Key != 0) { throw new InvalidOperationException("WslConfigFailed"); }
-                        var Distributions = new HashSet<String>(p.Value.Replace("\r", "").Split('\n').Skip(1).Where(Line => Line.Trim(' ') != "").Select(Line => Line.Split(' ').First()).ToArray());
+                        var Distributions = new HashSet<String>(p.Value.Replace("\r", "").Split('\n').Skip(1).Where(Line => Line.Trim(' ') != "").Select(Line => Line.Split(' ').First()).ToArray(), StringComparer.OrdinalIgnoreCase);
                         var DefaultDistribution = Distributions.Count > 0 ? Distributions.First() : "";
                         return VariableSpec.CreateSelection(new StringSelectionSpec
                         {
@@ -1233,7 +1233,7 @@ namespace TypeMake
                     var m = new Make(Variables.HostOperatingSystem, Variables.HostArchitecture, Variables.TargetOperatingSystem, Variables.TargetArchitecture, Variables.Toolchain, Variables.Compiler, Variables.CLibrary, Variables.CLibraryForm, Variables.CppLibrary, Variables.CppLibraryForm, Variables.Configuration, Variables.SourceDirectory, Variables.BuildDirectory, Variables.XCodeDevelopmentTeam, Variables.XCodeProvisioningProfileSpecifier, Variables.VSVersion, Variables.EnableJava, Variables.Jdk, Variables.AndroidSdk, Variables.AndroidNdk, Variables.CC, Variables.CXX, Variables.AR, Variables.STRIP, Variables.ForceRegenerate, Variables.EnableNonTargetingOperatingSystemDummy);
                     Variables.m = m;
                     Projects = m.GetAvailableProjects();
-                    var ProjectSet = new HashSet<String>(Projects.Values.Select(t => t.Definition.Name));
+                    var ProjectSet = new HashSet<String>(Projects.Values.Select(t => t.Definition.Name), StringComparer.OrdinalIgnoreCase);
                     return VariableSpec.CreateMultiSelection(new MultiSelectionSpec
                     {
                         DefaultValues = ProjectSet,

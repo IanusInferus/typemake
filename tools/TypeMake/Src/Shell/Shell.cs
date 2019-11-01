@@ -516,6 +516,7 @@ namespace TypeMake
                 Quiet = Quiet,
                 Suggester = GetCaseInsensitiveSelectionSuggester(Selections),
                 Validator = v => new KeyValuePair<bool, String>(Selections.Contains(v), ""),
+                PostMapper = v => Selections.First(Selection => Selections.Comparer.Equals(v, Selection)),
                 DefaultValue = DefaultValue.ToString(),
                 InputDisplay = InputDisplay
             };
@@ -545,8 +546,15 @@ namespace TypeMake
                     if (UnknownSelections.Count > 0) { return new KeyValuePair<bool, String>(false, $"Unknown selection: {String.Join(" ", UnknownSelections)}."); }
                     var DuplicateSelections = Parts.GroupBy(Part => Part).Where(g => g.Count() > 1).Select(g => g.Key).ToList();
                     if (DuplicateSelections.Count > 0) { return new KeyValuePair<bool, String>(false, $"Duplicate selection: {String.Join(" ", DuplicateSelections)}."); }
-                    if (Validator != null) { return Validator(Parts); }
+                    var Selected = new HashSet<String>(Parts, Selections.Comparer);
+                    if (Validator != null) { return Validator(Selections.Where(Selection => Selected.Contains(Selection)).ToList()); }
                     return new KeyValuePair<bool, String>(true, "");
+                },
+                PostMapper = v =>
+                {
+                    var Selected = new HashSet<String>(v.Split(' ').Where(Part => Part != ""), Selections.Comparer);
+                    var Result = Selections.Where(Selection => Selected.Contains(Selection)).ToList();
+                    return String.Join(" ", Result);
                 },
                 DefaultValue = String.Join(" ", Selections.Intersect(DefaultSelections)),
                 InputDisplay = InputDisplay
