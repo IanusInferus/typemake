@@ -1119,6 +1119,10 @@ namespace TypeMake
                 {
                     return TargetOperatingSystem == OperatingSystemType.Windows;
                 }
+                if (String.Equals(e, "Mac", StringComparison.OrdinalIgnoreCase))
+                {
+                    return TargetOperatingSystem == OperatingSystemType.MacOS;
+                }
                 if (Names.Contains(e))
                 {
                     return false;
