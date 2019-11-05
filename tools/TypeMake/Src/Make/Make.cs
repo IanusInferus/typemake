@@ -1105,28 +1105,41 @@ namespace TypeMake
             }
         }
 
+        private static Dictionary<String, OperatingSystemType> OperatingSystemAlias = new Dictionary<String, OperatingSystemType>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["Win"] = OperatingSystemType.Windows,
+            ["Mac"] = OperatingSystemType.MacOS
+        };
         private static bool IsOperatingSystemMatchExtensions(IEnumerable<String> Extensions, OperatingSystemType TargetOperatingSystem, bool IsExact = false)
         {
             var Names = new HashSet<String>(Enum.GetNames(typeof(OperatingSystemType)), StringComparer.OrdinalIgnoreCase);
             var TargetName = Enum.GetName(typeof(OperatingSystemType), TargetOperatingSystem);
+            var MatchedAnyOperatingSystem = false;
             foreach (var e in Extensions)
             {
                 if (String.Equals(e, TargetName, StringComparison.OrdinalIgnoreCase))
                 {
                     return true;
                 }
-                if (String.Equals(e, "Win", StringComparison.OrdinalIgnoreCase))
+                if (OperatingSystemAlias.ContainsKey(e))
                 {
-                    return TargetOperatingSystem == OperatingSystemType.Windows;
-                }
-                if (String.Equals(e, "Mac", StringComparison.OrdinalIgnoreCase))
-                {
-                    return TargetOperatingSystem == OperatingSystemType.MacOS;
+                    if (OperatingSystemAlias[e] == TargetOperatingSystem)
+                    {
+                        return true;
+                    }
+                    else
+                    {
+                        MatchedAnyOperatingSystem = true;
+                    }
                 }
                 if (Names.Contains(e))
                 {
-                    return false;
+                    MatchedAnyOperatingSystem = true;
                 }
+            }
+            if (MatchedAnyOperatingSystem)
+            {
+                return false;
             }
             return !IsExact;
         }
