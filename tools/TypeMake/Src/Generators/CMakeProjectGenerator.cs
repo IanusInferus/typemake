@@ -63,9 +63,19 @@ namespace TypeMake.Cpp
             yield return @"cmake_minimum_required(VERSION 3.3.2)";
             yield return $@"project({Project.Name})";
 
+            var EnableConvertToWsl = (HostOperatingSystem == OperatingSystemType.Windows) && (TargetOperatingSystem == OperatingSystemType.Linux);
+            Func<PathString, String> GetFinalPath = (PathString p) =>
+            {
+                if (EnableConvertToWsl)
+                {
+                    return p.RelativeTo(BaseDirPath, EnableAbsolutePath).ToWslPath().ToString(PathStringStyle.Unix);
+                }
+                return p.RelativeTo(BaseDirPath, EnableAbsolutePath).ToString(PathStringStyle.Unix);
+            };
+
             if ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary))
             {
-                var LibDirectories = conf.LibDirectories.Select(d => d.FullPath.RelativeTo(BaseDirPath, EnableAbsolutePath).ToString(PathStringStyle.Unix)).ToList();
+                var LibDirectories = conf.LibDirectories.Select(d => GetFinalPath(d.FullPath)).ToList();
                 if (LibDirectories.Count != 0)
                 {
                     yield return @"link_directories(";
@@ -100,7 +110,7 @@ namespace TypeMake.Cpp
             String OutDir;
             if (conf.OutputDirectory != null)
             {
-                OutDir = conf.OutputDirectory.RelativeTo(BaseDirPath, EnableAbsolutePath).ToString(PathStringStyle.Unix);
+                OutDir = GetFinalPath(conf.OutputDirectory);
             }
             else if (TargetArchitectureType.HasValue)
             {
@@ -132,25 +142,25 @@ namespace TypeMake.Cpp
             {
                 if ((f.Type == FileType.CSource) || (f.Type == FileType.CppSource) || (f.Type == FileType.ObjectiveCSource) || (f.Type == FileType.ObjectiveCppSource))
                 {
-                    yield return "  " + f.Path.FullPath.RelativeTo(BaseDirPath, EnableAbsolutePath).ToString(PathStringStyle.Unix);
+                    yield return "  " + GetFinalPath(f.Path.FullPath);
                 }
             }
             yield return @")";
 
             foreach (var g in conf.Files.GroupBy(f => f.Path.FullPath.Parent))
             {
-                var Name = g.Key.RelativeTo(InputDirectory).ToString(PathStringStyle.Windows).Replace(@"\", @"\\");
+                var Name = g.Key.RelativeTo(InputDirectory).ToString(PathStringStyle.Windows).Replace(@"\", @"\\").Replace(":", "");
                 yield return $@"source_group({Name} FILES";
                 foreach (var f in g)
                 {
-                    yield return "  " + f.Path.FullPath.RelativeTo(BaseDirPath, EnableAbsolutePath).ToString(PathStringStyle.Unix);
+                    yield return "  " + GetFinalPath(f.Path.FullPath);
                 }
                 yield return @")";
             }
 
             foreach (var f in conf.Files)
             {
-                var FilePath = f.Path.FullPath.RelativeTo(BaseDirPath, EnableAbsolutePath).ToString(PathStringStyle.Unix);
+                var FilePath = GetFinalPath(f.Path.FullPath);
                 var FileConf = f.Configurations.Merged(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitectureType, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType);
                 var FileDefines = FileConf.Defines;
                 if (FileDefines.Count != 0)
@@ -174,7 +184,7 @@ namespace TypeMake.Cpp
                 }
             }
 
-            var IncludeDirectories = conf.IncludeDirectories.Select(d => d.FullPath.RelativeTo(BaseDirPath, EnableAbsolutePath).ToString(PathStringStyle.Unix)).ToList();
+            var IncludeDirectories = conf.IncludeDirectories.Select(d => GetFinalPath(d.FullPath)).ToList();
             if (IncludeDirectories.Count != 0)
             {
                 yield return @"target_include_directories(${PROJECT_NAME} PRIVATE";
@@ -236,7 +246,7 @@ namespace TypeMake.Cpp
                     }
                     else
                     {
-                        PostObjectFileLinkerFlags.Add(WrapLinkerFlag(Lib.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix)));
+                        PostObjectFileLinkerFlags.Add(WrapLinkerFlag(GetFinalPath(Lib)));
                     }
                 }
                 PostObjectFileLinkerFlags.AddRange(conf.PostLinkerFlags.Select(f => WrapLinkerFlag(f)));

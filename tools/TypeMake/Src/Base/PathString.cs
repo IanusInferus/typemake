@@ -24,6 +24,13 @@ namespace TypeMake
             }
             this.Value = v;
         }
+        public bool IsFullPath
+        {
+            get
+            {
+                return (Parts.Count >= 1) && Parts.First().EndsWith(Slash);
+            }
+        }
         public PathString FullPath
         {
             get
@@ -54,7 +61,7 @@ namespace TypeMake
                 return Path.GetFileNameWithoutExtension(ToString());
             }
         }
-        public PathString ChnageExtension(String Extension)
+        public PathString ChangeExtension(String Extension)
         {
             return Path.ChangeExtension(Value, Extension).AsPath();
         }
@@ -317,6 +324,16 @@ namespace TypeMake
             {
                 throw new InvalidOperationException();
             }
+        }
+        public PathString ToWslPath()
+        {
+            var Parts = this.Parts;
+            if ((Parts.Count >= 1) && Parts.First().EndsWith(Slash) && (Parts.First().Length == 3))
+            {
+                var NewParts = (new List<String> { "/", "mnt", Parts.First().First().ToString().ToLowerInvariant() }).Concat(Parts.Skip(1)).ToList();
+                return Join(NewParts);
+            }
+            return this;
         }
     }
     public enum PathStringStyle

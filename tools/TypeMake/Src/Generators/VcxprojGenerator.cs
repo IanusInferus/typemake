@@ -278,9 +278,9 @@ namespace TypeMake.Cpp
                         else if ((File.Type == FileType.CSource) || (File.Type == FileType.CppSource))
                         {
                             x = new XElement(xn + "ClCompile", new XAttribute("Include", RelativePathStr));
-                            //x.Add(new XElement(xn + "ObjectFileName", "$(IntDir)" + RelativePath.Replace("..", "__") + ".obj"));
+                            //x.Add(new XElement(xn + "ObjectFileName", "$(IntDir)" + RelativePath.Replace("..", "__").Replace(":", "_") + ".obj"));
                             // workaround Visual Studio bug which slows build https://developercommunity.visualstudio.com/idea/586584/vs2017-cc-multi-processor-compilation-does-not-wor.html
-                            x.Add(new XElement(xn + "ObjectFileName", "$(IntDir)" + RelativePath.Parent.ToString(PathStringStyle.Windows).Replace("..", "__") + "\\"));
+                            x.Add(new XElement(xn + "ObjectFileName", "$(IntDir)" + RelativePath.Parent.ToString(PathStringStyle.Windows).Replace("..", "__").Replace(":", "_") + "\\"));
                         }
                         else
                         {

@@ -204,7 +204,7 @@ namespace TypeMake
                     Lines.Add("exit /b %EXIT_CODE%");
                     Lines.Add("");
                     Lines.Add(":main");
-                    Lines.Add("wsl -d " + Shell.EscapeArgumentForShell(TargetOperatingSystemDistribution, Shell.ShellArgumentStyle.CMD) + " " + Shell.EscapeArgumentForShell(Ninja.RelativeTo(BuildDirectory).ToString(PathStringStyle.Unix), Shell.ShellArgumentStyle.CMD) + " -j" + Environment.ProcessorCount.ToString() + " -C projects -f build.ninja || exit /b 1");
+                    Lines.Add("wsl -d " + Shell.EscapeArgumentForShell(TargetOperatingSystemDistribution, Shell.ShellArgumentStyle.CMD) + " " + Shell.EscapeArgumentForShell(Ninja.RelativeTo(BuildDirectory).ToWslPath().ToString(PathStringStyle.Unix), Shell.ShellArgumentStyle.CMD) + " -j" + Environment.ProcessorCount.ToString() + " -C projects -f build.ninja || exit /b 1");
                     Lines.Add("");
                     var BuildPath = BuildDirectory / "build.cmd";
                     TextFile.WriteToFile(BuildPath, String.Join("\r\n", Lines), System.Text.Encoding.Default, !ForceRegenerate);
