@@ -742,7 +742,13 @@ namespace TypeMake
                 {
                     MatchingCompilers = new List<CompilerType> { CompilerType.gcc, CompilerType.clang },
                     MatchingTargetArchitectures = new List<ArchitectureType> { ArchitectureType.armv7a },
-                    CommonFlags = ParseFlags("-mthumb -mfpu=neon")
+                    CommonFlags = ParseFlags("-mfpu=neon")
+                },
+                new Configuration
+                {
+                    MatchingCompilers = new List<CompilerType> { CompilerType.gcc, CompilerType.clang },
+                    MatchingTargetArchitectures = new List<ArchitectureType> { ArchitectureType.armv7a },
+                    CommonFlags = ParseFlags("-fno-omit-frame-pointer") //disable -fomit-frame-pointer and -mthumb for reliable unwinding on armv7a
                 },
                 new Configuration
                 {

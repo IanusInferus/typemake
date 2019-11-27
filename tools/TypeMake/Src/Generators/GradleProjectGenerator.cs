@@ -199,28 +199,32 @@ namespace TypeMake.Cpp
                 throw new NotSupportedException("NotSupportedHost: " + OperatingSystem.ToString() + " " + Architecture.ToString());
             }
         }
-        public static String GetTargetTripletString(ArchitectureType Architecture)
+        public static String GetNdkArchitectureString(ArchitectureType Architecture)
         {
             if (Architecture == Cpp.ArchitectureType.x86)
             {
-                return "i686-linux-android";
+                return "i686";
             }
             else if (Architecture == Cpp.ArchitectureType.x64)
             {
-                return "x86_64-linux-android";
+                return "x86_64";
             }
             else if (Architecture == Cpp.ArchitectureType.armv7a)
             {
-                return "arm-linux-androideabi";
+                return "arm";
             }
             else if (Architecture == Cpp.ArchitectureType.arm64)
             {
-                return "aarch64-linux-android";
+                return "aarch64";
             }
             else
             {
                 throw new NotSupportedException("NotSupportedArchitecture: " + Architecture.ToString());
             }
+        }
+        public static String GetTargetTripletString(ArchitectureType Architecture)
+        {
+            return GetNdkArchitectureString(Architecture) + "-linux-android";
         }
     }
 }
