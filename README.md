@@ -28,6 +28,7 @@ Target Operating System vs Building Operating System
 |            Linux x64           |   WSL+Ninja+clang  |     Ninja+clang    |                    |                    |
 |          Linux x86/x64         |   WSL+CMake+gcc *  |     CMake+gcc *    |                    |                    |
 |       Linux armv7a/arm64       |    WSL+Ninja+gcc   |      Ninja+gcc     |                    |                    |
+|         Linux Unknown **       |    WSL+Ninja+gcc   |      Ninja+gcc     |                    |                    |
 |            MacOS x64           |                    |                    |        XCode       |                    |
 |            MacOS x64           |                    |                    |    Ninja+clang     |                    |
 |            MacOS x64           |                    |                    |   CMake+clang *    |                    |
@@ -40,6 +41,8 @@ Target Operating System vs Building Operating System
 Different OSs use different ABIs on the same CPU architecture.
 
 \* CMake is supported as a compatibility solution. (Ex. Integration with other projects.)
+
+\** Linux for other CPU architectures are supported by specifying toolchain commands and flags.
 
 ## Dependencies
 

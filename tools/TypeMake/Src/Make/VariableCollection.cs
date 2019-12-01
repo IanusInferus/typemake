@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace TypeMake
 {
@@ -106,7 +107,7 @@ namespace TypeMake
                 {
                     if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
                     {
-                        return VariableSpecCreateEnumSelection(Cpp.ArchitectureType.x64);
+                        return VariableSpecCreateEnumSelection(Cpp.ArchitectureType.x64, new HashSet<Cpp.ArchitectureType> { Cpp.ArchitectureType.x86, Cpp.ArchitectureType.x64, Cpp.ArchitectureType.armv7a, Cpp.ArchitectureType.arm64 });
                     }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
                     {
@@ -122,7 +123,7 @@ namespace TypeMake
                     }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
                     {
-                        return VariableSpecCreateEnumSelection(Cpp.ArchitectureType.arm64);
+                        return VariableSpecCreateEnumSelection(Cpp.ArchitectureType.arm64, new HashSet<Cpp.ArchitectureType> { Cpp.ArchitectureType.x86, Cpp.ArchitectureType.x64, Cpp.ArchitectureType.armv7a, Cpp.ArchitectureType.arm64 });
                     }
                     else
                     {
@@ -1223,14 +1224,118 @@ namespace TypeMake
                 SetVariableValue = v => Variables.STRIP = v.String
             });
 
+            l.Add(new VariableItem
+            {
+                VariableName = nameof(Variables.EnableAdditionalFlags),
+                DependentVariableNames = new List<String> { },
+                GetVariableSpec = () =>
+                {
+                    return VariableSpec.CreateBoolean(new BooleanSpec
+                    {
+                        DefaultValue = false
+                    });
+                },
+                SetVariableValue = v => Variables.EnableAdditionalFlags = v.Boolean
+            });
+
+            l.Add(new VariableItem
+            {
+                VariableName = nameof(Variables.CommonFlags),
+                DependentVariableNames = new List<String> { nameof(Variables.EnableAdditionalFlags) },
+                GetVariableSpec = () =>
+                {
+                    if (Variables.EnableAdditionalFlags)
+                    {
+                        return VariableSpec.CreateString(new StringSpec
+                        {
+                            DefaultValue = ""
+                        });
+                    }
+                    return VariableSpec.CreateNotApply(VariableValue.CreateString(""));
+                },
+                SetVariableValue = v => Variables.CommonFlags = ParseFlags(v.String)
+            });
+
+            l.Add(new VariableItem
+            {
+                VariableName = nameof(Variables.CFlags),
+                DependentVariableNames = new List<String> { nameof(Variables.EnableAdditionalFlags) },
+                GetVariableSpec = () =>
+                {
+                    if (Variables.EnableAdditionalFlags)
+                    {
+                        return VariableSpec.CreateString(new StringSpec
+                        {
+                            DefaultValue = ""
+                        });
+                    }
+                    return VariableSpec.CreateNotApply(VariableValue.CreateString(""));
+                },
+                SetVariableValue = v => Variables.CFlags = ParseFlags(v.String)
+            });
+
+            l.Add(new VariableItem
+            {
+                VariableName = nameof(Variables.CppFlags),
+                DependentVariableNames = new List<String> { nameof(Variables.EnableAdditionalFlags) },
+                GetVariableSpec = () =>
+                {
+                    if (Variables.EnableAdditionalFlags)
+                    {
+                        return VariableSpec.CreateString(new StringSpec
+                        {
+                            DefaultValue = ""
+                        });
+                    }
+                    return VariableSpec.CreateNotApply(VariableValue.CreateString(""));
+                },
+                SetVariableValue = v => Variables.CppFlags = ParseFlags(v.String)
+            });
+
+            l.Add(new VariableItem
+            {
+                VariableName = nameof(Variables.LinkerFlags),
+                DependentVariableNames = new List<String> { nameof(Variables.EnableAdditionalFlags) },
+                GetVariableSpec = () =>
+                {
+                    if (Variables.EnableAdditionalFlags)
+                    {
+                        return VariableSpec.CreateString(new StringSpec
+                        {
+                            DefaultValue = ""
+                        });
+                    }
+                    return VariableSpec.CreateNotApply(VariableValue.CreateString(""));
+                },
+                SetVariableValue = v => Variables.LinkerFlags = ParseFlags(v.String)
+            });
+
+            l.Add(new VariableItem
+            {
+                VariableName = nameof(Variables.PostLinkerFlags),
+                DependentVariableNames = new List<String> { nameof(Variables.EnableAdditionalFlags) },
+                GetVariableSpec = () =>
+                {
+                    if (Variables.EnableAdditionalFlags)
+                    {
+                        return VariableSpec.CreateString(new StringSpec
+                        {
+                            DefaultValue = ""
+                        });
+                    }
+                    return VariableSpec.CreateNotApply(VariableValue.CreateString(""));
+                },
+                SetVariableValue = v => Variables.PostLinkerFlags = ParseFlags(v.String)
+            });
+
             Dictionary<String, Make.ProjectDescription> Projects = null;
             l.Add(new VariableItem
             {
                 VariableName = nameof(Variables.SelectedProjects),
-                DependentVariableNames = new List<String> { nameof(Variables.HostOperatingSystem), nameof(Variables.HostArchitecture), nameof(Variables.TargetOperatingSystem), nameof(Variables.TargetArchitecture), nameof(Variables.Toolchain), nameof(Variables.Compiler), nameof(Variables.CLibrary), nameof(Variables.CLibraryForm), nameof(Variables.CppLibrary), nameof(Variables.CppLibraryForm), nameof(Variables.Configuration), nameof(Variables.SourceDirectory), nameof(Variables.BuildDirectory), nameof(Variables.XCodeDevelopmentTeam), nameof(Variables.XCodeProvisioningProfileSpecifier), nameof(Variables.VSVersion), nameof(Variables.Jdk), nameof(Variables.AndroidSdk), nameof(Variables.AndroidNdk), nameof(Variables.CC), nameof(Variables.CXX), nameof(Variables.AR), nameof(Variables.STRIP), nameof(Variables.ForceRegenerate), nameof(Variables.EnableNonTargetingOperatingSystemDummy) },
+                DependentVariableNames = new List<String> { nameof(Variables.HostOperatingSystem), nameof(Variables.HostArchitecture), nameof(Variables.TargetOperatingSystem), nameof(Variables.TargetArchitecture), nameof(Variables.Toolchain), nameof(Variables.Compiler), nameof(Variables.CLibrary), nameof(Variables.CLibraryForm), nameof(Variables.CppLibrary), nameof(Variables.CppLibraryForm), nameof(Variables.Configuration), nameof(Variables.SourceDirectory), nameof(Variables.BuildDirectory), nameof(Variables.XCodeDevelopmentTeam), nameof(Variables.XCodeProvisioningProfileSpecifier), nameof(Variables.VSVersion), nameof(Variables.Jdk), nameof(Variables.AndroidSdk), nameof(Variables.AndroidNdk), nameof(Variables.CC), nameof(Variables.CXX), nameof(Variables.AR), nameof(Variables.STRIP), nameof(Variables.CommonFlags), nameof(Variables.CFlags), nameof(Variables.CppFlags), nameof(Variables.LinkerFlags), nameof(Variables.PostLinkerFlags), nameof(Variables.ForceRegenerate), nameof(Variables.EnableNonTargetingOperatingSystemDummy) },
                 GetVariableSpec = () =>
                 {
-                    var m = new Make(Variables.HostOperatingSystem, Variables.HostArchitecture, Variables.TargetOperatingSystem, Variables.TargetArchitecture, Variables.Toolchain, Variables.Compiler, Variables.CLibrary, Variables.CLibraryForm, Variables.CppLibrary, Variables.CppLibraryForm, Variables.Configuration, Variables.SourceDirectory, Variables.BuildDirectory, Variables.XCodeDevelopmentTeam, Variables.XCodeProvisioningProfileSpecifier, Variables.VSVersion, Variables.EnableJava, Variables.Jdk, Variables.AndroidSdk, Variables.AndroidNdk, Variables.CC, Variables.CXX, Variables.AR, Variables.STRIP, Variables.ForceRegenerate, Variables.EnableNonTargetingOperatingSystemDummy);
+                    var m = new Make(Variables.HostOperatingSystem, Variables.HostArchitecture, Variables.TargetOperatingSystem, Variables.TargetArchitecture, Variables.Toolchain, Variables.Compiler, Variables.CLibrary, Variables.CLibraryForm, Variables.CppLibrary, Variables.CppLibraryForm, Variables.Configuration, Variables.SourceDirectory, Variables.BuildDirectory, Variables.XCodeDevelopmentTeam, Variables.XCodeProvisioningProfileSpecifier, Variables.VSVersion, Variables.EnableJava, Variables.Jdk, Variables.AndroidSdk, Variables.AndroidNdk, Variables.CC, Variables.CXX, Variables.AR, Variables.STRIP, Variables.CommonFlags, Variables.CFlags, Variables.CppFlags, Variables.LinkerFlags, Variables.PostLinkerFlags, Variables.ForceRegenerate, Variables.EnableNonTargetingOperatingSystemDummy);
                     Variables.m = m;
                     Projects = m.GetAvailableProjects();
                     var ProjectSet = new HashSet<String>(Projects.Values.Select(t => t.Definition.Name), StringComparer.OrdinalIgnoreCase);
@@ -1320,6 +1425,11 @@ namespace TypeMake
                 },
                 PostMapper = v => Output.ToString()
             });
+        }
+        private static Regex rFlag = new Regex(@"([^ ""]|""[^""]*"")+", RegexOptions.ExplicitCapture);
+        private static List<String> ParseFlags(String Flags)
+        {
+            return rFlag.Matches(Flags).Cast<Match>().Select(m => m.Value).ToList();
         }
     }
 }

@@ -30,7 +30,8 @@ namespace TypeMake.Cpp
         x86,
         x64,
         armv7a,
-        arm64
+        arm64,
+        Unknown
     }
     public enum ToolchainType
     {

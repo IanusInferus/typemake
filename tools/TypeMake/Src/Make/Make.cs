@@ -36,12 +36,17 @@ namespace TypeMake
         private String CXX;
         private String AR;
         private String STRIP;
+        private List<String> CommonFlags;
+        private List<String> CFlags;
+        private List<String> CppFlags;
+        private List<String> LinkerFlags;
+        private List<String> PostLinkerFlags;
         private bool ForceRegenerate;
         private bool EnableNonTargetingOperatingSystemDummy;
 
         private Dictionary<String, String> ProjectIds = new Dictionary<String, String>();
 
-        public Make(OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType TargetArchitecture, ToolchainType Toolchain, CompilerType Compiler, CLibraryType CLibrary, CLibraryForm CLibraryForm, CppLibraryType CppLibrary, CppLibraryForm CppLibraryForm, ConfigurationType ConfigurationType, PathString SourceDirectory, PathString BuildDirectory, String XCodeDevelopmentTeam, String XCodeProvisioningProfileSpecifier, int VSVersion, bool EnableJava, PathString Jdk, PathString AndroidSdk, PathString AndroidNdk, String CC, String CXX, String AR, String STRIP, bool ForceRegenerate, bool EnableNonTargetingOperatingSystemDummy)
+        public Make(OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType TargetArchitecture, ToolchainType Toolchain, CompilerType Compiler, CLibraryType CLibrary, CLibraryForm CLibraryForm, CppLibraryType CppLibrary, CppLibraryForm CppLibraryForm, ConfigurationType ConfigurationType, PathString SourceDirectory, PathString BuildDirectory, String XCodeDevelopmentTeam, String XCodeProvisioningProfileSpecifier, int VSVersion, bool EnableJava, PathString Jdk, PathString AndroidSdk, PathString AndroidNdk, String CC, String CXX, String AR, String STRIP, List<String> CommonFlags, List<String> CFlags, List<String> CppFlags, List<String> LinkerFlags, List<String> PostLinkerFlags, bool ForceRegenerate, bool EnableNonTargetingOperatingSystemDummy)
         {
             this.HostOperatingSystem = HostOperatingSystem;
             this.HostArchitecture = HostArchitecture;
@@ -67,6 +72,11 @@ namespace TypeMake
             this.CXX = CXX;
             this.AR = AR;
             this.STRIP = STRIP;
+            this.CommonFlags = CommonFlags;
+            this.CFlags = CFlags;
+            this.CppFlags = CppFlags;
+            this.LinkerFlags = LinkerFlags;
+            this.PostLinkerFlags = PostLinkerFlags;
             this.ForceRegenerate = ForceRegenerate;
             this.EnableNonTargetingOperatingSystemDummy = EnableNonTargetingOperatingSystemDummy;
         }
@@ -478,6 +488,17 @@ namespace TypeMake
             var ProjectNameToDependencies = SelectedProjects.Values.Select(p => p.Reference).ToDictionary(p => p.Name);
             var Projects = new List<KeyValuePair<ProjectReference, List<ProjectReference>>>();
             var NeedInstallStrip = false;
+            var ExternalConfigurations = new List<Configuration>
+            {
+                new Configuration
+                {
+                    CommonFlags = CommonFlags,
+                    CFlags = CFlags,
+                    CppFlags = CppFlags,
+                    LinkerFlags = LinkerFlags,
+                    PostLinkerFlags = PostLinkerFlags
+                }
+            };
             foreach (var Project in SelectedProjects.Values)
             {
                 var FullDependentProjectNames = GetFullProjectDependencies(Project.Definition.Name, Dependencies, out var Unresovled);
@@ -493,7 +514,7 @@ namespace TypeMake
                     Name = Project.Definition.Name,
                     TargetName = Project.Definition.TargetName,
                     TargetType = Project.Definition.TargetType,
-                    Configurations = Project.BaseConfigurations.Concat(DependentProjectExportConfigurations).Concat(Project.Definition.Configurations).ToList()
+                    Configurations = Project.BaseConfigurations.Concat(DependentProjectExportConfigurations).Concat(Project.Definition.Configurations).Concat(ExternalConfigurations).ToList()
                 };
                 var InputDirectory = Project.PhysicalPath;
                 var OutputDirectory = Project.Reference.FilePath.Parent;
@@ -1026,10 +1047,10 @@ namespace TypeMake
             if (Defines.Trim(' ') == "") { return new List<KeyValuePair<String, String>> { }; }
             return Defines.Split(';').Select(d => d.Split('=')).Select(arr => arr.Length >= 2 ? new KeyValuePair<String, String>(arr[0], arr[1]) : new KeyValuePair<String, String>(arr[0], null)).ToList();
         }
+        private static Regex rFlag = new Regex(@"([^ ""]|""[^""]*"")+", RegexOptions.ExplicitCapture);
         private static List<String> ParseFlags(String Flags)
         {
-            if (Flags.Trim(' ') == "") { return new List<String> { }; }
-            return Flags.Split(' ').ToList();
+            return rFlag.Matches(Flags).Cast<Match>().Select(m => m.Value).ToList();
         }
         private String GetIdForProject(String ProjectName)
         {

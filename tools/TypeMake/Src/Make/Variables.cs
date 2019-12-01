@@ -39,6 +39,12 @@ namespace TypeMake
         public String CXX;
         public String AR;
         public String STRIP;
+        public bool EnableAdditionalFlags;
+        public List<String> CommonFlags;
+        public List<String> CFlags;
+        public List<String> CppFlags;
+        public List<String> LinkerFlags;
+        public List<String> PostLinkerFlags;
 
         public Make m;
         public Func<Make.Result> g;
