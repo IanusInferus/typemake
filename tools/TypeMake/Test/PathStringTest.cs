@@ -244,14 +244,14 @@ namespace TypeMakeTest
             Assert.AreEqual(@"C:\Windows\notepad.exe".AsPath().Extension, "exe");
             Assert.AreEqual(@"C:\Windows\notepad.exe".AsPath().FileName, "notepad.exe");
             Assert.AreEqual(@"C:\Windows\notepad.exe".AsPath().FileNameWithoutExtension, "notepad");
-            Assert.AreEqual(@"C:\Windows\notepad.exe".AsPath().ChnageExtension(".txt"), @"C:\Windows\notepad.txt");
-            Assert.AreEqual(@"C:\Windows\notepad.exe".AsPath().ChnageExtension("txt"), @"C:\Windows\notepad.txt");
+            Assert.AreEqual(@"C:\Windows\notepad.exe".AsPath().ChangeExtension(".txt"), @"C:\Windows\notepad.txt");
+            Assert.AreEqual(@"C:\Windows\notepad.exe".AsPath().ChangeExtension("txt"), @"C:\Windows\notepad.txt");
 
             Assert.AreEqual(@"C:\Windows\notepad.txt.exe".AsPath().Extension, "exe");
             Assert.AreEqual(@"C:\Windows\notepad.txt.exe".AsPath().FileName, "notepad.txt.exe");
             Assert.AreEqual(@"C:\Windows\notepad.txt.exe".AsPath().FileNameWithoutExtension, "notepad.txt");
-            Assert.AreEqual(@"C:\Windows\notepad.txt.exe".AsPath().ChnageExtension(".txt"), @"C:\Windows\notepad.txt.txt");
-            Assert.AreEqual(@"C:\Windows\notepad.txt.exe".AsPath().ChnageExtension("txt"), @"C:\Windows\notepad.txt.txt");
+            Assert.AreEqual(@"C:\Windows\notepad.txt.exe".AsPath().ChangeExtension(".txt"), @"C:\Windows\notepad.txt.txt");
+            Assert.AreEqual(@"C:\Windows\notepad.txt.exe".AsPath().ChangeExtension("txt"), @"C:\Windows\notepad.txt.txt");
         }
 
         private void AreSequentialEqual<T>(IEnumerable<T> Left, IEnumerable<T> Right)
