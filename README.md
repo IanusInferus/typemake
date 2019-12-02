@@ -11,9 +11,13 @@ The objective of TypeMake is not to implement a general-purpose C++ build tool, 
 ## Usage
 
 Windows: typemake.cmd
+
 Windows GUI: typemakegui.cmd
+
 Linux/Mac: ./typemake.sh
+
 Linux GUI: ./typemakegui.sh
+
 Mac GUI: ./typemakegui.command
 
 ## Support matrix
