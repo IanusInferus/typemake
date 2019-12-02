@@ -1251,7 +1251,7 @@ namespace TypeMake
                             DefaultValue = ""
                         });
                     }
-                    return VariableSpec.CreateNotApply(VariableValue.CreateString(""));
+                    return VariableSpec.CreateFixed(VariableValue.CreateString(""));
                 },
                 SetVariableValue = v => Variables.CommonFlags = ParseFlags(v.String)
             });
@@ -1269,7 +1269,7 @@ namespace TypeMake
                             DefaultValue = ""
                         });
                     }
-                    return VariableSpec.CreateNotApply(VariableValue.CreateString(""));
+                    return VariableSpec.CreateFixed(VariableValue.CreateString(""));
                 },
                 SetVariableValue = v => Variables.CFlags = ParseFlags(v.String)
             });
@@ -1287,7 +1287,7 @@ namespace TypeMake
                             DefaultValue = ""
                         });
                     }
-                    return VariableSpec.CreateNotApply(VariableValue.CreateString(""));
+                    return VariableSpec.CreateFixed(VariableValue.CreateString(""));
                 },
                 SetVariableValue = v => Variables.CppFlags = ParseFlags(v.String)
             });
@@ -1305,7 +1305,7 @@ namespace TypeMake
                             DefaultValue = ""
                         });
                     }
-                    return VariableSpec.CreateNotApply(VariableValue.CreateString(""));
+                    return VariableSpec.CreateFixed(VariableValue.CreateString(""));
                 },
                 SetVariableValue = v => Variables.LinkerFlags = ParseFlags(v.String)
             });
@@ -1323,7 +1323,7 @@ namespace TypeMake
                             DefaultValue = ""
                         });
                     }
-                    return VariableSpec.CreateNotApply(VariableValue.CreateString(""));
+                    return VariableSpec.CreateFixed(VariableValue.CreateString(""));
                 },
                 SetVariableValue = v => Variables.PostLinkerFlags = ParseFlags(v.String)
             });
