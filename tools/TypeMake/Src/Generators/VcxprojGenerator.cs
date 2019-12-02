@@ -98,7 +98,7 @@ namespace TypeMake.Cpp
 
             var ExistingConfigurationTypeAndArchitectures = new Dictionary<KeyValuePair<ConfigurationType, ArchitectureType>, String>();
             var ProjectConfigurations = xVcxproj.Elements(xn + "ItemGroup").Where(e => (e.Attribute("Label") != null) && (e.Attribute("Label").Value == "ProjectConfigurations")).SelectMany(e => e.Elements(xn + "ProjectConfiguration")).Select(e => e.Element(xn + "Configuration").Value + "|" + e.Element(xn + "Platform").Value).ToDictionary(s => s);
-            foreach (var Architecture in Enum.GetValues(typeof(ArchitectureType)).Cast<ArchitectureType>())
+            foreach (var Architecture in new ArchitectureType[] { ArchitectureType.x86, ArchitectureType.x64, ArchitectureType.armv7a, ArchitectureType.arm64 })
             {
                 foreach (var ConfigurationType in Enum.GetValues(typeof(ConfigurationType)).Cast<ConfigurationType>())
                 {
@@ -244,10 +244,12 @@ namespace TypeMake.Cpp
 
             var Import = xVcxproj.Elements(xn + "Import").LastOrDefault();
 
-            foreach (var gConf in Project.Configurations.Matches(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, null, ToolchainType.VisualStudio, CompilerType.VisualCpp, CLibraryType.VisualCRuntime, CLibraryForm, CppLibraryType.VisualCppRuntime, CppLibraryForm, null).GroupBy(conf => Tuple.Create(conf.MatchingConfigurationTypes, conf.MatchingTargetArchitectures), new ConfigurationTypesAndArchitecturesComparer()))
+            foreach (var gConf in Project.Configurations.Matches(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, null, ToolchainType.VisualStudio, CompilerType.VisualCpp, CLibraryType.VisualCRuntime, CLibraryForm, CppLibraryType.VisualCppRuntime, CppLibraryForm, null).GroupBy(conf => Tuple.Create(conf.MatchingConfigurationTypes, conf.MatchingTargetArchitectures?.Intersect(new ArchitectureType[] { ArchitectureType.x86, ArchitectureType.x64, ArchitectureType.armv7a, ArchitectureType.arm64 }).ToList()), new ConfigurationTypesAndArchitecturesComparer()))
             {
                 var MatchingConfigurationTypes = gConf.Key.Item1;
                 var MatchingTargetArchitectures = gConf.Key.Item2;
+                if ((MatchingConfigurationTypes != null) && (MatchingConfigurationTypes.Count == 0)) { continue; }
+                if ((MatchingTargetArchitectures != null) && (MatchingTargetArchitectures.Count == 0)) { continue; }
                 var Conditions = new List<String>();
                 Conditions = GetConditions(MatchingConfigurationTypes, MatchingTargetArchitectures);
 
