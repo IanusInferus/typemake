@@ -116,6 +116,9 @@ namespace TypeMake
                 Lines.Add("exit /b %EXIT_CODE%");
                 Lines.Add("");
                 Lines.Add(":main");
+                Lines.Add("set UseMultiToolTask=true");
+                Lines.Add("set EnforceProcessCountAcrossBuilds=true"); //limit process number in spite of cl /MP and MSBuild /m, https://developercommunity.visualstudio.com/idea/436208/limit-cpu-usage-of-visual-studio.html
+                Lines.Add($"set MultiProcMaxCount={Environment.ProcessorCount.ToString()}");
                 Lines.Add($@"""{VSDir.ToString(PathStringStyle.Windows)}\MSBuild\{MSBuildVersion}\Bin\MSBuild.exe"" {SolutionName}.sln /p:Configuration={Configuration} /p:Platform={SlnGenerator.GetArchitectureString(TargetArchitecture)} /m:{Environment.ProcessorCount.ToString()} || exit /b 1");
                 Lines.Add("");
                 var BuildPath = BuildDirectory / $"build_{TargetArchitecture}_{Configuration}.cmd";
