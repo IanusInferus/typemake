@@ -85,7 +85,8 @@ namespace TypeMake.Cpp
         CppSource,
         ObjectiveCSource,
         ObjectiveCppSource,
-        EmbeddedContent
+        EmbeddedContent,
+        NatVis
     }
 
     public class Configuration

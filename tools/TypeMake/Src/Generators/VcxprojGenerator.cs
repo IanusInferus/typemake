@@ -284,6 +284,10 @@ namespace TypeMake.Cpp
                             // workaround Visual Studio bug which slows build https://developercommunity.visualstudio.com/idea/586584/vs2017-cc-multi-processor-compilation-does-not-wor.html
                             x.Add(new XElement(xn + "ObjectFileName", "$(IntDir)" + RelativePath.Parent.ToString(PathStringStyle.Windows).Replace("..", "__").Replace(":", "_") + "\\"));
                         }
+                        else if (File.Type == FileType.NatVis)
+                        {
+                            x = new XElement(xn + "Natvis", new XAttribute("Include", RelativePathStr));
+                        }
                         else
                         {
                             x = new XElement(xn + "None", new XAttribute("Include", RelativePathStr));
@@ -476,6 +480,10 @@ namespace TypeMake.Cpp
                     else if (f.Type == FileType.CppSource)
                     {
                         x = new XElement(xn + "ClCompile", new XAttribute("Include", RelativePath));
+                    }
+                    else if (f.Type == FileType.NatVis)
+                    {
+                        x = new XElement(xn + "Natvis", new XAttribute("Include", RelativePath));
                     }
                     else
                     {

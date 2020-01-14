@@ -1037,6 +1037,10 @@ namespace TypeMake
             {
                 return new Cpp.File { Path = FilePath, Type = FileType.EmbeddedContent };
             }
+            else if (Ext == "natvis")
+            {
+                return new Cpp.File { Path = FilePath, Type = FileType.NatVis };
+            }
             else
             {
                 return new Cpp.File { Path = FilePath, Type = FileType.Unknown };
