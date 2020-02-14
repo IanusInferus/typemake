@@ -318,8 +318,9 @@ namespace TypeMake
                 //in mono it was originally implemented using g_shell_parse_argv
                 //https://bugzilla.xamarin.com/show_bug.cgi?id=19296
                 //https://developer.gnome.org/glib/stable/glib-Shell-related-Utilities.html
-                //but upon testing it is found that backslash need to be double in single quotes
-                return rComplexChars.IsMatch(Argument) ? "'" + Argument.Replace("\\", "\\\\").Replace("'", "'\\''") + "'" : Argument;
+                //but upon testing it is found that backslash need to be double in single quotes, before mono 6.6
+                //it is now fixed, https://github.com/mono/mono/issues/14724
+                return rComplexChars.IsMatch(Argument) ? "'" + String.Join("", Argument.SelectMany(c => c == '\\' ? @"'\\'" : c == '\'' ? @"'\''" : new String(c, 1))) + "'" : Argument;
             }
             else
             {
