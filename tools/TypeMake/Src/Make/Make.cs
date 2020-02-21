@@ -628,7 +628,7 @@ namespace TypeMake
             }
             else if (Toolchain == ToolchainType.CMake)
             {
-                var g = new CMakeSolutionGenerator(SolutionName, SortedProjects, BuildDirectory);
+                var g = new CMakeSolutionGenerator(SolutionName, SortedProjects, BuildDirectory, CC, CXX, AR, STRIP);
                 g.Generate(ForceRegenerate);
             }
             else if (Toolchain == ToolchainType.Ninja)
@@ -648,7 +648,7 @@ namespace TypeMake
                 }
                 if (Toolchain == ToolchainType.Gradle_CMake)
                 {
-                    var g = new CMakeSolutionGenerator(SolutionName, SortedProjects, BuildDirectory);
+                    var g = new CMakeSolutionGenerator(SolutionName, SortedProjects, BuildDirectory, CC, CXX, AR, STRIP);
                     g.Generate(ForceRegenerate);
                 }
                 else if (Toolchain == ToolchainType.Gradle_Ninja)

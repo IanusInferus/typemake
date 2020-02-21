@@ -995,7 +995,7 @@ namespace TypeMake
                 DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.TargetArchitecture), nameof(Variables.Toolchain), nameof(Variables.Compiler), nameof(Variables.LLVM), "AndroidVariables" },
                 GetVariableSpec = () =>
                 {
-                    if ((Variables.Toolchain == Cpp.ToolchainType.Ninja) || (Variables.Toolchain == Cpp.ToolchainType.Gradle_Ninja))
+                    if ((Variables.Toolchain == Cpp.ToolchainType.Ninja) || (Variables.Toolchain == Cpp.ToolchainType.Gradle_Ninja) || (Variables.Toolchain == Cpp.ToolchainType.CMake) || (Variables.Toolchain == Cpp.ToolchainType.Gradle_CMake))
                     {
                         if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
                         {
@@ -1055,7 +1055,7 @@ namespace TypeMake
                 DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.TargetArchitecture), nameof(Variables.Toolchain), nameof(Variables.Compiler), nameof(Variables.LLVM), "AndroidVariables" },
                 GetVariableSpec = () =>
                 {
-                    if ((Variables.Toolchain == Cpp.ToolchainType.Ninja) || (Variables.Toolchain == Cpp.ToolchainType.Gradle_Ninja))
+                    if ((Variables.Toolchain == Cpp.ToolchainType.Ninja) || (Variables.Toolchain == Cpp.ToolchainType.Gradle_Ninja) || (Variables.Toolchain == Cpp.ToolchainType.CMake) || (Variables.Toolchain == Cpp.ToolchainType.Gradle_CMake))
                     {
                         if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
                         {
@@ -1115,7 +1115,7 @@ namespace TypeMake
                 DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.TargetArchitecture), nameof(Variables.Toolchain), nameof(Variables.Compiler), nameof(Variables.LLVM), "AndroidVariables" },
                 GetVariableSpec = () =>
                 {
-                    if ((Variables.Toolchain == Cpp.ToolchainType.Ninja) || (Variables.Toolchain == Cpp.ToolchainType.Gradle_Ninja))
+                    if ((Variables.Toolchain == Cpp.ToolchainType.Ninja) || (Variables.Toolchain == Cpp.ToolchainType.Gradle_Ninja) || (Variables.Toolchain == Cpp.ToolchainType.CMake) || (Variables.Toolchain == Cpp.ToolchainType.Gradle_CMake))
                     {
                         if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
                         {
@@ -1174,7 +1174,7 @@ namespace TypeMake
                 DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.TargetArchitecture), nameof(Variables.Toolchain), nameof(Variables.Compiler), nameof(Variables.LLVM), "AndroidVariables" },
                 GetVariableSpec = () =>
                 {
-                    if ((Variables.Toolchain == Cpp.ToolchainType.Ninja) || (Variables.Toolchain == Cpp.ToolchainType.Gradle_Ninja))
+                    if ((Variables.Toolchain == Cpp.ToolchainType.Ninja) || (Variables.Toolchain == Cpp.ToolchainType.Gradle_Ninja) || (Variables.Toolchain == Cpp.ToolchainType.CMake) || (Variables.Toolchain == Cpp.ToolchainType.Gradle_CMake))
                     {
                         if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
                         {
