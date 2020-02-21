@@ -72,6 +72,19 @@ namespace TypeMake.Cpp
                 }
                 return p.RelativeTo(BaseDirPath, EnableAbsolutePath).ToString(PathStringStyle.Unix);
             };
+            Func<PathString, String> GetFinalPathRelativeToBinaryDir = (PathString p) =>
+            {
+                var rp = p.RelativeTo(BaseDirPath, EnableAbsolutePath);
+                if (EnableConvertToWsl)
+                {
+                    rp = rp.ToWslPath();
+                }
+                if (!rp.IsFullPath)
+                {
+                    rp = "${CMAKE_CURRENT_BINARY_DIR}" / rp;
+                }
+                return rp.ToString(PathStringStyle.Unix);
+            };
 
             if ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary))
             {
@@ -110,7 +123,7 @@ namespace TypeMake.Cpp
             String OutDir;
             if (conf.OutputDirectory != null)
             {
-                OutDir = GetFinalPath(conf.OutputDirectory);
+                OutDir = GetFinalPathRelativeToBinaryDir(conf.OutputDirectory);
             }
             else if (TargetArchitectureType.HasValue)
             {
