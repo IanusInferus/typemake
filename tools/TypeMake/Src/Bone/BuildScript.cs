@@ -169,7 +169,11 @@ namespace TypeMake
                     Lines.Add("");
                     Lines.Add(":main");
                     Lines.Add("wsl -d " + Shell.EscapeArgumentForShell(TargetOperatingSystemDistribution, Shell.ShellArgumentStyle.CMD) + " " + Shell.EscapeArgumentForShell(CMake, Shell.ShellArgumentStyle.CMD) + " " + String.Join(" ", CMakeArguments.Select(a => Shell.EscapeArgumentForShell(a, Shell.ShellArgumentStyle.CMD))) + " || exit /b 1");
-                    Lines.Add("wsl -d " + Shell.EscapeArgumentForShell(TargetOperatingSystemDistribution, Shell.ShellArgumentStyle.CMD) + " " + Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.CMD) + (NeedInstallStrip ? " install/strip" : "") + " -j" + Environment.ProcessorCount.ToString() + " || exit /b 1");
+                    Lines.Add("wsl -d " + Shell.EscapeArgumentForShell(TargetOperatingSystemDistribution, Shell.ShellArgumentStyle.CMD) + " " + Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.CMD) + " -j" + Environment.ProcessorCount.ToString() + " || exit /b 1");
+                    if (NeedInstallStrip)
+                    {
+                        Lines.Add("wsl -d " + Shell.EscapeArgumentForShell(TargetOperatingSystemDistribution, Shell.ShellArgumentStyle.CMD) + " " + Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.CMD) + " install/strip || exit /b 1");
+                    }
                     Lines.Add("");
                     var BuildPath = BuildDirectory / "build.cmd";
                     TextFile.WriteToFile(BuildPath, String.Join("\r\n", Lines), System.Text.Encoding.Default, !ForceRegenerate);
@@ -180,7 +184,11 @@ namespace TypeMake
                     Lines.Add("#!/bin/bash");
                     Lines.Add("set -e");
                     Lines.Add(Shell.EscapeArgumentForShell(CMake, Shell.ShellArgumentStyle.Bash) + " " + String.Join(" ", CMakeArguments.Select(a => Shell.EscapeArgumentForShell(a, Shell.ShellArgumentStyle.Bash))));
-                    Lines.Add(Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.Bash) + (NeedInstallStrip ? " install/strip" : "") + " -j" + Environment.ProcessorCount.ToString());
+                    Lines.Add(Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.Bash) + " -j" + Environment.ProcessorCount.ToString());
+                    if (NeedInstallStrip)
+                    {
+                        Lines.Add(Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.Bash) + " install/strip");
+                    }
                     Lines.Add("");
                     var BuildPath = BuildDirectory / "build.sh";
                     TextFile.WriteToFile(BuildPath, String.Join("\n", Lines), new System.Text.UTF8Encoding(false), !ForceRegenerate);
@@ -289,7 +297,11 @@ namespace TypeMake
                         //https://gitlab.kitware.com/cmake/cmake/issues/16859
                         Lines.Add("wsl find projects -name cmake_install.cmake ^| xargs sed -i -e 's:$ENV{DESTDIR}/::g'");
                     }
-                    Lines.Add(Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.CMD) + (NeedInstallStrip ? " install/strip" : "") + " -j" + Environment.ProcessorCount.ToString() + " || exit /b 1");
+                    Lines.Add(Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.CMD) + " -j" + Environment.ProcessorCount.ToString() + " || exit /b 1");
+                    if (NeedInstallStrip)
+                    {
+                        Lines.Add(Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.CMD) + " install/strip || exit /b 1");
+                    }
                     if (EnableJava)
                     {
                         Lines.Add("pushd gradle || exit /b 1");
@@ -306,7 +318,11 @@ namespace TypeMake
                     Lines.Add("#!/bin/bash");
                     Lines.Add("set -e");
                     Lines.Add(Shell.EscapeArgumentForShell(CMake, Shell.ShellArgumentStyle.Bash) + " " + String.Join(" ", CMakeArguments.Select(a => Shell.EscapeArgumentForShell(a, Shell.ShellArgumentStyle.Bash))));
-                    Lines.Add(Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.Bash) + (NeedInstallStrip ? " install/strip" : "") + " -j" + Environment.ProcessorCount.ToString());
+                    Lines.Add(Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.Bash) + " -j" + Environment.ProcessorCount.ToString());
+                    if (NeedInstallStrip)
+                    {
+                        Lines.Add(Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.Bash) + " install/strip");
+                    }
                     if (EnableJava)
                     {
                         Lines.Add("pushd gradle");
