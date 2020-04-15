@@ -296,6 +296,10 @@ namespace TypeMake
             if (Right.Contains('/') || Right.Contains('\\')) { throw new ArgumentException(); }
             return new PathString(Left.Value + Right);
         }
+        public static String operator +(String Left, PathString Right)
+        {
+            return Left + Right.ToString();
+        }
         public static implicit operator String(PathString p)
         {
             return p != null ? p.ToString() : null;
