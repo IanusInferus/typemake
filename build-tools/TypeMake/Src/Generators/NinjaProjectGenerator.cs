@@ -113,7 +113,14 @@ namespace TypeMake.Cpp
                 {
                     if (Lib.Parts.Count == 1)
                     {
-                        Libs.Add("-l" + Lib.ToString(PathStyle));
+                        if (Lib.Extension == "")
+                        {
+                            Libs.Add("-l" + Lib.ToString(PathStyle));
+                        }
+                        else
+                        {
+                            Libs.Add("-l:" + Lib.ToString(PathStyle));
+                        }
                     }
                     else
                     {

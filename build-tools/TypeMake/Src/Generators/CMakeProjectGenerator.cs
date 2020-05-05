@@ -255,7 +255,14 @@ namespace TypeMake.Cpp
                 {
                     if (Lib.Parts.Count == 1)
                     {
-                        PostObjectFileLinkerFlags.Add(Lib.ToString(PathStringStyle.Unix));
+                        if (Lib.Extension == "")
+                        {
+                            PostObjectFileLinkerFlags.Add(Lib.ToString(PathStringStyle.Unix));
+                        }
+                        else
+                        {
+                            PostObjectFileLinkerFlags.Add(WrapLinkerFlag("-l:" + Lib.ToString(PathStringStyle.Unix)));
+                        }
                     }
                     else
                     {

@@ -504,7 +504,7 @@ namespace TypeMake.Cpp
                     {
                         BuildSettings["LIBRARY_SEARCH_PATHS"] = Value.CreateArray(LibDirectories.Select(d => Value.CreateString(d)).ToList());
                     }
-                    var LinkerFlags = conf.LinkerFlags.Concat(conf.Libs.Select(Lib => Lib.Parts.Count == 1 ? "-l" + Lib.ToString(PathStringStyle.Unix) : Lib.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix))).Concat(conf.PostLinkerFlags).ToList();
+                    var LinkerFlags = conf.LinkerFlags.Concat(conf.Libs.Select(Lib => Lib.Parts.Count == 1 ? Lib.Extension == "" ? "-l" + Lib.ToString(PathStringStyle.Unix) : "-l:" + Lib.ToString(PathStringStyle.Unix) : Lib.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix))).Concat(conf.PostLinkerFlags).ToList();
                     if (LinkerFlags.Count != 0)
                     {
                         BuildSettings["OTHER_LDFLAGS"] = Value.CreateArray(LinkerFlags.Select(d => Value.CreateString(d)).ToList());
