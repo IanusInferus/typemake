@@ -735,13 +735,14 @@ namespace TypeMake
                 new Configuration
                 {
                     MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Linux, OperatingSystemType.Android },
-                    CommonFlags = new List<String> { "-fPIC" },
-                    Libs = new List<PathString> { "dl" }
+                    CommonFlags = new List<String> { "-fPIC" }
                 },
                 new Configuration
                 {
-                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Linux },
-                    Libs = new List<PathString> { "pthread" }
+                    MatchingCLibraries = new List<CLibraryType> { CLibraryType.glibc },
+                    CommonFlags = new List<String> { "-pthread" },
+                    LinkerFlags = new List<String> { "-pthread" },
+                    Libs = new List<PathString> { "dl", "rt" }
                 },
                 new Configuration
                 {
@@ -831,8 +832,7 @@ namespace TypeMake
                     MatchingCompilers = new List<CompilerType> { CompilerType.gcc },
                     MatchingCppLibraryForms = new List<CppLibraryForm> { CppLibraryForm.Static },
                     MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Linux, OperatingSystemType.Android },
-                    LinkerFlags = ParseFlags("-static-libgcc"),
-                    Libs = new List<PathString> { "rt" }
+                    LinkerFlags = ParseFlags("-static-libgcc")
                 },
                 new Configuration
                 {
