@@ -10,11 +10,11 @@ if not "%NO_PAUSE_SYMBOL%"=="1" pause
 exit /b %EXIT_CODE%
 
 :main
-pushd "%~dp0\tools\TypeMake" || exit /b 1
+pushd "%~dp0\build-tools\TypeMake" || exit /b 1
 echo building TypeMake...
 call Build.cmd --quiet || exit /b 1
 echo building TypeMake finished.
 popd
 
 set "SourceDirectory=%~dp0"
-"%~dp0\tools\TypeMake\Bin\TypeMake.exe" %* || exit /b 1
+"%~dp0\build-tools\TypeMake\Bin\TypeMake.exe" %* || exit /b 1

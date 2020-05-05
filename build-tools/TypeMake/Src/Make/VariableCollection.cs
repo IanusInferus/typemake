@@ -895,16 +895,16 @@ namespace TypeMake
                         {
                             if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
                             {
-                                return VariableSpec.CreateFixed(VariableValue.CreatePath(Variables.SourceDirectory / "tools/Ninja/ninja-linux/ninja"));
+                                return VariableSpec.CreateFixed(VariableValue.CreatePath(Variables.SourceDirectory / "build-tools/Ninja/ninja-linux/ninja"));
                             }
                             else
                             {
-                                return VariableSpec.CreateFixed(VariableValue.CreatePath(Variables.SourceDirectory / "tools/Ninja/ninja-win/ninja.exe"));
+                                return VariableSpec.CreateFixed(VariableValue.CreatePath(Variables.SourceDirectory / "build-tools/Ninja/ninja-win/ninja.exe"));
                             }
                         }
                         else if (Variables.HostOperatingSystem == Cpp.OperatingSystemType.Linux)
                         {
-                            var Ninja = Shell.TryLocate("ninja") ?? Variables.SourceDirectory / "tools/Ninja/ninja-linux/ninja";
+                            var Ninja = Shell.TryLocate("ninja") ?? Variables.SourceDirectory / "build-tools/Ninja/ninja-linux/ninja";
                             return VariableSpec.CreatePath(new PathStringSpec
                             {
                                 DefaultValue = Ninja
@@ -912,7 +912,7 @@ namespace TypeMake
                         }
                         else if (Variables.HostOperatingSystem == Cpp.OperatingSystemType.MacOS)
                         {
-                            return VariableSpec.CreateFixed(VariableValue.CreatePath(Variables.SourceDirectory / "tools/Ninja/ninja-mac/ninja"));
+                            return VariableSpec.CreateFixed(VariableValue.CreatePath(Variables.SourceDirectory / "build-tools/Ninja/ninja-mac/ninja"));
                         }
                         else
                         {
