@@ -395,7 +395,7 @@ namespace TypeMake
                     }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
                     {
-                        DefaultBuildDir = Variables.SourceDirectory / $"build/linux_{Variables.TargetArchitecture}_{Variables.Toolchain}_{Variables.Compiler}_{Variables.Configuration}";
+                        DefaultBuildDir = Variables.SourceDirectory / $"build/linux_{Variables.TargetArchitecture}_{Variables.Toolchain}_{Variables.Compiler}_{Variables.CLibrary}_{Variables.Configuration}";
                     }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.MacOS)
                     {
