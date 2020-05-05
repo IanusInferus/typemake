@@ -830,6 +830,7 @@ namespace TypeMake
                 new Configuration
                 {
                     MatchingCompilers = new List<CompilerType> { CompilerType.gcc },
+                    MatchingCLibraryForms = new List<CLibraryForm> { CLibraryForm.Dynamic },
                     MatchingCppLibraryForms = new List<CppLibraryForm> { CppLibraryForm.Static },
                     MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Linux, OperatingSystemType.Android },
                     LinkerFlags = ParseFlags("-static-libgcc")
@@ -837,6 +838,7 @@ namespace TypeMake
                 new Configuration
                 {
                     MatchingCompilers = new List<CompilerType> { CompilerType.gcc, CompilerType.clang },
+                    MatchingCLibraryForms = new List<CLibraryForm> { CLibraryForm.Dynamic },
                     MatchingCppLibraries = new List<CppLibraryType> { CppLibraryType.libstdcxx, CppLibraryType.libcxx },
                     MatchingCppLibraryForms = new List<CppLibraryForm> { CppLibraryForm.Static },
                     MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Linux, OperatingSystemType.Android },
