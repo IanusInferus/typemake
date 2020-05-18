@@ -49,6 +49,35 @@ namespace TypeMake
                     }
                     else if (s.OnFixed)
                     {
+                        if (!i.IsHidden)
+                        {
+                            String str;
+                            if (s.Fixed.OnBoolean)
+                            {
+                                str = s.Fixed.Boolean ? "True" : "False";
+                            }
+                            else if (s.Fixed.OnInteger)
+                            {
+                                str = s.Fixed.Integer.ToString();
+                            }
+                            else if (s.Fixed.OnString)
+                            {
+                                str = s.Fixed.String;
+                            }
+                            else if (s.Fixed.OnPath)
+                            {
+                                str = s.Fixed.Path.ToString();
+                            }
+                            else if (s.Fixed.OnStringSet)
+                            {
+                                str = String.Join(" ", s.Fixed.StringSet);
+                            }
+                            else
+                            {
+                                throw new InvalidOperationException();
+                            }
+                            Console.WriteLine(i.VariableName + "=" + str);
+                        }
                         i.SetVariableValue(s.Fixed);
                     }
                     else if (s.OnBoolean)
