@@ -89,40 +89,28 @@ namespace TypeMake
             public ProjectReference Reference;
 
             public PathString PhysicalPath;
-            public Dictionary<String, bool> DependentProjectToRequirement;
+            public HashSet<String> DependentProjectToRequirement;
         }
         public Dictionary<String, ProjectDescription> GetAvailableProjects()
         {
-            var Dependencies = new Dictionary<String, Dictionary<String, bool>>();
+            var Dependencies = new Dictionary<String, HashSet<String>>();
 
-            void Add(String Depender, String Dependee, bool IsRequired = true)
+            void Add(String Depender, params String[] Dependees)
             {
-                if (Dependencies.ContainsKey(Depender))
+                foreach (var Dependee in Dependees)
                 {
-                    var d = Dependencies[Depender];
-                    if (d.ContainsKey(Dependee))
+                    if (Dependencies.ContainsKey(Depender))
                     {
-                        throw new ArgumentException();
+                        var d = Dependencies[Depender];
+                        if (!d.Contains(Dependee))
+                        {
+                            d.Add(Dependee);
+                        }
                     }
-                    d.Add(Dependee, IsRequired);
-                }
-                else
-                {
-                    Dependencies.Add(Depender, new Dictionary<String, bool> { [Dependee] = IsRequired });
-                }
-            }
-            void AddRequired(String Depender, params String[] Dependees)
-            {
-                foreach (var Dependee in Dependees)
-                {
-                    Add(Depender, Dependee, true);
-                }
-            }
-            void AddOptional(String Depender, params String[] Dependees)
-            {
-                foreach (var Dependee in Dependees)
-                {
-                    Add(Depender, Dependee, false);
+                    else
+                    {
+                        Dependencies.Add(Depender, new HashSet<String> { Dependee });
+                    }
                 }
             }
 
@@ -132,14 +120,14 @@ namespace TypeMake
             var ModuleDict = Modules.ToDictionary(m => m.ModuleName);
 
             //modules
-            AddRequired("math", "core");
+            Add("math", "core");
 
             //products
-            AddRequired("basic.static", "math");
-            AddRequired("standard.dynamic", "math");
-            AddRequired("hello", "math");
-            AddRequired("hello.ios", "math");
-            AddRequired("hello.android", "math");
+            Add("basic.static", "math");
+            Add("standard.dynamic", "math");
+            Add("hello", "math");
+            Add("hello.ios", "math");
+            Add("hello.android", "math");
 
             var Projects = new List<ProjectDescription>();
 
@@ -151,7 +139,7 @@ namespace TypeMake
                 var IsTargetOperatingSystemMatched = IsOperatingSystemMatchExtensions(Extensions, TargetOperatingSystem);
                 if (IsTargetOperatingSystemMatched || EnableNonTargetingOperatingSystemDummy)
                 {
-                    var DependentModuleToRequirement = Dependencies.ContainsKey(ModuleName) ? Dependencies[ModuleName] : new Dictionary<String, bool>();
+                    var DependentModuleToRequirement = Dependencies.ContainsKey(ModuleName) ? Dependencies[ModuleName] : new HashSet<String>();
                     Projects.Add(new ProjectDescription
                     {
                         Definition = new Project
@@ -191,8 +179,8 @@ namespace TypeMake
                         {
                             if (TestFile.Type != FileType.CppSource) { continue; }
                             var TestName = ModuleName + "_" + Regex.Replace(TestFile.Path.FullPath.RelativeTo(InputDirectory), @"[\\/]", "_").AsPath().FileNameWithoutExtension;
-                            var TestDependentModuleToRequirement = DependentModuleToRequirement.ToDictionary(p => p.Key, p => p.Value);
-                            TestDependentModuleToRequirement.Add(ModuleName, true);
+                            var TestDependentModuleToRequirement = new HashSet<String>(DependentModuleToRequirement);
+                            TestDependentModuleToRequirement.Add(ModuleName);
                             Projects.Add(new ProjectDescription
                             {
                                 Definition = new Project
@@ -273,7 +261,7 @@ namespace TypeMake
                 }
                 if (IsTargetOperatingSystemMatched || EnableNonTargetingOperatingSystemDummy)
                 {
-                    var DependentModuleToRequirement = Dependencies.ContainsKey(ProductName) ? Dependencies[ProductName] : new Dictionary<String, bool>();
+                    var DependentModuleToRequirement = Dependencies.ContainsKey(ProductName) ? Dependencies[ProductName] : new HashSet<String>();
                     var Defines = new List<KeyValuePair<String, String>> { };
                     if ((ProductTargetType == TargetType.Executable) || (ProductTargetType == TargetType.MacApplication) || (ProductTargetType == TargetType.iOSApplication) || (ProductTargetType == TargetType.GradleApplication))
                     {
@@ -446,7 +434,7 @@ namespace TypeMake
                                 FilePath = BuildDirectory / "gradle" / GetProjectFileName(ProductName)
                             },
                             PhysicalPath = InputDirectory,
-                            DependentProjectToRequirement = new Dictionary<String, bool> { [ProductName] = true }
+                            DependentProjectToRequirement = new HashSet<String> { ProductName }
                         });
                     }
                 }
@@ -1085,32 +1073,28 @@ namespace TypeMake
                 throw new NotSupportedException();
             }
         }
-        private static List<String> GetFullProjectDependencies(String ProjectName, Dictionary<String, Dictionary<String, bool>> Dependencies, out List<String> UnresovledDependencies)
+        private static List<String> GetFullProjectDependencies(String ProjectName, Dictionary<String, HashSet<String>> Dependencies, out List<String> UnresovledDependencies)
         {
             var Full = new List<String>();
             var Unresovled = new List<String>();
             var Added = new HashSet<String>();
-            var Queue = new Queue<KeyValuePair<String, bool>>();
-            Queue.Enqueue(new KeyValuePair<String, bool>(ProjectName, true));
+            var Queue = new Queue<String>();
+            Queue.Enqueue(ProjectName);
             while (Queue.Count > 0)
             {
                 var m = Queue.Dequeue();
-                if (Added.Contains(m.Key)) { continue; }
-                if (!m.Value)
+                if (Added.Contains(m)) { continue; }
+                if (!Dependencies.ContainsKey(m))
                 {
-                    if (!Dependencies.ContainsKey(m.Key)) { continue; }
-                }
-                if (!Dependencies.ContainsKey(m.Key))
-                {
-                    Unresovled.Add(m.Key);
+                    Unresovled.Add(m);
                     continue;
                 }
                 if (Added.Count != 0)
                 {
-                    Full.Add(m.Key);
+                    Full.Add(m);
                 }
-                Added.Add(m.Key);
-                foreach (var d in Dependencies[m.Key])
+                Added.Add(m);
+                foreach (var d in Dependencies[m])
                 {
                     Queue.Enqueue(d);
                 }
