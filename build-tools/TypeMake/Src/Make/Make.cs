@@ -25,6 +25,7 @@ namespace TypeMake
         private CppLibraryForm CppLibraryForm;
         private PathString SourceDirectory;
         private PathString BuildDirectory;
+        private bool EnableMacCatalyst;
         private String XCodeDevelopmentTeam;
         private String XCodeProvisioningProfileSpecifier;
         private int VSVersion;
@@ -46,7 +47,7 @@ namespace TypeMake
 
         private Dictionary<String, String> ProjectIds = new Dictionary<String, String>();
 
-        public Make(OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType TargetArchitecture, ToolchainType Toolchain, CompilerType Compiler, CLibraryType CLibrary, CLibraryForm CLibraryForm, CppLibraryType CppLibrary, CppLibraryForm CppLibraryForm, ConfigurationType ConfigurationType, PathString SourceDirectory, PathString BuildDirectory, String XCodeDevelopmentTeam, String XCodeProvisioningProfileSpecifier, int VSVersion, bool EnableJava, PathString Jdk, PathString AndroidSdk, PathString AndroidNdk, String CC, String CXX, String AR, String STRIP, List<String> CommonFlags, List<String> CFlags, List<String> CppFlags, List<String> LinkerFlags, List<String> PostLinkerFlags, bool ForceRegenerate, bool EnableNonTargetingOperatingSystemDummy)
+        public Make(OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType TargetArchitecture, ToolchainType Toolchain, CompilerType Compiler, CLibraryType CLibrary, CLibraryForm CLibraryForm, CppLibraryType CppLibrary, CppLibraryForm CppLibraryForm, ConfigurationType ConfigurationType, PathString SourceDirectory, PathString BuildDirectory, bool EnableMacCatalyst, String XCodeDevelopmentTeam, String XCodeProvisioningProfileSpecifier, int VSVersion, bool EnableJava, PathString Jdk, PathString AndroidSdk, PathString AndroidNdk, String CC, String CXX, String AR, String STRIP, List<String> CommonFlags, List<String> CFlags, List<String> CppFlags, List<String> LinkerFlags, List<String> PostLinkerFlags, bool ForceRegenerate, bool EnableNonTargetingOperatingSystemDummy)
         {
             this.HostOperatingSystem = HostOperatingSystem;
             this.HostArchitecture = HostArchitecture;
@@ -61,6 +62,7 @@ namespace TypeMake
             this.ConfigurationType = ConfigurationType;
             this.SourceDirectory = SourceDirectory.FullPath;
             this.BuildDirectory = BuildDirectory.FullPath;
+            this.EnableMacCatalyst = EnableMacCatalyst;
             this.XCodeDevelopmentTeam = XCodeDevelopmentTeam;
             this.XCodeProvisioningProfileSpecifier = XCodeProvisioningProfileSpecifier;
             this.VSVersion = VSVersion;
@@ -737,7 +739,7 @@ namespace TypeMake
                     MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.MacOS },
                     Options = new Dictionary<String, String>
                     {
-                        ["xcode.target.VALID_ARCHS"] = "x86_64"
+                        ["xcode.project.VALID_ARCHS"] = "x86_64"
                     }
                 },
                 new Configuration
@@ -745,7 +747,7 @@ namespace TypeMake
                     MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.iOS },
                     Options = new Dictionary<String, String>
                     {
-                        ["xcode.target.VALID_ARCHS"] = "arm64"
+                        ["xcode.project.VALID_ARCHS"] = "arm64"
                     }
                 },
                 new Configuration
@@ -899,7 +901,7 @@ namespace TypeMake
                     MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.iOS },
                     Options = new Dictionary<String, String>
                     {
-                        ["xcode.target.IPHONEOS_DEPLOYMENT_TARGET"] = "8.0"
+                        ["xcode.project.IPHONEOS_DEPLOYMENT_TARGET"] = "8.0"
                     }
                 },
                 new Configuration
@@ -945,16 +947,31 @@ namespace TypeMake
                     });
                 }
             }
+            if (EnableMacCatalyst)
+            {
+                Configurations.Add(new Configuration
+                {
+                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.iOS },
+                    Options = new Dictionary<String, String>
+                    {
+                        ["xcode.project.TARGETED_DEVICE_FAMILY"] = "1,2",
+                        ["xcode.project.VALID_ARCHS"] = "arm64 x86_64",
+                        ["xcode.project.SUPPORTS_MACCATALYST"] = "YES",
+                        ["xcode.project.IPHONEOS_DEPLOYMENT_TARGET"] = "8.0",
+                        ["xcode.project.MACOSX_DEPLOYMENT_TARGET"] = "10.15"
+                    }
+                });
+            }
             return Configurations;
         }
 
-        private static List<Cpp.File> GetFilesInDirectory(PathString d, OperatingSystemType TargetOperatingSystem, bool IsTargetOperatingSystemMatched, bool TopOnly = false)
+        private List<Cpp.File> GetFilesInDirectory(PathString d, OperatingSystemType TargetOperatingSystem, bool IsTargetOperatingSystemMatched, bool TopOnly = false)
         {
             var l = new List<Cpp.File>();
             FillFilesInDirectory(d, TargetOperatingSystem, IsTargetOperatingSystemMatched, TopOnly, l);
             return l;
         }
-        private static void FillFilesInDirectory(PathString d, OperatingSystemType TargetOperatingSystem, bool IsTargetOperatingSystemMatched, bool TopOnly, List<Cpp.File> Results)
+        private void FillFilesInDirectory(PathString d, OperatingSystemType TargetOperatingSystem, bool IsTargetOperatingSystemMatched, bool TopOnly, List<Cpp.File> Results)
         {
             if (!Directory.Exists(d)) { return; }
             foreach (var FilePathRelative in Directory.EnumerateDirectories(d, "*", SearchOption.TopDirectoryOnly))
@@ -977,63 +994,79 @@ namespace TypeMake
                 Results.Add(GetFileByPath(FilePath, TargetOperatingSystem, IsTargetOperatingSystemMatched));
             }
         }
-        private static Cpp.File GetFileByPath(PathString FilePath, OperatingSystemType TargetOperatingSystem, bool IsTargetOperatingSystemMatched)
+        private Cpp.File GetFileByPath(PathString FilePath, OperatingSystemType TargetOperatingSystem, bool IsTargetOperatingSystemMatched)
         {
             var Ext = FilePath.Extension.ToLowerInvariant();
             var Extensions = FilePath.FileName.Split('.', '_').Skip(1).ToList();
-            if (!IsTargetOperatingSystemMatched || !IsOperatingSystemMatchExtensions(Extensions, TargetOperatingSystem))
+            var Configurations = new List<Configuration> { };
+            if ((!IsTargetOperatingSystemMatched || !IsOperatingSystemMatchExtensions(Extensions, TargetOperatingSystem)) && !((TargetOperatingSystem == OperatingSystemType.iOS) && EnableMacCatalyst && IsOperatingSystemMatchExtensions(Extensions, OperatingSystemType.MacOS, true)))
             {
-                return new Cpp.File { Path = FilePath, Type = FileType.Unknown };
+                return new Cpp.File { Path = FilePath, Type = FileType.Unknown, Configurations = Configurations };
+            }
+            if ((TargetOperatingSystem == OperatingSystemType.iOS) && EnableMacCatalyst)
+            {
+                if (IsOperatingSystemMatchExtensions(Extensions, TargetOperatingSystem, true) && !IsOperatingSystemMatchExtensions(Extensions, OperatingSystemType.MacOS, true))
+                {
+                    Configurations.Add(new Configuration { Options = new Dictionary<String, String> { ["xcode.buildFile.platformFilter"] = "ios" } });
+                }
+                else if (!IsOperatingSystemMatchExtensions(Extensions, TargetOperatingSystem, true) && IsOperatingSystemMatchExtensions(Extensions, OperatingSystemType.MacOS, true))
+                {
+                    Configurations.Add(new Configuration { Options = new Dictionary<String, String> { ["xcode.buildFile.platformFilter"] = "maccatalyst" } });
+                }
+            }
+            if (((TargetOperatingSystem == OperatingSystemType.MacOS) || (TargetOperatingSystem == OperatingSystemType.iOS)) && Extensions.Contains("mm"))
+            {
+                return new Cpp.File { Path = FilePath, Type = FileType.ObjectiveCppSource, Configurations = Configurations };
             }
             if ((Ext == "h") || (Ext == "hh") || (Ext == "hpp") || (Ext == "hxx"))
             {
-                return new Cpp.File { Path = FilePath, Type = FileType.Header };
+                return new Cpp.File { Path = FilePath, Type = FileType.Header, Configurations = Configurations };
             }
             else if (Ext == "c")
             {
-                return new Cpp.File { Path = FilePath, Type = FileType.CSource };
+                return new Cpp.File { Path = FilePath, Type = FileType.CSource, Configurations = Configurations };
             }
             else if ((Ext == "cc") || (Ext == "cpp") || (Ext == "cxx"))
             {
-                return new Cpp.File { Path = FilePath, Type = FileType.CppSource };
+                return new Cpp.File { Path = FilePath, Type = FileType.CppSource, Configurations = Configurations };
             }
             else if (Ext == "m")
             {
                 if ((TargetOperatingSystem == OperatingSystemType.iOS) || (TargetOperatingSystem == OperatingSystemType.MacOS))
                 {
-                    return new Cpp.File { Path = FilePath, Type = FileType.ObjectiveCSource };
+                    return new Cpp.File { Path = FilePath, Type = FileType.ObjectiveCSource, Configurations = Configurations };
                 }
                 else
                 {
-                    return new Cpp.File { Path = FilePath, Type = FileType.Unknown };
+                    return new Cpp.File { Path = FilePath, Type = FileType.Unknown, Configurations = Configurations };
                 }
             }
             else if (Ext == "mm")
             {
                 if ((TargetOperatingSystem == OperatingSystemType.iOS) || (TargetOperatingSystem == OperatingSystemType.MacOS))
                 {
-                    return new Cpp.File { Path = FilePath, Type = FileType.ObjectiveCppSource };
+                    return new Cpp.File { Path = FilePath, Type = FileType.ObjectiveCppSource, Configurations = Configurations };
                 }
                 else
                 {
-                    return new Cpp.File { Path = FilePath, Type = FileType.Unknown };
+                    return new Cpp.File { Path = FilePath, Type = FileType.Unknown, Configurations = Configurations };
                 }
             }
             else if (Ext == "storyboard")
             {
-                return new Cpp.File { Path = FilePath, Type = FileType.EmbeddedContent };
+                return new Cpp.File { Path = FilePath, Type = FileType.EmbeddedContent, Configurations = Configurations };
             }
             else if (Ext == "xib")
             {
-                return new Cpp.File { Path = FilePath, Type = FileType.EmbeddedContent };
+                return new Cpp.File { Path = FilePath, Type = FileType.EmbeddedContent, Configurations = Configurations };
             }
             else if (Ext == "natvis")
             {
-                return new Cpp.File { Path = FilePath, Type = FileType.NatVis };
+                return new Cpp.File { Path = FilePath, Type = FileType.NatVis, Configurations = Configurations };
             }
             else
             {
-                return new Cpp.File { Path = FilePath, Type = FileType.Unknown };
+                return new Cpp.File { Path = FilePath, Type = FileType.Unknown, Configurations = Configurations };
             }
         }
         private static List<KeyValuePair<String, String>> ParseDefines(String Defines)

@@ -163,31 +163,6 @@ namespace TypeMake.Cpp
                     if ((Project.TargetType == TargetType.MacApplication) || (Project.TargetType == TargetType.MacBundle) || (Project.TargetType == TargetType.iOSApplication) || (Project.TargetType == TargetType.iOSStaticFramework) || (Project.TargetType == TargetType.iOSSharedFramework))
                     {
                         //bundle and frameworks don't need to be signed https://stackoverflow.com/questions/30963294/creating-ios-osx-frameworks-is-it-necessary-to-codesign-them-before-distributin
-                        if (TargetOperatingSystem == OperatingSystemType.MacOS)
-                        {
-                            if (Project.TargetType == TargetType.MacApplication)
-                            {
-                                if (String.IsNullOrEmpty(DevelopmentTeam))
-                                {
-                                    //Ad Hoc
-                                    BuildSettings["CODE_SIGN_IDENTITY"] = Value.CreateString("-");
-                                }
-                                else
-                                {
-                                    BuildSettings["CODE_SIGN_IDENTITY"] = Value.CreateString("Mac Developer");
-                                }
-                            }
-                            else
-                            {
-                                //https://github.com/Carthage/Carthage/issues/399#issuecomment-86089516
-                                BuildSettings["CODE_SIGN_IDENTITY"] = Value.CreateString("");
-                            }
-                        }
-                        else if (TargetOperatingSystem == OperatingSystemType.iOS)
-                        {
-                            //https://github.com/Carthage/Carthage/issues/399#issuecomment-86089516
-                            BuildSettings["CODE_SIGN_IDENTITY"] = Value.CreateString("iPhone Developer");
-                        }
                         if ((Project.TargetType == TargetType.MacApplication) || (Project.TargetType == TargetType.iOSApplication))
                         {
                             if (String.IsNullOrEmpty(ProvisioningProfileSpecifier))
@@ -327,6 +302,15 @@ namespace TypeMake.Cpp
                                 if (FileFlags.Count > 0)
                                 {
                                     File.Add("settings", Value.CreateDict(new Dictionary<String, Value> { ["COMPILER_FLAGS"] = Value.CreateString(String.Join(" ", FileFlags)) }));
+                                }
+
+                                foreach (var o in FileConf.Options)
+                                {
+                                    var Prefix = "xcode.buildFile.";
+                                    if (o.Key.StartsWith(Prefix))
+                                    {
+                                        File[o.Key.Substring(Prefix.Length)] = Value.CreateString(o.Value);
+                                    }
                                 }
 
                                 var Hash = GetHashOfPath(TargetName + ":PBXSourcesBuildPhase:" + RelativePath);
