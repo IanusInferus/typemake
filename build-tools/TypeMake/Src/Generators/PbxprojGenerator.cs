@@ -110,7 +110,7 @@ namespace TypeMake.Cpp
                 var VirtualPath = ("Frameworks/" + Project.Name).AsPath();
                 AddProjectReference(Objects, RootObject["mainGroup"].String, "", VirtualPath, Project, RelativePathToObjects);
 
-                if (this.Project.TargetType == TargetType.iOSStaticFramework)
+                if (this.Project.TargetType == TargetType.DarwinStaticFramework)
                 {
                     var TargetFileProxyHash = GetHashOfPath("PBXReferenceProxy:PBXContainerItemProxy:" + Project.Name);
                     var TargetFileProxy = new Dictionary<String, Value>();
@@ -160,10 +160,10 @@ namespace TypeMake.Cpp
                     var conf = Project.Configurations.Merged(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitectureType, ToolchainType.XCode, CompilerType.clang, CLibraryType.libSystem, CLibraryForm.Dynamic, CppLibraryType.libcxx, CppLibraryForm, ConfigurationType);
 
                     BuildSettings["PRODUCT_NAME"] = Value.CreateString(ProductName);
-                    if ((Project.TargetType == TargetType.MacApplication) || (Project.TargetType == TargetType.MacBundle) || (Project.TargetType == TargetType.iOSApplication) || (Project.TargetType == TargetType.iOSStaticFramework) || (Project.TargetType == TargetType.iOSSharedFramework))
+                    if ((Project.TargetType == TargetType.DarwinApplication) || (Project.TargetType == TargetType.DarwinStaticFramework) || (Project.TargetType == TargetType.DarwinSharedFramework) || (Project.TargetType == TargetType.MacBundle))
                     {
                         //bundle and frameworks don't need to be signed https://stackoverflow.com/questions/30963294/creating-ios-osx-frameworks-is-it-necessary-to-codesign-them-before-distributin
-                        if ((Project.TargetType == TargetType.MacApplication) || (Project.TargetType == TargetType.iOSApplication))
+                        if (Project.TargetType == TargetType.DarwinApplication)
                         {
                             if (String.IsNullOrEmpty(ProvisioningProfileSpecifier))
                             {
@@ -192,13 +192,13 @@ namespace TypeMake.Cpp
                         BuildSettings["DEVELOPMENT_TEAM"] = Value.CreateString("");
                         BuildSettings["PROVISIONING_PROFILE_SPECIFIER"] = Value.CreateString("");
                     }
-                    if ((ConfigurationType == ConfigurationType.Release) && ((Project.TargetType == TargetType.DynamicLibrary) || (Project.TargetType == TargetType.MacApplication) || (Project.TargetType == TargetType.MacBundle) || (Project.TargetType == TargetType.iOSApplication) || (Project.TargetType == TargetType.iOSStaticFramework) || (Project.TargetType == TargetType.iOSSharedFramework)))
+                    if ((ConfigurationType == ConfigurationType.Release) && ((Project.TargetType == TargetType.DynamicLibrary) || (Project.TargetType == TargetType.DarwinApplication) || (Project.TargetType == TargetType.DarwinStaticFramework) || (Project.TargetType == TargetType.DarwinSharedFramework) || (Project.TargetType == TargetType.MacBundle)))
                     {
                         BuildSettings["DEPLOYMENT_POSTPROCESSING"] = Value.CreateString("YES");
                         BuildSettings["COPY_PHASE_STRIP"] = Value.CreateString("YES");
                         BuildSettings["STRIP_STYLE"] = Value.CreateString("non-global");
                     }
-                    if ((Project.TargetType == TargetType.MacApplication) || (Project.TargetType == TargetType.MacBundle) || (Project.TargetType == TargetType.iOSApplication) || (Project.TargetType == TargetType.iOSStaticFramework) || (Project.TargetType == TargetType.iOSSharedFramework))
+                    if ((Project.TargetType == TargetType.DarwinApplication) || (Project.TargetType == TargetType.DarwinStaticFramework) || (Project.TargetType == TargetType.DarwinSharedFramework) || (Project.TargetType == TargetType.MacBundle))
                     {
                         var InfoPlistPath = InputDirectory / "Info.plist";
                         if (System.IO.File.Exists(InfoPlistPath))
@@ -206,42 +206,44 @@ namespace TypeMake.Cpp
                             BuildSettings["INFOPLIST_FILE"] = Value.CreateString(InfoPlistPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix));
                         }
                     }
-                    if (TargetOperatingSystem == OperatingSystemType.MacOS)
+                    if (Project.TargetType == TargetType.DynamicLibrary)
                     {
-                        if (Project.TargetType == TargetType.DynamicLibrary)
+                        BuildSettings["EXECUTABLE_PREFIX"] = Value.CreateString("lib");
+                    }
+                    if ((Project.TargetType == TargetType.DynamicLibrary) || (Project.TargetType == TargetType.MacBundle) || (Project.TargetType == TargetType.DarwinSharedFramework))
+                    {
+                        BuildSettings["DYLIB_INSTALL_NAME_BASE"] = Value.CreateString("@rpath");
+                        BuildSettings["SKIP_INSTALL"] = Value.CreateString("YES");
+                    }
+                    if (Project.TargetType == TargetType.DarwinSharedFramework)
+                    {
+                        BuildSettings["DYLIB_COMPATIBILITY_VERSION"] = Value.CreateString("1");
+                        BuildSettings["DYLIB_CURRENT_VERSION"] = Value.CreateString("1");
+                        BuildSettings["INSTALL_PATH"] = Value.CreateString("$(LOCAL_LIBRARY_DIR)/Frameworks");
+                        if (TargetOperatingSystem == OperatingSystemType.MacOS)
                         {
-                            BuildSettings["EXECUTABLE_PREFIX"] = Value.CreateString("lib");
+                            BuildSettings["LD_RUNPATH_SEARCH_PATHS"] = Value.CreateString("@executable_path/../Frameworks @loader_path/Frameworks");
                         }
-                        if ((Project.TargetType == TargetType.DynamicLibrary) || (Project.TargetType == TargetType.MacBundle))
+                        else
                         {
-                            BuildSettings["DYLIB_INSTALL_NAME_BASE"] = Value.CreateString("@rpath");
-                            BuildSettings["SKIP_INSTALL"] = Value.CreateString("YES");
+                            BuildSettings["LD_RUNPATH_SEARCH_PATHS"] = Value.CreateString("@executable_path/Frameworks @loader_path/Frameworks");
                         }
                     }
-                    else if (TargetOperatingSystem == OperatingSystemType.iOS)
+                    if (Project.TargetType == TargetType.DarwinStaticFramework)
                     {
-                        if ((Project.TargetType == TargetType.DynamicLibrary) || (Project.TargetType == TargetType.iOSSharedFramework))
-                        {
-                            BuildSettings["DYLIB_COMPATIBILITY_VERSION"] = Value.CreateString("1");
-                            BuildSettings["DYLIB_CURRENT_VERSION"] = Value.CreateString("1");
-                            BuildSettings["DYLIB_INSTALL_NAME_BASE"] = Value.CreateString("@rpath");
-                            BuildSettings["INSTALL_PATH"] = Value.CreateString("$(LOCAL_LIBRARY_DIR)/Frameworks");
-                            BuildSettings["LD_RUNPATH_SEARCH_PATHS"] = Value.CreateString("@executable_path/Frameworks @loader_path/Frameworks");
-                            BuildSettings["SKIP_INSTALL"] = Value.CreateString("YES");
-                        }
-                        if (Project.TargetType == TargetType.iOSStaticFramework)
-                        {
-                            BuildSettings["MACH_O_TYPE"] = Value.CreateString("staticlib");
-                            BuildSettings["GENERATE_MASTER_OBJECT_FILE"] = Value.CreateString("YES");
+                        BuildSettings["MACH_O_TYPE"] = Value.CreateString("staticlib");
+                        BuildSettings["GENERATE_MASTER_OBJECT_FILE"] = Value.CreateString("YES");
 
-                            var LinkerFlags = new List<String> { "-L\"$BUILT_PRODUCTS_DIR\"" }.Concat(conf.LibDirectories.Select(d => "-L" + d.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix))).Concat(ProjectReferences.Select(r => "-l" + r.Name)).Concat(conf.Libs.Select(Lib => Lib.Parts.Count == 1 ? "-l" + Lib.ToString(PathStringStyle.Unix) : Lib.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix))).ToList();
-                            BuildSettings["PRELINK_FLAGS"] = Value.CreateString(String.Join(" ", LinkerFlags));
-                        }
-                        else if (Project.TargetType == TargetType.iOSSharedFramework)
-                        {
-                            BuildSettings["MACH_O_TYPE"] = Value.CreateString("mh_dylib");
-                        }
-                        if ((Project.TargetType == TargetType.iOSApplication) || (Project.TargetType == TargetType.DynamicLibrary) || (Project.TargetType == TargetType.iOSStaticFramework) || (Project.TargetType == TargetType.iOSSharedFramework))
+                        var LinkerFlags = new List<String> { "-L\"$BUILT_PRODUCTS_DIR\"" }.Concat(conf.LibDirectories.Select(d => "-L" + d.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix))).Concat(ProjectReferences.Select(r => "-l" + r.Name)).Concat(conf.Libs.Select(Lib => Lib.Parts.Count == 1 ? "-l" + Lib.ToString(PathStringStyle.Unix) : Lib.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix))).ToList();
+                        BuildSettings["PRELINK_FLAGS"] = Value.CreateString(String.Join(" ", LinkerFlags));
+                    }
+                    else if (Project.TargetType == TargetType.DarwinSharedFramework)
+                    {
+                        BuildSettings["MACH_O_TYPE"] = Value.CreateString("mh_dylib");
+                    }
+                    if (TargetOperatingSystem == OperatingSystemType.iOS)
+                    {
+                        if ((Project.TargetType == TargetType.DynamicLibrary) || (Project.TargetType == TargetType.DarwinApplication) || (Project.TargetType == TargetType.DarwinStaticFramework) || (Project.TargetType == TargetType.DarwinSharedFramework))
                         {
                             BuildSettings["TARGETED_DEVICE_FAMILY"] = Value.CreateString("1,2");
                         }
@@ -321,7 +323,7 @@ namespace TypeMake.Cpp
                     }
                     else if (Type == "PBXFrameworksBuildPhase")
                     {
-                        if ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary) || (Project.TargetType == TargetType.MacApplication) || (Project.TargetType == TargetType.MacBundle) || (Project.TargetType == TargetType.iOSApplication) || (Project.TargetType == TargetType.iOSSharedFramework))
+                        if ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary) || (Project.TargetType == TargetType.DarwinApplication) || (Project.TargetType == TargetType.DarwinSharedFramework) || (Project.TargetType == TargetType.MacBundle))
                         {
                             var Files = Phase["files"];
                             foreach (var Project in ProjectReferences)
@@ -376,7 +378,7 @@ namespace TypeMake.Cpp
                 var TargetDependencies = new List<Value>();
                 foreach (var Project in ProjectReferences)
                 {
-                    if (this.Project.TargetType == TargetType.iOSStaticFramework)
+                    if (this.Project.TargetType == TargetType.DarwinStaticFramework)
                     {
                         var VirtualPath = ("Frameworks/" + Project.Name).AsPath();
 
@@ -410,12 +412,6 @@ namespace TypeMake.Cpp
                     TargetFile.Dict["explicitFileType"] = Value.CreateString("compiled.mach-o.executable");
                     TargetFile.Dict["path"] = Value.CreateString(ProductName);
                 }
-                else if ((Project.TargetType == TargetType.MacApplication) || (Project.TargetType == TargetType.iOSApplication))
-                {
-                    Target["productType"] = Value.CreateString("com.apple.product-type.application");
-                    TargetFile.Dict["explicitFileType"] = Value.CreateString("wrapper.application");
-                    TargetFile.Dict["path"] = Value.CreateString(ProductName + ".app");
-                }
                 else if (Project.TargetType == TargetType.StaticLibrary)
                 {
                     Target["productType"] = Value.CreateString("com.apple.product-type.library.static");
@@ -428,23 +424,29 @@ namespace TypeMake.Cpp
                     TargetFile.Dict["explicitFileType"] = Value.CreateString("compiled.mach-o.dylib");
                     TargetFile.Dict["path"] = Value.CreateString("lib" + ProductName + ".dylib");
                 }
+                else if (Project.TargetType == TargetType.DarwinApplication)
+                {
+                    Target["productType"] = Value.CreateString("com.apple.product-type.application");
+                    TargetFile.Dict["explicitFileType"] = Value.CreateString("wrapper.application");
+                    TargetFile.Dict["path"] = Value.CreateString(ProductName + ".app");
+                }
+                else if (Project.TargetType == TargetType.DarwinStaticFramework)
+                {
+                    Target["productType"] = Value.CreateString("com.apple.product-type.framework");
+                    TargetFile.Dict["explicitFileType"] = Value.CreateString("wrapper.framework");
+                    TargetFile.Dict["path"] = Value.CreateString(ProductName + ".framework");
+                }
+                else if (Project.TargetType == TargetType.DarwinSharedFramework)
+                {
+                    Target["productType"] = Value.CreateString("com.apple.product-type.framework");
+                    TargetFile.Dict["explicitFileType"] = Value.CreateString("wrapper.framework");
+                    TargetFile.Dict["path"] = Value.CreateString(ProductName + ".framework");
+                }
                 else if (Project.TargetType == TargetType.MacBundle)
                 {
                     Target["productType"] = Value.CreateString("com.apple.product-type.bundle");
                     TargetFile.Dict["explicitFileType"] = Value.CreateString("wrapper.cfbundle");
                     TargetFile.Dict["path"] = Value.CreateString(ProductName + ".bundle");
-                }
-                else if (Project.TargetType == TargetType.iOSStaticFramework)
-                {
-                    Target["productType"] = Value.CreateString("com.apple.product-type.framework");
-                    TargetFile.Dict["explicitFileType"] = Value.CreateString("wrapper.framework");
-                    TargetFile.Dict["path"] = Value.CreateString(ProductName + ".framework");
-                }
-                else if (Project.TargetType == TargetType.iOSSharedFramework)
-                {
-                    Target["productType"] = Value.CreateString("com.apple.product-type.framework");
-                    TargetFile.Dict["explicitFileType"] = Value.CreateString("wrapper.framework");
-                    TargetFile.Dict["path"] = Value.CreateString(ProductName + ".framework");
                 }
                 else
                 {
@@ -481,7 +483,7 @@ namespace TypeMake.Cpp
                     BuildSettings["OTHER_CPLUSPLUSFLAGS"] = Value.CreateArray(CppFlags.Select(d => Value.CreateString(d)).ToList());
                 }
 
-                if ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary) || (Project.TargetType == TargetType.MacApplication) || (Project.TargetType == TargetType.MacBundle) || (Project.TargetType == TargetType.iOSApplication) || (Project.TargetType == TargetType.iOSSharedFramework))
+                if ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary) || (Project.TargetType == TargetType.DarwinApplication) || (Project.TargetType == TargetType.DarwinSharedFramework) || (Project.TargetType == TargetType.MacBundle))
                 {
                     var LibDirectories = conf.LibDirectories.Select(d => d.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix)).ToList();
                     if (LibDirectories.Count != 0)
@@ -698,7 +700,7 @@ namespace TypeMake.Cpp
                 var Hash = GetHashOfPath(ProjectVirtualPath.ToString(PathStringStyle.Unix));
 
                 var FileObject = new Dictionary<string, Value>();
-                if (this.Project.TargetType == TargetType.iOSStaticFramework)
+                if (this.Project.TargetType == TargetType.DarwinStaticFramework)
                 {
                     FileObject.Add("isa", Value.CreateString("PBXFileReference"));
                     FileObject.Add("explicitFileType", Value.CreateString("wrapper.pb-project"));

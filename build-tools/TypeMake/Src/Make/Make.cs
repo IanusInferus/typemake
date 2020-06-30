@@ -231,13 +231,9 @@ namespace TypeMake
                 }
                 if ((ProductTargetType == TargetType.Executable) && System.IO.File.Exists(InputDirectory / "Info.plist"))
                 {
-                    if (TargetOperatingSystem == OperatingSystemType.MacOS)
+                    if ((TargetOperatingSystem == OperatingSystemType.MacOS) || (TargetOperatingSystem == OperatingSystemType.iOS))
                     {
-                        ProductTargetType = TargetType.MacApplication;
-                    }
-                    else if (TargetOperatingSystem == OperatingSystemType.iOS)
-                    {
-                        ProductTargetType = TargetType.iOSApplication;
+                        ProductTargetType = TargetType.DarwinApplication;
                     }
                 }
                 if (System.IO.File.Exists(InputDirectory / "AndroidManifest.xml"))
@@ -253,7 +249,7 @@ namespace TypeMake
                     }
                 }
                 var IsTargetOperatingSystemMatched = IsOperatingSystemMatchExtensions(Extensions, TargetOperatingSystem);
-                if ((ProductTargetType == TargetType.MacApplication) && (Toolchain != ToolchainType.XCode))
+                if ((ProductTargetType == TargetType.DarwinApplication) && (Toolchain != ToolchainType.XCode))
                 {
                     IsTargetOperatingSystemMatched = false;
                 }
@@ -265,7 +261,7 @@ namespace TypeMake
                 {
                     var DependentModuleToRequirement = Dependencies.ContainsKey(ProductName) ? Dependencies[ProductName] : new HashSet<String>();
                     var Defines = new List<KeyValuePair<String, String>> { };
-                    if ((ProductTargetType == TargetType.Executable) || (ProductTargetType == TargetType.MacApplication) || (ProductTargetType == TargetType.iOSApplication) || (ProductTargetType == TargetType.GradleApplication))
+                    if ((ProductTargetType == TargetType.Executable) || (ProductTargetType == TargetType.DarwinApplication) || (ProductTargetType == TargetType.GradleApplication))
                     {
                     }
                     else if (ProductTargetType == TargetType.StaticLibrary)
@@ -306,7 +302,7 @@ namespace TypeMake
                         new Configuration
                         {
                             MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.MacOS, OperatingSystemType.iOS },
-                            MatchingTargetTypes = new List<TargetType> { TargetType.MacApplication, TargetType.MacBundle, TargetType.iOSApplication, TargetType.iOSStaticFramework, TargetType.iOSSharedFramework },
+                            MatchingTargetTypes = new List<TargetType> { TargetType.DarwinApplication, TargetType.DarwinApplication, TargetType.DarwinStaticFramework, TargetType.DarwinSharedFramework, TargetType.MacBundle },
                             Options = new Dictionary<String, String>
                             {
                                 ["xcode.target.PRODUCT_BUNDLE_IDENTIFIER"] = SolutionName + "." + TargetName
@@ -364,9 +360,9 @@ namespace TypeMake
                     }
                     else if ((TargetOperatingSystem == OperatingSystemType.iOS) && (ProductTargetType == TargetType.DynamicLibrary))
                     {
-                        foreach (var FrameworkTargetType in new List<TargetType> { TargetType.iOSStaticFramework, TargetType.iOSSharedFramework })
+                        foreach (var FrameworkTargetType in new List<TargetType> { TargetType.DarwinStaticFramework, TargetType.DarwinSharedFramework })
                         {
-                            var Type = FrameworkTargetType.ToString().Replace("iOS", "").Replace("Framework", "");
+                            var Type = FrameworkTargetType.ToString().Replace("Darwin", "").Replace("Framework", "");
                             var OutputDirConfigurations = new List<Configuration> { };
                             foreach (var Architecture in Enum.GetValues(typeof(ArchitectureType)).Cast<ArchitectureType>())
                             {

@@ -9,13 +9,12 @@ namespace TypeMake.Cpp
         Executable,
         StaticLibrary,
         DynamicLibrary,
-        MacApplication,
+        DarwinApplication,
+        DarwinStaticFramework,
+        DarwinSharedFramework,
         MacBundle,
         GradleApplication,
-        GradleLibrary,
-        iOSApplication,
-        iOSStaticFramework,
-        iOSSharedFramework
+        GradleLibrary
     }
     public enum OperatingSystemType
     {
