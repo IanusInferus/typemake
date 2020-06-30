@@ -169,7 +169,7 @@ namespace TypeMake.Cpp
                 }
                 foreach (var LibPath in SoLibraryPaths)
                 {
-                    yield return $@"{e(Strip)} {e(LibPath)} -o {e(JniLibs.AsPath() / Abi / LibPath.FileName)} -discard-all -strip-all || exit /b 1";
+                    yield return $@"{e(Strip)} {e(LibPath)} -o {e(JniLibs.AsPath() / Abi / LibPath.FileName)} --discard-all --strip-all || exit /b 1";
                 }
                 yield return @"";
                 if (ResSrcDirs.Count > 0)
@@ -269,7 +269,7 @@ namespace TypeMake.Cpp
                 }
                 foreach (var LibPath in SoLibraryPaths)
                 {
-                    yield return $@"{e(Strip)} {e(LibPath)} -o {e(JniLibs.AsPath() / Abi / LibPath.FileName)} -discard-all -strip-all";
+                    yield return $@"{e(Strip)} {e(LibPath)} -o {e(JniLibs.AsPath() / Abi / LibPath.FileName)} --discard-all --strip-all";
                 }
                 yield return @"";
                 if (ResSrcDirs.Count > 0)
