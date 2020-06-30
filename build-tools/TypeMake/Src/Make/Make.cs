@@ -333,72 +333,31 @@ namespace TypeMake
                             DependentProjectToRequirement = DependentModuleToRequirement
                         });
                     }
-                    if ((TargetOperatingSystem == OperatingSystemType.MacOS) && (Toolchain == ToolchainType.XCode) && (ProductTargetType == TargetType.DynamicLibrary))
+                    if (((TargetOperatingSystem == OperatingSystemType.MacOS) || (TargetOperatingSystem == OperatingSystemType.iOS)) && (ProductTargetType == TargetType.DynamicLibrary))
                     {
-                        var BundleName = ProductName + ".bundle";
+                        var FrameworkTargetType = TargetType.DarwinSharedFramework;
+                        var FrameworkName = ProductName + ".framework";
                         Projects.Add(new ProjectDescription
                         {
                             Definition = new Project
                             {
-                                Name = BundleName,
+                                Name = FrameworkName,
                                 TargetName = TargetName,
-                                TargetType = TargetType.MacBundle,
+                                TargetType = FrameworkTargetType,
                                 Configurations = Configurations
                             },
                             BaseConfigurations = GetCommonConfigurations(),
                             ExportConfigurations = new List<Configuration> { },
                             Reference = new ProjectReference
                             {
-                                Id = GetIdForProject(BundleName),
-                                Name = BundleName,
+                                Id = GetIdForProject(FrameworkName),
+                                Name = FrameworkName,
                                 VirtualDir = p.VirtualDir,
-                                FilePath = BuildDirectory / "projects" / GetProjectFileName(BundleName)
+                                FilePath = BuildDirectory / "projects" / GetProjectFileName(FrameworkName)
                             },
                             PhysicalPath = InputDirectory,
                             DependentProjectToRequirement = DependentModuleToRequirement
                         });
-                    }
-                    else if ((TargetOperatingSystem == OperatingSystemType.iOS) && (ProductTargetType == TargetType.DynamicLibrary))
-                    {
-                        foreach (var FrameworkTargetType in new List<TargetType> { TargetType.DarwinStaticFramework, TargetType.DarwinSharedFramework })
-                        {
-                            var Type = FrameworkTargetType.ToString().Replace("Darwin", "").Replace("Framework", "");
-                            var OutputDirConfigurations = new List<Configuration> { };
-                            foreach (var Architecture in Enum.GetValues(typeof(ArchitectureType)).Cast<ArchitectureType>())
-                            {
-                                foreach (var ConfigurationType in Enum.GetValues(typeof(ConfigurationType)).Cast<ConfigurationType>())
-                                {
-                                    OutputDirConfigurations.Add(new Configuration
-                                    {
-                                        MatchingTargetArchitectures = new List<ArchitectureType> { Architecture },
-                                        MatchingConfigurationTypes = new List<ConfigurationType> { ConfigurationType },
-                                        OutputDirectory = BuildDirectory / $"{Architecture}_{ConfigurationType}/{Type}"
-                                    });
-                                }
-                            }
-                            var FrameworkName = ProductName + "." + Type.ToLowerInvariant();
-                            Projects.Add(new ProjectDescription
-                            {
-                                Definition = new Project
-                                {
-                                    Name = FrameworkName,
-                                    TargetName = TargetName,
-                                    TargetType = FrameworkTargetType,
-                                    Configurations = Configurations.Concat(OutputDirConfigurations).ToList()
-                                },
-                                BaseConfigurations = GetCommonConfigurations(),
-                                ExportConfigurations = new List<Configuration> { },
-                                Reference = new ProjectReference
-                                {
-                                    Id = GetIdForProject(FrameworkName),
-                                    Name = FrameworkName,
-                                    VirtualDir = p.VirtualDir,
-                                    FilePath = BuildDirectory / "projects" / GetProjectFileName(FrameworkName)
-                                },
-                                PhysicalPath = InputDirectory,
-                                DependentProjectToRequirement = DependentModuleToRequirement
-                            });
-                        }
                     }
                     if ((TargetOperatingSystem == OperatingSystemType.Android) && (GradleTargetType != null))
                     {
