@@ -498,7 +498,7 @@ namespace TypeMake
                             if (Toolchain == ToolchainType.Ninja)
                             {
                                 var Out = OutputDirectory.FileName == "gradle" ? OutputDirectory.Parent / "batch" : OutputDirectory;
-                                var gBatch = new AndroidBatchProjectGenerator(SolutionName, p, ProjectReferences, InputDirectory, Out, BuildDirectory, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType, Jdk, AndroidSdk, AndroidNdk, "28.0.3", 15, 28, Environment.GetFolderPath(Environment.SpecialFolder.UserProfile).AsPath() / ".android/debug.keystore", "android", "androiddebugkey", "android", true);
+                                var gBatch = new AndroidBatchProjectGenerator(SolutionName, p, ProjectReferences, InputDirectory, Out, BuildDirectory, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType, Jdk, AndroidSdk, AndroidNdk, "29.0.3", 15, 29, Environment.GetFolderPath(Environment.SpecialFolder.UserProfile).AsPath() / ".android/debug.keystore", "android", "androiddebugkey", "android", true);
                                 gBatch.Generate(ForceRegenerate);
                             }
                             else
@@ -517,7 +517,7 @@ namespace TypeMake
                             if (Toolchain == ToolchainType.Ninja)
                             {
                                 var Out = OutputDirectory.FileName == "gradle" ? OutputDirectory.Parent / "batch" : OutputDirectory;
-                                var gBatch = new AndroidBatchProjectGenerator(SolutionName, p, ProjectReferences, InputDirectory, Out, BuildDirectory, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType, Jdk, AndroidSdk, AndroidNdk, "28.0.3", 15, 28, Environment.GetFolderPath(Environment.SpecialFolder.UserProfile).AsPath() / ".android/debug.keystore", "android", "androiddebugkey", "android", true);
+                                var gBatch = new AndroidBatchProjectGenerator(SolutionName, p, ProjectReferences, InputDirectory, Out, BuildDirectory, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType, Jdk, AndroidSdk, AndroidNdk, "29.0.3", 15, 29, Environment.GetFolderPath(Environment.SpecialFolder.UserProfile).AsPath() / ".android/debug.keystore", "android", "androiddebugkey", "android", true);
                                 gBatch.Generate(ForceRegenerate);
                             }
                             else

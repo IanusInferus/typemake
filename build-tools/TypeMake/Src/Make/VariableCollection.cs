@@ -752,9 +752,18 @@ namespace TypeMake
                 {
                     if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
                     {
+                        String DefaultValue = null;
+                        if ((Variables.AndroidSdk != null) && (Directory.Exists(Variables.AndroidSdk / "ndk")))
+                        {
+                            var NdkVersions = Directory.EnumerateDirectories(Variables.AndroidSdk / "ndk", "*", SearchOption.TopDirectoryOnly).Select(d => d.AsPath()).Where(d => File.Exists(d / "source.properties")).Select(d => d.FileName).ToList();
+                            if (NdkVersions.Count > 0)
+                            {
+                                DefaultValue = Variables.AndroidSdk / "ndk" / NdkVersions.Max();
+                            }
+                        }
                         return VariableSpec.CreatePath(new PathStringSpec
                         {
-                            DefaultValue = Variables.AndroidSdk != null ? Variables.AndroidSdk / "ndk-bundle" : (Variables.HostOperatingSystem == Cpp.OperatingSystemType.Windows ? (Environment.GetEnvironmentVariable("LocalAppData").AsPath() / "Android/sdk/ndk-bundle") : "".AsPath()),
+                            DefaultValue = DefaultValue,
                             IsDirectory = true,
                             Validator = p => new KeyValuePair<bool, String>(true, "")
                         });
