@@ -451,6 +451,7 @@ namespace TypeMake.Cpp
                 var x = new XElement(xn + "ProjectReference", new XAttribute("Include", RelativePath));
                 x.Add(new XElement(xn + "Project", "{" + p.Id.ToUpper() + "}"));
                 x.Add(new XElement(xn + "Name", p.Name));
+                x.Add(new XElement(xn + "Private", "false"));
                 ProjectItemGroup.Add(x);
             }
             if (!ProjectItemGroup.HasElements)

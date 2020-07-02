@@ -634,13 +634,24 @@ namespace TypeMake
                 },
                 new Configuration
                 {
-                    MatchingCompilers = new List<CompilerType> { CompilerType.VisualCpp },
                     MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Windows },
                     MatchingWindowsRuntimes = new List<WindowsRuntimeType> { WindowsRuntimeType.WinRT },
+                    MatchingCompilers = new List<CompilerType> { CompilerType.VisualCpp },
                     Options = new Dictionary<String, String>
                     {
                         ["vc.Globals.DefaultLanguage"] = "zh-CN",
                         ["vc.ClCompile.CompileAsWinRT"] = "false"
+                    }
+                },
+                new Configuration
+                {
+                    MatchingTargetTypes = new List<TargetType> { TargetType.Executable, TargetType.DynamicLibrary },
+                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Windows },
+                    MatchingWindowsRuntimes = new List<WindowsRuntimeType> { WindowsRuntimeType.WinRT },
+                    MatchingCompilers = new List<CompilerType> { CompilerType.VisualCpp },
+                    Options = new Dictionary<String, String>
+                    {
+                        ["vc.Link.GenerateWindowsMetadata"] = "false"
                     }
                 },
                 new Configuration
