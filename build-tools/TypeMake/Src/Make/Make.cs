@@ -17,6 +17,7 @@ namespace TypeMake
         private OperatingSystemType TargetOperatingSystem;
         private ArchitectureType TargetArchitecture;
         private WindowsRuntimeType? WindowsRuntime;
+        private bool EnableMacCatalyst;
         private ConfigurationType ConfigurationType;
         private ToolchainType Toolchain;
         private CompilerType Compiler;
@@ -26,7 +27,6 @@ namespace TypeMake
         private CppLibraryForm CppLibraryForm;
         private PathString SourceDirectory;
         private PathString BuildDirectory;
-        private bool EnableMacCatalyst;
         private String XCodeDevelopmentTeam;
         private String XCodeProvisioningProfileSpecifier;
         private int VSVersion;
@@ -48,13 +48,14 @@ namespace TypeMake
 
         private Dictionary<String, String> ProjectIds = new Dictionary<String, String>();
 
-        public Make(OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType TargetArchitecture, WindowsRuntimeType? WindowsRuntime, ToolchainType Toolchain, CompilerType Compiler, CLibraryType CLibrary, CLibraryForm CLibraryForm, CppLibraryType CppLibrary, CppLibraryForm CppLibraryForm, ConfigurationType ConfigurationType, PathString SourceDirectory, PathString BuildDirectory, bool EnableMacCatalyst, String XCodeDevelopmentTeam, String XCodeProvisioningProfileSpecifier, int VSVersion, bool EnableJava, PathString Jdk, PathString AndroidSdk, PathString AndroidNdk, String CC, String CXX, String AR, String STRIP, List<String> CommonFlags, List<String> CFlags, List<String> CppFlags, List<String> LinkerFlags, List<String> PostLinkerFlags, bool ForceRegenerate, bool EnableNonTargetingOperatingSystemDummy)
+        public Make(OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType TargetArchitecture, WindowsRuntimeType? WindowsRuntime, bool EnableMacCatalyst, ToolchainType Toolchain, CompilerType Compiler, CLibraryType CLibrary, CLibraryForm CLibraryForm, CppLibraryType CppLibrary, CppLibraryForm CppLibraryForm, ConfigurationType ConfigurationType, PathString SourceDirectory, PathString BuildDirectory, String XCodeDevelopmentTeam, String XCodeProvisioningProfileSpecifier, int VSVersion, bool EnableJava, PathString Jdk, PathString AndroidSdk, PathString AndroidNdk, String CC, String CXX, String AR, String STRIP, List<String> CommonFlags, List<String> CFlags, List<String> CppFlags, List<String> LinkerFlags, List<String> PostLinkerFlags, bool ForceRegenerate, bool EnableNonTargetingOperatingSystemDummy)
         {
             this.HostOperatingSystem = HostOperatingSystem;
             this.HostArchitecture = HostArchitecture;
             this.TargetOperatingSystem = TargetOperatingSystem;
             this.TargetArchitecture = TargetArchitecture;
             this.WindowsRuntime = WindowsRuntime;
+            this.EnableMacCatalyst = EnableMacCatalyst;
             this.Toolchain = Toolchain;
             this.Compiler = Compiler;
             this.CLibrary = CLibrary;
@@ -64,7 +65,6 @@ namespace TypeMake
             this.ConfigurationType = ConfigurationType;
             this.SourceDirectory = SourceDirectory.FullPath;
             this.BuildDirectory = BuildDirectory.FullPath;
-            this.EnableMacCatalyst = EnableMacCatalyst;
             this.XCodeDevelopmentTeam = XCodeDevelopmentTeam;
             this.XCodeProvisioningProfileSpecifier = XCodeProvisioningProfileSpecifier;
             this.VSVersion = VSVersion;

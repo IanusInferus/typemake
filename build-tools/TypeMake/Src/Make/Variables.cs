@@ -11,6 +11,7 @@ namespace TypeMake
         public String TargetOperatingSystemDistribution;
         public Cpp.ArchitectureType TargetArchitecture;
         public Cpp.WindowsRuntimeType? WindowsRuntime;
+        public bool EnableMacCatalyst;
         public Cpp.ToolchainType Toolchain;
         public Cpp.CompilerType Compiler;
         public Cpp.CLibraryType CLibrary;
@@ -24,7 +25,6 @@ namespace TypeMake
         public bool EnableNonTargetingOperatingSystemDummy;
         public PathString SourceDirectory;
         public PathString BuildDirectory;
-        public bool EnableMacCatalyst;
         public String XCodeDevelopmentTeam;
         public String XCodeProvisioningProfileSpecifier;
         public PathString VSDir;
