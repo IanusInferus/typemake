@@ -32,6 +32,11 @@ namespace TypeMake.Cpp
         arm64,
         Unknown
     }
+    public enum WindowsRuntimeType
+    {
+        Win32,
+        WinRT
+    }
     public enum ToolchainType
     {
         VisualStudio,
@@ -95,6 +100,7 @@ namespace TypeMake.Cpp
         public List<ArchitectureType> MatchingHostArchitectures = null;
         public List<OperatingSystemType> MatchingTargetOperatingSystems = null;
         public List<ArchitectureType> MatchingTargetArchitectures = null;
+        public List<WindowsRuntimeType> MatchingWindowsRuntimes = null;
         public List<ToolchainType> MatchingToolchains = null;
         public List<CompilerType> MatchingCompilers = null;
         public List<CLibraryType> MatchingCLibraries = null;

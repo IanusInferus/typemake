@@ -20,10 +20,11 @@ namespace TypeMake.Cpp
         private OperatingSystemType HostOperatingSystem;
         private ArchitectureType HostArchitecture;
         private OperatingSystemType TargetOperatingSystem;
+        private WindowsRuntimeType WindowsRuntime;
         private CLibraryForm CLibraryForm;
         private CppLibraryForm CppLibraryForm;
 
-        public VcxprojGenerator(Project Project, String ProjectId, List<ProjectReference> ProjectReferences, PathString InputDirectory, PathString OutputDirectory, String VcxprojTemplateText, String VcxprojFilterTemplateText, OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, CLibraryForm CLibraryForm, CppLibraryForm CppLibraryForm)
+        public VcxprojGenerator(Project Project, String ProjectId, List<ProjectReference> ProjectReferences, PathString InputDirectory, PathString OutputDirectory, String VcxprojTemplateText, String VcxprojFilterTemplateText, OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, WindowsRuntimeType WindowsRuntime, CLibraryForm CLibraryForm, CppLibraryForm CppLibraryForm)
         {
             this.Project = Project;
             this.ProjectId = ProjectId;
@@ -35,6 +36,7 @@ namespace TypeMake.Cpp
             this.HostOperatingSystem = HostOperatingSystem;
             this.HostArchitecture = HostArchitecture;
             this.TargetOperatingSystem = TargetOperatingSystem;
+            this.WindowsRuntime = WindowsRuntime;
             this.CLibraryForm = CLibraryForm;
             this.CppLibraryForm = CppLibraryForm;
         }
@@ -95,6 +97,31 @@ namespace TypeMake.Cpp
             GlobalsPropertyGroup.SetElementValue(xn + "ProjectGuid", g);
             GlobalsPropertyGroup.SetElementValue(xn + "RootNamespace", Project.Name);
             GlobalsPropertyGroup.SetElementValue(xn + "WindowsTargetPlatformVersion", GetWindowsTargetPlatformVersion());
+            if (WindowsRuntime == WindowsRuntimeType.Win32)
+            {
+                GlobalsPropertyGroup.SetElementValue(xn + "Keyword", "Win32Proj");
+            }
+            else if (WindowsRuntime == WindowsRuntimeType.WinRT)
+            {
+                GlobalsPropertyGroup.SetElementValue(xn + "AppContainerApplication", true);
+                GlobalsPropertyGroup.SetElementValue(xn + "ApplicationType", "Windows Store");
+                GlobalsPropertyGroup.SetElementValue(xn + "ApplicationTypeRevision", "10.0");
+            }
+            else
+            {
+                throw new InvalidOperationException();
+            }
+
+            var globalConf = Project.Configurations.Merged(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, null, WindowsRuntime, ToolchainType.VisualStudio, CompilerType.VisualCpp, CLibraryType.VisualCRuntime, CLibraryForm, CppLibraryType.VisualCppRuntime, CppLibraryForm, null);
+            foreach (var o in globalConf.Options)
+            {
+                var Prefix = "vc.Globals.";
+                if (o.Key.StartsWith(Prefix))
+                {
+                    var Key = o.Key.Substring(Prefix.Length);
+                    GlobalsPropertyGroup.SetElementValue(xn + Key, o.Value);
+                }
+            }
 
             var ExistingConfigurationTypeAndArchitectures = new Dictionary<KeyValuePair<ConfigurationType, ArchitectureType>, String>();
             var ProjectConfigurations = xVcxproj.Elements(xn + "ItemGroup").Where(e => (e.Attribute("Label") != null) && (e.Attribute("Label").Value == "ProjectConfigurations")).SelectMany(e => e.Elements(xn + "ProjectConfiguration")).Select(e => e.Element(xn + "Configuration").Value + "|" + e.Element(xn + "Platform").Value).ToDictionary(s => s);
@@ -116,34 +143,53 @@ namespace TypeMake.Cpp
                 var Architecture = Pair.Key.Value;
                 var Name = Pair.Value;
 
-                var conf = Project.Configurations.Merged(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, Architecture, ToolchainType.VisualStudio, CompilerType.VisualCpp, CLibraryType.VisualCRuntime, CLibraryForm, CppLibraryType.VisualCppRuntime, CppLibraryForm, ConfigurationType);
+                var conf = Project.Configurations.Merged(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, Architecture, WindowsRuntime, ToolchainType.VisualStudio, CompilerType.VisualCpp, CLibraryType.VisualCRuntime, CLibraryForm, CppLibraryType.VisualCppRuntime, CppLibraryForm, ConfigurationType);
 
-                var PropertyGroup = xVcxproj.Elements(xn + "PropertyGroup").Where(e => (e.Attribute("Condition") != null) && (e.Attribute("Condition").Value == "'$(Configuration)|$(Platform)'=='" + Name + "'")).LastOrDefault();
-                if (PropertyGroup == null)
+                var PropertyGroupConfiguration = xVcxproj.Elements(xn + "PropertyGroup").Where(e => (e.Attribute("Condition") != null) && (e.Attribute("Condition").Value == "'$(Configuration)|$(Platform)'=='" + Name + "'") && (e.Attribute("Label") != null) && (e.Attribute("Label").Value == "Configuration")).LastOrDefault();
+                if (PropertyGroupConfiguration == null)
                 {
-                    PropertyGroup = new XElement(xn + "PropertyGroup", new XAttribute("Condition", "'$(Configuration)|$(Platform)'=='" + Name + "'"));
+                    PropertyGroupConfiguration = new XElement(xn + "PropertyGroup", new XAttribute("Condition", "'$(Configuration)|$(Platform)'=='" + Name + "'"), new XAttribute("Label", "Configuration"));
+                    xVcxproj.Add(PropertyGroupConfiguration);
                 }
 
                 if (!String.IsNullOrEmpty(Project.TargetName) && (Project.TargetName != Project.Name))
                 {
-                    PropertyGroup.SetElementValue(xn + "TargetName", Project.TargetName);
+                    PropertyGroupConfiguration.SetElementValue(xn + "TargetName", Project.TargetName);
                 }
                 if (Project.TargetType == TargetType.Executable)
                 {
-                    PropertyGroup.SetElementValue(xn + "ConfigurationType", "Application");
+                    PropertyGroupConfiguration.SetElementValue(xn + "ConfigurationType", "Application");
                 }
                 else if (Project.TargetType == TargetType.StaticLibrary)
                 {
-                    PropertyGroup.SetElementValue(xn + "ConfigurationType", "StaticLibrary");
+                    PropertyGroupConfiguration.SetElementValue(xn + "ConfigurationType", "StaticLibrary");
                 }
                 else if (Project.TargetType == TargetType.DynamicLibrary)
                 {
-                    PropertyGroup.SetElementValue(xn + "ConfigurationType", "DynamicLibrary");
+                    PropertyGroupConfiguration.SetElementValue(xn + "ConfigurationType", "DynamicLibrary");
                 }
                 else
                 {
                     throw new NotSupportedException("NotSupportedTargetType: " + Project.TargetType.ToString());
                 }
+
+                foreach (var o in conf.Options)
+                {
+                    var Prefix = "vc.Configuration.";
+                    if (o.Key.StartsWith(Prefix))
+                    {
+                        var Key = o.Key.Substring(Prefix.Length);
+                        PropertyGroupConfiguration.SetElementValue(xn + Key, o.Value);
+                    }
+                }
+
+                var PropertyGroup = xVcxproj.Elements(xn + "PropertyGroup").Where(e => (e.Attribute("Condition") != null) && (e.Attribute("Condition").Value == "'$(Configuration)|$(Platform)'=='" + Name + "'") && (e.Attribute("Label") == null)).LastOrDefault();
+                if (PropertyGroup == null)
+                {
+                    PropertyGroup = new XElement(xn + "PropertyGroup", new XAttribute("Condition", "'$(Configuration)|$(Platform)'=='" + Name + "'"));
+                    xVcxproj.Add(PropertyGroup);
+                }
+
                 if (conf.OutputDirectory != null)
                 {
                     var OutDir = conf.OutputDirectory.RelativeTo(BaseDirPath).ToString(PathStringStyle.Windows);
@@ -158,14 +204,11 @@ namespace TypeMake.Cpp
 
                 foreach (var o in conf.Options)
                 {
-                    var Prefix = "vc.";
+                    var Prefix = "vc.PropertyGroup.";
                     if (o.Key.StartsWith(Prefix))
                     {
                         var Key = o.Key.Substring(Prefix.Length);
-                        if (!Key.Contains("."))
-                        {
-                            PropertyGroup.SetElementValue(xn + Key, o.Value);
-                        }
+                        PropertyGroupConfiguration.SetElementValue(xn + Key, o.Value);
                     }
                 }
 
@@ -192,6 +235,10 @@ namespace TypeMake.Cpp
                     ClCompile.SetElementValue(xn + "PreprocessorDefinitions", String.Join(";", Defines.Select(d => d.Key + (d.Value == null ? "" : "=" + d.Value))) + ";%(PreprocessorDefinitions)");
                 }
                 var CompilerFlags = conf.CommonFlags.Concat(conf.CFlags).Concat(conf.CppFlags).ToList();
+                if (WindowsRuntime == WindowsRuntimeType.WinRT)
+                {
+                    CompilerFlags.Add("/Zc:twoPhase-"); //https://docs.microsoft.com/en-us/cpp/build/reference/zc-twophase?view=vs-2019
+                }
                 if (CompilerFlags.Count != 0)
                 {
                     ClCompile.SetElementValue(xn + "AdditionalOptions", "%(AdditionalOptions) " + String.Join(" ", CompilerFlags.Select(f => (f == null ? "" : Regex.IsMatch(f, @"^[0-9]+$") ? f : "\"" + f.Replace("\"", "\"\"\"") + "\""))));
@@ -206,13 +253,32 @@ namespace TypeMake.Cpp
                     }
                 }
 
+                if (Project.TargetType == TargetType.StaticLibrary)
+                {
+                    var Lib = ItemDefinitionGroup.Element(xn + "Lib");
+                    if (Lib == null)
+                    {
+                        Lib = new XElement(xn + "Lib");
+                        ItemDefinitionGroup.Add(Lib);
+                    }
+
+                    foreach (var o in conf.Options)
+                    {
+                        var Prefix = "vc.Lib.";
+                        if (o.Key.StartsWith(Prefix))
+                        {
+                            Lib.SetElementValue(xn + o.Key.Substring(Prefix.Length), o.Value);
+                        }
+                    }
+                }
+
                 if ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary))
                 {
                     var Link = ItemDefinitionGroup.Element(xn + "Link");
                     if (Link == null)
                     {
                         Link = new XElement(xn + "Link");
-                        ItemDefinitionGroup.Add(ClCompile);
+                        ItemDefinitionGroup.Add(Link);
                     }
                     var LibDirectories = conf.LibDirectories.Select(d => d.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Windows)).ToList();
                     if (LibDirectories.Count != 0)
@@ -244,7 +310,7 @@ namespace TypeMake.Cpp
 
             var Import = xVcxproj.Elements(xn + "Import").LastOrDefault();
 
-            foreach (var gConf in Project.Configurations.Matches(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, null, ToolchainType.VisualStudio, CompilerType.VisualCpp, CLibraryType.VisualCRuntime, CLibraryForm, CppLibraryType.VisualCppRuntime, CppLibraryForm, null).GroupBy(conf => Tuple.Create(conf.MatchingConfigurationTypes, conf.MatchingTargetArchitectures?.Intersect(new ArchitectureType[] { ArchitectureType.x86, ArchitectureType.x64, ArchitectureType.armv7a, ArchitectureType.arm64 }).ToList()), new ConfigurationTypesAndArchitecturesComparer()))
+            foreach (var gConf in Project.Configurations.Matches(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, null, WindowsRuntime, ToolchainType.VisualStudio, CompilerType.VisualCpp, CLibraryType.VisualCRuntime, CLibraryForm, CppLibraryType.VisualCppRuntime, CppLibraryForm, null).GroupBy(conf => Tuple.Create(conf.MatchingConfigurationTypes, conf.MatchingTargetArchitectures?.Intersect(new ArchitectureType[] { ArchitectureType.x86, ArchitectureType.x64, ArchitectureType.armv7a, ArchitectureType.arm64 }).ToList()), new ConfigurationTypesAndArchitecturesComparer()))
             {
                 var MatchingConfigurationTypes = gConf.Key.Item1;
                 var MatchingTargetArchitectures = gConf.Key.Item2;
@@ -294,7 +360,7 @@ namespace TypeMake.Cpp
                         }
                         if ((File.Type == FileType.CSource) || (File.Type == FileType.CppSource))
                         {
-                            var fileConfs = File.Configurations.Matches(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, null, ToolchainType.VisualStudio, CompilerType.VisualCpp, CLibraryType.VisualCRuntime, CLibraryForm, CppLibraryType.VisualCppRuntime, CppLibraryForm, null);
+                            var fileConfs = File.Configurations.Matches(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, null, WindowsRuntime, ToolchainType.VisualStudio, CompilerType.VisualCpp, CLibraryType.VisualCRuntime, CLibraryForm, CppLibraryType.VisualCppRuntime, CppLibraryForm, null);
 
                             foreach (var conf in fileConfs)
                             {
@@ -443,7 +509,7 @@ namespace TypeMake.Cpp
 
             var Files = new HashSet<String>(StringComparer.OrdinalIgnoreCase);
             var Filters = new HashSet<String>(StringComparer.OrdinalIgnoreCase);
-            foreach (var conf in Project.Configurations.Matches(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, null, ToolchainType.VisualStudio, CompilerType.VisualCpp, CLibraryType.VisualCRuntime, CLibraryForm, CppLibraryType.VisualCppRuntime, CppLibraryForm, null))
+            foreach (var conf in Project.Configurations.Matches(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, null, WindowsRuntime, ToolchainType.VisualStudio, CompilerType.VisualCpp, CLibraryType.VisualCRuntime, CLibraryForm, CppLibraryType.VisualCppRuntime, CppLibraryForm, null))
             {
                 foreach (var f in conf.Files)
                 {

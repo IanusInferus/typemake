@@ -42,6 +42,8 @@ Target Operating System vs Building Operating System
 |          Android arm64         |                    |                    |                    | Termux+Ninja+clang |
 |          iOS arm64/x64         |                    |                    |        XCode       |                    |
 
+Win32 and WinRT targets are both supported, but WinRT only supports libraries and not applications.
+
 Different OSs use different ABIs on the same CPU architecture.
 
 \* CMake is supported as a compatibility solution. (Ex. Integration with other projects.)

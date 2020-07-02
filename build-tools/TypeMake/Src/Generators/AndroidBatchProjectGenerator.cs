@@ -96,7 +96,7 @@ namespace TypeMake.Cpp
 
         private IEnumerable<String> GenerateLines(String BuildBatchPath, String BaseDirPath)
         {
-            var conf = Project.Configurations.Merged(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitectureType, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType);
+            var conf = Project.Configurations.Merged(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitectureType, null, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType);
 
             var Abi = GetArchitectureString(TargetArchitectureType);
             var ProjectTargetName = Project.TargetName ?? ProjectName;

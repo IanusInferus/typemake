@@ -135,13 +135,31 @@ namespace TypeMake
 
             l.Add(new VariableItem
             {
-                VariableName = nameof(Variables.Toolchain),
-                DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.TargetArchitecture) },
+                VariableName = nameof(Variables.WindowsRuntime),
+                DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem) },
                 GetVariableSpec = () =>
                 {
                     if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
                     {
-                        if ((Variables.TargetArchitecture == Cpp.ArchitectureType.x86) || (Variables.TargetArchitecture == Cpp.ArchitectureType.x64))
+                        return VariableSpecCreateEnumSelection(Cpp.WindowsRuntimeType.Win32);
+                    }
+                    else
+                    {
+                        return VariableSpec.CreateFixed(VariableValue.CreateString(null));
+                    }
+                },
+                SetVariableValue = v => Variables.WindowsRuntime = UnwrapNullableEnum<Cpp.WindowsRuntimeType>(v.String)
+            });
+
+            l.Add(new VariableItem
+            {
+                VariableName = nameof(Variables.Toolchain),
+                DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.TargetArchitecture), nameof(Variables.WindowsRuntime) },
+                GetVariableSpec = () =>
+                {
+                    if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
+                    {
+                        if ((Variables.WindowsRuntime == Cpp.WindowsRuntimeType.Win32) && ((Variables.TargetArchitecture == Cpp.ArchitectureType.x86) || (Variables.TargetArchitecture == Cpp.ArchitectureType.x64)))
                         {
                             return VariableSpecCreateEnumSelection(Cpp.ToolchainType.VisualStudio, new HashSet<Cpp.ToolchainType> { Cpp.ToolchainType.VisualStudio, Cpp.ToolchainType.Ninja });
                         }
@@ -266,7 +284,7 @@ namespace TypeMake
                 DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.Toolchain), nameof(Variables.CLibrary) },
                 GetVariableSpec = () =>
                 {
-                    if ((Variables.CLibrary == Cpp.CLibraryType.VisualCRuntime) || (Variables.CLibrary == Cpp.CLibraryType.musl))
+                    if (((Variables.WindowsRuntime == Cpp.WindowsRuntimeType.Win32) && (Variables.CLibrary == Cpp.CLibraryType.VisualCRuntime)) || (Variables.CLibrary == Cpp.CLibraryType.musl))
                     {
                         return VariableSpecCreateEnumSelection(Cpp.CLibraryForm.Dynamic, new HashSet<Cpp.CLibraryForm> { Cpp.CLibraryForm.Static, Cpp.CLibraryForm.Dynamic });
                     }
@@ -378,19 +396,37 @@ namespace TypeMake
             l.Add(new VariableItem
             {
                 VariableName = nameof(Variables.BuildDirectory),
-                DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.TargetArchitecture), nameof(Variables.Toolchain), nameof(Variables.Compiler), nameof(Variables.Configuration), nameof(Variables.SourceDirectory) },
+                DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.TargetArchitecture), nameof(Variables.WindowsRuntime), nameof(Variables.Toolchain), nameof(Variables.Compiler), nameof(Variables.Configuration), nameof(Variables.SourceDirectory) },
                 GetVariableSpec = () =>
                 {
                     String DefaultBuildDir = null;
                     if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
                     {
-                        if (Variables.Toolchain == Cpp.ToolchainType.VisualStudio)
+                        if (Variables.WindowsRuntime == Cpp.WindowsRuntimeType.Win32)
                         {
-                            DefaultBuildDir = Variables.SourceDirectory / "build/windows";
+                            if (Variables.Toolchain == Cpp.ToolchainType.VisualStudio)
+                            {
+                                DefaultBuildDir = Variables.SourceDirectory / "build/windows";
+                            }
+                            else
+                            {
+                                DefaultBuildDir = Variables.SourceDirectory / $"build/windows_{Variables.TargetArchitecture}_{Variables.Toolchain}_{Variables.Compiler}_{Variables.Configuration}";
+                            }
+                        }
+                        else if (Variables.WindowsRuntime == Cpp.WindowsRuntimeType.WinRT)
+                        {
+                            if (Variables.Toolchain == Cpp.ToolchainType.VisualStudio)
+                            {
+                                DefaultBuildDir = Variables.SourceDirectory / "build/winrt";
+                            }
+                            else
+                            {
+                                DefaultBuildDir = Variables.SourceDirectory / $"build/winrt_{Variables.TargetArchitecture}_{Variables.Toolchain}_{Variables.Compiler}_{Variables.Configuration}";
+                            }
                         }
                         else
                         {
-                            DefaultBuildDir = Variables.SourceDirectory / $"build/windows_{Variables.TargetArchitecture}_{Variables.Toolchain}_{Variables.Compiler}_{Variables.Configuration}";
+                            throw new InvalidOperationException();
                         }
                     }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
@@ -1359,10 +1395,10 @@ namespace TypeMake
             l.Add(new VariableItem
             {
                 VariableName = nameof(Variables.SelectedProjects),
-                DependentVariableNames = new List<String> { nameof(Variables.HostOperatingSystem), nameof(Variables.HostArchitecture), nameof(Variables.TargetOperatingSystem), nameof(Variables.TargetArchitecture), nameof(Variables.Toolchain), nameof(Variables.Compiler), nameof(Variables.CLibrary), nameof(Variables.CLibraryForm), nameof(Variables.CppLibrary), nameof(Variables.CppLibraryForm), nameof(Variables.Configuration), nameof(Variables.SourceDirectory), nameof(Variables.BuildDirectory), nameof(Variables.EnableMacCatalyst), nameof(Variables.XCodeDevelopmentTeam), nameof(Variables.XCodeProvisioningProfileSpecifier), nameof(Variables.VSVersion), nameof(Variables.Jdk), nameof(Variables.AndroidSdk), nameof(Variables.AndroidNdk), nameof(Variables.CC), nameof(Variables.CXX), nameof(Variables.AR), nameof(Variables.STRIP), nameof(Variables.CommonFlags), nameof(Variables.CFlags), nameof(Variables.CppFlags), nameof(Variables.LinkerFlags), nameof(Variables.PostLinkerFlags), nameof(Variables.ForceRegenerate), nameof(Variables.EnableNonTargetingOperatingSystemDummy) },
+                DependentVariableNames = new List<String> { nameof(Variables.HostOperatingSystem), nameof(Variables.HostArchitecture), nameof(Variables.TargetOperatingSystem), nameof(Variables.TargetArchitecture), nameof(Variables.WindowsRuntime), nameof(Variables.Toolchain), nameof(Variables.Compiler), nameof(Variables.CLibrary), nameof(Variables.CLibraryForm), nameof(Variables.CppLibrary), nameof(Variables.CppLibraryForm), nameof(Variables.Configuration), nameof(Variables.SourceDirectory), nameof(Variables.BuildDirectory), nameof(Variables.EnableMacCatalyst), nameof(Variables.XCodeDevelopmentTeam), nameof(Variables.XCodeProvisioningProfileSpecifier), nameof(Variables.VSVersion), nameof(Variables.Jdk), nameof(Variables.AndroidSdk), nameof(Variables.AndroidNdk), nameof(Variables.CC), nameof(Variables.CXX), nameof(Variables.AR), nameof(Variables.STRIP), nameof(Variables.CommonFlags), nameof(Variables.CFlags), nameof(Variables.CppFlags), nameof(Variables.LinkerFlags), nameof(Variables.PostLinkerFlags), nameof(Variables.ForceRegenerate), nameof(Variables.EnableNonTargetingOperatingSystemDummy) },
                 GetVariableSpec = () =>
                 {
-                    var m = new Make(Variables.HostOperatingSystem, Variables.HostArchitecture, Variables.TargetOperatingSystem, Variables.TargetArchitecture, Variables.Toolchain, Variables.Compiler, Variables.CLibrary, Variables.CLibraryForm, Variables.CppLibrary, Variables.CppLibraryForm, Variables.Configuration, Variables.SourceDirectory, Variables.BuildDirectory, Variables.EnableMacCatalyst, Variables.XCodeDevelopmentTeam, Variables.XCodeProvisioningProfileSpecifier, Variables.VSVersion, Variables.EnableJava, Variables.Jdk, Variables.AndroidSdk, Variables.AndroidNdk, Variables.CC, Variables.CXX, Variables.AR, Variables.STRIP, Variables.CommonFlags, Variables.CFlags, Variables.CppFlags, Variables.LinkerFlags, Variables.PostLinkerFlags, Variables.ForceRegenerate, Variables.EnableNonTargetingOperatingSystemDummy);
+                    var m = new Make(Variables.HostOperatingSystem, Variables.HostArchitecture, Variables.TargetOperatingSystem, Variables.TargetArchitecture, Variables.WindowsRuntime, Variables.Toolchain, Variables.Compiler, Variables.CLibrary, Variables.CLibraryForm, Variables.CppLibrary, Variables.CppLibraryForm, Variables.Configuration, Variables.SourceDirectory, Variables.BuildDirectory, Variables.EnableMacCatalyst, Variables.XCodeDevelopmentTeam, Variables.XCodeProvisioningProfileSpecifier, Variables.VSVersion, Variables.EnableJava, Variables.Jdk, Variables.AndroidSdk, Variables.AndroidNdk, Variables.CC, Variables.CXX, Variables.AR, Variables.STRIP, Variables.CommonFlags, Variables.CFlags, Variables.CppFlags, Variables.LinkerFlags, Variables.PostLinkerFlags, Variables.ForceRegenerate, Variables.EnableNonTargetingOperatingSystemDummy);
                     Variables.m = m;
                     Projects = m.GetAvailableProjects();
                     var ProjectSet = new HashSet<String>(Projects.Values.Select(t => t.Definition.Name), StringComparer.OrdinalIgnoreCase);

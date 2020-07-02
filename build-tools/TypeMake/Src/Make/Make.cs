@@ -16,6 +16,7 @@ namespace TypeMake
         private ArchitectureType HostArchitecture;
         private OperatingSystemType TargetOperatingSystem;
         private ArchitectureType TargetArchitecture;
+        private WindowsRuntimeType? WindowsRuntime;
         private ConfigurationType ConfigurationType;
         private ToolchainType Toolchain;
         private CompilerType Compiler;
@@ -47,12 +48,13 @@ namespace TypeMake
 
         private Dictionary<String, String> ProjectIds = new Dictionary<String, String>();
 
-        public Make(OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType TargetArchitecture, ToolchainType Toolchain, CompilerType Compiler, CLibraryType CLibrary, CLibraryForm CLibraryForm, CppLibraryType CppLibrary, CppLibraryForm CppLibraryForm, ConfigurationType ConfigurationType, PathString SourceDirectory, PathString BuildDirectory, bool EnableMacCatalyst, String XCodeDevelopmentTeam, String XCodeProvisioningProfileSpecifier, int VSVersion, bool EnableJava, PathString Jdk, PathString AndroidSdk, PathString AndroidNdk, String CC, String CXX, String AR, String STRIP, List<String> CommonFlags, List<String> CFlags, List<String> CppFlags, List<String> LinkerFlags, List<String> PostLinkerFlags, bool ForceRegenerate, bool EnableNonTargetingOperatingSystemDummy)
+        public Make(OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType TargetArchitecture, WindowsRuntimeType? WindowsRuntime, ToolchainType Toolchain, CompilerType Compiler, CLibraryType CLibrary, CLibraryForm CLibraryForm, CppLibraryType CppLibrary, CppLibraryForm CppLibraryForm, ConfigurationType ConfigurationType, PathString SourceDirectory, PathString BuildDirectory, bool EnableMacCatalyst, String XCodeDevelopmentTeam, String XCodeProvisioningProfileSpecifier, int VSVersion, bool EnableJava, PathString Jdk, PathString AndroidSdk, PathString AndroidNdk, String CC, String CXX, String AR, String STRIP, List<String> CommonFlags, List<String> CFlags, List<String> CppFlags, List<String> LinkerFlags, List<String> PostLinkerFlags, bool ForceRegenerate, bool EnableNonTargetingOperatingSystemDummy)
         {
             this.HostOperatingSystem = HostOperatingSystem;
             this.HostArchitecture = HostArchitecture;
             this.TargetOperatingSystem = TargetOperatingSystem;
             this.TargetArchitecture = TargetArchitecture;
+            this.WindowsRuntime = WindowsRuntime;
             this.Toolchain = Toolchain;
             this.Compiler = Compiler;
             this.CLibrary = CLibrary;
@@ -175,7 +177,7 @@ namespace TypeMake
                         PhysicalPath = InputDirectory,
                         DependentProjectToRequirement = DependentModuleToRequirement
                     });
-                    if (!((TargetOperatingSystem == OperatingSystemType.Android) || (TargetOperatingSystem == OperatingSystemType.iOS)))
+                    if (!((TargetOperatingSystem == OperatingSystemType.Android) || (TargetOperatingSystem == OperatingSystemType.iOS) || ((TargetOperatingSystem == OperatingSystemType.Windows) && (WindowsRuntime == WindowsRuntimeType.WinRT))))
                     {
                         foreach (var TestFile in GetFilesInDirectory(InputDirectory / "test", TargetOperatingSystem, IsTargetOperatingSystemMatched))
                         {
@@ -231,10 +233,7 @@ namespace TypeMake
                 }
                 if ((ProductTargetType == TargetType.Executable) && System.IO.File.Exists(InputDirectory / "Info.plist"))
                 {
-                    if ((TargetOperatingSystem == OperatingSystemType.MacOS) || (TargetOperatingSystem == OperatingSystemType.iOS))
-                    {
-                        ProductTargetType = TargetType.DarwinApplication;
-                    }
+                    ProductTargetType = TargetType.DarwinApplication;
                 }
                 if (System.IO.File.Exists(InputDirectory / "AndroidManifest.xml"))
                 {
@@ -254,6 +253,10 @@ namespace TypeMake
                     IsTargetOperatingSystemMatched = false;
                 }
                 if ((ProductTargetType == TargetType.Executable) && (TargetOperatingSystem == OperatingSystemType.iOS))
+                {
+                    IsTargetOperatingSystemMatched = false;
+                }
+                if ((ProductTargetType == TargetType.Executable) && (TargetOperatingSystem == OperatingSystemType.Windows) && (WindowsRuntime == WindowsRuntimeType.WinRT))
                 {
                     IsTargetOperatingSystemMatched = false;
                 }
@@ -468,7 +471,7 @@ namespace TypeMake
                 {
                     var VcxprojTemplateText = Resource.GetResourceText(VSVersion == 2019 ? @"Templates\vc16\Default.vcxproj" : @"Templates\vc15\Default.vcxproj");
                     var VcxprojFilterTemplateText = Resource.GetResourceText(VSVersion == 2019 ? @"Templates\vc16\Default.vcxproj.filters" : @"Templates\vc15\Default.vcxproj.filters");
-                    var g = new VcxprojGenerator(p, ProjectReference.Id, ProjectReferences, InputDirectory, OutputDirectory, VcxprojTemplateText, VcxprojFilterTemplateText, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, CLibraryForm, CppLibraryForm);
+                    var g = new VcxprojGenerator(p, ProjectReference.Id, ProjectReferences, InputDirectory, OutputDirectory, VcxprojTemplateText, VcxprojFilterTemplateText, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, WindowsRuntime.Value, CLibraryForm, CppLibraryForm);
                     g.Generate(ForceRegenerate);
                 }
                 else if (Toolchain == ToolchainType.XCode)
@@ -479,14 +482,14 @@ namespace TypeMake
                 }
                 else if (Toolchain == ToolchainType.CMake)
                 {
-                    var g = new CMakeProjectGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType, false);
+                    var g = new CMakeProjectGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, WindowsRuntime, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType, false);
                     var ProjectNeedInstallStrip = false;
                     g.Generate(ForceRegenerate, out ProjectNeedInstallStrip);
                     NeedInstallStrip = NeedInstallStrip || ProjectNeedInstallStrip;
                 }
                 else if ((Toolchain == ToolchainType.Ninja) && (TargetOperatingSystem != OperatingSystemType.Android))
                 {
-                    var g = new NinjaProjectGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType);
+                    var g = new NinjaProjectGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, WindowsRuntime, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType);
                     g.Generate(ForceRegenerate);
                 }
                 else if ((Toolchain == ToolchainType.Gradle_CMake) || (Toolchain == ToolchainType.Gradle_Ninja) || (Toolchain == ToolchainType.Ninja))
@@ -533,19 +536,19 @@ namespace TypeMake
                     {
                         if (Toolchain == ToolchainType.Gradle_CMake)
                         {
-                            var g = new CMakeProjectGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType, HostOperatingSystem == OperatingSystemType.Windows);
+                            var g = new CMakeProjectGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, WindowsRuntime, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType, HostOperatingSystem == OperatingSystemType.Windows);
                             var ProjectNeedInstallStrip = false;
                             g.Generate(ForceRegenerate, out ProjectNeedInstallStrip);
                             NeedInstallStrip = NeedInstallStrip || ProjectNeedInstallStrip;
                         }
                         else if (Toolchain == ToolchainType.Gradle_Ninja)
                         {
-                            var g = new NinjaProjectGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType);
+                            var g = new NinjaProjectGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, WindowsRuntime, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType);
                             g.Generate(ForceRegenerate);
                         }
                         else if (Toolchain == ToolchainType.Ninja)
                         {
-                            var g = new NinjaProjectGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType);
+                            var g = new NinjaProjectGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, WindowsRuntime, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType);
                             g.Generate(ForceRegenerate);
                         }
                     }
@@ -631,6 +634,17 @@ namespace TypeMake
                 },
                 new Configuration
                 {
+                    MatchingCompilers = new List<CompilerType> { CompilerType.VisualCpp },
+                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Windows },
+                    MatchingWindowsRuntimes = new List<WindowsRuntimeType> { WindowsRuntimeType.WinRT },
+                    Options = new Dictionary<String, String>
+                    {
+                        ["vc.Globals.DefaultLanguage"] = "zh-CN",
+                        ["vc.ClCompile.CompileAsWinRT"] = "false"
+                    }
+                },
+                new Configuration
+                {
                     MatchingCompilers = new List<CompilerType> { CompilerType.gcc, CompilerType.clang },
                     CppFlags = ParseFlags("-std=c++17")
                 },
@@ -641,7 +655,7 @@ namespace TypeMake
                     CommonFlags = ParseFlags("/bigobj /JMC"),
                     Options = new Dictionary<String, String>
                     {
-                        ["vc.UseNativeEnvironment"] = "true"
+                        ["vc.Configuration.UseNativeEnvironment"] = "true"
                     }
                 },
                 new Configuration
@@ -1113,6 +1127,7 @@ namespace TypeMake
         private static Dictionary<String, OperatingSystemType> OperatingSystemAlias = new Dictionary<String, OperatingSystemType>(StringComparer.OrdinalIgnoreCase)
         {
             ["Win"] = OperatingSystemType.Windows,
+            ["WinRT"] = OperatingSystemType.Windows,
             ["Mac"] = OperatingSystemType.MacOS
         };
         private static bool IsOperatingSystemMatchExtensions(IEnumerable<String> Extensions, OperatingSystemType TargetOperatingSystem, bool IsExact = false)

@@ -10,6 +10,7 @@ namespace TypeMake
         public Cpp.OperatingSystemType TargetOperatingSystem;
         public String TargetOperatingSystemDistribution;
         public Cpp.ArchitectureType TargetArchitecture;
+        public Cpp.WindowsRuntimeType? WindowsRuntime;
         public Cpp.ToolchainType Toolchain;
         public Cpp.CompilerType Compiler;
         public Cpp.CLibraryType CLibrary;
