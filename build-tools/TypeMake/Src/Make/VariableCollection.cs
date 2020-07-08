@@ -611,7 +611,7 @@ namespace TypeMake
                             var ProgramFiles = Environment.GetEnvironmentVariable("ProgramFiles(x86)");
                             if (ProgramFiles != "")
                             {
-                                foreach (var Version in new int[] { 2019, 2017 })
+                                foreach (var Version in new int[] { 2019 })
                                 {
                                     foreach (var d in new String[] { "Enterprise", "Professional", "Community", "BuildTools" })
                                     {
@@ -677,7 +677,7 @@ namespace TypeMake
                 {
                     if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
                     {
-                        var VSVersion = Variables.VSDir.ToString().Contains("2019") ? 2019 : 2017;
+                        var VSVersion = Variables.VSDir.ToString().Contains("2019") ? 2019 : 2019;
                         return VariableSpec.CreateFixed(VariableValue.CreateInteger(VSVersion));
                     }
                     else

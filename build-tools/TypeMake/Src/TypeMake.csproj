@@ -76,9 +76,6 @@
     <Compile Include="Templates\Resource.cs" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Templates\vc15\Default.sln" />
-    <EmbeddedResource Include="Templates\vc15\Default.vcxproj.filters" />
-    <EmbeddedResource Include="Templates\vc15\Default.vcxproj" />
     <EmbeddedResource Include="Templates\vc16\Default.sln" />
     <EmbeddedResource Include="Templates\vc16\Default.vcxproj.filters" />
     <EmbeddedResource Include="Templates\vc16\Default.vcxproj" />

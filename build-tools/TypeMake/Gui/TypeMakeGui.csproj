@@ -16,15 +16,6 @@
     <Compile Remove="..\Src\Bone\Program.cs" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="..\Src\Templates\vc15\Default.sln">
-      <LogicalName>TypeMake.Templates.vc15.Default.sln</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="..\Src\Templates\vc15\Default.vcxproj.filters">
-      <LogicalName>TypeMake.Templates.vc15.Default.vcxproj.filters</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="..\Src\Templates\vc15\Default.vcxproj">
-      <LogicalName>TypeMake.Templates.vc15.Default.vcxproj</LogicalName>
-    </EmbeddedResource>
     <EmbeddedResource Include="..\Src\Templates\vc16\Default.sln">
       <LogicalName>TypeMake.Templates.vc16.Default.sln</LogicalName>
     </EmbeddedResource>

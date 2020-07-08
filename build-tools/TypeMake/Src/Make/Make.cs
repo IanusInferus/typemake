@@ -469,8 +469,8 @@ namespace TypeMake
                 var ProjectTargetType = Project.Definition.TargetType;
                 if (Toolchain == ToolchainType.VisualStudio)
                 {
-                    var VcxprojTemplateText = Resource.GetResourceText(VSVersion == 2019 ? @"Templates\vc16\Default.vcxproj" : @"Templates\vc15\Default.vcxproj");
-                    var VcxprojFilterTemplateText = Resource.GetResourceText(VSVersion == 2019 ? @"Templates\vc16\Default.vcxproj.filters" : @"Templates\vc15\Default.vcxproj.filters");
+                    var VcxprojTemplateText = Resource.GetResourceText(VSVersion == 2019 ? @"Templates\vc16\Default.vcxproj" : @"Templates\vc16\Default.vcxproj");
+                    var VcxprojFilterTemplateText = Resource.GetResourceText(VSVersion == 2019 ? @"Templates\vc16\Default.vcxproj.filters" : @"Templates\vc16\Default.vcxproj.filters");
                     var g = new VcxprojGenerator(p, ProjectReference.Id, ProjectReferences, InputDirectory, OutputDirectory, VcxprojTemplateText, VcxprojFilterTemplateText, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, WindowsRuntime.Value, CLibraryForm, CppLibraryForm);
                     g.Generate(ForceRegenerate);
                 }
@@ -565,7 +565,7 @@ namespace TypeMake
             var SortedProjects = Projects.Select(p => p.Key).PartialOrderBy(p => ProjectDependencies.ContainsKey(p) ? ProjectDependencies[p] : null).ToList();
             if (Toolchain == ToolchainType.VisualStudio)
             {
-                var SlnTemplateText = Resource.GetResourceText(VSVersion == 2019 ? @"Templates\vc16\Default.sln" : @"Templates\vc15\Default.sln");
+                var SlnTemplateText = Resource.GetResourceText(VSVersion == 2019 ? @"Templates\vc16\Default.sln" : @"Templates\vc16\Default.sln");
                 var g = new SlnGenerator(SolutionName, GetIdForProject(SolutionName + ".solution"), Projects.Select(p => p.Key).ToList(), BuildDirectory, SlnTemplateText);
                 g.Generate(ForceRegenerate);
             }

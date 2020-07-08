@@ -52,7 +52,7 @@ Different OSs use different ABIs on the same CPU architecture.
 
 ## Dependencies
 
-Windows: VS2017/VS2019, LLVM(9.0.0-r363781-win64)
+Windows: VS2019, LLVM(9.0.0-r363781-win64)
 
 Linux(openSUSE 15): \[cmake(>=3.3.2)\] gcc-c++(7.3.1) \[gcc-c++-32bit(7.3.1)\] mono-devel(5.x) glibc(runtime 2.14)
 
