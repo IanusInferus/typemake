@@ -10,16 +10,18 @@ namespace TypeMake.Cpp
         private String SolutionName;
         private List<ProjectReference> ProjectReferences;
         private PathString ProjectOutputDirectory;
+        private OperatingSystemType TargetOperatingSystem;
         private String CC;
         private String CXX;
         private String AR;
         private String STRIP;
 
-        public NinjaSolutionGenerator(String SolutionName, List<ProjectReference> ProjectReferences, PathString ProjectOutputDirectory, String CC, String CXX, String AR, String STRIP)
+        public NinjaSolutionGenerator(String SolutionName, List<ProjectReference> ProjectReferences, PathString ProjectOutputDirectory, OperatingSystemType TargetOperatingSystem, String CC, String CXX, String AR, String STRIP)
         {
             this.SolutionName = SolutionName;
             this.ProjectReferences = ProjectReferences;
             this.ProjectOutputDirectory = ProjectOutputDirectory.FullPath;
+            this.TargetOperatingSystem = TargetOperatingSystem;
             this.CC = CC;
             this.CXX = CXX;
             this.AR = AR;
@@ -70,6 +72,13 @@ namespace TypeMake.Cpp
                 yield return "  command = $strip -o $out $in";
                 yield return "  description = STRIP $out";
                 yield return "";
+                if (TargetOperatingSystem == OperatingSystemType.MacOS)
+                {
+                    yield return "rule stripx";
+                    yield return "  command = $strip -x -o $out $in";
+                    yield return "  description = STRIP $out";
+                    yield return "";
+                }
             }
             foreach (var p in ProjectReferences)
             {

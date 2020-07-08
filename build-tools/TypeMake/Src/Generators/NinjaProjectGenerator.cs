@@ -264,7 +264,14 @@ namespace TypeMake.Cpp
             {
                 var SymbolPath = GetFinalPath(((conf.OutputDirectory != null ? conf.OutputDirectory : (OutputDirectory / ".." / $"{ConfigurationType}")) + "_symbol") / TargetName);
                 yield return $"build {NinjaEscape(SymbolPath)}: {RuleName} {String.Join(" ", ObjectFilePaths.Select(p => NinjaEscape(p)))}" + (Dependencies.Count > 0 ? " | " + String.Join(" ", Dependencies.Select(p => NinjaEscape(p))) : "");
-                yield return $"build {NinjaEscape(TargetPath)}: strip {NinjaEscape(SymbolPath)}";
+                if ((Project.TargetType == TargetType.DynamicLibrary) && (TargetOperatingSystem == OperatingSystemType.MacOS))
+                {
+                    yield return $"build {NinjaEscape(TargetPath)}: stripx {NinjaEscape(SymbolPath)}";
+                }
+                else
+                {
+                    yield return $"build {NinjaEscape(TargetPath)}: stripx {NinjaEscape(SymbolPath)}";
+                }
             }
             else
             {

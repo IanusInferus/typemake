@@ -597,7 +597,7 @@ namespace TypeMake
             }
             else if (Toolchain == ToolchainType.Ninja)
             {
-                var g = new NinjaSolutionGenerator(SolutionName, SortedProjects, BuildDirectory / "projects", CC, CXX, AR, STRIP);
+                var g = new NinjaSolutionGenerator(SolutionName, SortedProjects, BuildDirectory / "projects", TargetOperatingSystem, CC, CXX, AR, STRIP);
                 g.Generate(ForceRegenerate);
             }
             else if ((Toolchain == ToolchainType.Gradle_CMake) || (Toolchain == ToolchainType.Gradle_Ninja))
@@ -617,7 +617,7 @@ namespace TypeMake
                 }
                 else if (Toolchain == ToolchainType.Gradle_Ninja)
                 {
-                    var g = new NinjaSolutionGenerator(SolutionName, SortedProjects, BuildDirectory / "projects", CC, CXX, AR, STRIP);
+                    var g = new NinjaSolutionGenerator(SolutionName, SortedProjects, BuildDirectory / "projects", TargetOperatingSystem, CC, CXX, AR, STRIP);
                     g.Generate(ForceRegenerate);
                 }
                 if (GradleProjectNames.Count > 0)
