@@ -11,6 +11,8 @@ namespace TypeMake
             BuildScript.GenerateRetypemakeScript(v.HostOperatingSystem, v.SourceDirectory, v.BuildDirectory, Memory, v.OverwriteRetypemakeScript);
             var r = v.g();
 
+            var GradleProjectNames = r.SortedProjects.Where(p => (p.TargetType == Cpp.TargetType.GradleApplication) || (p.TargetType == Cpp.TargetType.GradleLibrary)).Select(p => p.Name).ToList();
+
             if (v.TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
             {
                 BuildScript.GenerateBuildScriptWindows(v.Toolchain, v.BuildDirectory, r.SolutionName, v.TargetArchitecture, Cpp.ConfigurationType.Debug, v.VSDir, v.VSVersion, v.Ninja, v.ForceRegenerate);
@@ -116,7 +118,7 @@ namespace TypeMake
                 {
                     TextFile.WriteToFile(v.BuildDirectory / "gradle/local.properties", $"sdk.dir={v.AndroidSdk.ToString(PathStringStyle.Unix)}", new System.Text.UTF8Encoding(false), !v.ForceRegenerate);
                 }
-                BuildScript.GenerateBuildScriptAndroid(v.SelectedProjects.Values.Where(p => (p.Definition.TargetType == Cpp.TargetType.GradleApplication) || (p.Definition.TargetType == Cpp.TargetType.GradleLibrary)).Select(p => p.Reference).ToList(), v.Toolchain, v.HostOperatingSystem, v.BuildDirectory, v.TargetArchitecture, v.Configuration, v.AndroidNdk, v.CMake, v.Make, v.Ninja, 17, v.ForceRegenerate, v.EnableJava, r.NeedInstallStrip);
+                BuildScript.GenerateBuildScriptAndroid(GradleProjectNames, v.Toolchain, v.HostOperatingSystem, v.BuildDirectory, v.TargetArchitecture, v.Configuration, v.AndroidNdk, v.CMake, v.Make, v.Ninja, 17, v.ForceRegenerate, v.EnableJava, r.NeedInstallStrip);
                 if (v.BuildNow)
                 {
                     using (var d = Shell.PushDirectory(v.BuildDirectory))

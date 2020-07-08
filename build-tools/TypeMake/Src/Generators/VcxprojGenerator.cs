@@ -501,13 +501,25 @@ namespace TypeMake.Cpp
                 var x = new XElement(xn + "ProjectReference", new XAttribute("Include", RelativePath));
                 x.Add(new XElement(xn + "Project", "{" + p.Id.ToUpper() + "}"));
                 x.Add(new XElement(xn + "Name", p.Name));
-                x.Add(new XElement(xn + "Private", "false"));
                 x.Add(new XElement(xn + "LinkLibraryDependecies", "true"));
+                if (WindowsRuntime == WindowsRuntimeType.WinRT)
+                {
+                    x.Add(new XElement(xn + "ReferenceOutputAssembly", "false"));
+                }
                 ProjectItemGroup.Add(x);
             }
             if (!ProjectItemGroup.HasElements)
             {
                 ProjectItemGroup.Remove();
+            }
+
+            //https://developercommunity.visualstudio.com/idea/555602/c-referenced-dlls-copylocal-dosnt-work.html
+            if (Project.TargetType == TargetType.DynamicLibrary)
+            {
+                var OutputCopyItemGroup = new XElement(xn + "ItemGroup");
+                xVcxproj.Add(OutputCopyItemGroup);
+
+                OutputCopyItemGroup.Add(new XElement(xn + "Content", new XAttribute("Include", "$(TargetPath)"), new XElement(xn + "Link", "%(Filename)%(Extension)"), new XElement(xn + "CopyToOutputDirectory", "PreserveNewest")));
             }
 
             var sVcxproj = XmlFile.ToString(xVcxproj);

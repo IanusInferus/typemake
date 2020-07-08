@@ -119,7 +119,7 @@ namespace TypeMake
                 Lines.Add("set UseMultiToolTask=true");
                 Lines.Add("set EnforceProcessCountAcrossBuilds=true"); //limit process number in spite of cl /MP and MSBuild /m, https://developercommunity.visualstudio.com/idea/436208/limit-cpu-usage-of-visual-studio.html
                 Lines.Add($"set MultiProcMaxCount={Environment.ProcessorCount.ToString()}");
-                Lines.Add($@"""{VSDir.ToString(PathStringStyle.Windows)}\MSBuild\{MSBuildVersion}\Bin\MSBuild.exe"" {SolutionName}.sln /p:Configuration={Configuration} /p:Platform={SlnGenerator.GetArchitectureString(TargetArchitecture)} /m:{Environment.ProcessorCount.ToString()} || exit /b 1");
+                Lines.Add($@"""{VSDir.ToString(PathStringStyle.Windows)}\MSBuild\{MSBuildVersion}\Bin\MSBuild.exe"" {SolutionName}.sln /p:Configuration={Configuration} /p:Platform={Cpp.SlnGenerator.GetArchitectureString(TargetArchitecture)} /m:{Environment.ProcessorCount.ToString()} || exit /b 1");
                 Lines.Add("");
                 var BuildPath = BuildDirectory / $"build_{Configuration}.cmd";
                 TextFile.WriteToFile(BuildPath, String.Join("\r\n", Lines), System.Text.Encoding.Default, !ForceRegenerate);
@@ -236,7 +236,7 @@ namespace TypeMake
                 }
             }
         }
-        public static void GenerateBuildScriptXCode(Cpp.OperatingSystemType HostOperatingSystem, PathString BuildDirectory, Cpp.ConfigurationType Configuration, List<ProjectReference> SortedProjects, bool ForceRegenerate)
+        public static void GenerateBuildScriptXCode(Cpp.OperatingSystemType HostOperatingSystem, PathString BuildDirectory, Cpp.ConfigurationType Configuration, List<Cpp.ProjectReference> SortedProjects, bool ForceRegenerate)
         {
             var Lines = new List<String>();
             Lines.Add("#!/bin/bash");
@@ -256,7 +256,7 @@ namespace TypeMake
                 }
             }
         }
-        public static void GenerateBuildScriptAndroid(List<ProjectReference> GradleProjects, Cpp.ToolchainType Toolchain, Cpp.OperatingSystemType HostOperatingSystem, PathString BuildDirectory, Cpp.ArchitectureType TargetArchitecture, Cpp.ConfigurationType Configuration, PathString AndroidNdk, PathString CMake, PathString Make, PathString Ninja, int ApiLevel, bool ForceRegenerate, bool EnableJava, bool NeedInstallStrip)
+        public static void GenerateBuildScriptAndroid(List<String> GradleProjectNames, Cpp.ToolchainType Toolchain, Cpp.OperatingSystemType HostOperatingSystem, PathString BuildDirectory, Cpp.ArchitectureType TargetArchitecture, Cpp.ConfigurationType Configuration, PathString AndroidNdk, PathString CMake, PathString Make, PathString Ninja, int ApiLevel, bool ForceRegenerate, bool EnableJava, bool NeedInstallStrip)
         {
             if (Toolchain == Cpp.ToolchainType.Gradle_CMake)
             {
@@ -367,9 +367,9 @@ namespace TypeMake
                         }
                         else
                         {
-                            foreach (var p in GradleProjects)
+                            foreach (var GradleProjectName in GradleProjectNames)
                             {
-                                Lines.Add($"pushd batch\\{Shell.EscapeArgumentForShell(p.Name.Split(':').First(), Shell.ShellArgumentStyle.CMD)} || exit /b 1");
+                                Lines.Add($"pushd batch\\{Shell.EscapeArgumentForShell(GradleProjectName.Split(':').First(), Shell.ShellArgumentStyle.CMD)} || exit /b 1");
                                 Lines.Add("call build.cmd || exit /b 1");
                                 Lines.Add("popd");
                             }
@@ -397,9 +397,9 @@ namespace TypeMake
                         }
                         else
                         {
-                            foreach (var p in GradleProjects)
+                            foreach (var GradleProjectName in GradleProjectNames)
                             {
-                                Lines.Add($"pushd batch/{Shell.EscapeArgumentForShell(p.Name.Split(':').First(), Shell.ShellArgumentStyle.Bash)}");
+                                Lines.Add($"pushd batch/{Shell.EscapeArgumentForShell(GradleProjectName.Split(':').First(), Shell.ShellArgumentStyle.Bash)}");
                                 Lines.Add("./build.sh");
                                 Lines.Add("popd");
                             }

@@ -135,12 +135,26 @@ namespace TypeMake.Cpp
         public List<Configuration> Configurations = new List<Configuration> { };
     }
 
-    [DebuggerDisplay("Name = {Name}, TargetName = {TargetName}, TargetType = {TargetType}, Configurations = ...")]
+    [DebuggerDisplay("Id = {Id}, Name = {Name}, TargetName = {TargetName}, VirtualDir = {VirtualDir}, FilePath = {FilePath}, TargetType = {TargetType}, Configurations = ...")]
     public class Project
     {
+        public String Id;
         public String Name;
-        public String TargetName = null;
+        public PathString VirtualDir;
+        public PathString FilePath;
         public TargetType TargetType;
+        public String TargetName = null;
         public List<Configuration> Configurations = new List<Configuration> { };
+    }
+
+    [DebuggerDisplay("Id = {Id}, Name = {Name}, VirtualDir = {VirtualDir}, FilePath = {FilePath}")]
+    public class ProjectReference
+    {
+        public String Id;
+        public String Name;
+        public PathString VirtualDir;
+        public PathString FilePath;
+        public TargetType TargetType;
+        public Dictionary<ConfigurationType, PathString> OutputFilePath = new Dictionary<ConfigurationType, PathString> { };
     }
 }

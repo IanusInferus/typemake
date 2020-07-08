@@ -121,7 +121,14 @@ namespace TypeMake.Cpp
                         }
                         else
                         {
-                            Libs.Add("-l:" + Lib.ToString(PathStyle));
+                            if (ExecutingOperatingSystem == OperatingSystemType.Windows)
+                            {
+                                Libs.Add(Lib.ToString(PathStyle));
+                            }
+                            else
+                            {
+                                Libs.Add("-l:" + Lib.ToString(PathStyle));
+                            }
                         }
                     }
                     else
@@ -131,14 +138,37 @@ namespace TypeMake.Cpp
                 }
                 foreach (var p in ProjectReferences)
                 {
-                    Libs.Add("-l" + p.Name);
-                    if (TargetOperatingSystem == OperatingSystemType.Windows)
+                    if (p.OutputFilePath.ContainsKey(ConfigurationType))
                     {
-                        Dependencies.Add((LibrarySearchPath.AsPath() / p.Name + ".lib").ToString(PathStyle));
+                        var LibPath = p.OutputFilePath[ConfigurationType];
+                        if (ExecutingOperatingSystem == OperatingSystemType.Windows)
+                        {
+                            if ((TargetOperatingSystem == OperatingSystemType.Windows) && (p.TargetType == TargetType.DynamicLibrary))
+                            {
+                                Libs.Add(GetFinalPath(LibPath.ChangeExtension("lib")));
+                            }
+                            else
+                            {
+                                Libs.Add(GetFinalPath(LibPath));
+                            }
+                        }
+                        else
+                        {
+                            Libs.Add("-l:" + GetFinalPath(LibPath));
+                        }
+                        Dependencies.Add(GetFinalPath(LibPath));
                     }
                     else
                     {
-                        Dependencies.Add((LibrarySearchPath.AsPath() / "lib" + p.Name + ".a").ToString(PathStyle));
+                        Libs.Add("-l" + p.Name);
+                        if (TargetOperatingSystem == OperatingSystemType.Windows)
+                        {
+                            Dependencies.Add((LibrarySearchPath.AsPath() / p.Name + ".lib").ToString(PathStyle));
+                        }
+                        else
+                        {
+                            Dependencies.Add((LibrarySearchPath.AsPath() / "lib" + p.Name + ".a").ToString(PathStyle));
+                        }
                     }
                 }
                 if ((TargetOperatingSystem == OperatingSystemType.Linux) || (TargetOperatingSystem == OperatingSystemType.Android))
@@ -147,12 +177,12 @@ namespace TypeMake.Cpp
                 }
             }
 
-            yield return "commonflags  = " + String.Join(" ", CommonFlags.Select(f => CommandArgumentEscape(f)));
-            yield return "cflags  = " + String.Join(" ", CFlags.Select(f => CommandArgumentEscape(f)));
-            yield return "cxxflags  = " + String.Join(" ", CppFlags.Select(f => CommandArgumentEscape(f)));
-            yield return "ldflags  = " + String.Join(" ", LinkerFlags.Select(f => CommandArgumentEscape(f)));
-            yield return "post_ldflags  = " + String.Join(" ", PostLinkerFlags.Select(f => CommandArgumentEscape(f)));
-            yield return "libs  = " + String.Join(" ", Libs.Select(f => CommandArgumentEscape(f)));
+            yield return "commonflags = " + String.Join(" ", CommonFlags.Select(f => CommandArgumentEscape(f)));
+            yield return "cflags = " + String.Join(" ", CFlags.Select(f => CommandArgumentEscape(f)));
+            yield return "cxxflags = " + String.Join(" ", CppFlags.Select(f => CommandArgumentEscape(f)));
+            yield return "ldflags = " + String.Join(" ", LinkerFlags.Select(f => CommandArgumentEscape(f)));
+            yield return "post_ldflags = " + String.Join(" ", PostLinkerFlags.Select(f => CommandArgumentEscape(f)));
+            yield return "libs = " + String.Join(" ", Libs.Select(f => CommandArgumentEscape(f)));
 
             yield return "";
 

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace TypeMake
+namespace TypeMake.Cpp
 {
     public class NinjaSolutionGenerator
     {

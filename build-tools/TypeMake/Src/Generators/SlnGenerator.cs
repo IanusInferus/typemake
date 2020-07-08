@@ -3,9 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.IO;
 using System.Text;
-using TypeMake.Cpp;
 
-namespace TypeMake
+namespace TypeMake.Cpp
 {
     public class SlnGenerator
     {

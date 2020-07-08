@@ -6,7 +6,7 @@ using System.Xml;
 using System.Xml.Linq;
 using static TypeMake.Plist;
 
-namespace TypeMake
+namespace TypeMake.Cpp
 {
     public class XcworkspaceGenerator
     {

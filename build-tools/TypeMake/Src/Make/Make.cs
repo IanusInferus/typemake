@@ -90,7 +90,6 @@ namespace TypeMake
             public Project Definition;
             public List<Configuration> BaseConfigurations;
             public List<Configuration> ExportConfigurations;
-            public ProjectReference Reference;
 
             public PathString PhysicalPath;
             public HashSet<String> DependentProjectToRequirement;
@@ -121,6 +120,11 @@ namespace TypeMake
             var Modules = Directory.EnumerateDirectories(SourceDirectory / "modules", "*", SearchOption.TopDirectoryOnly).Select(p => p.AsPath()).Select(p => new { ModuleName = p.FileName, ModulePath = p, VirtualDir = "modules" }).ToList();
             var Products = Directory.EnumerateDirectories(SourceDirectory / "products", "*", SearchOption.TopDirectoryOnly).Select(p => p.AsPath()).Select(p => new { ProductName = p.FileName, ProductPath = p, VirtualDir = "products" }).ToList();
 
+            if ((CLibrary == CLibraryType.musl) && (CLibraryForm == CLibraryForm.Static))
+            {
+                Products = Products.Where(p => p.ProductName != "hello_dyn").ToList();
+            }
+
             var ModuleDict = Modules.ToDictionary(m => m.ModuleName);
 
             //modules
@@ -132,6 +136,7 @@ namespace TypeMake
             Add("hello", "math");
             Add("hello.ios", "math");
             Add("hello.android", "math");
+            Add("hello_dyn", "standard.dynamic");
 
             var Projects = new List<ProjectDescription>();
 
@@ -148,8 +153,11 @@ namespace TypeMake
                     {
                         Definition = new Project
                         {
+                            Id = GetIdForProject(ModuleName),
                             Name = ModuleName,
                             TargetType = TargetType.StaticLibrary,
+                            VirtualDir = m.VirtualDir,
+                            FilePath = BuildDirectory / "projects" / GetProjectFileName(ModuleName),
                             Configurations = new List<Configuration>
                             {
                                 new Configuration
@@ -167,13 +175,6 @@ namespace TypeMake
                                 IncludeDirectories = new List<PathString> { InputDirectory / "include" }
                             }
                         },
-                        Reference = new ProjectReference
-                        {
-                            Id = GetIdForProject(ModuleName),
-                            Name = ModuleName,
-                            VirtualDir = m.VirtualDir,
-                            FilePath = BuildDirectory / "projects" / GetProjectFileName(ModuleName)
-                        },
                         PhysicalPath = InputDirectory,
                         DependentProjectToRequirement = DependentModuleToRequirement
                     });
@@ -189,7 +190,10 @@ namespace TypeMake
                             {
                                 Definition = new Project
                                 {
+                                    Id = GetIdForProject(TestName),
                                     Name = TestName,
+                                    VirtualDir = m.VirtualDir,
+                                    FilePath = BuildDirectory / "projects" / GetProjectFileName(TestName),
                                     TargetType = TargetType.Executable,
                                     Configurations = new List<Configuration>
                                     {
@@ -202,13 +206,6 @@ namespace TypeMake
                                 },
                                 BaseConfigurations = GetCommonConfigurations(),
                                 ExportConfigurations = new List<Configuration> { },
-                                Reference = new ProjectReference
-                                {
-                                    Id = GetIdForProject(TestName),
-                                    Name = TestName,
-                                    VirtualDir = m.VirtualDir,
-                                    FilePath = BuildDirectory / "projects" / GetProjectFileName(TestName)
-                                },
                                 PhysicalPath = InputDirectory,
                                 DependentProjectToRequirement = TestDependentModuleToRequirement
                             });
@@ -318,20 +315,22 @@ namespace TypeMake
                         {
                             Definition = new Project
                             {
-                                Name = ProductName,
-                                TargetName = TargetName,
-                                TargetType = IsTargetOperatingSystemMatched ? ProductTargetType : TargetType.StaticLibrary,
-                                Configurations = Configurations
-                            },
-                            BaseConfigurations = GetCommonConfigurations(),
-                            ExportConfigurations = new List<Configuration> { },
-                            Reference = new ProjectReference
-                            {
                                 Id = GetIdForProject(ProductName),
                                 Name = ProductName,
                                 VirtualDir = p.VirtualDir,
-                                FilePath = BuildDirectory / "projects" / GetProjectFileName(ProductName)
+                                FilePath = BuildDirectory / "projects" / GetProjectFileName(ProductName),
+                                TargetType = IsTargetOperatingSystemMatched ? ProductTargetType : TargetType.StaticLibrary,
+                                TargetName = TargetName,
+                                Configurations = Configurations
                             },
+                            BaseConfigurations = GetCommonConfigurations(),
+                            ExportConfigurations = (ProductTargetType == TargetType.StaticLibrary) || (ProductTargetType == TargetType.DynamicLibrary) ? new List<Configuration>
+                            {
+                                new Configuration
+                                {
+                                    IncludeDirectories = new List<PathString> { InputDirectory / "include" }
+                                }
+                            } : new List<Configuration> { },
                             PhysicalPath = InputDirectory,
                             DependentProjectToRequirement = DependentModuleToRequirement
                         });
@@ -344,20 +343,16 @@ namespace TypeMake
                         {
                             Definition = new Project
                             {
+                                Id = GetIdForProject(FrameworkName),
                                 Name = FrameworkName,
-                                TargetName = TargetName,
+                                VirtualDir = p.VirtualDir,
+                                FilePath = BuildDirectory / "projects" / GetProjectFileName(FrameworkName),
                                 TargetType = FrameworkTargetType,
+                                TargetName = TargetName,
                                 Configurations = Configurations
                             },
                             BaseConfigurations = GetCommonConfigurations(),
                             ExportConfigurations = new List<Configuration> { },
-                            Reference = new ProjectReference
-                            {
-                                Id = GetIdForProject(FrameworkName),
-                                Name = FrameworkName,
-                                VirtualDir = p.VirtualDir,
-                                FilePath = BuildDirectory / "projects" / GetProjectFileName(FrameworkName)
-                            },
                             PhysicalPath = InputDirectory,
                             DependentProjectToRequirement = DependentModuleToRequirement
                         });
@@ -368,9 +363,12 @@ namespace TypeMake
                         {
                             Definition = new Project
                             {
+                                Id = GetIdForProject(ProductName),
                                 Name = ProductName + ":" + GradleTargetType.Value.ToString(),
-                                TargetName = TargetName,
+                                VirtualDir = p.VirtualDir,
+                                FilePath = BuildDirectory / "gradle" / GetProjectFileName(ProductName),
                                 TargetType = GradleTargetType.Value,
+                                TargetName = TargetName,
                                 Configurations = new List<Configuration>
                                 {
                                     new Configuration
@@ -386,13 +384,6 @@ namespace TypeMake
                             },
                             BaseConfigurations = new List<Configuration> { },
                             ExportConfigurations = new List<Configuration> { },
-                            Reference = new ProjectReference
-                            {
-                                Id = GetIdForProject(ProductName),
-                                Name = ProductName + ":" + GradleTargetType.Value.ToString(),
-                                VirtualDir = p.VirtualDir,
-                                FilePath = BuildDirectory / "gradle" / GetProjectFileName(ProductName)
-                            },
                             PhysicalPath = InputDirectory,
                             DependentProjectToRequirement = new HashSet<String> { ProductName }
                         });
@@ -426,16 +417,12 @@ namespace TypeMake
         public class Result
         {
             public String SolutionName;
-            public List<KeyValuePair<ProjectReference, List<ProjectReference>>> Projects;
             public List<ProjectReference> SortedProjects;
             public bool NeedInstallStrip;
         }
         public Result Execute(Dictionary<String, ProjectDescription> SelectedProjects)
         {
             var Dependencies = SelectedProjects.Values.ToDictionary(p => p.Definition.Name, p => p.DependentProjectToRequirement);
-            var ProjectNameToDependencies = SelectedProjects.Values.Select(p => p.Reference).ToDictionary(p => p.Name);
-            var Projects = new List<KeyValuePair<ProjectReference, List<ProjectReference>>>();
-            var NeedInstallStrip = false;
             var ExternalConfigurations = new List<Configuration>
             {
                 new Configuration
@@ -447,31 +434,62 @@ namespace TypeMake
                     PostLinkerFlags = PostLinkerFlags
                 }
             };
+            var ProjectDict = new Dictionary<String, Project>();
+            var ProjectNameToFullDependentProjectNames = new Dictionary<String, List<String>>();
             foreach (var Project in SelectedProjects.Values)
             {
-                var FullDependentProjectNames = GetFullProjectDependencies(Project.Definition.Name, Dependencies, out var Unresovled);
-                if (Unresovled.Count > 0)
+                var FullDependentProjectNames = GetFullProjectDependencies(Project.Definition.Name, Dependencies, out var Unresolved);
+                if (Unresolved.Count > 0)
                 {
-                    throw new InvalidOperationException($"UnresolvedDependencies: {Project.Definition.Name} -> {String.Join(" ", Unresovled)}");
+                    throw new InvalidOperationException($"UnresolvedDependencies: {Project.Definition.Name} -> {String.Join(" ", Unresolved)}");
                 }
-                var ProjectReference = Project.Reference;
-                var ProjectReferences = FullDependentProjectNames.Select(d => ProjectNameToDependencies[d]).ToList();
                 var DependentProjectExportConfigurations = FullDependentProjectNames.SelectMany(d => SelectedProjects[d].ExportConfigurations).ToList();
                 var p = new Project
                 {
+                    Id = Project.Definition.Id,
                     Name = Project.Definition.Name,
-                    TargetName = Project.Definition.TargetName,
+                    VirtualDir = Project.Definition.VirtualDir,
+                    FilePath = Project.Definition.FilePath,
                     TargetType = Project.Definition.TargetType,
+                    TargetName = Project.Definition.TargetName,
                     Configurations = Project.BaseConfigurations.Concat(DependentProjectExportConfigurations).Concat(Project.Definition.Configurations).Concat(ExternalConfigurations).ToList()
                 };
+                ProjectDict.Add(p.Name, p);
+                ProjectNameToFullDependentProjectNames.Add(p.Name, FullDependentProjectNames);
+            }
+            var ProjectNameToReference = new Dictionary<String, ProjectReference>();
+            foreach (var p in ProjectDict.Values)
+            {
+                var OutputFilePath = new Dictionary<ConfigurationType, PathString>();
+                foreach (var ConfigurationType in Enum.GetValues(typeof(ConfigurationType)).Cast<ConfigurationType>())
+                {
+                    var conf = p.Configurations.Merged(p.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, WindowsRuntime, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType);
+                    OutputFilePath.Add(ConfigurationType, BuildDirectory / GetProjectOutputFilePath(p.Name, p.TargetName ?? p.Name, p.TargetType, conf.OutputDirectory));
+                }
+                var Reference = new ProjectReference
+                {
+                    Id = p.Id,
+                    Name = p.Name,
+                    VirtualDir = p.VirtualDir,
+                    FilePath = p.FilePath,
+                    TargetType = p.TargetType,
+                    OutputFilePath = OutputFilePath
+                };
+                ProjectNameToReference.Add(p.Name, Reference);
+            }
+            var NeedInstallStrip = false;
+            foreach (var Project in SelectedProjects.Values)
+            {
+                var p = ProjectDict[Project.Definition.Name];
+                var ProjectReferences = ProjectNameToFullDependentProjectNames[p.Name].Select(d => ProjectNameToReference[d]).ToList();
                 var InputDirectory = Project.PhysicalPath;
-                var OutputDirectory = Project.Reference.FilePath.Parent;
+                var OutputDirectory = Project.Definition.FilePath.Parent;
                 var ProjectTargetType = Project.Definition.TargetType;
                 if (Toolchain == ToolchainType.VisualStudio)
                 {
                     var VcxprojTemplateText = Resource.GetResourceText(VSVersion == 2019 ? @"Templates\vc16\Default.vcxproj" : @"Templates\vc16\Default.vcxproj");
                     var VcxprojFilterTemplateText = Resource.GetResourceText(VSVersion == 2019 ? @"Templates\vc16\Default.vcxproj.filters" : @"Templates\vc16\Default.vcxproj.filters");
-                    var g = new VcxprojGenerator(p, ProjectReference.Id, ProjectReferences, InputDirectory, OutputDirectory, VcxprojTemplateText, VcxprojFilterTemplateText, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, WindowsRuntime.Value, CLibraryForm, CppLibraryForm);
+                    var g = new VcxprojGenerator(p, Project.Definition.Id, ProjectReferences, InputDirectory, OutputDirectory, VcxprojTemplateText, VcxprojFilterTemplateText, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, WindowsRuntime.Value, CLibraryForm, CppLibraryForm);
                     g.Generate(ForceRegenerate);
                 }
                 else if (Toolchain == ToolchainType.XCode)
@@ -557,21 +575,19 @@ namespace TypeMake
                 {
                     throw new NotSupportedException();
                 }
-                Projects.Add(new KeyValuePair<ProjectReference, List<ProjectReference>>(ProjectReference, ProjectReferences));
             }
             var GradleProjectNames = SelectedProjects.Values.Where(Project => (Project.Definition.TargetType == TargetType.GradleLibrary) || (Project.Definition.TargetType == TargetType.GradleApplication)).Select(Project => Project.Definition.Name).ToList();
-            var ProjectDict = Projects.ToDictionary(p => p.Key.Name, p => p.Key);
-            var ProjectDependencies = Projects.ToDictionary(p => ProjectDict[p.Key.Name], p => p.Value.Select(n => ProjectDict[n.Name]).ToList());
-            var SortedProjects = Projects.Select(p => p.Key).PartialOrderBy(p => ProjectDependencies.ContainsKey(p) ? ProjectDependencies[p] : null).ToList();
+            var ProjectDependencies = ProjectNameToFullDependentProjectNames.ToDictionary(p => ProjectNameToReference[p.Key], p => p.Value.Select(n => ProjectNameToReference[n]).ToList());
+            var SortedProjects = ProjectDependencies.Keys.PartialOrderBy(p => ProjectDependencies.ContainsKey(p) ? ProjectDependencies[p] : null).ToList();
             if (Toolchain == ToolchainType.VisualStudio)
             {
                 var SlnTemplateText = Resource.GetResourceText(VSVersion == 2019 ? @"Templates\vc16\Default.sln" : @"Templates\vc16\Default.sln");
-                var g = new SlnGenerator(SolutionName, GetIdForProject(SolutionName + ".solution"), Projects.Select(p => p.Key).ToList(), BuildDirectory, SlnTemplateText, TargetArchitecture);
+                var g = new SlnGenerator(SolutionName, GetIdForProject(SolutionName + ".solution"), SortedProjects, BuildDirectory, SlnTemplateText, TargetArchitecture);
                 g.Generate(ForceRegenerate);
             }
             else if (Toolchain == ToolchainType.XCode)
             {
-                var g = new XcworkspaceGenerator(SolutionName, Projects.Select(p => p.Key).ToList(), BuildDirectory);
+                var g = new XcworkspaceGenerator(SolutionName, SortedProjects, BuildDirectory);
                 g.Generate(ForceRegenerate);
             }
             else if (Toolchain == ToolchainType.CMake)
@@ -617,7 +633,7 @@ namespace TypeMake
             {
                 throw new NotSupportedException();
             }
-            return new Result { SolutionName = SolutionName, Projects = Projects, SortedProjects = SortedProjects, NeedInstallStrip = NeedInstallStrip };
+            return new Result { SolutionName = SolutionName, SortedProjects = SortedProjects, NeedInstallStrip = NeedInstallStrip };
         }
 
         private List<Configuration> GetCommonConfigurations()
@@ -1098,6 +1114,204 @@ namespace TypeMake
             else if ((Toolchain == ToolchainType.CMake) || (Toolchain == ToolchainType.Ninja) || (Toolchain == ToolchainType.Gradle_CMake) || (Toolchain == ToolchainType.Gradle_Ninja))
             {
                 return ProjectName;
+            }
+            else
+            {
+                throw new NotSupportedException();
+            }
+        }
+        private String GetProjectOutputFileName(String TargetName, TargetType TargetType)
+        {
+            if (TargetOperatingSystem == OperatingSystemType.Windows)
+            {
+                if (TargetType == TargetType.Executable)
+                {
+                    return TargetName + ".exe";
+                }
+                else if (TargetType == TargetType.StaticLibrary)
+                {
+                    return TargetName + ".lib";
+                }
+                else if (TargetType == TargetType.DynamicLibrary)
+                {
+                    return TargetName + ".dll";
+                }
+                else
+                {
+                    throw new NotSupportedException();
+                }
+            }
+            else if (TargetOperatingSystem == OperatingSystemType.Linux)
+            {
+                if (TargetType == TargetType.Executable)
+                {
+                    return TargetName;
+                }
+                else if (TargetType == TargetType.StaticLibrary)
+                {
+                    return "lib" + TargetName + ".a";
+                }
+                else if (TargetType == TargetType.DynamicLibrary)
+                {
+                    return "lib" + TargetName + ".so";
+                }
+                else
+                {
+                    throw new NotSupportedException();
+                }
+            }
+            else if (TargetOperatingSystem == OperatingSystemType.MacOS)
+            {
+                if (TargetType == TargetType.Executable)
+                {
+                    return TargetName;
+                }
+                else if (TargetType == TargetType.StaticLibrary)
+                {
+                    return "lib" + TargetName + ".a";
+                }
+                else if (TargetType == TargetType.DynamicLibrary)
+                {
+                    return "lib" + TargetName + ".dylib";
+                }
+                else if (TargetType == TargetType.DarwinApplication)
+                {
+                    return TargetName + ".app";
+                }
+                else if (TargetType == TargetType.DarwinStaticFramework)
+                {
+                    return TargetName + ".framework";
+                }
+                else if (TargetType == TargetType.DarwinSharedFramework)
+                {
+                    return TargetName + ".framework";
+                }
+                else if (TargetType == TargetType.MacBundle)
+                {
+                    return TargetName + ".bundle";
+                }
+                else
+                {
+                    throw new NotSupportedException();
+                }
+            }
+            else if (TargetOperatingSystem == OperatingSystemType.Android)
+            {
+                if (TargetType == TargetType.Executable)
+                {
+                    return TargetName;
+                }
+                else if (TargetType == TargetType.StaticLibrary)
+                {
+                    return "lib" + TargetName + ".a";
+                }
+                else if (TargetType == TargetType.DynamicLibrary)
+                {
+                    return "lib" + TargetName + ".so";
+                }
+                else if (TargetType == TargetType.GradleApplication)
+                {
+                    return TargetName + ".apk";
+                }
+                else if (TargetType == TargetType.GradleLibrary)
+                {
+                    return TargetName + ".aar";
+                }
+                else
+                {
+                    throw new NotSupportedException();
+                }
+            }
+            else if (TargetOperatingSystem == OperatingSystemType.iOS)
+            {
+                if (TargetType == TargetType.Executable)
+                {
+                    return TargetName;
+                }
+                else if (TargetType == TargetType.StaticLibrary)
+                {
+                    return "lib" + TargetName + ".a";
+                }
+                else if (TargetType == TargetType.DynamicLibrary)
+                {
+                    return "lib" + TargetName + ".dylib";
+                }
+                else if (TargetType == TargetType.DarwinApplication)
+                {
+                    return TargetName + ".app";
+                }
+                else if (TargetType == TargetType.DarwinStaticFramework)
+                {
+                    return TargetName + ".framework";
+                }
+                else if (TargetType == TargetType.DarwinSharedFramework)
+                {
+                    return TargetName + ".framework";
+                }
+                else
+                {
+                    throw new NotSupportedException();
+                }
+            }
+            else
+            {
+                throw new NotSupportedException();
+            }
+        }
+        private PathString GetProjectOutputFilePath(String ProjectName, String TargetName, TargetType TargetType, PathString OutputDirectory = null)
+        {
+            var OutputFileName = GetProjectOutputFileName(TargetName, TargetType);
+            if ((TargetType == TargetType.GradleApplication) || (TargetType == TargetType.GradleLibrary))
+            {
+                if (Toolchain == ToolchainType.Ninja)
+                {
+                    var SimpleProjectName = ProjectName.Split(':').First();
+                    return $"batch/{SimpleProjectName}".AsPath() / OutputFileName;
+                }
+                else if ((Toolchain == ToolchainType.Gradle_CMake) || (Toolchain == ToolchainType.Gradle_Ninja))
+                {
+                    var SimpleProjectName = ProjectName.Split(':').First();
+                    if (TargetType == TargetType.GradleApplication)
+                    {
+                        return $"gradle/{SimpleProjectName}/build/outputs/apk/{ConfigurationType.ToString().ToLowerInvariant()}/{OutputFileName.AsPath().FileNameWithoutExtension}-{ConfigurationType.ToString().ToLowerInvariant()}.apk".AsPath();
+                    }
+                    else if (TargetType == TargetType.GradleLibrary)
+                    {
+                        var Unsigned = ConfigurationType == ConfigurationType.Release ? "-unsigned" : "";
+                        return $"gradle/{SimpleProjectName}/build/outputs/aar/{OutputFileName.AsPath().FileNameWithoutExtension}-{ConfigurationType.ToString().ToLowerInvariant()}{Unsigned}.aar".AsPath();
+                    }
+                    else
+                    {
+                        throw new NotSupportedException();
+                    }
+                }
+                else
+                {
+                    throw new NotSupportedException();
+                }
+            }
+            if (OutputDirectory != null)
+            {
+                return OutputDirectory / OutputFileName;
+            }
+            if (Toolchain == ToolchainType.VisualStudio)
+            {
+                return $"{ConfigurationType}".AsPath() / OutputFileName;
+            }
+            else if (Toolchain == ToolchainType.XCode)
+            {
+                if (TargetOperatingSystem == OperatingSystemType.MacOS)
+                {
+                    return $"{ConfigurationType}".AsPath() / OutputFileName;
+                }
+                else
+                {
+                    return $"{ConfigurationType}-iphoneos".AsPath() / OutputFileName;
+                }
+            }
+            else if ((Toolchain == ToolchainType.CMake) || (Toolchain == ToolchainType.Ninja) || (Toolchain == ToolchainType.Gradle_CMake) || (Toolchain == ToolchainType.Gradle_Ninja))
+            {
+                return $"{ConfigurationType}".AsPath() / OutputFileName;
             }
             else
             {
