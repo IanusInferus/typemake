@@ -876,6 +876,23 @@ namespace TypeMake
                 },
                 new Configuration
                 {
+                    MatchingTargetTypes = new List<TargetType> { TargetType.Executable, TargetType.DynamicLibrary },
+                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.MacOS },
+                    MatchingToolchains = new List<ToolchainType> { ToolchainType.Ninja, ToolchainType.CMake },
+                    LinkerFlags = ParseFlags(@"-Wl,-rpath -Wl,@executable_path")
+                },
+                new Configuration
+                {
+                    MatchingTargetTypes = new List<TargetType> { TargetType.Executable, TargetType.DynamicLibrary },
+                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.MacOS },
+                    MatchingToolchains = new List<ToolchainType> { ToolchainType.XCode },
+                    Options = new Dictionary<String, String>
+                    {
+                        ["xcode.project.LD_RUNPATH_SEARCH_PATHS"] = "@executable_path"
+                    }
+                },
+                new Configuration
+                {
                     MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.MacOS },
                     Options = new Dictionary<String, String>
                     {
