@@ -870,6 +870,12 @@ namespace TypeMake
                 },
                 new Configuration
                 {
+                    MatchingTargetTypes = new List<TargetType> { TargetType.Executable, TargetType.DynamicLibrary },
+                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Linux },
+                    LinkerFlags = ParseFlags(@"-Wl,-rpath -Wl,$ORIGIN")
+                },
+                new Configuration
+                {
                     MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.MacOS },
                     Options = new Dictionary<String, String>
                     {

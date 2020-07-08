@@ -62,8 +62,8 @@ namespace TypeMake.Cpp
             yield return "";
 
             var ExecutingOperatingSystem = (HostOperatingSystem == OperatingSystemType.Windows) && (TargetOperatingSystem == OperatingSystemType.Linux) ? TargetOperatingSystem : HostOperatingSystem;
-            var CommandArgumentEscape = ExecutingOperatingSystem == OperatingSystemType.Windows ? (Func<String, String>)(arg => Shell.EscapeArgument(arg, Shell.ArgumentStyle.Windows)) : (Func<String, String>)(arg => Shell.EscapeArgumentForShell(arg, Shell.ShellArgumentStyle.Bash));
             Func<String, String> NinjaEscape = s => s.Replace("$", "$$").Replace(":", "$:").Replace(" ", "$ ");
+            var CommandArgumentEscape = ExecutingOperatingSystem == OperatingSystemType.Windows ? (Func<String, String>)(arg => NinjaEscape(Shell.EscapeArgument(arg, Shell.ArgumentStyle.Windows))) : (Func<String, String>)(arg => NinjaEscape(Shell.EscapeArgumentForShell(arg, Shell.ShellArgumentStyle.Bash)));
 
             var PathStyle = ExecutingOperatingSystem == OperatingSystemType.Windows ? PathStringStyle.Windows : PathStringStyle.Unix;
             var EnableConvertToWsl = (HostOperatingSystem == OperatingSystemType.Windows) && (TargetOperatingSystem == OperatingSystemType.Linux);
@@ -121,14 +121,7 @@ namespace TypeMake.Cpp
                         }
                         else
                         {
-                            if (ExecutingOperatingSystem == OperatingSystemType.Windows)
-                            {
-                                Libs.Add(Lib.ToString(PathStyle));
-                            }
-                            else
-                            {
-                                Libs.Add("-l:" + Lib.ToString(PathStyle));
-                            }
+                            Libs.Add("-l:" + Lib.ToString(PathStyle));
                         }
                     }
                     else
@@ -141,20 +134,13 @@ namespace TypeMake.Cpp
                     if (p.OutputFilePath.ContainsKey(ConfigurationType))
                     {
                         var LibPath = p.OutputFilePath[ConfigurationType];
-                        if (ExecutingOperatingSystem == OperatingSystemType.Windows)
+                        if ((TargetOperatingSystem == OperatingSystemType.Windows) && (p.TargetType == TargetType.DynamicLibrary))
                         {
-                            if ((TargetOperatingSystem == OperatingSystemType.Windows) && (p.TargetType == TargetType.DynamicLibrary))
-                            {
-                                Libs.Add(GetFinalPath(LibPath.ChangeExtension("lib")));
-                            }
-                            else
-                            {
-                                Libs.Add(GetFinalPath(LibPath));
-                            }
+                            Libs.Add(GetFinalPath(LibPath.ChangeExtension("lib")));
                         }
                         else
                         {
-                            Libs.Add("-l:" + GetFinalPath(LibPath));
+                            Libs.Add(GetFinalPath(LibPath));
                         }
                         Dependencies.Add(GetFinalPath(LibPath));
                     }
