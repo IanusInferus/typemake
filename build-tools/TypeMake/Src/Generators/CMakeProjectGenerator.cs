@@ -16,7 +16,7 @@ namespace TypeMake.Cpp
         private OperatingSystemType HostOperatingSystem;
         private ArchitectureType HostArchitecture;
         private OperatingSystemType TargetOperatingSystem;
-        private ArchitectureType? TargetArchitectureType;
+        private ArchitectureType? TargetArchitecture;
         private WindowsRuntimeType? WindowsRuntime;
         private ToolchainType Toolchain;
         private CompilerType Compiler;
@@ -27,7 +27,7 @@ namespace TypeMake.Cpp
         private ConfigurationType? ConfigurationType;
         private bool EnableAbsolutePath;
 
-        public CMakeProjectGenerator(Project Project, List<ProjectReference> ProjectReferences, PathString InputDirectory, PathString OutputDirectory, OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType? TargetArchitectureType, WindowsRuntimeType? WindowsRuntime, ToolchainType Toolchain, CompilerType Compiler, CLibraryType CLibrary, CLibraryForm CLibraryForm, CppLibraryType CppLibrary, CppLibraryForm CppLibraryForm, ConfigurationType? ConfigurationType, bool EnableAbsolutePath)
+        public CMakeProjectGenerator(Project Project, List<ProjectReference> ProjectReferences, PathString InputDirectory, PathString OutputDirectory, OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType? TargetArchitecture, WindowsRuntimeType? WindowsRuntime, ToolchainType Toolchain, CompilerType Compiler, CLibraryType CLibrary, CLibraryForm CLibraryForm, CppLibraryType CppLibrary, CppLibraryForm CppLibraryForm, ConfigurationType? ConfigurationType, bool EnableAbsolutePath)
         {
             this.Project = Project;
             this.ProjectReferences = ProjectReferences;
@@ -36,7 +36,7 @@ namespace TypeMake.Cpp
             this.HostOperatingSystem = HostOperatingSystem;
             this.HostArchitecture = HostArchitecture;
             this.TargetOperatingSystem = TargetOperatingSystem;
-            this.TargetArchitectureType = TargetArchitectureType;
+            this.TargetArchitecture = TargetArchitecture;
             this.WindowsRuntime = WindowsRuntime;
             this.Toolchain = Toolchain;
             this.Compiler = Compiler;
@@ -60,7 +60,7 @@ namespace TypeMake.Cpp
 
         private IEnumerable<String> GenerateLines(PathString CMakeListsPath, PathString BaseDirPath)
         {
-            var conf = Project.Configurations.Merged(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitectureType, WindowsRuntime, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType);
+            var conf = Project.Configurations.Merged(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, WindowsRuntime, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType);
 
             yield return @"cmake_minimum_required(VERSION 3.3.2)";
             yield return $@"project({Project.Name})";
@@ -127,11 +127,6 @@ namespace TypeMake.Cpp
             {
                 OutDir = GetFinalPathRelativeToBinaryDir(conf.OutputDirectory);
             }
-            else if (TargetArchitectureType.HasValue)
-            {
-                var Architecture = TargetArchitectureType.Value;
-                OutDir = $@"${{CMAKE_CURRENT_BINARY_DIR}}/../../{Architecture}_${{CMAKE_BUILD_TYPE}}";
-            }
             else
             {
                 OutDir = $@"${{CMAKE_CURRENT_BINARY_DIR}}/../../${{CMAKE_BUILD_TYPE}}";
@@ -176,7 +171,7 @@ namespace TypeMake.Cpp
             foreach (var f in conf.Files)
             {
                 var FilePath = GetFinalPath(f.Path.FullPath);
-                var FileConf = f.Configurations.Merged(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitectureType, WindowsRuntime, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType);
+                var FileConf = f.Configurations.Merged(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, WindowsRuntime, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType);
                 var FileDefines = FileConf.Defines;
                 if (FileDefines.Count != 0)
                 {

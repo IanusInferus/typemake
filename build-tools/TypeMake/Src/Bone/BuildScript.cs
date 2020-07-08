@@ -121,7 +121,7 @@ namespace TypeMake
                 Lines.Add($"set MultiProcMaxCount={Environment.ProcessorCount.ToString()}");
                 Lines.Add($@"""{VSDir.ToString(PathStringStyle.Windows)}\MSBuild\{MSBuildVersion}\Bin\MSBuild.exe"" {SolutionName}.sln /p:Configuration={Configuration} /p:Platform={SlnGenerator.GetArchitectureString(TargetArchitecture)} /m:{Environment.ProcessorCount.ToString()} || exit /b 1");
                 Lines.Add("");
-                var BuildPath = BuildDirectory / $"build_{TargetArchitecture}_{Configuration}.cmd";
+                var BuildPath = BuildDirectory / $"build_{Configuration}.cmd";
                 TextFile.WriteToFile(BuildPath, String.Join("\r\n", Lines), System.Text.Encoding.Default, !ForceRegenerate);
             }
             else if (Toolchain == Cpp.ToolchainType.Ninja)

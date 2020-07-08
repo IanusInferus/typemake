@@ -336,7 +336,7 @@ namespace TypeMake
                             DependentProjectToRequirement = DependentModuleToRequirement
                         });
                     }
-                    if (((TargetOperatingSystem == OperatingSystemType.MacOS) || (TargetOperatingSystem == OperatingSystemType.iOS)) && (ProductTargetType == TargetType.DynamicLibrary))
+                    if (((TargetOperatingSystem == OperatingSystemType.MacOS) || (TargetOperatingSystem == OperatingSystemType.iOS)) && (Toolchain == ToolchainType.XCode) && (ProductTargetType == TargetType.DynamicLibrary))
                     {
                         var FrameworkTargetType = TargetType.DarwinSharedFramework;
                         var FrameworkName = ProductName + ".framework";
@@ -471,13 +471,13 @@ namespace TypeMake
                 {
                     var VcxprojTemplateText = Resource.GetResourceText(VSVersion == 2019 ? @"Templates\vc16\Default.vcxproj" : @"Templates\vc16\Default.vcxproj");
                     var VcxprojFilterTemplateText = Resource.GetResourceText(VSVersion == 2019 ? @"Templates\vc16\Default.vcxproj.filters" : @"Templates\vc16\Default.vcxproj.filters");
-                    var g = new VcxprojGenerator(p, ProjectReference.Id, ProjectReferences, InputDirectory, OutputDirectory, VcxprojTemplateText, VcxprojFilterTemplateText, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, WindowsRuntime.Value, CLibraryForm, CppLibraryForm);
+                    var g = new VcxprojGenerator(p, ProjectReference.Id, ProjectReferences, InputDirectory, OutputDirectory, VcxprojTemplateText, VcxprojFilterTemplateText, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, WindowsRuntime.Value, CLibraryForm, CppLibraryForm);
                     g.Generate(ForceRegenerate);
                 }
                 else if (Toolchain == ToolchainType.XCode)
                 {
                     var PbxprojTemplateText = Resource.GetResourceText(@"Templates\xcode9\Default.xcodeproj\project.pbxproj");
-                    var g = new PbxprojGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, PbxprojTemplateText, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, CppLibraryForm, XCodeDevelopmentTeam, XCodeProvisioningProfileSpecifier);
+                    var g = new PbxprojGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, PbxprojTemplateText, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, CppLibraryForm, XCodeDevelopmentTeam, XCodeProvisioningProfileSpecifier);
                     g.Generate(ForceRegenerate);
                 }
                 else if (Toolchain == ToolchainType.CMake)
@@ -566,7 +566,7 @@ namespace TypeMake
             if (Toolchain == ToolchainType.VisualStudio)
             {
                 var SlnTemplateText = Resource.GetResourceText(VSVersion == 2019 ? @"Templates\vc16\Default.sln" : @"Templates\vc16\Default.sln");
-                var g = new SlnGenerator(SolutionName, GetIdForProject(SolutionName + ".solution"), Projects.Select(p => p.Key).ToList(), BuildDirectory, SlnTemplateText);
+                var g = new SlnGenerator(SolutionName, GetIdForProject(SolutionName + ".solution"), Projects.Select(p => p.Key).ToList(), BuildDirectory, SlnTemplateText, TargetArchitecture);
                 g.Generate(ForceRegenerate);
             }
             else if (Toolchain == ToolchainType.XCode)
@@ -713,22 +713,6 @@ namespace TypeMake
                     CommonFlags = new List<String> { "-pthread" },
                     LinkerFlags = new List<String> { "-pthread" },
                     Libs = new List<PathString> { "dl", "rt" }
-                },
-                new Configuration
-                {
-                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.MacOS },
-                    Options = new Dictionary<String, String>
-                    {
-                        ["xcode.project.VALID_ARCHS"] = "x86_64"
-                    }
-                },
-                new Configuration
-                {
-                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.iOS },
-                    Options = new Dictionary<String, String>
-                    {
-                        ["xcode.project.VALID_ARCHS"] = "arm64"
-                    }
                 },
                 new Configuration
                 {
@@ -914,19 +898,6 @@ namespace TypeMake
                     LinkerFlags = ParseFlags("-fcolor-diagnostics -fansi-escape-codes")
                 }
             };
-            foreach (var Architecture in Enum.GetValues(typeof(ArchitectureType)).Cast<ArchitectureType>())
-            {
-                foreach (var ConfigurationType in Enum.GetValues(typeof(ConfigurationType)).Cast<ConfigurationType>())
-                {
-                    Configurations.Add(new Configuration
-                    {
-                        MatchingCompilers = new List<CompilerType> { CompilerType.VisualCpp },
-                        MatchingTargetArchitectures = new List<ArchitectureType> { Architecture },
-                        MatchingConfigurationTypes = new List<ConfigurationType> { ConfigurationType },
-                        LibDirectories = new List<PathString> { BuildDirectory / $"{Architecture}_{ConfigurationType}" }
-                    });
-                }
-            }
             if (EnableMacCatalyst)
             {
                 Configurations.Add(new Configuration
@@ -935,7 +906,6 @@ namespace TypeMake
                     Options = new Dictionary<String, String>
                     {
                         ["xcode.project.TARGETED_DEVICE_FAMILY"] = "1,2",
-                        ["xcode.project.VALID_ARCHS"] = "arm64 x86_64",
                         ["xcode.project.SUPPORTS_MACCATALYST"] = "YES",
                         ["xcode.project.IPHONEOS_DEPLOYMENT_TARGET"] = "8.0",
                         ["xcode.project.MACOSX_DEPLOYMENT_TARGET"] = "10.15"

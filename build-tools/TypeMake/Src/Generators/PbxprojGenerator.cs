@@ -17,12 +17,12 @@ namespace TypeMake.Cpp
         private OperatingSystemType HostOperatingSystem;
         private ArchitectureType HostArchitecture;
         private OperatingSystemType TargetOperatingSystem;
-        private ArchitectureType TargetArchitectureType;
+        private ArchitectureType TargetArchitecture;
         private CppLibraryForm CppLibraryForm; //static libc++ requires a custom build
         private String DevelopmentTeam;
         private String ProvisioningProfileSpecifier;
 
-        public PbxprojGenerator(Project Project, List<ProjectReference> ProjectReferences, PathString InputDirectory, PathString OutputDirectory, String PbxprojTemplateText, OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, CppLibraryForm CppLibraryForm, String DevelopmentTeam = null, String ProvisioningProfileSpecifier = null)
+        public PbxprojGenerator(Project Project, List<ProjectReference> ProjectReferences, PathString InputDirectory, PathString OutputDirectory, String PbxprojTemplateText, OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType TargetArchitecture, CppLibraryForm CppLibraryForm, String DevelopmentTeam = null, String ProvisioningProfileSpecifier = null)
         {
             this.Project = Project;
             this.ProjectReferences = ProjectReferences;
@@ -32,7 +32,7 @@ namespace TypeMake.Cpp
             this.HostOperatingSystem = HostOperatingSystem;
             this.HostArchitecture = HostArchitecture;
             this.TargetOperatingSystem = TargetOperatingSystem;
-            this.TargetArchitectureType = TargetOperatingSystem == OperatingSystemType.iOS ? ArchitectureType.arm64 : ArchitectureType.x64;
+            this.TargetArchitecture = TargetArchitecture;
             this.CppLibraryForm = CppLibraryForm;
             this.DevelopmentTeam = DevelopmentTeam;
             this.ProvisioningProfileSpecifier = ProvisioningProfileSpecifier;
@@ -90,7 +90,7 @@ namespace TypeMake.Cpp
             ObjectReferenceValidityTest(Objects, RootObjectKey);
 
             var RelativePathToObjects = new Dictionary<String, String>();
-            foreach (var conf in Project.Configurations.Matches(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitectureType, null, ToolchainType.XCode, CompilerType.clang, CLibraryType.libSystem, CLibraryForm.Dynamic, CppLibraryType.libcxx, CppLibraryForm, null))
+            foreach (var conf in Project.Configurations.Matches(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, null, ToolchainType.XCode, CompilerType.clang, CLibraryType.libSystem, CLibraryForm.Dynamic, CppLibraryType.libcxx, CppLibraryForm, null))
             {
                 foreach (var f in conf.Files)
                 {
@@ -157,7 +157,7 @@ namespace TypeMake.Cpp
                     var BuildConfiguration = Objects[BuildConfigurationKey.String].Dict;
                     var ConfigurationType = (ConfigurationType)(Enum.Parse(typeof(ConfigurationType), BuildConfiguration["name"].String));
                     var BuildSettings = BuildConfiguration["buildSettings"].Dict;
-                    var conf = Project.Configurations.Merged(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitectureType, null, ToolchainType.XCode, CompilerType.clang, CLibraryType.libSystem, CLibraryForm.Dynamic, CppLibraryType.libcxx, CppLibraryForm, ConfigurationType);
+                    var conf = Project.Configurations.Merged(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, null, ToolchainType.XCode, CompilerType.clang, CLibraryType.libSystem, CLibraryForm.Dynamic, CppLibraryType.libcxx, CppLibraryForm, ConfigurationType);
 
                     BuildSettings["PRODUCT_NAME"] = Value.CreateString(ProductName);
                     if ((Project.TargetType == TargetType.DarwinApplication) || (Project.TargetType == TargetType.DarwinStaticFramework) || (Project.TargetType == TargetType.DarwinSharedFramework) || (Project.TargetType == TargetType.MacBundle))
@@ -271,7 +271,7 @@ namespace TypeMake.Cpp
                     }
                 }
 
-                var confF = Project.Configurations.Merged(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitectureType, null, ToolchainType.XCode, CompilerType.clang, CLibraryType.libSystem, CLibraryForm.Dynamic, CppLibraryType.libcxx, CppLibraryForm, null);
+                var confF = Project.Configurations.Merged(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, null, ToolchainType.XCode, CompilerType.clang, CLibraryType.libSystem, CLibraryForm.Dynamic, CppLibraryType.libcxx, CppLibraryForm, null);
                 foreach (var PhaseKey in Target["buildPhases"].Array)
                 {
                     var Phase = Objects[PhaseKey.String].Dict;
@@ -288,7 +288,7 @@ namespace TypeMake.Cpp
                                 File.Add("fileRef", Value.CreateString(RelativePathToObjects[RelativePath]));
                                 File.Add("isa", Value.CreateString("PBXBuildFile"));
 
-                                var FileConf = f.Configurations.Merged(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitectureType, null, ToolchainType.XCode, CompilerType.clang, CLibraryType.libSystem, CLibraryForm.Dynamic, CppLibraryType.libcxx, CppLibraryForm, null);
+                                var FileConf = f.Configurations.Merged(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, null, ToolchainType.XCode, CompilerType.clang, CLibraryType.libSystem, CLibraryForm.Dynamic, CppLibraryType.libcxx, CppLibraryForm, null);
 
                                 var FileFlags = FileConf.CommonFlags;
                                 if ((f.Type == FileType.CSource) || (f.Type == FileType.ObjectiveCSource))
@@ -460,7 +460,7 @@ namespace TypeMake.Cpp
                 var ConfigurationType = (ConfigurationType)(Enum.Parse(typeof(ConfigurationType), BuildConfiguration["name"].String));
                 var BuildSettings = BuildConfiguration["buildSettings"].Dict;
 
-                var conf = Project.Configurations.Merged(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitectureType, null, ToolchainType.XCode, CompilerType.clang, CLibraryType.libSystem, CLibraryForm.Dynamic, CppLibraryType.libcxx, CppLibraryForm, ConfigurationType);
+                var conf = Project.Configurations.Merged(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, null, ToolchainType.XCode, CompilerType.clang, CLibraryType.libSystem, CLibraryForm.Dynamic, CppLibraryType.libcxx, CppLibraryForm, ConfigurationType);
 
                 var IncludeDirectories = conf.IncludeDirectories.Select(d => d.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix)).ToList();
                 if (IncludeDirectories.Count != 0)
@@ -512,6 +512,9 @@ namespace TypeMake.Cpp
 
                 BuildSettings["CONFIGURATION_TEMP_DIR"] = Value.CreateString($"$(SRCROOT)/../{ConfigurationType}$(EFFECTIVE_PLATFORM_NAME)");
                 BuildSettings["CONFIGURATION_BUILD_DIR"] = Value.CreateString($"$(SRCROOT)/../{ConfigurationType}$(EFFECTIVE_PLATFORM_NAME)");
+
+                BuildSettings["ARCHS"] = Value.CreateString(GetArchitectureString(TargetArchitecture));
+                BuildSettings["VALID_ARCHS"] = Value.CreateString(GetArchitectureString(TargetArchitecture));
 
                 foreach (var o in conf.Options)
                 {
@@ -767,6 +770,30 @@ namespace TypeMake.Cpp
         private String GetHashOfPath(String Path)
         {
             return Hash.GetHashForPath(Project.Name + "/" + Path, 24);
+        }
+
+        public static String GetArchitectureString(ArchitectureType Architecture)
+        {
+            if (Architecture == ArchitectureType.x86)
+            {
+                return "i386";
+            }
+            else if (Architecture == ArchitectureType.x64)
+            {
+                return "x86_64";
+            }
+            else if (Architecture == ArchitectureType.armv7a)
+            {
+                return "armv7";
+            }
+            else if (Architecture == ArchitectureType.arm64)
+            {
+                return "arm64";
+            }
+            else
+            {
+                throw new NotSupportedException("NotSupportedArchitecture: " + Architecture.ToString());
+            }
         }
     }
 }

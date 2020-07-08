@@ -17,7 +17,7 @@ namespace TypeMake.Cpp
         private OperatingSystemType HostOperatingSystem;
         private ArchitectureType HostArchitecture;
         private OperatingSystemType TargetOperatingSystem;
-        private ArchitectureType TargetArchitectureType;
+        private ArchitectureType TargetArchitecture;
         private ToolchainType Toolchain;
         private CompilerType Compiler;
         private CLibraryType CLibrary;
@@ -37,7 +37,7 @@ namespace TypeMake.Cpp
         private String KeyPass;
         private bool IsDebug;
 
-        public AndroidBatchProjectGenerator(String SolutionName, Project Project, List<ProjectReference> ProjectReferences, PathString InputDirectory, PathString OutputDirectory, PathString SolutionOutputDirectory, OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType? TargetArchitectureType, ToolchainType Toolchain, CompilerType Compiler, CLibraryType CLibrary, CLibraryForm CLibraryForm, CppLibraryType CppLibrary, CppLibraryForm CppLibraryForm, ConfigurationType? ConfigurationType, PathString Jdk, PathString AndroidSdk, PathString AndroidNdk, String BuildToolVersion, int MinSdkVersion, int TargetSdkVersion, PathString KeyStore, String KeyStorePass, String KeyAlias, String KeyPass, bool IsDebug)
+        public AndroidBatchProjectGenerator(String SolutionName, Project Project, List<ProjectReference> ProjectReferences, PathString InputDirectory, PathString OutputDirectory, PathString SolutionOutputDirectory, OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType? TargetArchitecture, ToolchainType Toolchain, CompilerType Compiler, CLibraryType CLibrary, CLibraryForm CLibraryForm, CppLibraryType CppLibrary, CppLibraryForm CppLibraryForm, ConfigurationType? ConfigurationType, PathString Jdk, PathString AndroidSdk, PathString AndroidNdk, String BuildToolVersion, int MinSdkVersion, int TargetSdkVersion, PathString KeyStore, String KeyStorePass, String KeyAlias, String KeyPass, bool IsDebug)
         {
             this.SolutionName = SolutionName;
             this.ProjectName = Project.Name.Split(':').First();
@@ -49,11 +49,11 @@ namespace TypeMake.Cpp
             this.HostOperatingSystem = HostOperatingSystem;
             this.HostArchitecture = HostArchitecture;
             this.TargetOperatingSystem = TargetOperatingSystem;
-            if (!TargetArchitectureType.HasValue)
+            if (!TargetArchitecture.HasValue)
             {
                 throw new NotSupportedException("ArchitectureTypeIsNull");
             }
-            this.TargetArchitectureType = TargetArchitectureType.Value;
+            this.TargetArchitecture = TargetArchitecture.Value;
             if (!ConfigurationType.HasValue)
             {
                 throw new NotSupportedException("ConfigurationTypeIsNull");
@@ -96,14 +96,14 @@ namespace TypeMake.Cpp
 
         private IEnumerable<String> GenerateLines(String BuildBatchPath, String BaseDirPath)
         {
-            var conf = Project.Configurations.Merged(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitectureType, null, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType);
+            var conf = Project.Configurations.Merged(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, null, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType);
 
-            var Abi = GetArchitectureString(TargetArchitectureType);
+            var Abi = GetArchitectureString(TargetArchitecture);
             var ProjectTargetName = Project.TargetName ?? ProjectName;
             var Suffix = Project.TargetType == TargetType.GradleApplication ? "apk" : Project.TargetType == TargetType.GradleLibrary ? "aar" : throw new InvalidOperationException();
             var JniLibs = Project.TargetType == TargetType.GradleApplication ? "lib" : Project.TargetType == TargetType.GradleLibrary ? "jni" : throw new InvalidOperationException();
 
-            var TargetDirectory = conf.Options.ContainsKey("gradle.targetDirectory") ? conf.Options["gradle.targetDirectory"].AsPath() : (SolutionOutputDirectory / $"{TargetArchitectureType}_{ConfigurationType}");
+            var TargetDirectory = conf.Options.ContainsKey("gradle.targetDirectory") ? conf.Options["gradle.targetDirectory"].AsPath() : (SolutionOutputDirectory / $"{ConfigurationType}");
 
             var SoLibraryPaths = new List<PathString> { TargetDirectory / $"lib{ProjectTargetName}.so" };
             foreach (var Lib in conf.Libs)
@@ -121,7 +121,7 @@ namespace TypeMake.Cpp
                 }
                 if (!Found)
                 {
-                    SoLibraryPaths.Add(SolutionOutputDirectory / $"{TargetArchitectureType}_{ConfigurationType}" / Lib);
+                    SoLibraryPaths.Add(SolutionOutputDirectory / $"{ConfigurationType}" / Lib);
                 }
             }
             var ApplicationId = conf.Options.ContainsKey("gradle.applicationId") ? conf.Options["gradle.applicationId"] : (SolutionName + "." + ProjectTargetName).ToLower();
@@ -143,7 +143,7 @@ namespace TypeMake.Cpp
                 var ApkSigner = AndroidSdk / "build-tools" / BuildToolVersion / "apksigner.bat";
                 var AndroidJar = AndroidSdk / $"platforms/android-{TargetSdkVersion}" / "android.jar";
                 var Strip = AndroidNdk / $"toolchains/llvm/prebuilt/{GetHostArchitectureString(HostOperatingSystem, HostArchitecture)}/bin/llvm-strip.exe";
-                var LibcxxSo = AndroidNdk / $"toolchains/llvm/prebuilt/{GetHostArchitectureString(HostOperatingSystem, HostArchitecture)}/sysroot/usr/lib/{GetTargetTripletString(TargetArchitectureType)}/libc++_shared.so";
+                var LibcxxSo = AndroidNdk / $"toolchains/llvm/prebuilt/{GetHostArchitectureString(HostOperatingSystem, HostArchitecture)}/sysroot/usr/lib/{GetTargetTripletString(TargetArchitecture)}/libc++_shared.so";
 
                 yield return @"@echo off";
                 yield return @"setlocal";
@@ -252,7 +252,7 @@ namespace TypeMake.Cpp
                 var ApkSigner = AndroidSdk / "build-tools" / BuildToolVersion / "apksigner";
                 var AndroidJar = AndroidSdk / $"platforms/android-{TargetSdkVersion}" / "android.jar";
                 var Strip = AndroidNdk / $"toolchains/llvm/prebuilt/{GetHostArchitectureString(HostOperatingSystem, HostArchitecture)}/bin/llvm-strip";
-                var LibcxxSo = AndroidNdk / $"toolchains/llvm/prebuilt/{GetHostArchitectureString(HostOperatingSystem, HostArchitecture)}/sysroot/usr/lib/{GetTargetTripletString(TargetArchitectureType)}/libc++_shared.so";
+                var LibcxxSo = AndroidNdk / $"toolchains/llvm/prebuilt/{GetHostArchitectureString(HostOperatingSystem, HostArchitecture)}/sysroot/usr/lib/{GetTargetTripletString(TargetArchitecture)}/libc++_shared.so";
 
                 yield return @"#!/bin/bash";
                 yield return @"set -e";

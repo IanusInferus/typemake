@@ -18,7 +18,7 @@ namespace TypeMake.Cpp
         private OperatingSystemType HostOperatingSystem;
         private ArchitectureType HostArchitecture;
         private OperatingSystemType TargetOperatingSystem;
-        private ArchitectureType? TargetArchitectureType;
+        private ArchitectureType? TargetArchitecture;
         private ToolchainType Toolchain;
         private CompilerType Compiler;
         private CLibraryType CLibrary;
@@ -28,7 +28,7 @@ namespace TypeMake.Cpp
         private ConfigurationType? ConfigurationType;
         private PathString AndroidNdk;
 
-        public GradleProjectGenerator(String SolutionName, Project Project, List<ProjectReference> ProjectReferences, PathString InputDirectory, PathString OutputDirectory, PathString SolutionOutputDirectory, String BuildGradleTemplateText, OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType? TargetArchitectureType, ToolchainType Toolchain, CompilerType Compiler, CLibraryType CLibrary, CLibraryForm CLibraryForm, CppLibraryType CppLibrary, CppLibraryForm CppLibraryForm, ConfigurationType? ConfigurationType, PathString AndroidNdk)
+        public GradleProjectGenerator(String SolutionName, Project Project, List<ProjectReference> ProjectReferences, PathString InputDirectory, PathString OutputDirectory, PathString SolutionOutputDirectory, String BuildGradleTemplateText, OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType? TargetArchitecture, ToolchainType Toolchain, CompilerType Compiler, CLibraryType CLibrary, CLibraryForm CLibraryForm, CppLibraryType CppLibrary, CppLibraryForm CppLibraryForm, ConfigurationType? ConfigurationType, PathString AndroidNdk)
         {
             this.SolutionName = SolutionName;
             this.ProjectName = Project.Name.Split(':').First();
@@ -41,8 +41,8 @@ namespace TypeMake.Cpp
             this.HostOperatingSystem = HostOperatingSystem;
             this.HostArchitecture = HostArchitecture;
             this.TargetOperatingSystem = TargetOperatingSystem;
-            this.TargetArchitectureType = TargetArchitectureType;
-            if (!TargetArchitectureType.HasValue)
+            this.TargetArchitecture = TargetArchitecture;
+            if (!TargetArchitecture.HasValue)
             {
                 throw new NotSupportedException("ArchitectureTypeIsNull");
             }
@@ -67,13 +67,13 @@ namespace TypeMake.Cpp
 
         private IEnumerable<String> GenerateLines(String BuildGradlePath, String BaseDirPath)
         {
-            var conf = Project.Configurations.Merged(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitectureType, null, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType);
-            var confDebug = Project.Configurations.Merged(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitectureType, null, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, Cpp.ConfigurationType.Debug);
-            var confRelease = Project.Configurations.Merged(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitectureType, null, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, Cpp.ConfigurationType.Release);
+            var conf = Project.Configurations.Merged(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, null, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType);
+            var confDebug = Project.Configurations.Merged(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, null, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, Cpp.ConfigurationType.Debug);
+            var confRelease = Project.Configurations.Merged(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, null, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, Cpp.ConfigurationType.Release);
 
             var Results = BuildGradleTemplateText.Replace("\r\n", "\n").Split('\n').AsEnumerable();
             var SolutionOutputDir = SolutionOutputDirectory.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix);
-            var ArchitectureType = TargetArchitectureType.Value.ToString();
+            var ArchitectureType = TargetArchitecture.Value.ToString();
             var ProjectTargetName = Project.TargetName ?? ProjectName;
             var ApplicationId = conf.Options.ContainsKey("gradle.applicationId") ? conf.Options["gradle.applicationId"] : (SolutionName + "." + ProjectTargetName).ToLower();
             var ManifestSrcFile = confDebug.Options.ContainsKey("gradle.manifestSrcFile") ? confDebug.Options["gradle.manifestSrcFile"].AsPath().RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix) : (InputDirectory / "AndroidManifest.xml").RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix);
@@ -81,7 +81,7 @@ namespace TypeMake.Cpp
             var ResSrcDirs = conf.Options.ContainsKey("gradle.resSrcDirs") ? String.Join(", ", conf.Options["gradle.resSrcDirs"].Split(';').Select(d => "'" + d.AsPath().RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix) + "'")) : "'" + (InputDirectory / "res").RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix) + "'";
             var AssetsSrcDirs = conf.Options.ContainsKey("gradle.assetsSrcDirs") ? String.Join(", ", conf.Options["gradle.assetsSrcDirs"].Split(';').Select(d => "'" + d.AsPath().RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix) + "'")) : "'" + (InputDirectory / "assets").RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix) + "'";
             var JarDirs = conf.Options.ContainsKey("gradle.jarDirs") ? conf.Options["gradle.jarDirs"].Split(';').Select(d => d.AsPath().RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix)).ToList() : new List<String> { };
-            var AndroidAbi = GetArchitectureString(TargetArchitectureType.Value);
+            var AndroidAbi = GetArchitectureString(TargetArchitecture.Value);
             var TempJniLibsDirDebug = confDebug.Options.ContainsKey("gradle.tempJniLibsDirectory") ? confDebug.Options["gradle.tempJniLibsDirectory"].AsPath().RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix) : $"{SolutionOutputDir}/{ArchitectureType}_Debug/gradle/{ProjectName}";
             var TempJniLibsDirRelease = confRelease.Options.ContainsKey("gradle.tempJniLibsDirectory") ? confRelease.Options["gradle.tempJniLibsDirectory"].AsPath().RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix) : $"{SolutionOutputDir}/{ArchitectureType}_Release/gradle/{ProjectName}";
             var TargetDirectoryDebug = confDebug.Options.ContainsKey("gradle.targetDirectory") ? confDebug.Options["gradle.targetDirectory"].AsPath() : (SolutionOutputDirectory / $"{ArchitectureType}_Debug");
@@ -136,7 +136,7 @@ namespace TypeMake.Cpp
             }
             if ((CppLibrary == CppLibraryType.libcxx) && (CppLibraryForm == CppLibraryForm.Dynamic))
             {
-                var LibcxxSo = AndroidNdk / $"toolchains/llvm/prebuilt/{GetHostArchitectureString(HostOperatingSystem, HostArchitecture)}-x86_64/sysroot/usr/lib/{GetTargetTripletString(TargetArchitectureType.Value)}/libc++_shared.so";
+                var LibcxxSo = AndroidNdk / $"toolchains/llvm/prebuilt/{GetHostArchitectureString(HostOperatingSystem, HostArchitecture)}-x86_64/sysroot/usr/lib/{GetTargetTripletString(TargetArchitecture.Value)}/libc++_shared.so";
                 SoLibraryPathsDebug.Add(LibcxxSo);
                 SoLibraryPathsRelease.Add(LibcxxSo);
             }

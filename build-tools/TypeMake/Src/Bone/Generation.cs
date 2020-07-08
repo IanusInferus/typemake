@@ -13,40 +13,17 @@ namespace TypeMake
 
             if (v.TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
             {
-                BuildScript.GenerateBuildScriptWindows(v.Toolchain, v.BuildDirectory, r.SolutionName, Cpp.ArchitectureType.x86, Cpp.ConfigurationType.Debug, v.VSDir, v.VSVersion, v.Ninja, v.ForceRegenerate);
-                BuildScript.GenerateBuildScriptWindows(v.Toolchain, v.BuildDirectory, r.SolutionName, Cpp.ArchitectureType.x86, Cpp.ConfigurationType.Release, v.VSDir, v.VSVersion, v.Ninja, v.ForceRegenerate);
-                BuildScript.GenerateBuildScriptWindows(v.Toolchain, v.BuildDirectory, r.SolutionName, Cpp.ArchitectureType.x64, Cpp.ConfigurationType.Debug, v.VSDir, v.VSVersion, v.Ninja, v.ForceRegenerate);
-                BuildScript.GenerateBuildScriptWindows(v.Toolchain, v.BuildDirectory, r.SolutionName, Cpp.ArchitectureType.x64, Cpp.ConfigurationType.Release, v.VSDir, v.VSVersion, v.Ninja, v.ForceRegenerate);
-                BuildScript.GenerateBuildScriptWindows(v.Toolchain, v.BuildDirectory, r.SolutionName, Cpp.ArchitectureType.armv7a, Cpp.ConfigurationType.Debug, v.VSDir, v.VSVersion, v.Ninja, v.ForceRegenerate);
-                BuildScript.GenerateBuildScriptWindows(v.Toolchain, v.BuildDirectory, r.SolutionName, Cpp.ArchitectureType.armv7a, Cpp.ConfigurationType.Release, v.VSDir, v.VSVersion, v.Ninja, v.ForceRegenerate);
-                BuildScript.GenerateBuildScriptWindows(v.Toolchain, v.BuildDirectory, r.SolutionName, Cpp.ArchitectureType.arm64, Cpp.ConfigurationType.Debug, v.VSDir, v.VSVersion, v.Ninja, v.ForceRegenerate);
-                BuildScript.GenerateBuildScriptWindows(v.Toolchain, v.BuildDirectory, r.SolutionName, Cpp.ArchitectureType.arm64, Cpp.ConfigurationType.Release, v.VSDir, v.VSVersion, v.Ninja, v.ForceRegenerate);
+                BuildScript.GenerateBuildScriptWindows(v.Toolchain, v.BuildDirectory, r.SolutionName, v.TargetArchitecture, Cpp.ConfigurationType.Debug, v.VSDir, v.VSVersion, v.Ninja, v.ForceRegenerate);
+                BuildScript.GenerateBuildScriptWindows(v.Toolchain, v.BuildDirectory, r.SolutionName, v.TargetArchitecture, Cpp.ConfigurationType.Release, v.VSDir, v.VSVersion, v.Ninja, v.ForceRegenerate);
                 if (v.BuildNow)
                 {
                     if (v.HostOperatingSystem == Cpp.OperatingSystemType.Windows)
                     {
-                        var ArchitectureName = "";
-                        if (v.TargetArchitecture == Cpp.ArchitectureType.x86)
-                        {
-                            ArchitectureName = "x86";
-                        }
-                        else if (v.TargetArchitecture == Cpp.ArchitectureType.x64)
-                        {
-                            ArchitectureName = "x64";
-                        }
-                        else if (v.TargetArchitecture == Cpp.ArchitectureType.armv7a)
-                        {
-                            ArchitectureName = "ARM32";
-                        }
-                        else if (v.TargetArchitecture == Cpp.ArchitectureType.arm64)
-                        {
-                            ArchitectureName = "ARM64";
-                        }
                         using (var d = Shell.PushDirectory(v.BuildDirectory))
                         {
-                            if (Shell.Execute($"build_{ArchitectureName}_{v.Configuration}.cmd") != 0)
+                            if (Shell.Execute($"build_{v.Configuration}.cmd") != 0)
                             {
-                                throw new InvalidOperationException("ErrorInExecution: " + $"build_{ArchitectureName}_{v.Configuration}.cmd");
+                                throw new InvalidOperationException("ErrorInExecution: " + $"build_{v.Configuration}.cmd");
                             }
                         }
                     }

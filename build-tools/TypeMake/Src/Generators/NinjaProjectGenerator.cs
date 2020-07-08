@@ -15,7 +15,7 @@ namespace TypeMake.Cpp
         private OperatingSystemType HostOperatingSystem;
         private ArchitectureType HostArchitecture;
         private OperatingSystemType TargetOperatingSystem;
-        private ArchitectureType TargetArchitectureType;
+        private ArchitectureType TargetArchitecture;
         private WindowsRuntimeType? WindowsRuntime;
         private ToolchainType Toolchain;
         private CompilerType Compiler;
@@ -25,7 +25,7 @@ namespace TypeMake.Cpp
         private CppLibraryForm CppLibraryForm;
         private ConfigurationType ConfigurationType;
 
-        public NinjaProjectGenerator(Project Project, List<ProjectReference> ProjectReferences, PathString InputDirectory, PathString OutputDirectory, OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType TargetArchitectureType, WindowsRuntimeType? WindowsRuntime, ToolchainType Toolchain, CompilerType Compiler, CLibraryType CLibrary, CLibraryForm CLibraryForm, CppLibraryType CppLibrary, CppLibraryForm CppLibraryForm, ConfigurationType ConfigurationType)
+        public NinjaProjectGenerator(Project Project, List<ProjectReference> ProjectReferences, PathString InputDirectory, PathString OutputDirectory, OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType TargetArchitecture, WindowsRuntimeType? WindowsRuntime, ToolchainType Toolchain, CompilerType Compiler, CLibraryType CLibrary, CLibraryForm CLibraryForm, CppLibraryType CppLibrary, CppLibraryForm CppLibraryForm, ConfigurationType ConfigurationType)
         {
             this.Project = Project;
             this.ProjectReferences = ProjectReferences;
@@ -34,7 +34,7 @@ namespace TypeMake.Cpp
             this.HostOperatingSystem = HostOperatingSystem;
             this.HostArchitecture = HostArchitecture;
             this.TargetOperatingSystem = TargetOperatingSystem;
-            this.TargetArchitectureType = TargetArchitectureType;
+            this.TargetArchitecture = TargetArchitecture;
             this.WindowsRuntime = WindowsRuntime;
             this.Toolchain = Toolchain;
             this.Compiler = Compiler;
@@ -56,7 +56,7 @@ namespace TypeMake.Cpp
 
         private IEnumerable<String> GenerateLines(PathString NinjaScriptPath, PathString BaseDirPath)
         {
-            var conf = Project.Configurations.Merged(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitectureType, WindowsRuntime, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType);
+            var conf = Project.Configurations.Merged(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, WindowsRuntime, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType);
 
             yield return "ninja_required_version = 1.3";
             yield return "";
@@ -102,7 +102,7 @@ namespace TypeMake.Cpp
                         LinkerFlags.Add("-Wl,-soname=" + "lib" + (Project.TargetName ?? Project.Name) + ".so");
                     }
                 }
-                var LibrarySearchPath = GetFinalPath(OutputDirectory / ".." / $"{TargetArchitectureType}_{ConfigurationType}");
+                var LibrarySearchPath = GetFinalPath(OutputDirectory / ".." / $"{ConfigurationType}");
                 LinkerFlags.Add($"-L{LibrarySearchPath}");
                 LinkerFlags.AddRange(conf.LibDirectories.Select(d => GetFinalPath(d.FullPath)).Select(d => "-L" + (d.Contains(" ") ? "\"" + d + "\"" : d)));
                 LinkerFlags.AddRange(conf.LinkerFlags);
@@ -161,7 +161,7 @@ namespace TypeMake.Cpp
             {
                 if ((File.Type != FileType.CSource) && (File.Type != FileType.CppSource) && (File.Type != FileType.ObjectiveCSource) && (File.Type != FileType.ObjectiveCppSource)) { continue; }
 
-                var FileConf = File.Configurations.Merged(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitectureType, WindowsRuntime, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType);
+                var FileConf = File.Configurations.Merged(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, WindowsRuntime, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType);
 
                 var FileFlags = new List<String>();
                 FileFlags.AddRange(FileConf.Defines.Select(d => "-D" + d.Key + (d.Value == null ? "" : "=" + d.Value)));
@@ -243,10 +243,10 @@ namespace TypeMake.Cpp
 
             yield return "";
 
-            var TargetPath = GetFinalPath((conf.OutputDirectory != null ? conf.OutputDirectory : (OutputDirectory / ".." / $"{TargetArchitectureType}_{ConfigurationType}")) / TargetName);
+            var TargetPath = GetFinalPath((conf.OutputDirectory != null ? conf.OutputDirectory : (OutputDirectory / ".." / $"{ConfigurationType}")) / TargetName);
             if (((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary)) && (ConfigurationType == ConfigurationType.Release) && ((TargetOperatingSystem == OperatingSystemType.Linux) || (TargetOperatingSystem == OperatingSystemType.MacOS) || (TargetOperatingSystem == OperatingSystemType.Android)))
             {
-                var SymbolPath = GetFinalPath(((conf.OutputDirectory != null ? conf.OutputDirectory : (OutputDirectory / ".." / $"{TargetArchitectureType}_{ConfigurationType}")) + "_symbol") / TargetName);
+                var SymbolPath = GetFinalPath(((conf.OutputDirectory != null ? conf.OutputDirectory : (OutputDirectory / ".." / $"{ConfigurationType}")) + "_symbol") / TargetName);
                 yield return $"build {NinjaEscape(SymbolPath)}: {RuleName} {String.Join(" ", ObjectFilePaths.Select(p => NinjaEscape(p)))}" + (Dependencies.Count > 0 ? " | " + String.Join(" ", Dependencies.Select(p => NinjaEscape(p))) : "");
                 yield return $"build {NinjaEscape(TargetPath)}: strip {NinjaEscape(SymbolPath)}";
             }

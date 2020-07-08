@@ -13,14 +13,16 @@ namespace TypeMake
         private String SolutionId;
         private List<ProjectReference> ProjectReferences;
         private PathString OutputDirectory;
+        private ArchitectureType TargetArchitecture;
         private String SlnTemplateText;
 
-        public SlnGenerator(String SolutionName, String SolutionId, List<ProjectReference> ProjectReferences, PathString OutputDirectory, String SlnTemplateText)
+        public SlnGenerator(String SolutionName, String SolutionId, List<ProjectReference> ProjectReferences, PathString OutputDirectory, String SlnTemplateText, ArchitectureType TargetArchitecture)
         {
             this.SolutionName = SolutionName;
             this.SolutionId = SolutionId;
             this.ProjectReferences = ProjectReferences;
             this.OutputDirectory = OutputDirectory.FullPath;
+            this.TargetArchitecture = TargetArchitecture;
             this.SlnTemplateText = SlnTemplateText;
         }
 
@@ -34,7 +36,15 @@ namespace TypeMake
             }
 
             s.Projects.Clear();
+            s.SolutionConfigurationsSection.Clear();
             s.ProjectConfigurationsSection.Clear();
+
+            foreach (var ConfigurationType in Enum.GetValues(typeof(ConfigurationType)).Cast<ConfigurationType>())
+            {
+                var ConfigurationTypeAndArchitecture = $"{ConfigurationType}|{GetArchitectureString(TargetArchitecture)}";
+                s.SolutionConfigurationsSection.SetValue(ConfigurationTypeAndArchitecture, ConfigurationTypeAndArchitecture);
+            }
+
             SlnSection NestedProjects = null;
             foreach (var Section in s.Sections.Where(Section => Section.Id == "NestedProjects"))
             {

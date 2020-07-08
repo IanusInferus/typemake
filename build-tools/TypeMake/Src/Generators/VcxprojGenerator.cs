@@ -20,11 +20,12 @@ namespace TypeMake.Cpp
         private OperatingSystemType HostOperatingSystem;
         private ArchitectureType HostArchitecture;
         private OperatingSystemType TargetOperatingSystem;
+        private ArchitectureType? TargetArchitecture;
         private WindowsRuntimeType WindowsRuntime;
         private CLibraryForm CLibraryForm;
         private CppLibraryForm CppLibraryForm;
 
-        public VcxprojGenerator(Project Project, String ProjectId, List<ProjectReference> ProjectReferences, PathString InputDirectory, PathString OutputDirectory, String VcxprojTemplateText, String VcxprojFilterTemplateText, OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, WindowsRuntimeType WindowsRuntime, CLibraryForm CLibraryForm, CppLibraryForm CppLibraryForm)
+        public VcxprojGenerator(Project Project, String ProjectId, List<ProjectReference> ProjectReferences, PathString InputDirectory, PathString OutputDirectory, String VcxprojTemplateText, String VcxprojFilterTemplateText, OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType? TargetArchitecture, WindowsRuntimeType WindowsRuntime, CLibraryForm CLibraryForm, CppLibraryForm CppLibraryForm)
         {
             this.Project = Project;
             this.ProjectId = ProjectId;
@@ -36,6 +37,7 @@ namespace TypeMake.Cpp
             this.HostOperatingSystem = HostOperatingSystem;
             this.HostArchitecture = HostArchitecture;
             this.TargetOperatingSystem = TargetOperatingSystem;
+            this.TargetArchitecture = TargetArchitecture;
             this.WindowsRuntime = WindowsRuntime;
             this.CLibraryForm = CLibraryForm;
             this.CppLibraryForm = CppLibraryForm;
@@ -56,6 +58,40 @@ namespace TypeMake.Cpp
             Trim(xVcxproj);
 
             var xn = xVcxproj.Name.Namespace;
+
+            if (TargetArchitecture != null)
+            {
+                var rProjectConfigurationInclude = new Regex(@"[^|]+\|(?<Architecture>[^|]+)");
+                foreach (var e in xVcxproj.Elements(xn + "ItemGroup").Where(e => (e.Attribute("Label") != null) && (e.Attribute("Label").Value == "ProjectConfigurations")).SelectMany(e => e.Elements(xn + "ProjectConfiguration")).ToArray())
+                {
+                    var m = rProjectConfigurationInclude.Match(e.Attribute("Include").Value);
+                    if (m.Success)
+                    {
+                        var Architecture = m.Result("${Architecture}");
+                        if (Architecture != GetArchitectureString(TargetArchitecture.Value))
+                        {
+                            e.Remove();
+                        }
+                    }
+                }
+
+                var rCondition = new Regex(@"'\$\(Configuration\)\|\$\(Platform\)'=='[^|]+\|(?<Architecture>[^|]+)'");
+                foreach (var e in xVcxproj.Elements().ToArray())
+                {
+                    if (e.Attribute("Condition") != null)
+                    {
+                        var m = rCondition.Match(e.Attribute("Condition").Value);
+                        if (m.Success)
+                        {
+                            var Architecture = m.Result("${Architecture}");
+                            if (Architecture != GetArchitectureString(TargetArchitecture.Value))
+                            {
+                                e.Remove();
+                            }
+                        }
+                    }
+                }
+            }
 
             foreach (var ig in xVcxproj.Elements(xn + "ItemGroup").ToArray())
             {
@@ -112,7 +148,7 @@ namespace TypeMake.Cpp
                 throw new InvalidOperationException();
             }
 
-            var globalConf = Project.Configurations.Merged(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, null, WindowsRuntime, ToolchainType.VisualStudio, CompilerType.VisualCpp, CLibraryType.VisualCRuntime, CLibraryForm, CppLibraryType.VisualCppRuntime, CppLibraryForm, null);
+            var globalConf = Project.Configurations.Merged(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, WindowsRuntime, ToolchainType.VisualStudio, CompilerType.VisualCpp, CLibraryType.VisualCRuntime, CLibraryForm, CppLibraryType.VisualCppRuntime, CppLibraryForm, null);
             foreach (var o in globalConf.Options)
             {
                 var Prefix = "vc.Globals.";
@@ -198,9 +234,23 @@ namespace TypeMake.Cpp
                 }
                 else
                 {
-                    PropertyGroup.SetElementValue(xn + "OutDir", $"$(SolutionDir){Architecture}_{ConfigurationType}\\");
+                    if (TargetArchitecture == null)
+                    {
+                        PropertyGroup.SetElementValue(xn + "OutDir", $"$(SolutionDir){Architecture}_{ConfigurationType}\\");
+                    }
+                    else
+                    {
+                        PropertyGroup.SetElementValue(xn + "OutDir", $"$(SolutionDir){ConfigurationType}\\");
+                    }
                 }
-                PropertyGroup.SetElementValue(xn + "IntDir", $"$(SolutionDir){Architecture}_{ConfigurationType}\\$(ProjectName)\\");
+                if (TargetArchitecture == null)
+                {
+                    PropertyGroup.SetElementValue(xn + "IntDir", $"$(SolutionDir){Architecture}_{ConfigurationType}\\$(ProjectName)\\");
+                }
+                else
+                {
+                    PropertyGroup.SetElementValue(xn + "IntDir", $"$(SolutionDir){ConfigurationType}\\$(ProjectName)\\");
+                }
 
                 foreach (var o in conf.Options)
                 {
@@ -285,7 +335,7 @@ namespace TypeMake.Cpp
                     {
                         Link.SetElementValue(xn + "AdditionalLibraryDirectories", String.Join(";", LibDirectories) + ";%(AdditionalLibraryDirectories)");
                     }
-                    var Libs = conf.Libs.Select(Lib => Lib.Parts.Count == 1 ? Lib.ToString(PathStringStyle.Windows) : Lib.RelativeTo(BaseDirPath).ToString(PathStringStyle.Windows)).Concat(ProjectReferences.Select(p => p.Name + ".lib")).ToList();
+                    var Libs = conf.Libs.Select(Lib => Lib.Parts.Count == 1 ? Lib.ToString(PathStringStyle.Windows) : Lib.RelativeTo(BaseDirPath).ToString(PathStringStyle.Windows)).ToList();
                     if (Libs.Count != 0)
                     {
                         Link.SetElementValue(xn + "AdditionalDependencies", String.Join(";", Libs) + ";%(AdditionalDependencies)");
@@ -452,6 +502,7 @@ namespace TypeMake.Cpp
                 x.Add(new XElement(xn + "Project", "{" + p.Id.ToUpper() + "}"));
                 x.Add(new XElement(xn + "Name", p.Name));
                 x.Add(new XElement(xn + "Private", "false"));
+                x.Add(new XElement(xn + "LinkLibraryDependecies", "true"));
                 ProjectItemGroup.Add(x);
             }
             if (!ProjectItemGroup.HasElements)

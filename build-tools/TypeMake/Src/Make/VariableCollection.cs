@@ -115,11 +115,11 @@ namespace TypeMake
                     }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.MacOS)
                     {
-                        return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.ArchitectureType.x64.ToString()));
+                        return VariableSpecCreateEnumSelection(Cpp.ArchitectureType.x64, new HashSet<Cpp.ArchitectureType> { Cpp.ArchitectureType.x64, Cpp.ArchitectureType.arm64 });
                     }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.iOS)
                     {
-                        return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.ArchitectureType.arm64.ToString()));
+                        return VariableSpecCreateEnumSelection(Cpp.ArchitectureType.arm64, new HashSet<Cpp.ArchitectureType> { Cpp.ArchitectureType.arm64, Cpp.ArchitectureType.x64 });
                     }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
                     {
@@ -154,12 +154,19 @@ namespace TypeMake
             l.Add(new VariableItem
             {
                 VariableName = nameof(Variables.EnableMacCatalyst),
-                DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem) },
+                DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.TargetArchitecture) },
                 GetVariableSpec = () =>
                 {
                     if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.iOS)
                     {
-                        return VariableSpec.CreateBoolean(new BooleanSpec { DefaultValue = false });
+                        if (Variables.TargetArchitecture == Cpp.ArchitectureType.x64)
+                        {
+                            return VariableSpec.CreateFixed(VariableValue.CreateBoolean(true));
+                        }
+                        else
+                        {
+                            return VariableSpec.CreateBoolean(new BooleanSpec { DefaultValue = false });
+                        }
                     }
                     else
                     {
@@ -424,7 +431,7 @@ namespace TypeMake
                         {
                             if (Variables.Toolchain == Cpp.ToolchainType.VisualStudio)
                             {
-                                DefaultBuildDir = Variables.SourceDirectory / "build/windows";
+                                DefaultBuildDir = Variables.SourceDirectory / $"build/windows_{Variables.TargetArchitecture}";
                             }
                             else
                             {
@@ -435,7 +442,7 @@ namespace TypeMake
                         {
                             if (Variables.Toolchain == Cpp.ToolchainType.VisualStudio)
                             {
-                                DefaultBuildDir = Variables.SourceDirectory / "build/winrt";
+                                DefaultBuildDir = Variables.SourceDirectory / $"build/winrt_{Variables.TargetArchitecture}";
                             }
                             else
                             {
@@ -455,16 +462,16 @@ namespace TypeMake
                     {
                         if (Variables.Toolchain == Cpp.ToolchainType.XCode)
                         {
-                            DefaultBuildDir = Variables.SourceDirectory / "build/mac";
+                            DefaultBuildDir = Variables.SourceDirectory / $"build/mac_{Variables.TargetArchitecture}";
                         }
                         else
                         {
-                            DefaultBuildDir = Variables.SourceDirectory / $"build/mac_{Variables.Toolchain}_{Variables.Configuration}";
+                            DefaultBuildDir = Variables.SourceDirectory / $"build/mac_{Variables.TargetArchitecture}_{Variables.Toolchain}_{Variables.Configuration}";
                         }
                     }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.iOS)
                     {
-                        DefaultBuildDir = Variables.SourceDirectory / "build/ios";
+                        DefaultBuildDir = Variables.SourceDirectory / $"build/ios_{Variables.TargetArchitecture}";
                     }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
                     {
