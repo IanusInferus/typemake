@@ -574,14 +574,30 @@ namespace TypeMake.Cpp
                         BuildSettings["FRAMEWORK_SEARCH_PATHS"] = Value.CreateArray(FrameworkDirectories.Select(d => Value.CreateString(d)).ToList());
                     }
 
-                    var LinkerFlags = conf.LinkerFlags.Concat(conf.Libs.Select(Lib => Lib.Parts.Count == 1 ? Lib.Extension == "" ? "-l" + Lib.ToString(PathStringStyle.Unix) : "-l:" + Lib.ToString(PathStringStyle.Unix) : Lib.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix))).Concat(conf.PostLinkerFlags).ToList();
-                    if (LinkerFlags.Count != 0)
+                    if (Project.TargetType == TargetType.DarwinStaticFramework)
                     {
-                        if (Project.TargetType == TargetType.DarwinStaticFramework)
+                        var PrelinkLibDirectories = conf.LibDirectories.Select(d => d.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix)).ToList();
+                        var PrelinkLibs = conf.Libs;
+                        foreach (var Project in ProjectReferences)
                         {
-                            BuildSettings["PRELINK_FLAGS"] = Value.CreateArray(LinkerFlags.Select(d => Value.CreateString(d)).ToList());
+                            if (Project.TargetType == TargetType.StaticLibrary)
+                            {
+                                if (Project.OutputFilePath.ContainsKey(ConfigurationType))
+                                {
+                                    var LibPath = Project.OutputFilePath[ConfigurationType];
+                                    PrelinkLibs.Add(LibPath);
+                                }
+                            }
                         }
-                        else
+                        PrelinkLibDirectories = PrelinkLibDirectories.Distinct().ToList();
+
+                        var PrelinkLinkerFlags = PrelinkLibDirectories.Select(d => "-L" + d).Concat(PrelinkLibs.Select(Lib => Lib.Parts.Count == 1 ? Lib.Extension == "" ? "-l" + Lib.ToString(PathStringStyle.Unix) : "-l:" + Lib.ToString(PathStringStyle.Unix) : Lib.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix))).ToList();
+                        BuildSettings["PRELINK_FLAGS"] = Value.CreateArray(PrelinkLinkerFlags.Select(d => Value.CreateString(d)).ToList());
+                    }
+                    else
+                    {
+                        var LinkerFlags = conf.LinkerFlags.Concat(conf.Libs.Select(Lib => Lib.Parts.Count == 1 ? Lib.Extension == "" ? "-l" + Lib.ToString(PathStringStyle.Unix) : "-l:" + Lib.ToString(PathStringStyle.Unix) : Lib.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix))).Concat(conf.PostLinkerFlags).ToList();
+                        if (LinkerFlags.Count != 0)
                         {
                             BuildSettings["OTHER_LDFLAGS"] = Value.CreateArray(LinkerFlags.Select(d => Value.CreateString(d)).ToList());
                         }
