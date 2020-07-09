@@ -124,8 +124,25 @@ namespace TypeMake.Cpp
                     var FileHash = GetHashOfPath("PBXReferenceProxy:" + VirtualPath.ToString(PathStringStyle.Unix));
                     var FileObject = new Dictionary<string, Value>();
                     FileObject.Add("isa", Value.CreateString("PBXReferenceProxy"));
-                    FileObject.Add("fileType", Value.CreateString("archive.ar"));
-                    FileObject.Add("path", Value.CreateString("lib" + Project.Name + ".a"));
+                    if (Project.TargetType == TargetType.StaticLibrary)
+                    {
+                        FileObject.Add("fileType", Value.CreateString("archive.ar"));
+                        FileObject.Add("path", Value.CreateString("lib" + Project.TargetName + ".a"));
+                    }
+                    else if (Project.TargetType == TargetType.DynamicLibrary)
+                    {
+                        FileObject.Add("explicitFileType", Value.CreateString("compiled.mach-o.dylib"));
+                        FileObject.Add("path", Value.CreateString("lib" + Project.TargetName + ".dylib"));
+                    }
+                    else if ((Project.TargetType == TargetType.DarwinStaticFramework) || (Project.TargetType == TargetType.DarwinSharedFramework))
+                    {
+                        FileObject.Add("explicitFileType", Value.CreateString("wrapper.framework"));
+                        FileObject.Add("path", Value.CreateString(Project.TargetName + ".framework"));
+                    }
+                    else
+                    {
+                        throw new NotSupportedException();
+                    }
                     FileObject.Add("remoteRef", Value.CreateString(TargetFileProxyHash));
                     FileObject.Add("sourceTree", Value.CreateString("BUILT_PRODUCTS_DIR"));
                     Objects.Add(FileHash, Value.CreateDict(FileObject));
@@ -486,10 +503,41 @@ namespace TypeMake.Cpp
                 if ((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary) || (Project.TargetType == TargetType.DarwinApplication) || (Project.TargetType == TargetType.DarwinSharedFramework) || (Project.TargetType == TargetType.MacBundle))
                 {
                     var LibDirectories = conf.LibDirectories.Select(d => d.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix)).ToList();
+                    foreach (var Project in ProjectReferences)
+                    {
+                        if (Project.TargetType == TargetType.DynamicLibrary)
+                        {
+                            if (Project.OutputFilePath.ContainsKey(ConfigurationType))
+                            {
+                                var LibPath = Project.OutputFilePath[ConfigurationType];
+                                LibDirectories.Add(LibPath.Parent.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix));
+                            }
+                        }
+                    }
+                    LibDirectories = LibDirectories.Distinct().ToList();
                     if (LibDirectories.Count != 0)
                     {
                         BuildSettings["LIBRARY_SEARCH_PATHS"] = Value.CreateArray(LibDirectories.Select(d => Value.CreateString(d)).ToList());
                     }
+
+                    var FrameworkDirectories = new List<String>();
+                    foreach (var Project in ProjectReferences)
+                    {
+                        if ((Project.TargetType == TargetType.DarwinStaticFramework) || (Project.TargetType == TargetType.DarwinSharedFramework))
+                        {
+                            if (Project.OutputFilePath.ContainsKey(ConfigurationType))
+                            {
+                                var FrameworkPath = Project.OutputFilePath[ConfigurationType];
+                                FrameworkDirectories.Add(FrameworkPath.Parent.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix));
+                            }
+                        }
+                    }
+                    FrameworkDirectories = FrameworkDirectories.Distinct().ToList();
+                    if (FrameworkDirectories.Count != 0)
+                    {
+                        BuildSettings["FRAMEWORK_SEARCH_PATHS"] = Value.CreateArray(FrameworkDirectories.Select(d => Value.CreateString(d)).ToList());
+                    }
+
                     var LinkerFlags = conf.LinkerFlags.Concat(conf.Libs.Select(Lib => Lib.Parts.Count == 1 ? Lib.Extension == "" ? "-l" + Lib.ToString(PathStringStyle.Unix) : "-l:" + Lib.ToString(PathStringStyle.Unix) : Lib.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix))).Concat(conf.PostLinkerFlags).ToList();
                     if (LinkerFlags.Count != 0)
                     {
@@ -713,8 +761,25 @@ namespace TypeMake.Cpp
                 else
                 {
                     FileObject.Add("isa", Value.CreateString("PBXFileReference"));
-                    FileObject.Add("explicitFileType", Value.CreateString("archive.ar"));
-                    FileObject.Add("path", Value.CreateString("lib" + Project.Name + ".a"));
+                    if (Project.TargetType == TargetType.StaticLibrary)
+                    {
+                        FileObject.Add("fileType", Value.CreateString("archive.ar"));
+                        FileObject.Add("path", Value.CreateString("lib" + Project.TargetName + ".a"));
+                    }
+                    else if (Project.TargetType == TargetType.DynamicLibrary)
+                    {
+                        FileObject.Add("explicitFileType", Value.CreateString("compiled.mach-o.dylib"));
+                        FileObject.Add("path", Value.CreateString("lib" + Project.TargetName + ".dylib"));
+                    }
+                    else if ((Project.TargetType == TargetType.DarwinStaticFramework) || (Project.TargetType == TargetType.DarwinSharedFramework))
+                    {
+                        FileObject.Add("explicitFileType", Value.CreateString("wrapper.framework"));
+                        FileObject.Add("path", Value.CreateString(Project.TargetName + ".framework"));
+                    }
+                    else
+                    {
+                        throw new NotSupportedException();
+                    }
                     FileObject.Add("sourceTree", Value.CreateString("BUILT_PRODUCTS_DIR"));
                 }
                 Objects.Add(Hash, Value.CreateDict(FileObject));

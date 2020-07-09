@@ -155,9 +155,9 @@ namespace TypeMake
                         {
                             Id = GetIdForProject(ModuleName),
                             Name = ModuleName,
-                            TargetType = TargetType.StaticLibrary,
                             VirtualDir = m.VirtualDir,
                             FilePath = BuildDirectory / "projects" / GetProjectFileName(ModuleName),
+                            TargetType = TargetType.StaticLibrary,
                             Configurations = new List<Configuration>
                             {
                                 new Configuration
@@ -443,7 +443,8 @@ namespace TypeMake
                 {
                     throw new InvalidOperationException($"UnresolvedDependencies: {Project.Definition.Name} -> {String.Join(" ", Unresolved)}");
                 }
-                var DependentProjectExportConfigurations = FullDependentProjectNames.SelectMany(d => SelectedProjects[d].ExportConfigurations).ToList();
+                var TransitiveDepedentProjectNames = GetTransitiveProjectDependencies(Project.Definition.Name, Dependencies, ProjectName => SelectedProjects[ProjectName].Definition.TargetType == TargetType.StaticLibrary, out _);
+                var DependentProjectExportConfigurations = TransitiveDepedentProjectNames.SelectMany(d => SelectedProjects[d].ExportConfigurations).ToList();
                 var p = new Project
                 {
                     Id = Project.Definition.Id,
@@ -473,6 +474,7 @@ namespace TypeMake
                     VirtualDir = p.VirtualDir,
                     FilePath = p.FilePath,
                     TargetType = p.TargetType,
+                    TargetName = p.TargetName ?? p.Name,
                     OutputFilePath = OutputFilePath
                 };
                 ProjectNameToReference.Add(p.Name, Reference);
@@ -529,7 +531,6 @@ namespace TypeMake
                                 gGradle.Generate(ForceRegenerate);
                             }
                         }
-                        continue;
                     }
                     else if (ProjectTargetType == TargetType.GradleLibrary)
                     {
@@ -548,7 +549,6 @@ namespace TypeMake
                                 gGradle.Generate(ForceRegenerate);
                             }
                         }
-                        continue;
                     }
                     else
                     {
@@ -579,25 +579,26 @@ namespace TypeMake
             var GradleProjectNames = SelectedProjects.Values.Where(Project => (Project.Definition.TargetType == TargetType.GradleLibrary) || (Project.Definition.TargetType == TargetType.GradleApplication)).Select(Project => Project.Definition.Name).ToList();
             var ProjectDependencies = ProjectNameToFullDependentProjectNames.ToDictionary(p => ProjectNameToReference[p.Key], p => p.Value.Select(n => ProjectNameToReference[n]).ToList());
             var SortedProjects = ProjectDependencies.Keys.PartialOrderBy(p => ProjectDependencies.ContainsKey(p) ? ProjectDependencies[p] : null).ToList();
+            var CppSortedProjects = SortedProjects.Where(p => (p.TargetType == TargetType.Executable) || (p.TargetType == TargetType.StaticLibrary) || (p.TargetType == TargetType.DynamicLibrary) || (p.TargetType == TargetType.DarwinApplication) || (p.TargetType == TargetType.DarwinStaticFramework) || (p.TargetType == TargetType.DarwinSharedFramework) || (p.TargetType == TargetType.MacBundle)).ToList();
             if (Toolchain == ToolchainType.VisualStudio)
             {
                 var SlnTemplateText = Resource.GetResourceText(VSVersion == 2019 ? @"Templates\vc16\Default.sln" : @"Templates\vc16\Default.sln");
-                var g = new SlnGenerator(SolutionName, GetIdForProject(SolutionName + ".solution"), SortedProjects, BuildDirectory, SlnTemplateText, TargetArchitecture);
+                var g = new SlnGenerator(SolutionName, GetIdForProject(SolutionName + ".solution"), CppSortedProjects, BuildDirectory, SlnTemplateText, TargetArchitecture);
                 g.Generate(ForceRegenerate);
             }
             else if (Toolchain == ToolchainType.XCode)
             {
-                var g = new XcworkspaceGenerator(SolutionName, SortedProjects, BuildDirectory);
+                var g = new XcworkspaceGenerator(SolutionName, CppSortedProjects, BuildDirectory);
                 g.Generate(ForceRegenerate);
             }
             else if (Toolchain == ToolchainType.CMake)
             {
-                var g = new CMakeSolutionGenerator(SolutionName, SortedProjects, BuildDirectory, CC, CXX, AR, STRIP);
+                var g = new CMakeSolutionGenerator(SolutionName, CppSortedProjects, BuildDirectory, CC, CXX, AR, STRIP);
                 g.Generate(ForceRegenerate);
             }
             else if (Toolchain == ToolchainType.Ninja)
             {
-                var g = new NinjaSolutionGenerator(SolutionName, SortedProjects, BuildDirectory / "projects", TargetOperatingSystem, CC, CXX, AR, STRIP);
+                var g = new NinjaSolutionGenerator(SolutionName, CppSortedProjects, BuildDirectory / "projects", TargetOperatingSystem, CC, CXX, AR, STRIP);
                 g.Generate(ForceRegenerate);
             }
             else if ((Toolchain == ToolchainType.Gradle_CMake) || (Toolchain == ToolchainType.Gradle_Ninja))
@@ -612,12 +613,12 @@ namespace TypeMake
                 }
                 if (Toolchain == ToolchainType.Gradle_CMake)
                 {
-                    var g = new CMakeSolutionGenerator(SolutionName, SortedProjects, BuildDirectory, CC, CXX, AR, STRIP);
+                    var g = new CMakeSolutionGenerator(SolutionName, CppSortedProjects, BuildDirectory, CC, CXX, AR, STRIP);
                     g.Generate(ForceRegenerate);
                 }
                 else if (Toolchain == ToolchainType.Gradle_Ninja)
                 {
-                    var g = new NinjaSolutionGenerator(SolutionName, SortedProjects, BuildDirectory / "projects", TargetOperatingSystem, CC, CXX, AR, STRIP);
+                    var g = new NinjaSolutionGenerator(SolutionName, CppSortedProjects, BuildDirectory / "projects", TargetOperatingSystem, CC, CXX, AR, STRIP);
                     g.Generate(ForceRegenerate);
                 }
                 if (GradleProjectNames.Count > 0)
@@ -1097,6 +1098,10 @@ namespace TypeMake
         }
         private static List<String> GetFullProjectDependencies(String ProjectName, Dictionary<String, HashSet<String>> Dependencies, out List<String> UnresovledDependencies)
         {
+            return GetTransitiveProjectDependencies(ProjectName, Dependencies, _ => true, out UnresovledDependencies);
+        }
+        private static List<String> GetTransitiveProjectDependencies(String ProjectName, Dictionary<String, HashSet<String>> Dependencies, Func<String, bool> IsTransitive, out List<String> UnresovledDependencies)
+        {
             var Full = new List<String>();
             var Unresovled = new List<String>();
             var Added = new HashSet<String>();
@@ -1115,11 +1120,14 @@ namespace TypeMake
                 {
                     Full.Add(m);
                 }
-                Added.Add(m);
-                foreach (var d in Dependencies[m])
+                if ((Added.Count == 0) || IsTransitive(m))
                 {
-                    Queue.Enqueue(d);
+                    foreach (var d in Dependencies[m])
+                    {
+                        Queue.Enqueue(d);
+                    }
                 }
+                Added.Add(m);
             }
             UnresovledDependencies = Unresovled;
             return Full;

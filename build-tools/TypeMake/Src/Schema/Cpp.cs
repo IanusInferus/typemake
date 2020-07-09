@@ -155,6 +155,7 @@ namespace TypeMake.Cpp
         public PathString VirtualDir;
         public PathString FilePath;
         public TargetType TargetType;
+        public String TargetName;
         public Dictionary<ConfigurationType, PathString> OutputFilePath = new Dictionary<ConfigurationType, PathString> { };
     }
 }

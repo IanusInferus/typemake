@@ -270,7 +270,7 @@ namespace TypeMake.Cpp
                 }
                 else
                 {
-                    yield return $"build {NinjaEscape(TargetPath)}: stripx {NinjaEscape(SymbolPath)}";
+                    yield return $"build {NinjaEscape(TargetPath)}: strip {NinjaEscape(SymbolPath)}";
                 }
             }
             else

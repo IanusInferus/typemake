@@ -11,6 +11,7 @@ namespace TypeMake
             BuildScript.GenerateRetypemakeScript(v.HostOperatingSystem, v.SourceDirectory, v.BuildDirectory, Memory, v.OverwriteRetypemakeScript);
             var r = v.g();
 
+            var CppSortedProjectNames = r.SortedProjects.Where(p => (p.TargetType == Cpp.TargetType.Executable) || (p.TargetType == Cpp.TargetType.StaticLibrary) || (p.TargetType == Cpp.TargetType.DynamicLibrary) || (p.TargetType == Cpp.TargetType.DarwinApplication) || (p.TargetType == Cpp.TargetType.DarwinStaticFramework) || (p.TargetType == Cpp.TargetType.DarwinSharedFramework) || (p.TargetType == Cpp.TargetType.MacBundle)).Select(p => p.Name).ToList();
             var GradleProjectNames = r.SortedProjects.Where(p => (p.TargetType == Cpp.TargetType.GradleApplication) || (p.TargetType == Cpp.TargetType.GradleLibrary)).Select(p => p.Name).ToList();
 
             if (v.TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
@@ -67,7 +68,7 @@ namespace TypeMake
             {
                 if (v.Toolchain == Cpp.ToolchainType.XCode)
                 {
-                    BuildScript.GenerateBuildScriptXCode(v.HostOperatingSystem, v.BuildDirectory, v.Configuration, r.SortedProjects, v.ForceRegenerate);
+                    BuildScript.GenerateBuildScriptXCode(v.HostOperatingSystem, v.BuildDirectory, v.Configuration, CppSortedProjectNames, v.ForceRegenerate);
                 }
                 else
                 {
@@ -93,7 +94,7 @@ namespace TypeMake
             }
             else if (v.TargetOperatingSystem == Cpp.OperatingSystemType.iOS)
             {
-                BuildScript.GenerateBuildScriptXCode(v.HostOperatingSystem, v.BuildDirectory, v.Configuration, r.SortedProjects, v.ForceRegenerate);
+                BuildScript.GenerateBuildScriptXCode(v.HostOperatingSystem, v.BuildDirectory, v.Configuration, CppSortedProjectNames, v.ForceRegenerate);
                 if (v.BuildNow)
                 {
                     using (var d = Shell.PushDirectory(v.BuildDirectory))

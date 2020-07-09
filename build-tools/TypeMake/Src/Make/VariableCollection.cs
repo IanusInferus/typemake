@@ -1007,7 +1007,7 @@ namespace TypeMake
                 IsHidden = true,
                 GetVariableSpec = () =>
                 {
-                    if ((Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android) && ((Variables.Toolchain == Cpp.ToolchainType.Gradle_Ninja) || (Variables.Toolchain == Cpp.ToolchainType.Ninja)))
+                    if ((Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android) && ((Variables.Toolchain == Cpp.ToolchainType.Gradle_Ninja) || (Variables.Toolchain == Cpp.ToolchainType.Ninja) || (Variables.Toolchain == Cpp.ToolchainType.CMake) || (Variables.Toolchain == Cpp.ToolchainType.Gradle_CMake)))
                     {
                         if (Variables.HostOperatingSystem == Cpp.OperatingSystemType.Windows)
                         {
