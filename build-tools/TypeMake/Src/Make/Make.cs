@@ -465,7 +465,7 @@ namespace TypeMake
                 foreach (var ConfigurationType in Enum.GetValues(typeof(ConfigurationType)).Cast<ConfigurationType>())
                 {
                     var conf = p.Configurations.Merged(p.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, WindowsRuntime, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType);
-                    OutputFilePath.Add(ConfigurationType, BuildDirectory / GetProjectOutputFilePath(p.Name, p.TargetName ?? p.Name, p.TargetType, conf.OutputDirectory));
+                    OutputFilePath.Add(ConfigurationType, BuildDirectory / GetProjectOutputFilePath(p.Name, p.TargetName ?? p.Name, p.TargetType, conf.OutputDirectory, ConfigurationType));
                 }
                 var Reference = new ProjectReference
                 {
@@ -1289,8 +1289,9 @@ namespace TypeMake
                 throw new NotSupportedException();
             }
         }
-        private PathString GetProjectOutputFilePath(String ProjectName, String TargetName, TargetType TargetType, PathString OutputDirectory = null)
+        private PathString GetProjectOutputFilePath(String ProjectName, String TargetName, TargetType TargetType, PathString OutputDirectory = null, ConfigurationType? oConfigurationType = null)
         {
+            var ConfigurationType = oConfigurationType ?? this.ConfigurationType;
             var OutputFileName = GetProjectOutputFileName(TargetName, TargetType);
             if ((TargetType == TargetType.GradleApplication) || (TargetType == TargetType.GradleLibrary))
             {

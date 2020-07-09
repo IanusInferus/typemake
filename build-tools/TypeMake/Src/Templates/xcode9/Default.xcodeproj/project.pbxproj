@@ -21,6 +21,23 @@
 			<key>runOnlyForDeploymentPostprocessing</key>
 			<string>0</string>
 		</dict>
+		<key>CD960DFB24B73FDA00AB8CBF</key>
+		<dict>
+			<key>buildActionMask</key>
+			<string>2147483647</string>
+			<key>dstPath</key>
+			<string></string>
+			<key>dstSubfolderSpec</key>
+			<string>10</string>
+			<key>files</key>
+			<array/>
+			<key>isa</key>
+			<string>PBXCopyFilesBuildPhase</string>
+			<key>name</key>
+			<string>Embed Frameworks</string>
+			<key>runOnlyForDeploymentPostprocessing</key>
+			<string>0</string>
+		</dict>
 		<key>CDB235CC2078AB3800F8F245</key>
 		<dict>
 			<key>children</key>
@@ -136,6 +153,7 @@
 				<string>CDB235D22078AB3800F8F245</string>
 				<string>CDB235D32078AB3800F8F245</string>
 				<string>CD3092A52236946000A3ABE9</string>
+				<string>CD960DFB24B73FDA00AB8CBF</string>
 			</array>
 			<key>buildRules</key>
 			<array/>
