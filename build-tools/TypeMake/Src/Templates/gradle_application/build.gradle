@@ -38,7 +38,8 @@ android {
 }
 
 dependencies {
-    implementation fileTree(dir: '${JarDirs}', include: ['*.jar'])
+    implementation files('${JarFiles}')
+    implementation project(':${ProjectDependencies}')
 }
 
 tasks.withType(JavaCompile) {
