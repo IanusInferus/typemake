@@ -3,8 +3,8 @@
   <PropertyGroup>
     <TargetFramework>net461</TargetFramework>
     <IsPackable>false</IsPackable>
-    <BaseIntermediateOutputPath>..\Obj\$(MSBuildProjectName)</BaseIntermediateOutputPath>
-    <OutputPath>..\Bin\</OutputPath>
+    <BaseIntermediateOutputPath>..\..\..\build\TypeMake\Obj\$(MSBuildProjectName)</BaseIntermediateOutputPath>
+    <OutputPath>..\..\..\build\TypeMake\Bin\</OutputPath>
   </PropertyGroup>
 
   <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />

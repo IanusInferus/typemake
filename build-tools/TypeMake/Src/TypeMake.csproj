@@ -16,8 +16,8 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>..\Bin\</OutputPath>
-    <BaseIntermediateOutputPath>..\Obj\$(MSBuildProjectName)</BaseIntermediateOutputPath>
+    <OutputPath>..\..\..\build\TypeMake\Bin\</OutputPath>
+    <BaseIntermediateOutputPath>..\..\..\build\TypeMake\Obj\$(MSBuildProjectName)</BaseIntermediateOutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -27,8 +27,8 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>..\Bin\</OutputPath>
-    <BaseIntermediateOutputPath>..\Obj\$(MSBuildProjectName)</BaseIntermediateOutputPath>
+    <OutputPath>..\..\..\build\TypeMake\Bin\</OutputPath>
+    <BaseIntermediateOutputPath>..\..\..\build\TypeMake\Obj\$(MSBuildProjectName)</BaseIntermediateOutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>

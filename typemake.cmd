@@ -17,4 +17,4 @@ echo building TypeMake finished.
 popd
 
 set "SourceDirectory=%~dp0"
-"%~dp0\build-tools\TypeMake\Bin\TypeMake.exe" %* || exit /b 1
+"%~dp0\build\TypeMake\Bin\TypeMake.exe" %* || exit /b 1

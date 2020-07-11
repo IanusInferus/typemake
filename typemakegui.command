@@ -8,4 +8,4 @@ echo building TypeMake finished.
 popd
 
 export SourceDirectory="$(dirname "$0")"
-open "$(dirname "$0")/build-tools/TypeMake/Bin/net461/TypeMakeGui.app" --args "SourceDirectory=$SourceDirectory"
+open "$(dirname "$0")/build/TypeMake/Bin/net461/TypeMakeGui.app" --args "SourceDirectory=$SourceDirectory"
