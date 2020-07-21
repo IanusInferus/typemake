@@ -83,10 +83,10 @@ namespace TypeMake.Cpp
             var JarFiles = conf.Options.ContainsKey("gradle.jarFiles") ? conf.Options["gradle.jarFiles"].Split(';').Select(d => d.AsPath().RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix)).ToList() : new List<String> { };
             var ProjectDependencies = conf.Options.ContainsKey("gradle.projectDependencies") ? conf.Options["gradle.projectDependencies"].Split(';').ToList() : new List<String> { };
             var AndroidAbi = GetArchitectureString(TargetArchitecture.Value);
-            var TempJniLibsDirDebug = confDebug.Options.ContainsKey("gradle.tempJniLibsDirectory") ? confDebug.Options["gradle.tempJniLibsDirectory"].AsPath().RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix) : $"{SolutionOutputDir}/{ArchitectureType}_Debug/gradle/{ProjectName}";
-            var TempJniLibsDirRelease = confRelease.Options.ContainsKey("gradle.tempJniLibsDirectory") ? confRelease.Options["gradle.tempJniLibsDirectory"].AsPath().RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix) : $"{SolutionOutputDir}/{ArchitectureType}_Release/gradle/{ProjectName}";
-            var TargetDirectoryDebug = confDebug.Options.ContainsKey("gradle.targetDirectory") ? confDebug.Options["gradle.targetDirectory"].AsPath() : (SolutionOutputDirectory / $"{ArchitectureType}_Debug");
-            var TargetDirectoryRelease = confRelease.Options.ContainsKey("gradle.targetDirectory") ? confRelease.Options["gradle.targetDirectory"].AsPath() : (SolutionOutputDirectory / $"{ArchitectureType}_Release");
+            var TempJniLibsDirDebug = confDebug.Options.ContainsKey("gradle.tempJniLibsDirectory") ? confDebug.Options["gradle.tempJniLibsDirectory"].AsPath().RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix) : $"{SolutionOutputDir}/Debug/gradle/{ProjectName}";
+            var TempJniLibsDirRelease = confRelease.Options.ContainsKey("gradle.tempJniLibsDirectory") ? confRelease.Options["gradle.tempJniLibsDirectory"].AsPath().RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix) : $"{SolutionOutputDir}/Release/gradle/{ProjectName}";
+            var TargetDirectoryDebug = confDebug.Options.ContainsKey("gradle.targetDirectory") ? confDebug.Options["gradle.targetDirectory"].AsPath() : (SolutionOutputDirectory / $"Debug");
+            var TargetDirectoryRelease = confRelease.Options.ContainsKey("gradle.targetDirectory") ? confRelease.Options["gradle.targetDirectory"].AsPath() : (SolutionOutputDirectory / $"Release");
             if (ConfigurationType == Cpp.ConfigurationType.Debug)
             {
                 TempJniLibsDirRelease = TempJniLibsDirDebug;
@@ -114,7 +114,7 @@ namespace TypeMake.Cpp
                 }
                 if (!Found)
                 {
-                    SoLibraryPathsDebug.Add(SolutionOutputDirectory / $"{ArchitectureType}_Debug" / Lib);
+                    SoLibraryPathsDebug.Add(SolutionOutputDirectory / $"Debug" / Lib);
                 }
             }
             foreach (var Lib in confRelease.Libs)
@@ -132,12 +132,12 @@ namespace TypeMake.Cpp
                 }
                 if (!Found)
                 {
-                    SoLibraryPathsRelease.Add(SolutionOutputDirectory / $"{ArchitectureType}_Release" / Lib);
+                    SoLibraryPathsRelease.Add(SolutionOutputDirectory / $"Release" / Lib);
                 }
             }
             if ((CppLibrary == CppLibraryType.libcxx) && (CppLibraryForm == CppLibraryForm.Dynamic))
             {
-                var LibcxxSo = AndroidNdk / $"toolchains/llvm/prebuilt/{GetHostArchitectureString(HostOperatingSystem, HostArchitecture)}-x86_64/sysroot/usr/lib/{GetTargetTripletString(TargetArchitecture.Value)}/libc++_shared.so";
+                var LibcxxSo = AndroidNdk / $"toolchains/llvm/prebuilt/{GetHostArchitectureString(HostOperatingSystem, HostArchitecture)}/sysroot/usr/lib/{GetTargetTripletString(TargetArchitecture.Value)}/libc++_shared.so";
                 SoLibraryPathsDebug.Add(LibcxxSo);
                 SoLibraryPathsRelease.Add(LibcxxSo);
             }
