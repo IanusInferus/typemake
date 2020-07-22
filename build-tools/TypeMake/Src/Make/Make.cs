@@ -1129,7 +1129,7 @@ namespace TypeMake
                 }
                 Added.Add(m);
             }
-            UnresovledDependencies = Unresovled;
+            UnresovledDependencies = Unresovled.Distinct().ToList();
             return Full;
         }
         private String GetProjectFileName(String ProjectName)
