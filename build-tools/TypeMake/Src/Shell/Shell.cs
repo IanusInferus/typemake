@@ -575,7 +575,7 @@ namespace TypeMake
                     var Result = Selections.Where(Selection => Selected.Contains(Selection)).ToList();
                     return String.Join(" ", Result);
                 },
-                DefaultValue = String.Join(" ", Selections.Intersect(DefaultSelections)),
+                DefaultValue = DefaultSelections != null ? String.Join(" ", Selections.Intersect(DefaultSelections)) : "",
                 InputDisplay = InputDisplay
             };
             if (OnOptionCustomization != null) { OnOptionCustomization(Options); }
