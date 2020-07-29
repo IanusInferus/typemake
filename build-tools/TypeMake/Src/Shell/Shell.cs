@@ -369,6 +369,7 @@ namespace TypeMake
             public Dictionary<String, String> Variables = new Dictionary<String, String>();
             public Dictionary<String, List<String>> VariableSelections = new Dictionary<String, List<String>>();
             public Dictionary<String, List<String>> VariableMultipleSelections = new Dictionary<String, List<String>>();
+            public bool UseSystemEnvironmentVariable = true;
         }
         public class EnvironmentVariableReadOptions
         {
@@ -396,10 +397,21 @@ namespace TypeMake
             var Top = Options.Quiet ? -1 : Console.CursorTop;
             var cps = Options.Quiet ? null : GetConsolePositionState();
             var d = Options.InputDisplay ?? (!String.IsNullOrEmpty(Options.DefaultValue) ? "[" + Options.DefaultValue + "]" : "");
-            var v = Environment.GetEnvironmentVariable(Name);
-            if (v == "_EMPTY_")
+            String v = null;
+            if (Memory.Variables.ContainsKey(Name))
             {
-                v = "";
+                v = Memory.Variables[Name];
+            }
+            else
+            {
+                if (Memory.UseSystemEnvironmentVariable)
+                {
+                    v = Environment.GetEnvironmentVariable(Name);
+                    if (v == "_EMPTY_")
+                    {
+                        v = "";
+                    }
+                }
             }
             if ((v == null) && Options.Quiet)
             {
