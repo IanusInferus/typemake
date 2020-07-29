@@ -15,12 +15,18 @@ namespace TypeMake
             public PathString OriginalDir;
             public void Dispose()
             {
+                Console.WriteLine("popd");
                 Environment.CurrentDirectory = OriginalDir;
             }
         }
 
         public static IDisposable PushDirectory(PathString Dir)
         {
+            var Style = OperatingSystem == OperatingSystemType.Windows ? ShellArgumentStyle.CMD : ShellArgumentStyle.Bash;
+            var Arguments = new List<String> { "pushd", Dir.FullPath };
+            var CommandLine = String.Join(" ", Arguments.Select(a => EscapeArgumentForShell(a, Style)));
+            Console.WriteLine(CommandLine);
+
             var d = new PushDirectoryDisposee { OriginalDir = Environment.CurrentDirectory };
             Environment.CurrentDirectory = Dir.FullPath;
             return d;
