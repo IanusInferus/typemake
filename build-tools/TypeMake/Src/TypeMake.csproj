@@ -72,6 +72,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Schema\Cpp.cs" />
     <Compile Include="Bone\ConsoleVariableCollector.cs" />
+    <Compile Include="Shell\Terminal.cs" />
     <Compile Include="Templates\Resource.cs" />
   </ItemGroup>
   <ItemGroup>

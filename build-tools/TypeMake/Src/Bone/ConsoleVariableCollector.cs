@@ -33,14 +33,14 @@ namespace TypeMake
         }
         public void Execute()
         {
-            var PreviousFetchWithUserInteraction = new Stack<Tuple<int, int, Shell.ConsolePositionState>>();
+            var PreviousStateWithUserInteraction = new Stack<Tuple<int, ITerminalCursorAndText>>();
             var Index = 0;
             while (Index < SortedItems.Count)
             {
                 var IsLast = Index == SortedItems.Count - 1;
                 try
                 {
-                    var Current = Quiet ? null : Tuple.Create(Index, Console.CursorTop, Shell.GetConsolePositionState());
+                    var ct = Shell.Terminal.GetCursorAndText();
                     var i = SortedItems[Index];
                     bool Interactive = false;
                     var s = i.GetVariableSpec();
@@ -205,27 +205,18 @@ namespace TypeMake
                     {
                         throw new InvalidOperationException();
                     }
-                    if (Interactive && (Current != null))
+                    if (Interactive)
                     {
-                        PreviousFetchWithUserInteraction.Push(Current);
+                        PreviousStateWithUserInteraction.Push(Tuple.Create(Index, ct));
                     }
                 }
                 catch (Shell.UserCancelledException)
                 {
-                    if (PreviousFetchWithUserInteraction.Count > 0)
+                    if (PreviousStateWithUserInteraction.Count > 0)
                     {
-                        var p = PreviousFetchWithUserInteraction.Pop();
-                        Index = p.Item1;
-                        if (Shell.OperatingSystem == Shell.OperatingSystemType.Windows)
-                        {
-                            var cps = p.Item3;
-                            var Top = p.Item2;
-
-                            var cpsNew = Shell.GetConsolePositionState();
-                            Shell.SetConsolePositionState(cps);
-                            Shell.BackspaceCursorToLine(Top);
-                            Shell.SetConsolePositionState(cpsNew);
-                        }
+                        var t = PreviousStateWithUserInteraction.Pop();
+                        Index = t.Item1;
+                        Shell.Terminal.LoadCursorAndText(t.Item2);
                         Memory.Variables.Remove(SortedItems[Index].VariableName);
                     }
                     continue;

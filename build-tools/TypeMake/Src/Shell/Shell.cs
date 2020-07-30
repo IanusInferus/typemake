@@ -393,9 +393,6 @@ namespace TypeMake
         }
         public static String RequireEnvironmentVariable(EnvironmentVariableMemory Memory, String Name, EnvironmentVariableReadOptions Options)
         {
-            var OriginalForegroundColor = GetForegroundColor();
-            var Top = Options.Quiet ? -1 : Console.CursorTop;
-            var cps = Options.Quiet ? null : GetConsolePositionState();
             var d = Options.InputDisplay ?? (!String.IsNullOrEmpty(Options.DefaultValue) ? "[" + Options.DefaultValue + "]" : "");
             String v = null;
             if (Memory.Variables.ContainsKey(Name))
@@ -421,27 +418,11 @@ namespace TypeMake
             {
                 if (Options.Quiet) { throw new InvalidOperationException("Variable '" + Name + "' not exist."); }
                 if (Options.OnInteraction != null) { Options.OnInteraction(); }
-                if (Options.ForegroundColor != null) { SetForegroundColor(Options.ForegroundColor.Value); }
-                Console.Write("'" + Name + "' not exist. Input" + (d == "" ? "" : " " + d) + ": ");
-                if (OriginalForegroundColor == null) {  }
-                SetForegroundColor(OriginalForegroundColor);
-                try
+                var PromptText = "'" + Name + "' not exist. Input" + (d == "" ? "" : " " + d) + ": ";
+                v = Options.IsPassword ? Terminal.ReadLinePassword(Options.ForegroundColor, PromptText, Options.EnableCancellation) : Terminal.ReadLineWithSuggestion(Options.ForegroundColor, PromptText, Options.Suggester, Options.EnableCancellation);
+                if (v == "")
                 {
-                    v = Options.IsPassword ? ReadLinePassword(Options.EnableCancellation) : ReadLineWithSuggestion(Options.Suggester, Options.EnableCancellation);
-                    if (v == "")
-                    {
-                        v = Options.DefaultValue ?? "";
-                    }
-                }
-                finally
-                {
-                    if (Shell.OperatingSystem == Shell.OperatingSystemType.Windows)
-                    {
-                        var cpsNew = GetConsolePositionState();
-                        SetConsolePositionState(cps);
-                        BackspaceCursorToLine(Top);
-                        SetConsolePositionState(cpsNew);
-                    }
+                    v = Options.DefaultValue ?? "";
                 }
             }
             while (true)
@@ -452,42 +433,25 @@ namespace TypeMake
                 var ValidationMessage = ValidationResult.Value == "" ? "Variable '" + Name + "' invalid." : "Variable '" + Name + "' invalid. " + ValidationResult.Value;
                 if (Options.Quiet) { throw new InvalidOperationException(ValidationMessage); }
                 if (Options.OnInteraction != null) { Options.OnInteraction(); }
-                if (Options.ForegroundColor != null) { SetForegroundColor(Options.ForegroundColor.Value); }
-                Console.Write(ValidationMessage + " Input" + (d == "" ? "" : " " + d) + ": ");
-                SetForegroundColor(OriginalForegroundColor);
-                try
+                var PromptText = ValidationMessage + " Input" + (d == "" ? "" : " " + d) + ": ";
+                v = Options.IsPassword ? Terminal.ReadLinePassword(Options.ForegroundColor, PromptText, Options.EnableCancellation) : Terminal.ReadLineWithSuggestion(Options.ForegroundColor, PromptText, Options.Suggester, Options.EnableCancellation);
+                if (v == "")
                 {
-                    v = Options.IsPassword ? ReadLinePassword(Options.EnableCancellation) : ReadLineWithSuggestion(Options.Suggester, Options.EnableCancellation);
-                    if (v == "")
-                    {
-                        v = Options.DefaultValue ?? "";
-                    }
-                }
-                finally
-                {
-                    if (Shell.OperatingSystem == Shell.OperatingSystemType.Windows)
-                    {
-                        var cpsNew = GetConsolePositionState();
-                        SetConsolePositionState(cps);
-                        BackspaceCursorToLine(Top);
-                        SetConsolePositionState(cpsNew);
-                    }
+                    v = Options.DefaultValue ?? "";
                 }
             }
             if (Options.PostMapper != null)
             {
                 v = Options.PostMapper(v);
             }
-            if (Options.ForegroundColor != null) { SetForegroundColor(Options.ForegroundColor.Value); }
             if (Options.IsPassword)
             {
-                Console.WriteLine(Name + "=[***]");
+                Terminal.WriteLine(Options.ForegroundColor, Name + "=[***]");
             }
             else
             {
-                Console.WriteLine(Name + "=" + v);
+                Terminal.WriteLine(Options.ForegroundColor, Name + "=" + v);
             }
-            SetForegroundColor(OriginalForegroundColor);
             Memory.Variables[Name] = v == "" ? "_EMPTY_" : v;
             return v;
         }
@@ -814,484 +778,35 @@ namespace TypeMake
                 return FirstMatched ?? (Cycle ? v : vConfirmed);
             };
         }
-        public static String ReadLinePassword(bool EnableCancellation)
+
+        private static Object TerminalLock = new Object();
+        private static ITerminal TerminalValue;
+        public static ITerminal Terminal
         {
-            if (OperatingSystem == OperatingSystemType.Windows)
+            get
             {
-                var l = new LinkedList<Char>();
-                while (true)
+                lock (TerminalLock)
                 {
-                    var ki = Console.ReadKey(true);
-                    if (EnableCancellation && (ki.Key == ConsoleKey.Escape))
+                    if (TerminalValue == null)
                     {
-                        throw new UserCancelledException();
-                    }
-                    if (ki.Key == ConsoleKey.Enter)
-                    {
-                        Console.WriteLine();
-                        break;
-                    }
-                    if (ki.Key == ConsoleKey.Backspace)
-                    {
-                        l.RemoveLast();
-                    }
-                    else
-                    {
-                        var c = ki.KeyChar;
-                        if (Char.IsControl(c)) { continue; }
-                        l.AddLast(ki.KeyChar);
-                    }
-                }
-                return new String(l.ToArray());
-            }
-            else
-            {
-                return Console.ReadLine();
-            }
-        }
-        public static String ReadLineWithSuggestion(Func<String, int, bool, bool, String> Suggester, bool EnableCancellation)
-        {
-            if (OperatingSystem == OperatingSystemType.Windows)
-            {
-                var Confirmed = new LinkedList<KeyValuePair<Char, KeyValuePair<int, int>>>();
-                var Suggested = new LinkedList<KeyValuePair<Char, KeyValuePair<int, int>>>();
-                LinkedListNode<KeyValuePair<Char, KeyValuePair<int, int>>> CurrentCharNode = null;
-                int ConfirmedLastTop = Console.CursorTop;
-                int ConfirmedLastLeft = Console.CursorLeft;
-                int SuggestedLastTop = Console.CursorTop;
-                int SuggestedLastLeft = Console.CursorLeft;
-                void ClearSuggestion()
-                {
-                    Suggested = new LinkedList<KeyValuePair<Char, KeyValuePair<int, int>>>();
-                }
-                void RefreshSuggestion()
-                {
-                    if (Suggester == null) { return; }
-                    var v = new String(Confirmed.Select(p => p.Key).Concat(Suggested.Select(p => p.Key)).ToArray());
-                    var vSuggested = Suggester(v, Confirmed.Count, false, false).Substring(Confirmed.Count);
-                    Suggested = new LinkedList<KeyValuePair<Char, KeyValuePair<int, int>>>(vSuggested.Select(c => new KeyValuePair<Char, KeyValuePair<int, int>>(c, new KeyValuePair<int, int>(SuggestedLastTop, SuggestedLastLeft))));
-                }
-                void CycleSuggestion(bool CyclePrevious)
-                {
-                    if (Suggester == null) { return; }
-                    var v = new String(Confirmed.Select(p => p.Key).Concat(Suggested.Select(p => p.Key)).ToArray());
-                    var vSuggested = Suggester(v, Confirmed.Count, true, CyclePrevious).Substring(Confirmed.Count);
-                    Suggested = new LinkedList<KeyValuePair<Char, KeyValuePair<int, int>>>(vSuggested.Select(c => new KeyValuePair<Char, KeyValuePair<int, int>>(c, new KeyValuePair<int, int>(SuggestedLastTop, SuggestedLastLeft))));
-                }
-                void MoveSuggestionToConfirmed()
-                {
-                    foreach (var n in Suggested.ToList())
-                    {
-                        Console.Write(n.Key);
-                        Confirmed.AddLast(n);
-                    }
-                    Suggested.Clear();
-                    ConfirmedLastTop = SuggestedLastTop;
-                    ConfirmedLastLeft = SuggestedLastLeft;
-                    RefreshCharsAfterCursor();
-                }
-                void RefreshCharsAfterCursor()
-                {
-                    var Top = Console.CursorTop;
-                    var Left = Console.CursorLeft;
-                    MoveCursorToPosition(SuggestedLastTop, SuggestedLastLeft);
-                    BackspaceCursorToPosition(Top, Left);
-                    var Next = CurrentCharNode;
-                    while (Next != null)
-                    {
-                        Next.Value = new KeyValuePair<Char, KeyValuePair<int, int>>(Next.Value.Key, new KeyValuePair<int, int>(Console.CursorTop, Console.CursorLeft));
-                        Console.Write(Next.Value.Key);
-                        Next = Next.Next;
-                    }
-                    ConfirmedLastTop = Console.CursorTop;
-                    ConfirmedLastLeft = Console.CursorLeft;
-                    Next = Suggested.First;
-                    SetBackgroundColor(ConsoleColor.Blue);
-                    SetForegroundColor(ConsoleColor.Yellow);
-                    while (Next != null)
-                    {
-                        Next.Value = new KeyValuePair<Char, KeyValuePair<int, int>>(Next.Value.Key, new KeyValuePair<int, int>(Console.CursorTop, Console.CursorLeft));
-                        Console.Write(Next.Value.Key);
-                        Next = Next.Next;
-                    }
-                    ResetColor();
-                    SuggestedLastTop = Console.CursorTop;
-                    SuggestedLastLeft = Console.CursorLeft;
-                    MoveCursorToPosition(Top, Left);
-                }
-                while (true)
-                {
-                    var Top = Console.CursorTop;
-                    var Left = Console.CursorLeft;
-                    var cps = GetConsolePositionState();
-                    var ki = Console.ReadKey(true);
-                    if (Console.BufferWidth != cps.BufferWidth)
-                    {
-                        var BackupTop = Console.CursorTop;
-                        var BackupLeft = Console.CursorLeft;
-                        var cpsBackup = GetConsolePositionState();
-                        var BackupCharNode = CurrentCharNode;
-                        SetConsolePositionState(cps);
-                        if ((SuggestedLastTop > Top) || ((SuggestedLastTop == Top) && (SuggestedLastLeft > Left)))
+                        if (OperatingSystem == OperatingSystemType.Windows)
                         {
-                            MoveCursorToPosition(SuggestedLastTop, SuggestedLastLeft);
-                        }
-                        CurrentCharNode = Confirmed.First;
-                        if (CurrentCharNode != null)
-                        {
-                            BackspaceCursorToPosition(CurrentCharNode.Value.Value.Key, CurrentCharNode.Value.Value.Value);
+                            TerminalValue = new WindowsTerminal();
                         }
                         else
                         {
-                            BackspaceCursorToPosition(SuggestedLastTop, SuggestedLastLeft);
-                        }
-                        SetConsolePositionState(cpsBackup);
-                        SuggestedLastTop = Console.CursorTop;
-                        SuggestedLastLeft = Console.CursorLeft;
-                        RefreshCharsAfterCursor();
-                        CurrentCharNode = BackupCharNode;
-                        MoveCursorToPosition(BackupTop, BackupLeft);
-                        Top = Console.CursorTop;
-                        Left = Console.CursorLeft;
-                    }
-                    if (EnableCancellation && (ki.Key == ConsoleKey.Escape))
-                    {
-                        ClearSuggestion();
-                        RefreshCharsAfterCursor();
-                        throw new UserCancelledException();
-                    }
-                    if (ki.Key == ConsoleKey.Enter)
-                    {
-                        Console.WriteLine();
-                        break;
-                    }
-                    if (ki.Key == ConsoleKey.LeftArrow)
-                    {
-                        if (CurrentCharNode == null)
-                        {
-                            CurrentCharNode = Confirmed.Last;
-                        }
-                        else
-                        {
-                            if (CurrentCharNode.Previous == null) { continue; }
-                            CurrentCharNode = CurrentCharNode.Previous;
-                        }
-                        if (CurrentCharNode == null)
-                        {
-                            MoveCursorToPosition(ConfirmedLastTop, ConfirmedLastLeft);
-                        }
-                        else
-                        {
-                            MoveCursorToPosition(CurrentCharNode.Value.Value);
+                            TerminalValue = new CsiTerminal();
                         }
                     }
-                    else if (ki.Key == ConsoleKey.RightArrow)
-                    {
-                        if (CurrentCharNode == null)
-                        {
-                            MoveSuggestionToConfirmed();
-                            MoveCursorToPosition(ConfirmedLastTop, ConfirmedLastLeft);
-                            continue;
-                        }
-                        else
-                        {
-                            CurrentCharNode = CurrentCharNode.Next;
-                        }
-                        if (CurrentCharNode == null)
-                        {
-                            MoveCursorToPosition(ConfirmedLastTop, ConfirmedLastLeft);
-                        }
-                        else
-                        {
-                            MoveCursorToPosition(CurrentCharNode.Value.Value);
-                        }
-                    }
-                    else if (ki.Key == ConsoleKey.Home)
-                    {
-                        CurrentCharNode = Confirmed.First;
-                        if (CurrentCharNode == null)
-                        {
-                            MoveCursorToPosition(ConfirmedLastTop, ConfirmedLastLeft);
-                        }
-                        else
-                        {
-                            MoveCursorToPosition(CurrentCharNode.Value.Value);
-                        }
-                    }
-                    else if (ki.Key == ConsoleKey.End)
-                    {
-                        CurrentCharNode = null;
-                        MoveCursorToPosition(ConfirmedLastTop, ConfirmedLastLeft);
-                        MoveSuggestionToConfirmed();
-                        MoveCursorToPosition(ConfirmedLastTop, ConfirmedLastLeft);
-                    }
-                    else if (ki.Key == ConsoleKey.Backspace)
-                    {
-                        if (Suggested.Count > 0)
-                        {
-                            ClearSuggestion();
-                            RefreshCharsAfterCursor();
-                        }
-                        else if (CurrentCharNode != null)
-                        {
-                            if (CurrentCharNode.Previous != null)
-                            {
-                                MoveCursorToPosition(CurrentCharNode.Previous.Value.Value);
-                                Confirmed.Remove(CurrentCharNode.Previous);
-                                RefreshCharsAfterCursor();
-                            }
-                        }
-                        else
-                        {
-                            if (Confirmed.Last != null)
-                            {
-                                MoveCursorToPosition(Confirmed.Last.Value.Value);
-                                Confirmed.RemoveLast();
-                                RefreshCharsAfterCursor();
-                            }
-                        }
-                    }
-                    else if (ki.Key == ConsoleKey.Delete)
-                    {
-                        if (CurrentCharNode != null)
-                        {
-                            var Next = CurrentCharNode.Next;
-                            Confirmed.Remove(CurrentCharNode);
-                            CurrentCharNode = Next;
-                            RefreshSuggestion();
-                            RefreshCharsAfterCursor();
-                        }
-                    }
-                    else if (ki.Key == ConsoleKey.Tab)
-                    {
-                        if (ki.Modifiers == ConsoleModifiers.Shift)
-                        {
-                            CycleSuggestion(true);
-                            RefreshCharsAfterCursor();
-                        }
-                        else
-                        {
-                            CycleSuggestion(false);
-                            RefreshCharsAfterCursor();
-                        }
-                    }
-                    else
-                    {
-                        var c = ki.KeyChar;
-                        if (Char.IsControl(c)) { continue; }
-                        if (CurrentCharNode != null)
-                        {
-                            Confirmed.AddBefore(CurrentCharNode, new KeyValuePair<Char, KeyValuePair<int, int>>(ki.KeyChar, new KeyValuePair<int, int>(Top, Left)));
-                        }
-                        else
-                        {
-                            Confirmed.AddLast(new KeyValuePair<Char, KeyValuePair<int, int>>(ki.KeyChar, new KeyValuePair<int, int>(Top, Left)));
-                            CurrentCharNode = null;
-                        }
-                        Console.Write(c);
-                        RefreshSuggestion();
-                        RefreshCharsAfterCursor();
-                    }
-                }
-                return new String(Confirmed.Select(p => p.Key).Concat(Suggested.Select(p => p.Key)).ToArray());
-            }
-            else
-            {
-                return Console.ReadLine();
-            }
-        }
-        public static void BackspaceCursorToLine(int Top)
-        {
-            BackspaceCursorToPosition(Top, 0);
-        }
-        private static void BackspaceCursorToPosition(int Top, int Left)
-        {
-            while (true)
-            {
-                if (Console.CursorTop < Top) { break; }
-                if (Console.CursorTop == Top)
-                {
-                    if (Console.CursorLeft <= Left) { break; }
-                }
-                if ((Console.CursorLeft == 0) && (Console.CursorTop > 0))
-                {
-                    var PrevLeft = Console.BufferWidth - 1;
-                    var PrevTop = Console.CursorTop - 1;
-                    MoveCursorToPosition(PrevTop, PrevLeft);
-                    Console.Write(" ");
-                    MoveCursorToPosition(PrevTop, PrevLeft);
-                }
-                else
-                {
-                    var Count = Console.CursorLeft - (Console.CursorTop == Top ? Left : 0);
-                    Console.Write(new String('\b', Count) + new String(' ', Count) + new String('\b', Count));
-                }
-            }
-            MoveCursorToPosition(Top, Left);
-        }
-        private static void MoveCursorToPosition(int Top, int Left)
-        {
-            Console.SetCursorPosition(Math.Max(0, Math.Min(Left, Console.BufferWidth - 1)), Math.Max(0, Math.Min(Top, Console.BufferHeight - 1)));
-        }
-        private static void MoveCursorToPosition(KeyValuePair<int, int> Pair)
-        {
-            MoveCursorToPosition(Pair.Key, Pair.Value);
-        }
-        private static int GetColorCode(ConsoleColor Color, bool Back)
-        {
-            if (!Back)
-            {
-                if (Color == ConsoleColor.Black) { return 30; }
-                if (Color == ConsoleColor.Red) { return 31; }
-                if (Color == ConsoleColor.Green) { return 32; }
-                if (Color == ConsoleColor.Yellow) { return 33; }
-                if (Color == ConsoleColor.Blue) { return 34; }
-                if (Color == ConsoleColor.Magenta) { return 35; }
-                if (Color == ConsoleColor.Cyan) { return 36; }
-                if (Color == ConsoleColor.White) { return 37; }
-                if (Color == ConsoleColor.DarkGray) { return 30; }
-                if (Color == ConsoleColor.DarkRed) { return 31; }
-                if (Color == ConsoleColor.DarkGreen) { return 32; }
-                if (Color == ConsoleColor.DarkYellow) { return 33; }
-                if (Color == ConsoleColor.DarkBlue) { return 34; }
-                if (Color == ConsoleColor.DarkMagenta) { return 35; }
-                if (Color == ConsoleColor.DarkCyan) { return 36; }
-                if (Color == ConsoleColor.Gray) { return 37; }
-                throw new InvalidOperationException();
-            }
-            else
-            {
-                if (Color == ConsoleColor.Black) { return 40; }
-                if (Color == ConsoleColor.Red) { return 41; }
-                if (Color == ConsoleColor.Green) { return 42; }
-                if (Color == ConsoleColor.Yellow) { return 43; }
-                if (Color == ConsoleColor.Blue) { return 44; }
-                if (Color == ConsoleColor.Magenta) { return 45; }
-                if (Color == ConsoleColor.Cyan) { return 46; }
-                if (Color == ConsoleColor.White) { return 47; }
-                if (Color == ConsoleColor.DarkGray) { return 40; }
-                if (Color == ConsoleColor.DarkRed) { return 41; }
-                if (Color == ConsoleColor.DarkGreen) { return 42; }
-                if (Color == ConsoleColor.DarkYellow) { return 43; }
-                if (Color == ConsoleColor.DarkBlue) { return 44; }
-                if (Color == ConsoleColor.DarkMagenta) { return 45; }
-                if (Color == ConsoleColor.DarkCyan) { return 46; }
-                if (Color == ConsoleColor.Gray) { return 47; }
-                throw new InvalidOperationException();
-            }
-        }
-        private static ConsoleColor? CurrentBackgroundColor = null;
-        private static ConsoleColor? CurrentForegroundColor = null;
-        public static ConsoleColor? GetBackgroundColor()
-        {
-            return CurrentBackgroundColor;
-        }
-        public static ConsoleColor? GetForegroundColor()
-        {
-            return CurrentForegroundColor;
-        }
-        public static void SetBackgroundColor(ConsoleColor? Color)
-        {
-            if (CurrentBackgroundColor != Color)
-            {
-                CurrentBackgroundColor = Color;
-                if (OperatingSystem == OperatingSystemType.Windows)
-                {
-                    if (Color == null)
-                    {
-                        Console.ResetColor();
-                    }
-                    else
-                    {
-                        Console.BackgroundColor = Color.Value;
-                    }
-                }
-                else
-                {
-                    if (Color == null)
-                    {
-                        Console.Write($"\x1B[0m");
-                    }
-                    else
-                    {
-                        Console.Write($"\x1B[{GetColorCode(Color.Value, true)}m");
-                    }
+                    return TerminalValue;
                 }
             }
         }
-        public static void SetForegroundColor(ConsoleColor? Color)
+        public static void UseSimpleTerminal()
         {
-            if (CurrentForegroundColor != Color)
+            lock (TerminalLock)
             {
-                CurrentForegroundColor = Color;
-                if (OperatingSystem == OperatingSystemType.Windows)
-                {
-                    if (Color == null)
-                    {
-                        Console.ResetColor();
-                    }
-                    else
-                    {
-                        Console.ForegroundColor = Color.Value;
-                    }
-                }
-                else
-                {
-                    if (Color == null)
-                    {
-                        Console.Write($"\x1B[0m");
-                    }
-                    else
-                    {
-                        Console.Write($"\x1B[{GetColorCode(Color.Value, false)}m");
-                    }
-                }
-            }
-        }
-        public static void ResetColor()
-        {
-            if ((CurrentBackgroundColor != null) || (CurrentForegroundColor != null))
-            {
-                CurrentBackgroundColor = null;
-                CurrentForegroundColor = null;
-                if (OperatingSystem == OperatingSystemType.Windows)
-                {
-                    Console.ResetColor();
-                }
-                else
-                {
-                    Console.Write("\x1B[0m");
-                }
-            }
-        }
-        public class ConsolePositionState
-        {
-            public int BufferWidth = Console.BufferWidth;
-            public int BufferHeight = Console.BufferHeight;
-            public int WindowWidth = Console.WindowWidth;
-            public int WindowHeight = Console.WindowHeight;
-            public int WindowTop = Console.WindowTop;
-            public int WindowLeft = Console.WindowLeft;
-        }
-        public static ConsolePositionState GetConsolePositionState()
-        {
-            return new ConsolePositionState
-            {
-                BufferWidth = Console.BufferWidth,
-                BufferHeight = Console.BufferHeight,
-                WindowWidth = Console.WindowWidth,
-                WindowHeight = Console.WindowHeight,
-                WindowTop = Console.WindowTop,
-                WindowLeft = Console.WindowLeft
-            };
-        }
-        public static void SetConsolePositionState(ConsolePositionState s)
-        {
-            if (OperatingSystem == OperatingSystemType.Windows)
-            {
-                Console.SetWindowSize(s.WindowWidth, s.WindowHeight);
-                Console.SetWindowPosition(s.WindowLeft, s.WindowTop);
-                Console.SetBufferSize(s.BufferWidth, s.BufferHeight);
+                TerminalValue = new SimpleTerminal();
             }
         }
     }

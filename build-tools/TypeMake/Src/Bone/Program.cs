@@ -55,7 +55,12 @@ namespace TypeMake
             }
 
             var Memory = new Shell.EnvironmentVariableMemory();
+            var Simple = options.ContainsKey("simple");
             var Quiet = options.ContainsKey("quiet");
+            if (Simple || Quiet)
+            {
+                Shell.UseSimpleTerminal();
+            }
             var VariablesAndVariableItems = VariableCollection.GetVariableItems();
             var vc = new ConsoleVariableCollector(Memory, Quiet, VariablesAndVariableItems.Value);
             vc.Execute();
@@ -73,7 +78,8 @@ namespace TypeMake
             Console.WriteLine(@"TypeMake [<RetypemakeScript>] <Variable>* [--quiet] [--help]");
             Console.WriteLine(@"RetypemakeScript batch or bash file to get environment variables for diagnostics");
             Console.WriteLine(@"Variable <Key>=<Value> additional environment variables that only take effect in the call");
-            Console.WriteLine(@"--quiet no interactive variable input, all variables will be input from environment variables or use default values");
+            Console.WriteLine(@"--simpleterm use simple terminal (no colors or cancellation)");
+            Console.WriteLine(@"--quiet no interactive variable input, all variables will be input from environment variables or use default values. --simpleterm is implied");
         }
     }
 }

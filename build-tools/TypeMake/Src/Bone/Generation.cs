@@ -153,9 +153,7 @@ namespace TypeMake
 
         private static void WriteLineError(String Line)
         {
-            Shell.SetForegroundColor(ConsoleColor.Red);
-            Console.Error.WriteLine(Line);
-            Shell.ResetColor();
+            Shell.Terminal.WriteLineError(ConsoleColor.Red, Line);
         }
     }
 }
