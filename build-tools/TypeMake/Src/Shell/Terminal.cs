@@ -240,33 +240,39 @@ namespace TypeMake
                     }
                     else if (ki.Key == ConsoleKey.Backspace)
                     {
-                        if (Suggested.Count > 0)
+                        if (CurrentCharNode == null)
                         {
-                            ClearSuggestion();
-                            RefreshCharsAfterCursor();
-                        }
-                        else if (CurrentCharNode != null)
-                        {
-                            if (CurrentCharNode.Previous != null)
+                            if (Suggested.Count > 0)
                             {
-                                MoveCursorToPosition(CurrentCharNode.Previous.Value.Value);
-                                Confirmed.Remove(CurrentCharNode.Previous);
+                                ClearSuggestion();
                                 RefreshCharsAfterCursor();
                             }
-                        }
-                        else
-                        {
-                            if (Confirmed.Last != null)
+                            else if (Confirmed.Last != null)
                             {
                                 MoveCursorToPosition(Confirmed.Last.Value.Value);
                                 Confirmed.RemoveLast();
                                 RefreshCharsAfterCursor();
                             }
                         }
+                        else
+                        {
+                            if (CurrentCharNode.Previous != null)
+                            {
+                                MoveCursorToPosition(CurrentCharNode.Previous.Value.Value);
+                                Confirmed.Remove(CurrentCharNode.Previous);
+                                RefreshSuggestion();
+                                RefreshCharsAfterCursor();
+                            }
+                        }
                     }
                     else if (ki.Key == ConsoleKey.Delete)
                     {
-                        if (CurrentCharNode != null)
+                        if (CurrentCharNode == null)
+                        {
+                            ClearSuggestion();
+                            RefreshCharsAfterCursor();
+                        }
+                        else
                         {
                             var Next = CurrentCharNode.Next;
                             Confirmed.Remove(CurrentCharNode);
@@ -380,12 +386,12 @@ namespace TypeMake
         }
         private class ConsolePositionState
         {
-            public int BufferWidth = Console.BufferWidth;
-            public int BufferHeight = Console.BufferHeight;
-            public int WindowWidth = Console.WindowWidth;
-            public int WindowHeight = Console.WindowHeight;
-            public int WindowTop = Console.WindowTop;
-            public int WindowLeft = Console.WindowLeft;
+            public int BufferWidth;
+            public int BufferHeight;
+            public int WindowWidth;
+            public int WindowHeight;
+            public int WindowTop;
+            public int WindowLeft;
         }
         private ConsolePositionState GetConsolePositionState()
         {
@@ -463,6 +469,7 @@ namespace TypeMake
     {
         public String ReadLinePassword(ConsoleColor? ForegroundColor, String PromptText, bool EnableCancellation)
         {
+            SaveCursor();
             SaveColor();
             try
             {
@@ -497,21 +504,171 @@ namespace TypeMake
             finally
             {
                 LoadColor();
+                LoadCursor();
+                ErasePosterior();
             }
         }
         public String ReadLineWithSuggestion(ConsoleColor? ForegroundColor, String PromptText, Func<String, int, bool, bool, String> Suggester, bool EnableCancellation)
         {
+            SaveCursor();
             SaveColor();
-            try
+
+            var Confirmed = "";
+            var Index = 0;
+            var Suggested = "";
+            void RefreshSuggestion()
             {
+                Suggested = Suggester(Confirmed + Suggested, Confirmed.Length, false, false).Substring(Confirmed.Length);
+            }
+            void CycleSuggestion(bool CyclePrevious)
+            {
+                Suggested = Suggester(Confirmed + Suggested, Confirmed.Length, true, CyclePrevious).Substring(Confirmed.Length);
+            }
+            void Refresh()
+            {
+                LoadCursor();
+                ErasePosterior();
+
                 SetColor(null, ForegroundColor);
                 Console.Write(PromptText);
-                var Text = Console.ReadLine();
-                return Text;
+                Console.Write(Confirmed);
+                SetColor(ConsoleColor.Blue, ConsoleColor.Yellow);
+                Console.Write(Suggested);
+
+                LoadCursor();
+                SetColor(null, ForegroundColor);
+                Console.Write(PromptText);
+                Console.Write(Confirmed.Substring(0, Index));
+
+                SetColor(null, null);
+            }
+
+            try
+            {
+                Refresh();
+
+                while (true)
+                {
+                    var ki = Console.ReadKey(true);
+                    if (EnableCancellation && (ki.Key == ConsoleKey.Escape))
+                    {
+                        Suggested = "";
+                        Refresh();
+                        throw new Shell.UserCancelledException();
+                    }
+                    if (ki.Key == ConsoleKey.Enter)
+                    {
+                        Confirmed = Confirmed + Suggested;
+                        Suggested = "";
+                        Index = Confirmed.Length;
+                        Refresh();
+                        Console.WriteLine();
+                        break;
+                    }
+                    if (ki.Key == ConsoleKey.LeftArrow)
+                    {
+                        if (Index > 0)
+                        {
+                            Index -= 1;
+                            Refresh();
+                        }
+                    }
+                    else if (ki.Key == ConsoleKey.RightArrow)
+                    {
+                        if ((Index == Confirmed.Length) && (Suggested != ""))
+                        {
+                            Confirmed = Confirmed + Suggested;
+                            Suggested = "";
+                            Index = Confirmed.Length;
+                            Refresh();
+                        }
+                        else if (Index < Confirmed.Length)
+                        {
+                            Index += 1;
+                            Refresh();
+                        }
+                    }
+                    else if (ki.Key == ConsoleKey.Home)
+                    {
+                        if (Index > 0)
+                        {
+                            Index = 0;
+                            Refresh();
+                        }
+                    }
+                    else if (ki.Key == ConsoleKey.End)
+                    {
+                        if ((Index == Confirmed.Length) && (Suggested != ""))
+                        {
+                            Confirmed = Confirmed + Suggested;
+                            Suggested = "";
+                            Index = Confirmed.Length;
+                            Refresh();
+                        }
+                        else if (Index < Confirmed.Length)
+                        {
+                            Index = Confirmed.Length;
+                            Refresh();
+                        }
+                    }
+                    else if (ki.Key == ConsoleKey.Backspace)
+                    {
+                        if ((Index == Confirmed.Length) && (Suggested != ""))
+                        {
+                            Suggested = "";
+                            Refresh();
+                        }
+                        else if (Index > 0)
+                        {
+                            Confirmed = Confirmed.Substring(0, Index - 1) + Confirmed.Substring(Index);
+                            Index -= 1;
+                            Refresh();
+                        }
+                    }
+                    else if (ki.Key == ConsoleKey.Delete)
+                    {
+                        if (Index < Confirmed.Length)
+                        {
+                            Confirmed = Confirmed.Substring(0, Index) + Confirmed.Substring(Index + 1);
+                            RefreshSuggestion();
+                            Refresh();
+                        }
+                        else if ((Index == Confirmed.Length) && (Suggested != ""))
+                        {
+                            Suggested = "";
+                            Refresh();
+                        }
+                    }
+                    else if (ki.Key == ConsoleKey.Tab)
+                    {
+                        if (ki.Modifiers == ConsoleModifiers.Shift)
+                        {
+                            CycleSuggestion(true);
+                            Refresh();
+                        }
+                        else
+                        {
+                            CycleSuggestion(false);
+                            Refresh();
+                        }
+                    }
+                    else
+                    {
+                        var c = ki.KeyChar;
+                        if (Char.IsControl(c)) { continue; }
+                        Confirmed = Confirmed.Substring(0, Index) + c + Confirmed.Substring(Index);
+                        Index += 1;
+                        RefreshSuggestion();
+                        Refresh();
+                    }
+                }
+                return Confirmed + Suggested;
             }
             finally
             {
                 LoadColor();
+                LoadCursor();
+                ErasePosterior();
             }
         }
         public void WriteLine(ConsoleColor? ForegroundColor, String Text)
@@ -539,6 +696,19 @@ namespace TypeMake
             {
                 LoadColor();
             }
+        }
+
+        private void SaveCursor()
+        {
+            Console.Write("\x1B[s");
+        }
+        private void LoadCursor()
+        {
+            Console.Write("\x1B[u");
+        }
+        private void ErasePosterior()
+        {
+            Console.Write("\x1B[J");
         }
 
         public ITerminalCursorAndText GetCursorAndText()
