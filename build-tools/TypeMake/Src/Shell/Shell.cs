@@ -795,7 +795,7 @@ namespace TypeMake
                         }
                         else
                         {
-                            TerminalValue = new CsiTerminal();
+                            TerminalValue = new EscapeTerminal();
                         }
                     }
                     return TerminalValue;

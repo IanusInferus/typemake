@@ -463,9 +463,9 @@ namespace TypeMake
     }
 
     /// <summary>
-    /// Based on ECMA-48 CSI sequences (https://man7.org/linux/man-pages/man4/console_codes.4.html)
+    /// Mainly based on ECMA-48 CSI sequences (https://man7.org/linux/man-pages/man4/console_codes.4.html)
     /// </summary>
-    public class CsiTerminal : ITerminal
+    public class EscapeTerminal : ITerminal
     {
         public String ReadLinePassword(ConsoleColor? ForegroundColor, String PromptText, bool EnableCancellation)
         {
@@ -702,13 +702,28 @@ namespace TypeMake
             }
         }
 
+        // Mac don't support \x1B[s and \x1B[u https://stackoverflow.com/questions/25879183/can-terminal-app-be-made-to-respect-ansi-escape-codes
         private void SaveCursor()
         {
-            Console.Write("\x1B[s");
+            if (Shell.OperatingSystem == Shell.OperatingSystemType.MacOS)
+            {
+                Console.Write("\x1B" + "7");
+            }
+            else
+            {
+                Console.Write("\x1B[s");
+            }
         }
         private void LoadCursor()
         {
-            Console.Write("\x1B[u");
+            if (Shell.OperatingSystem == Shell.OperatingSystemType.MacOS)
+            {
+                Console.Write("\x1B" + "8");
+            }
+            else
+            {
+                Console.Write("\x1B[u");
+            }
         }
         private void ErasePosterior()
         {
