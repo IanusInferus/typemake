@@ -510,6 +510,10 @@ namespace TypeMake
         }
         public String ReadLineWithSuggestion(ConsoleColor? ForegroundColor, String PromptText, Func<String, int, bool, bool, String> Suggester, bool EnableCancellation)
         {
+            // workaround cursor position change on input line overflow at the terminal bottom
+            // https://unix.stackexchange.com/questions/565597/restore-cursor-position-after-having-saved-it
+            Console.Write("\n\n\n\n\n\n\x1B[6A");
+
             SaveCursor();
             SaveColor();
 
