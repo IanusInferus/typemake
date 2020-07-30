@@ -816,31 +816,38 @@ namespace TypeMake
         }
         public static String ReadLinePassword(bool EnableCancellation)
         {
-            var l = new LinkedList<Char>();
-            while (true)
+            if (OperatingSystem == OperatingSystemType.Windows)
             {
-                var ki = Console.ReadKey(true);
-                if (EnableCancellation && (ki.Key == ConsoleKey.Escape))
+                var l = new LinkedList<Char>();
+                while (true)
                 {
-                    throw new UserCancelledException();
+                    var ki = Console.ReadKey(true);
+                    if (EnableCancellation && (ki.Key == ConsoleKey.Escape))
+                    {
+                        throw new UserCancelledException();
+                    }
+                    if (ki.Key == ConsoleKey.Enter)
+                    {
+                        Console.WriteLine();
+                        break;
+                    }
+                    if (ki.Key == ConsoleKey.Backspace)
+                    {
+                        l.RemoveLast();
+                    }
+                    else
+                    {
+                        var c = ki.KeyChar;
+                        if (Char.IsControl(c)) { continue; }
+                        l.AddLast(ki.KeyChar);
+                    }
                 }
-                if (ki.Key == ConsoleKey.Enter)
-                {
-                    Console.WriteLine();
-                    break;
-                }
-                if (ki.Key == ConsoleKey.Backspace)
-                {
-                    l.RemoveLast();
-                }
-                else
-                {
-                    var c = ki.KeyChar;
-                    if (Char.IsControl(c)) { continue; }
-                    l.AddLast(ki.KeyChar);
-                }
+                return new String(l.ToArray());
             }
-            return new String(l.ToArray());
+            else
+            {
+                return Console.ReadLine();
+            }
         }
         public static String ReadLineWithSuggestion(Func<String, int, bool, bool, String> Suggester, bool EnableCancellation)
         {
@@ -1185,67 +1192,76 @@ namespace TypeMake
         }
         public static void SetBackgroundColor(ConsoleColor? Color)
         {
-            CurrentBackgroundColor = Color;
-            if (OperatingSystem == OperatingSystemType.Windows)
+            if (CurrentBackgroundColor != Color)
             {
-                if (Color == null)
+                CurrentBackgroundColor = Color;
+                if (OperatingSystem == OperatingSystemType.Windows)
                 {
-                    Console.ResetColor();
+                    if (Color == null)
+                    {
+                        Console.ResetColor();
+                    }
+                    else
+                    {
+                        Console.BackgroundColor = Color.Value;
+                    }
                 }
                 else
                 {
-                    Console.BackgroundColor = Color.Value;
-                }
-            }
-            else
-            {
-                if (Color == null)
-                {
-                    Console.Write($"\x1B[0m");
-                }
-                else
-                {
-                    Console.Write($"\x1B[{GetColorCode(Color.Value, true)}m");
+                    if (Color == null)
+                    {
+                        Console.Write($"\x1B[0m");
+                    }
+                    else
+                    {
+                        Console.Write($"\x1B[{GetColorCode(Color.Value, true)}m");
+                    }
                 }
             }
         }
         public static void SetForegroundColor(ConsoleColor? Color)
         {
-            CurrentForegroundColor = Color;
-            if (OperatingSystem == OperatingSystemType.Windows)
+            if (CurrentForegroundColor != Color)
             {
-                if (Color == null)
+                CurrentForegroundColor = Color;
+                if (OperatingSystem == OperatingSystemType.Windows)
                 {
-                    Console.ResetColor();
+                    if (Color == null)
+                    {
+                        Console.ResetColor();
+                    }
+                    else
+                    {
+                        Console.ForegroundColor = Color.Value;
+                    }
                 }
                 else
                 {
-                    Console.ForegroundColor = Color.Value;
-                }
-            }
-            else
-            {
-                if (Color == null)
-                {
-                    Console.Write($"\x1B[0m");
-                }
-                else
-                {
-                    Console.Write($"\x1B[{GetColorCode(Color.Value, false)}m");
+                    if (Color == null)
+                    {
+                        Console.Write($"\x1B[0m");
+                    }
+                    else
+                    {
+                        Console.Write($"\x1B[{GetColorCode(Color.Value, false)}m");
+                    }
                 }
             }
         }
         public static void ResetColor()
         {
-            CurrentBackgroundColor = null;
-            CurrentForegroundColor = null;
-            if (OperatingSystem == OperatingSystemType.Windows)
+            if ((CurrentBackgroundColor != null) || (CurrentForegroundColor != null))
             {
-                Console.ResetColor();
-            }
-            else
-            {
-                Console.Write("\x1B[0m");
+                CurrentBackgroundColor = null;
+                CurrentForegroundColor = null;
+                if (OperatingSystem == OperatingSystemType.Windows)
+                {
+                    Console.ResetColor();
+                }
+                else
+                {
+                    Console.Write("\x1B[0m");
+                }
             }
         }
         public class ConsolePositionState
