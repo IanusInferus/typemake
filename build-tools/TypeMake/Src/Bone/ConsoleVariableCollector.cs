@@ -226,6 +226,7 @@ namespace TypeMake
                             Shell.BackspaceCursorToLine(Top);
                             Shell.SetConsolePositionState(cpsNew);
                         }
+                        Memory.Variables.Remove(SortedItems[Index].VariableName);
                     }
                     continue;
                 }
