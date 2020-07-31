@@ -76,6 +76,11 @@ iOS: XCode(10.0)
 
 You need to set a key to build Android release APK and iOS applications/dynamic libraries.
 
+With Android Ninja toolchain, you can generate a debug key if you don't already have one.
+
+    mkdir ~/.android
+    ${JAVA_HOME}/bin/keytool -genkeypair -v -alias androiddebugkey -keyalg RSA -keysize 2048 -dname "C=US, O=Android, CN=Android Debug" -validity 10000 -keypass android -keystore ~/.android/debug.keystore -storepass android
+
 You need to set Configuration - Debugger - Debug type to Native/Dual to debug C++ code in Android Studio.
 
 To use this repo in a project, just copy 'tools' directory to the project repo.

@@ -207,7 +207,7 @@ namespace TypeMake.Cpp
                 {
                     yield return $@"dir /A:-D /S /B {e(JavaSrcDir / "*.java")} >> java_source_list.txt || exit /b 1";
                 }
-                yield return $@"{e(Javac)} -parameters -g -encoding utf-8 -d classes{String.Join("", JavaSrcDirs.Select(d => " -sourcepath " + e(d)))} -sourcepath gen {"-cp " + e(String.Join(";", new List<PathString> { AndroidJar }.Concat(JarFiles)))} @java_source_list.txt || exit /b 1";
+                yield return $@"{e(Javac)} -source 1.8 -target 1.8 -parameters -g -encoding utf-8 -d classes{String.Join("", JavaSrcDirs.Select(d => " -sourcepath " + e(d)))} -sourcepath gen {"-cp " + e(String.Join(";", new List<PathString> { AndroidJar }.Concat(JarFiles)))} @java_source_list.txt || exit /b 1";
                 yield return @"";
                 yield return @":: package class files to jar";
                 yield return $@"{e(Jar)} cvfM classes.jar -C classes . || exit /b 1";
@@ -307,7 +307,7 @@ namespace TypeMake.Cpp
                 {
                     yield return $@"find {e(JavaSrcDir)} -type f -name *.java >> java_source_list.txt";
                 }
-                yield return $@"{e(Javac)} -parameters -g -encoding utf-8 -d classes{String.Join("", JavaSrcDirs.Select(d => " -sourcepath " + e(d)))} -sourcepath gen {"-cp " + e(String.Join(":", new List<PathString> { AndroidJar }.Concat(JarFiles)))} @java_source_list.txt";
+                yield return $@"{e(Javac)} -source 1.8 -target 1.8 -parameters -g -encoding utf-8 -d classes{String.Join("", JavaSrcDirs.Select(d => " -sourcepath " + e(d)))} -sourcepath gen {"-cp " + e(String.Join(":", new List<PathString> { AndroidJar }.Concat(JarFiles)))} @java_source_list.txt";
                 yield return @"";
                 yield return @"# package class files to jar";
                 yield return $@"{e(Jar)} cvfM classes.jar -C classes .";
