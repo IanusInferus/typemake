@@ -1,6 +1,7 @@
 {
     global:
         typemakesample_*;
+        Java_*;
     local:
         *;
 };
