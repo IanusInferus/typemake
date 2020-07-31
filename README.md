@@ -70,6 +70,8 @@ Mac: XCode(10.0) mono(5.x)
 
 Android: JDK(8.x) AndroidSDK(build-tools:29.0.3 platforms:android-29) AndroidNDK(r21d) \[Android Gradle plugin(4.0.0)\] \[CMake(>=3.3.2)\]
 
+Android on Android: https://github.com/IanusInferus/termux-mono https://github.com/Lzhiyong/termux-ndk/releases (Only Android 10.0 is tested.)
+
 iOS: XCode(10.0)
 
 ## Notice
@@ -89,4 +91,4 @@ You may need to customize some code to cope with your project, mainly in directo
 
 To build a program statically for Linux/Android on x64/arm64/... without libc(glibc/bionic) dependency, you can build [musl-cross-make](https://github.com/richfelker/musl-cross-make) with ([GCC_CONFIG += --enable-default-pie](https://github.com/richfelker/musl-cross-make/issues/47)) and then build your program for Linux with static options(CLibrary=Static).
 
-Android host support is [Termux](https://github.com/termux/termux-app)-only and is limited. Java must be disabled as there is no complete Android SDK for Android host. Static libc++ is not supported by Termux. Remove /data/data/com.termux/files/usr/lib/liblzma.so (which is a different library with the same name as /system/liblzma.so) if you encountered something like 'cannot locate symbol "XzUnpacker_Construct" referenced by "/system/lib/libunwind.so"'. (See [2416](https://github.com/termux/termux-packages/issues/2416) [3078](https://github.com/termux/termux-packages/issues/3078).)
+Android host support is [Termux](https://github.com/termux/termux-app)-only and is limited.

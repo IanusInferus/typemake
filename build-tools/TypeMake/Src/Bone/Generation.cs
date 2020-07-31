@@ -131,7 +131,7 @@ namespace TypeMake
                                 throw new InvalidOperationException("ErrorInExecution: " + @".\build.cmd");
                             }
                         }
-                        else if ((v.HostOperatingSystem == Cpp.OperatingSystemType.Linux) || (v.HostOperatingSystem == Cpp.OperatingSystemType.MacOS))
+                        else if ((v.HostOperatingSystem == Cpp.OperatingSystemType.Linux) || (v.HostOperatingSystem == Cpp.OperatingSystemType.MacOS) || (v.HostOperatingSystem == Cpp.OperatingSystemType.Android))
                         {
                             if (Shell.Execute("./build.sh") != 0)
                             {

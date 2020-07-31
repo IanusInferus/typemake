@@ -371,13 +371,17 @@ namespace TypeMake.Cpp
             {
                 return "windows-x86_64";
             }
-            if ((OperatingSystem == OperatingSystemType.Linux) && (Architecture == ArchitectureType.x64))
+            else if ((OperatingSystem == OperatingSystemType.Linux) && (Architecture == ArchitectureType.x64))
             {
                 return "linux-x86_64";
             }
-            if ((OperatingSystem == OperatingSystemType.MacOS) && (Architecture == ArchitectureType.x64))
+            else if ((OperatingSystem == OperatingSystemType.MacOS) && (Architecture == ArchitectureType.x64))
             {
                 return "darwin-x86_64";
+            }
+            else if ((OperatingSystem == OperatingSystemType.Android) && (Architecture == ArchitectureType.arm64))
+            {
+                return "linux-aarch64";
             }
             else
             {

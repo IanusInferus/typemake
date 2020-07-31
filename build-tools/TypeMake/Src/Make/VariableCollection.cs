@@ -25,7 +25,14 @@ namespace TypeMake
                     }
                     else if (Shell.OperatingSystem == Shell.OperatingSystemType.Linux)
                     {
-                        return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.OperatingSystemType.Linux.ToString()));
+                        if (Directory.Exists("/data/data/com.termux/files"))
+                        {
+                            return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.OperatingSystemType.Android.ToString()));
+                        }
+                        else
+                        {
+                            return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.OperatingSystemType.Linux.ToString()));
+                        }
                     }
                     else if (Shell.OperatingSystem == Shell.OperatingSystemType.MacOS)
                     {
@@ -42,20 +49,27 @@ namespace TypeMake
             l.Add(new VariableItem
             {
                 VariableName = nameof(Variables.HostArchitecture),
-                DependentVariableNames = new List<String> { },
+                DependentVariableNames = new List<String> { nameof(Variables.HostOperatingSystem) },
                 GetVariableSpec = () =>
                 {
-                    if (Shell.OperatingSystemArchitecture == Shell.OperatingSystemArchitectureType.x86_64)
+                    if (Variables.HostOperatingSystem == Cpp.OperatingSystemType.Android)
                     {
-                        return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.ArchitectureType.x64.ToString()));
-                    }
-                    else if (Shell.OperatingSystemArchitecture == Shell.OperatingSystemArchitectureType.x86)
-                    {
-                        return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.ArchitectureType.x86.ToString()));
+                        return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.ArchitectureType.arm64.ToString()));
                     }
                     else
                     {
-                        throw new InvalidOperationException("UnknownHostArchitecture");
+                        if (Shell.OperatingSystemArchitecture == Shell.OperatingSystemArchitectureType.x86_64)
+                        {
+                            return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.ArchitectureType.x64.ToString()));
+                        }
+                        else if (Shell.OperatingSystemArchitecture == Shell.OperatingSystemArchitectureType.x86)
+                        {
+                            return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.ArchitectureType.x86.ToString()));
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException("UnknownHostArchitecture");
+                        }
                     }
                     //process architecture is supposed to be the same as the operating system architecture
                 },
@@ -743,7 +757,10 @@ namespace TypeMake
                             try
                             {
                                 var JavacPath = Shell.ExecuteAndGetOutput("which", "javac").Value.Trim('\r', '\n');
-                                DefaultJdk = Shell.ExecuteAndGetOutput("readlink", "-f", JavacPath).Value.Trim('\r', '\n').AsPath().Parent.Parent;
+                                if (JavacPath != "")
+                                {
+                                    DefaultJdk = Shell.ExecuteAndGetOutput("readlink", "-f", JavacPath).Value.Trim('\r', '\n').AsPath().Parent.Parent;
+                                }
                             }
                             catch
                             {
@@ -760,7 +777,7 @@ namespace TypeMake
                     {
                         return VariableSpec.CreateNotApply(VariableValue.CreatePath(null));
                     }
-               },
+                },
                 SetVariableValue = v => Variables.Jdk = v.Path
             });
 
@@ -869,7 +886,7 @@ namespace TypeMake
                                     Validator = PathValidator
                                 });
                             }
-                            else if (Variables.HostOperatingSystem == Cpp.OperatingSystemType.Linux)
+                            else if ((Variables.HostOperatingSystem == Cpp.OperatingSystemType.Linux) || (Variables.HostOperatingSystem == Cpp.OperatingSystemType.Android))
                             {
                                 return VariableSpec.CreatePath(new PathStringSpec
                                 {
@@ -941,6 +958,10 @@ namespace TypeMake
                                 {
                                     DefaultMake = Variables.AndroidNdk / "prebuilt/darwin-x86_64/bin/make";
                                 }
+                                else if (Variables.HostOperatingSystem == Cpp.OperatingSystemType.Android)
+                                {
+                                    DefaultMake = Variables.AndroidNdk / "prebuilt/linux-aarch64/bin/make";
+                                }
                             }
                             return VariableSpec.CreatePath(new PathStringSpec
                             {
@@ -984,6 +1005,14 @@ namespace TypeMake
                         {
                             return VariableSpec.CreateFixed(VariableValue.CreatePath(Variables.SourceDirectory / "build-tools/Ninja/ninja-mac/ninja"));
                         }
+                        else if (Variables.HostOperatingSystem == Cpp.OperatingSystemType.Android)
+                        {
+                            var Ninja = Shell.TryLocate("ninja");
+                            return VariableSpec.CreatePath(new PathStringSpec
+                            {
+                                DefaultValue = Ninja
+                            });
+                        }
                         else
                         {
                             throw new InvalidOperationException("HostOperatingSystemNotSupported");
@@ -1022,6 +1051,11 @@ namespace TypeMake
                         else if (Variables.HostOperatingSystem == Cpp.OperatingSystemType.MacOS)
                         {
                             Host = "darwin-x86_64";
+                            ExeSuffix = "";
+                        }
+                        else if (Variables.HostOperatingSystem == Cpp.OperatingSystemType.Android)
+                        {
+                            Host = "linux-aarch64";
                             ExeSuffix = "";
                         }
                         else

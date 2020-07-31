@@ -739,8 +739,28 @@ namespace TypeMake
                 if ((ConfirmedParts != "") && !Directory.Exists(ConfirmedParts)) { return vConfirmed; }
                 if (EnableFile && File.Exists(ConfirmedPath) && !Cycle) { return vConfirmed; }
                 if (EnableDirectory && Directory.Exists(ConfirmedPath) && !Cycle) { return vConfirmed; }
-                var FileSelections = EnableFile ? Directory.EnumerateFiles(ConfirmedParts, "*", SearchOption.TopDirectoryOnly).Select(f => f.AsPath().FileName).ToList() : new List<string> { };
-                var DirectorySelections = EnableDirectory ? Directory.EnumerateDirectories(ConfirmedParts, "*", SearchOption.TopDirectoryOnly).Select(d => d.AsPath().FileName).ToList() : new List<string> { };
+                var FileSelections = new List<string> { };
+                if (EnableFile)
+                {
+                    try
+                    {
+                        FileSelections = Directory.EnumerateFiles(ConfirmedParts, "*", SearchOption.TopDirectoryOnly).Select(f => f.AsPath().FileName).ToList();
+                    }
+                    catch (UnauthorizedAccessException)
+                    {
+                    }
+                }
+                var DirectorySelections = new List<string> { };
+                if (EnableDirectory)
+                {
+                    try
+                    {
+                        DirectorySelections = Directory.EnumerateDirectories(ConfirmedParts, "*", SearchOption.TopDirectoryOnly).Select(d => d.AsPath().FileName).ToList();
+                    }
+                    catch (UnauthorizedAccessException)
+                    {
+                    }
+                }
                 var Selections = FileSelections.Concat(DirectorySelections).Select(s => ConfirmedParts / s).ToList();
                 String FirstMatched = null;
                 String PreviousMatched = null;
