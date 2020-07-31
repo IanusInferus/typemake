@@ -54,7 +54,7 @@ Different OSs use different ABIs on the same CPU architecture.
 
 Windows: VS2019, LLVM(9.0.0-r363781-win64)
 
-Linux(openSUSE 15): \[cmake(>=3.3.2)\] gcc-c++(7.3.1) \[gcc-c++-32bit(7.3.1)\] mono-devel(5.x) glibc(runtime 2.14)
+Linux(openSUSE 15.1): \[cmake(>=3.3.2)\] gcc-c++(7.3.1) \[gcc-c++-32bit(7.3.1)\] mono-devel(5.x) glibc(runtime 2.14)
 
 Linux(Ubuntu 18.04): \[cmake(>=3.3.2)\] g++(7.3.0) \[g++-multilib(7.3.0)\] mono-devel(5.x) glibc(runtime 2.14)
 
@@ -62,17 +62,25 @@ Linux(Ubuntu 18.04) with clang: clang-7 libc++-7-dev libc++abi-7-dev llvm-7-tool
 
 Linux(Ubuntu 18.04) with musl(x86/x64/armv7a/arm64): musl-cross-make (CC=xxx-linux-musl-gcc CXX=xxx-linux-musl-g++ AR=xxx-linux-musl-ar)
 
-Linux(Alpine 3.9): g++(8.2.0) bash mono-devel(5.x, in edge/testing repo)
+Linux(Alpine 3.9): g++(8.2.0) bash mono-devel(5.x, in edge/testing repo) ninja
 
 Linux GUI: GTK
 
-Mac: XCode(10.0) mono(5.x)
+Mac: XCode(11.0) mono(5.x)
+
+iOS: XCode(11.0) mono(5.x)
 
 Android: JDK(8.x) AndroidSDK(build-tools:29.0.3 platforms:android-29) AndroidNDK(r21d) \[Android Gradle plugin(4.0.0)\] \[CMake(>=3.3.2)\]
 
-Android on Android: https://github.com/IanusInferus/termux-mono https://github.com/Lzhiyong/termux-ndk/releases (Only Android 10.0 is tested.)
+Android on Linux(openSUSE 15.1): java-1_8_0-openjdk
 
-iOS: XCode(10.0)
+Android on Linux(Ubuntu 18.04): openjdk-8-jdk
+
+Android on Linux(Alpine 3.9): openjdk8
+
+Android on Linux(CentOS 7.7): java-1.8.0-openjdk-devel
+
+Android on Android: ninja mono(https://github.com/IanusInferus/termux-mono) {OpenJDK(11.0.1), AndroidSDK, AndroidNDK(r21)}(https://github.com/Lzhiyong/termux-ndk/releases, only Android 10.0 is tested)
 
 ## Notice
 
