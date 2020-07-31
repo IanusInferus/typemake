@@ -507,6 +507,20 @@ namespace TypeMake
 
             l.Add(new VariableItem
             {
+                VariableName = nameof(Variables.MaxProcessCount),
+                DependentVariableNames = new List<String> { },
+                GetVariableSpec = () =>
+                {
+                    return VariableSpec.CreateInteger(new IntegerSpec
+                    {
+                        DefaultValue = Environment.ProcessorCount
+                    });
+                },
+                SetVariableValue = v => Variables.MaxProcessCount = v.Integer
+            });
+
+            l.Add(new VariableItem
+            {
                 VariableName = nameof(Variables.OverwriteRetypemakeScript),
                 DependentVariableNames = new List<String> { },
                 GetVariableSpec = () =>

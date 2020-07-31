@@ -98,7 +98,7 @@ namespace TypeMake
                 }
             }
         }
-        public static void GenerateBuildScriptWindows(Cpp.ToolchainType Toolchain, PathString BuildDirectory, String SolutionName, Cpp.ArchitectureType TargetArchitecture, Cpp.ConfigurationType Configuration, PathString VSDir, int VSVersion, PathString Ninja, bool ForceRegenerate)
+        public static void GenerateBuildScriptWindows(Cpp.ToolchainType Toolchain, PathString BuildDirectory, String SolutionName, Cpp.ArchitectureType TargetArchitecture, Cpp.ConfigurationType Configuration, int MaxProcessCount, PathString VSDir, int VSVersion, PathString Ninja, bool ForceRegenerate)
         {
             if (Toolchain == Cpp.ToolchainType.VisualStudio)
             {
@@ -118,8 +118,8 @@ namespace TypeMake
                 Lines.Add(":main");
                 Lines.Add("set UseMultiToolTask=true");
                 Lines.Add("set EnforceProcessCountAcrossBuilds=true"); //limit process number in spite of cl /MP and MSBuild /m, https://developercommunity.visualstudio.com/idea/436208/limit-cpu-usage-of-visual-studio.html
-                Lines.Add($"set MultiProcMaxCount={Environment.ProcessorCount.ToString()}");
-                Lines.Add($@"""{VSDir.ToString(PathStringStyle.Windows)}\MSBuild\{MSBuildVersion}\Bin\MSBuild.exe"" {SolutionName}.sln /p:Configuration={Configuration} /p:Platform={Cpp.SlnGenerator.GetArchitectureString(TargetArchitecture)} /m:{Environment.ProcessorCount.ToString()} || exit /b 1");
+                Lines.Add($"set MultiProcMaxCount={MaxProcessCount}");
+                Lines.Add($@"""{VSDir.ToString(PathStringStyle.Windows)}\MSBuild\{MSBuildVersion}\Bin\MSBuild.exe"" {SolutionName}.sln /p:Configuration={Configuration} /p:Platform={Cpp.SlnGenerator.GetArchitectureString(TargetArchitecture)} /m:{MaxProcessCount} || exit /b 1");
                 Lines.Add("");
                 var BuildPath = BuildDirectory / $"build_{Configuration}.cmd";
                 TextFile.WriteToFile(BuildPath, String.Join("\r\n", Lines), System.Text.Encoding.Default, !ForceRegenerate);
@@ -139,13 +139,13 @@ namespace TypeMake
                 Lines.Add("exit /b %EXIT_CODE%");
                 Lines.Add("");
                 Lines.Add(":main");
-                Lines.Add(Shell.EscapeArgumentForShell(Ninja.RelativeTo(BuildDirectory).ToString(PathStringStyle.Windows), Shell.ShellArgumentStyle.CMD) + " -j" + Environment.ProcessorCount.ToString() + " -C projects -f build.ninja || exit /b 1");
+                Lines.Add(Shell.EscapeArgumentForShell(Ninja.RelativeTo(BuildDirectory).ToString(PathStringStyle.Windows), Shell.ShellArgumentStyle.CMD) + $" -j{MaxProcessCount} -C projects -f build.ninja || exit /b 1");
                 Lines.Add("");
                 var BuildPath = BuildDirectory / "build.cmd";
                 TextFile.WriteToFile(BuildPath, String.Join("\r\n", Lines), System.Text.Encoding.Default, !ForceRegenerate);
             }
         }
-        public static void GenerateBuildScriptLinux(String TargetOperatingSystemDistribution, Cpp.ToolchainType Toolchain, Cpp.OperatingSystemType HostOperatingSystem, PathString BuildDirectory, Cpp.ConfigurationType Configuration, PathString CMake, PathString Make, PathString Ninja, bool ForceRegenerate, bool NeedInstallStrip)
+        public static void GenerateBuildScriptLinux(String TargetOperatingSystemDistribution, Cpp.ToolchainType Toolchain, Cpp.OperatingSystemType HostOperatingSystem, PathString BuildDirectory, Cpp.ConfigurationType Configuration, int MaxProcessCount, PathString CMake, PathString Make, PathString Ninja, bool ForceRegenerate, bool NeedInstallStrip)
         {
             if (Toolchain == Cpp.ToolchainType.CMake)
             {
@@ -169,7 +169,7 @@ namespace TypeMake
                     Lines.Add("");
                     Lines.Add(":main");
                     Lines.Add("wsl -d " + Shell.EscapeArgumentForShell(TargetOperatingSystemDistribution, Shell.ShellArgumentStyle.CMD) + " " + Shell.EscapeArgumentForShell(CMake, Shell.ShellArgumentStyle.CMD) + " " + String.Join(" ", CMakeArguments.Select(a => Shell.EscapeArgumentForShell(a, Shell.ShellArgumentStyle.CMD))) + " || exit /b 1");
-                    Lines.Add("wsl -d " + Shell.EscapeArgumentForShell(TargetOperatingSystemDistribution, Shell.ShellArgumentStyle.CMD) + " " + Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.CMD) + " -j" + Environment.ProcessorCount.ToString() + " || exit /b 1");
+                    Lines.Add("wsl -d " + Shell.EscapeArgumentForShell(TargetOperatingSystemDistribution, Shell.ShellArgumentStyle.CMD) + " " + Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.CMD) + $" -j{MaxProcessCount} || exit /b 1");
                     if (NeedInstallStrip)
                     {
                         Lines.Add("wsl -d " + Shell.EscapeArgumentForShell(TargetOperatingSystemDistribution, Shell.ShellArgumentStyle.CMD) + " " + Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.CMD) + " install/strip || exit /b 1");
@@ -184,7 +184,7 @@ namespace TypeMake
                     Lines.Add("#!/bin/bash");
                     Lines.Add("set -e");
                     Lines.Add(Shell.EscapeArgumentForShell(CMake, Shell.ShellArgumentStyle.Bash) + " " + String.Join(" ", CMakeArguments.Select(a => Shell.EscapeArgumentForShell(a, Shell.ShellArgumentStyle.Bash))));
-                    Lines.Add(Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.Bash) + " -j" + Environment.ProcessorCount.ToString());
+                    Lines.Add(Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.Bash) + $" -j{MaxProcessCount}");
                     if (NeedInstallStrip)
                     {
                         Lines.Add(Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.Bash) + " install/strip");
@@ -215,7 +215,7 @@ namespace TypeMake
                     Lines.Add("exit /b %EXIT_CODE%");
                     Lines.Add("");
                     Lines.Add(":main");
-                    Lines.Add("wsl -d " + Shell.EscapeArgumentForShell(TargetOperatingSystemDistribution, Shell.ShellArgumentStyle.CMD) + " " + Shell.EscapeArgumentForShell(Ninja.RelativeTo(BuildDirectory).ToWslPath().ToString(PathStringStyle.Unix), Shell.ShellArgumentStyle.CMD) + " -j" + Environment.ProcessorCount.ToString() + " -C projects -f build.ninja || exit /b 1");
+                    Lines.Add("wsl -d " + Shell.EscapeArgumentForShell(TargetOperatingSystemDistribution, Shell.ShellArgumentStyle.CMD) + " " + Shell.EscapeArgumentForShell(Ninja.RelativeTo(BuildDirectory).ToWslPath().ToString(PathStringStyle.Unix), Shell.ShellArgumentStyle.CMD) + $" -j{MaxProcessCount} -C projects -f build.ninja || exit /b 1");
                     Lines.Add("");
                     var BuildPath = BuildDirectory / "build.cmd";
                     TextFile.WriteToFile(BuildPath, String.Join("\r\n", Lines), System.Text.Encoding.Default, !ForceRegenerate);
@@ -225,7 +225,7 @@ namespace TypeMake
                     var Lines = new List<String>();
                     Lines.Add("#!/bin/bash");
                     Lines.Add("set -e");
-                    Lines.Add(Shell.EscapeArgumentForShell(Ninja.RelativeTo(BuildDirectory).ToString(PathStringStyle.Unix), Shell.ShellArgumentStyle.Bash) + " -j" + Environment.ProcessorCount.ToString() + " -C projects -f build.ninja");
+                    Lines.Add(Shell.EscapeArgumentForShell(Ninja.RelativeTo(BuildDirectory).ToString(PathStringStyle.Unix), Shell.ShellArgumentStyle.Bash) + $" -j{MaxProcessCount} -C projects -f build.ninja");
                     Lines.Add("");
                     var BuildPath = BuildDirectory / "build.sh";
                     TextFile.WriteToFile(BuildPath, String.Join("\n", Lines), new System.Text.UTF8Encoding(false), !ForceRegenerate);
@@ -236,14 +236,14 @@ namespace TypeMake
                 }
             }
         }
-        public static void GenerateBuildScriptXCode(Cpp.OperatingSystemType HostOperatingSystem, PathString BuildDirectory, Cpp.ConfigurationType Configuration, List<String> CppSortedProjectNames, bool ForceRegenerate)
+        public static void GenerateBuildScriptXCode(Cpp.OperatingSystemType HostOperatingSystem, PathString BuildDirectory, Cpp.ConfigurationType Configuration, int MaxProcessCount, List<String> CppSortedProjectNames, bool ForceRegenerate)
         {
             var Lines = new List<String>();
             Lines.Add("#!/bin/bash");
             Lines.Add("set -e");
             foreach (var CppSortedProjectName in CppSortedProjectNames)
             {
-                Lines.Add($"xcodebuild -project projects/{CppSortedProjectName}.xcodeproj -configuration {Configuration}");
+                Lines.Add($"xcodebuild -project projects/{CppSortedProjectName}.xcodeproj -configuration {Configuration} -jobs {MaxProcessCount}");
             }
             Lines.Add("");
             var BuildPath = BuildDirectory / "build.sh";
@@ -256,7 +256,7 @@ namespace TypeMake
                 }
             }
         }
-        public static void GenerateBuildScriptAndroid(List<String> GradleProjectNames, Cpp.ToolchainType Toolchain, Cpp.OperatingSystemType HostOperatingSystem, PathString BuildDirectory, Cpp.ArchitectureType TargetArchitecture, Cpp.ConfigurationType Configuration, PathString AndroidNdk, PathString CMake, PathString Make, PathString Ninja, int ApiLevel, bool ForceRegenerate, bool EnableJava, bool NeedInstallStrip)
+        public static void GenerateBuildScriptAndroid(List<String> GradleProjectNames, Cpp.ToolchainType Toolchain, Cpp.OperatingSystemType HostOperatingSystem, PathString BuildDirectory, Cpp.ArchitectureType TargetArchitecture, Cpp.ConfigurationType Configuration, int MaxProcessCount, PathString AndroidNdk, PathString CMake, PathString Make, PathString Ninja, int ApiLevel, bool ForceRegenerate, bool EnableJava, bool NeedInstallStrip)
         {
             if (Toolchain == Cpp.ToolchainType.Gradle_CMake)
             {
@@ -297,7 +297,7 @@ namespace TypeMake
                         //https://gitlab.kitware.com/cmake/cmake/issues/16859
                         Lines.Add("wsl find projects -name cmake_install.cmake ^| xargs sed -i -e 's:$ENV{DESTDIR}/::g'");
                     }
-                    Lines.Add(Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.CMD) + " -j" + Environment.ProcessorCount.ToString() + " || exit /b 1");
+                    Lines.Add(Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.CMD) + $" -j{MaxProcessCount} || exit /b 1");
                     if (NeedInstallStrip)
                     {
                         Lines.Add(Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.CMD) + " install/strip || exit /b 1");
@@ -318,7 +318,7 @@ namespace TypeMake
                     Lines.Add("#!/bin/bash");
                     Lines.Add("set -e");
                     Lines.Add(Shell.EscapeArgumentForShell(CMake, Shell.ShellArgumentStyle.Bash) + " " + String.Join(" ", CMakeArguments.Select(a => Shell.EscapeArgumentForShell(a, Shell.ShellArgumentStyle.Bash))));
-                    Lines.Add(Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.Bash) + " -j" + Environment.ProcessorCount.ToString());
+                    Lines.Add(Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.Bash) + $" -j{MaxProcessCount}");
                     if (NeedInstallStrip)
                     {
                         Lines.Add(Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.Bash) + " install/strip");
@@ -355,7 +355,7 @@ namespace TypeMake
                     Lines.Add("exit /b %EXIT_CODE%");
                     Lines.Add("");
                     Lines.Add(":main");
-                    Lines.Add(Shell.EscapeArgumentForShell(Ninja.RelativeTo(BuildDirectory).ToString(PathStringStyle.Windows), Shell.ShellArgumentStyle.CMD) + " -j" + Environment.ProcessorCount.ToString() + " -C projects -f build.ninja || exit /b 1");
+                    Lines.Add(Shell.EscapeArgumentForShell(Ninja.RelativeTo(BuildDirectory).ToString(PathStringStyle.Windows), Shell.ShellArgumentStyle.CMD) + $" -j{MaxProcessCount} -C projects -f build.ninja || exit /b 1");
                     if (EnableJava)
                     {
                         if (Toolchain == Cpp.ToolchainType.Gradle_Ninja)
@@ -385,7 +385,7 @@ namespace TypeMake
                     var Lines = new List<String>();
                     Lines.Add("#!/bin/bash");
                     Lines.Add("set -e");
-                    Lines.Add(Shell.EscapeArgumentForShell(Ninja.RelativeTo(BuildDirectory).ToString(PathStringStyle.Unix), Shell.ShellArgumentStyle.Bash) + " -j" + Environment.ProcessorCount.ToString() + " -C projects -f build.ninja");
+                    Lines.Add(Shell.EscapeArgumentForShell(Ninja.RelativeTo(BuildDirectory).ToString(PathStringStyle.Unix), Shell.ShellArgumentStyle.Bash) + $" -j{MaxProcessCount} -C projects -f build.ninja");
                     if (EnableJava)
                     {
                         if (Toolchain == Cpp.ToolchainType.Gradle_Ninja)

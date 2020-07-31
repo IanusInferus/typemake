@@ -25,6 +25,7 @@ namespace TypeMake
         public bool EnableNonTargetingOperatingSystemDummy;
         public PathString SourceDirectory;
         public PathString BuildDirectory;
+        public int MaxProcessCount;
         public String XCodeDevelopmentTeam;
         public String XCodeProvisioningProfileSpecifier;
         public PathString VSDir;

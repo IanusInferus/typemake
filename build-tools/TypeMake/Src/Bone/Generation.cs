@@ -16,8 +16,8 @@ namespace TypeMake
 
             if (v.TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
             {
-                BuildScript.GenerateBuildScriptWindows(v.Toolchain, v.BuildDirectory, r.SolutionName, v.TargetArchitecture, Cpp.ConfigurationType.Debug, v.VSDir, v.VSVersion, v.Ninja, v.ForceRegenerate);
-                BuildScript.GenerateBuildScriptWindows(v.Toolchain, v.BuildDirectory, r.SolutionName, v.TargetArchitecture, Cpp.ConfigurationType.Release, v.VSDir, v.VSVersion, v.Ninja, v.ForceRegenerate);
+                BuildScript.GenerateBuildScriptWindows(v.Toolchain, v.BuildDirectory, r.SolutionName, v.TargetArchitecture, Cpp.ConfigurationType.Debug, v.MaxProcessCount, v.VSDir, v.VSVersion, v.Ninja, v.ForceRegenerate);
+                BuildScript.GenerateBuildScriptWindows(v.Toolchain, v.BuildDirectory, r.SolutionName, v.TargetArchitecture, Cpp.ConfigurationType.Release, v.MaxProcessCount, v.VSDir, v.VSVersion, v.Ninja, v.ForceRegenerate);
                 if (v.BuildNow)
                 {
                     if (v.HostOperatingSystem == Cpp.OperatingSystemType.Windows)
@@ -38,7 +38,7 @@ namespace TypeMake
             }
             else if (v.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
             {
-                BuildScript.GenerateBuildScriptLinux(v.TargetOperatingSystemDistribution, v.Toolchain, v.HostOperatingSystem, v.BuildDirectory, v.Configuration, v.CMake, v.Make, v.Ninja, v.ForceRegenerate, r.NeedInstallStrip);
+                BuildScript.GenerateBuildScriptLinux(v.TargetOperatingSystemDistribution, v.Toolchain, v.HostOperatingSystem, v.BuildDirectory, v.Configuration, v.MaxProcessCount, v.CMake, v.Make, v.Ninja, v.ForceRegenerate, r.NeedInstallStrip);
                 if (v.BuildNow)
                 {
                     using (var d = Shell.PushDirectory(v.BuildDirectory))
@@ -68,11 +68,11 @@ namespace TypeMake
             {
                 if (v.Toolchain == Cpp.ToolchainType.XCode)
                 {
-                    BuildScript.GenerateBuildScriptXCode(v.HostOperatingSystem, v.BuildDirectory, v.Configuration, CppSortedProjectNames, v.ForceRegenerate);
+                    BuildScript.GenerateBuildScriptXCode(v.HostOperatingSystem, v.BuildDirectory, v.Configuration, v.MaxProcessCount, CppSortedProjectNames, v.ForceRegenerate);
                 }
                 else
                 {
-                    BuildScript.GenerateBuildScriptLinux("Mac", v.Toolchain, v.HostOperatingSystem, v.BuildDirectory, v.Configuration, v.CMake, v.Make, v.Ninja, v.ForceRegenerate, r.NeedInstallStrip);
+                    BuildScript.GenerateBuildScriptLinux("Mac", v.Toolchain, v.HostOperatingSystem, v.BuildDirectory, v.Configuration, v.MaxProcessCount, v.CMake, v.Make, v.Ninja, v.ForceRegenerate, r.NeedInstallStrip);
                 }
                 if (v.BuildNow)
                 {
@@ -94,7 +94,7 @@ namespace TypeMake
             }
             else if (v.TargetOperatingSystem == Cpp.OperatingSystemType.iOS)
             {
-                BuildScript.GenerateBuildScriptXCode(v.HostOperatingSystem, v.BuildDirectory, v.Configuration, CppSortedProjectNames, v.ForceRegenerate);
+                BuildScript.GenerateBuildScriptXCode(v.HostOperatingSystem, v.BuildDirectory, v.Configuration, v.MaxProcessCount, CppSortedProjectNames, v.ForceRegenerate);
                 if (v.BuildNow)
                 {
                     using (var d = Shell.PushDirectory(v.BuildDirectory))
@@ -119,7 +119,7 @@ namespace TypeMake
                 {
                     TextFile.WriteToFile(v.BuildDirectory / "gradle/local.properties", $"sdk.dir={v.AndroidSdk.ToString(PathStringStyle.Unix)}", new System.Text.UTF8Encoding(false), !v.ForceRegenerate);
                 }
-                BuildScript.GenerateBuildScriptAndroid(GradleProjectNames, v.Toolchain, v.HostOperatingSystem, v.BuildDirectory, v.TargetArchitecture, v.Configuration, v.AndroidNdk, v.CMake, v.Make, v.Ninja, 17, v.ForceRegenerate, v.EnableJava, r.NeedInstallStrip);
+                BuildScript.GenerateBuildScriptAndroid(GradleProjectNames, v.Toolchain, v.HostOperatingSystem, v.BuildDirectory, v.TargetArchitecture, v.Configuration, v.MaxProcessCount, v.AndroidNdk, v.CMake, v.Make, v.Ninja, 17, v.ForceRegenerate, v.EnableJava, r.NeedInstallStrip);
                 if (v.BuildNow)
                 {
                     using (var d = Shell.PushDirectory(v.BuildDirectory))
