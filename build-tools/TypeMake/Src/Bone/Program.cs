@@ -55,7 +55,7 @@ namespace TypeMake
             }
 
             var Memory = new Shell.EnvironmentVariableMemory();
-            var Simple = options.ContainsKey("simple");
+            var Simple = options.ContainsKey("simpleterm");
             var Quiet = options.ContainsKey("quiet");
             if (Simple || Quiet)
             {
