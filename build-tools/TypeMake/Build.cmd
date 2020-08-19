@@ -18,6 +18,9 @@ for %%v in (2019) do (
     )
   )
 )
+echo MSBuild not found.
+echo You need to install Visual Studio 2019 or add MSBuild environment variable.
+exit /b 1
 :MSBuild_Found
 
 if "%1"=="--quiet" (
