@@ -50,7 +50,8 @@ namespace TypeMake.Cpp
     {
         VisualCpp,
         gcc,
-        clang
+        clang,
+        clangcl
     }
     public enum CLibraryType
     {

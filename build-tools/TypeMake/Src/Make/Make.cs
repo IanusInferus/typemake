@@ -29,6 +29,7 @@ namespace TypeMake
         private PathString BuildDirectory;
         private String XCodeDevelopmentTeam;
         private String XCodeProvisioningProfileSpecifier;
+        private PathString VSDir;
         private int VSVersion;
         private bool EnableJava;
         private PathString Jdk;
@@ -48,7 +49,7 @@ namespace TypeMake
 
         private Dictionary<String, String> ProjectIds = new Dictionary<String, String>();
 
-        public Make(OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType TargetArchitecture, WindowsRuntimeType? WindowsRuntime, bool EnableMacCatalyst, ToolchainType Toolchain, CompilerType Compiler, CLibraryType CLibrary, CLibraryForm CLibraryForm, CppLibraryType CppLibrary, CppLibraryForm CppLibraryForm, ConfigurationType ConfigurationType, PathString SourceDirectory, PathString BuildDirectory, String XCodeDevelopmentTeam, String XCodeProvisioningProfileSpecifier, int VSVersion, bool EnableJava, PathString Jdk, PathString AndroidSdk, PathString AndroidNdk, String CC, String CXX, String AR, String STRIP, List<String> CommonFlags, List<String> CFlags, List<String> CppFlags, List<String> LinkerFlags, List<String> PostLinkerFlags, bool ForceRegenerate, bool EnableNonTargetingOperatingSystemDummy)
+        public Make(OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType TargetArchitecture, WindowsRuntimeType? WindowsRuntime, bool EnableMacCatalyst, ToolchainType Toolchain, CompilerType Compiler, CLibraryType CLibrary, CLibraryForm CLibraryForm, CppLibraryType CppLibrary, CppLibraryForm CppLibraryForm, ConfigurationType ConfigurationType, PathString SourceDirectory, PathString BuildDirectory, String XCodeDevelopmentTeam, String XCodeProvisioningProfileSpecifier, PathString VSDir, int VSVersion, bool EnableJava, PathString Jdk, PathString AndroidSdk, PathString AndroidNdk, String CC, String CXX, String AR, String STRIP, List<String> CommonFlags, List<String> CFlags, List<String> CppFlags, List<String> LinkerFlags, List<String> PostLinkerFlags, bool ForceRegenerate, bool EnableNonTargetingOperatingSystemDummy)
         {
             this.HostOperatingSystem = HostOperatingSystem;
             this.HostArchitecture = HostArchitecture;
@@ -67,6 +68,7 @@ namespace TypeMake
             this.BuildDirectory = BuildDirectory.FullPath;
             this.XCodeDevelopmentTeam = XCodeDevelopmentTeam;
             this.XCodeProvisioningProfileSpecifier = XCodeProvisioningProfileSpecifier;
+            this.VSDir = VSDir;
             this.VSVersion = VSVersion;
             this.EnableJava = EnableJava;
             this.Jdk = Jdk;
@@ -491,7 +493,7 @@ namespace TypeMake
                 {
                     var VcxprojTemplateText = Resource.GetResourceText(VSVersion == 2019 ? @"Templates\vc16\Default.vcxproj" : @"Templates\vc16\Default.vcxproj");
                     var VcxprojFilterTemplateText = Resource.GetResourceText(VSVersion == 2019 ? @"Templates\vc16\Default.vcxproj.filters" : @"Templates\vc16\Default.vcxproj.filters");
-                    var g = new VcxprojGenerator(p, Project.Definition.Id, ProjectReferences, InputDirectory, OutputDirectory, VcxprojTemplateText, VcxprojFilterTemplateText, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, WindowsRuntime.Value, CLibraryForm, CppLibraryForm);
+                    var g = new VcxprojGenerator(p, Project.Definition.Id, ProjectReferences, InputDirectory, OutputDirectory, VcxprojTemplateText, VcxprojFilterTemplateText, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, WindowsRuntime.Value, Compiler, CLibraryForm, CppLibraryForm);
                     g.Generate(ForceRegenerate);
                 }
                 else if (Toolchain == ToolchainType.XCode)
@@ -643,7 +645,24 @@ namespace TypeMake
             {
                 new Configuration
                 {
-                    MatchingCompilers = new List<CompilerType> { CompilerType.VisualCpp },
+                    MatchingCompilers = new List<CompilerType> { CompilerType.clangcl },
+                    Options = new Dictionary<String, String>
+                    {
+                        ["vc.Configuration.PlatformToolset"] = "ClangCL"
+                    }
+                },
+                new Configuration
+                {
+                    MatchingTargetTypes = new List<TargetType> { TargetType.StaticLibrary },
+                    MatchingCompilers = new List<CompilerType> { CompilerType.clangcl },
+                    Options = new Dictionary<String, String>
+                    {
+                        ["vc.Lib.LinkTimeCodeGeneration"] = "false"
+                    }
+                },
+                new Configuration
+                {
+                    MatchingCompilers = new List<CompilerType> { CompilerType.VisualCpp, CompilerType.clangcl },
                     Options = new Dictionary<String, String>
                     {
                         ["vc.ClCompile.LanguageStandard"] = "stdcpp17"
@@ -678,7 +697,7 @@ namespace TypeMake
                 },
                 new Configuration
                 {
-                    MatchingCompilers = new List<CompilerType> { CompilerType.VisualCpp },
+                    MatchingCompilers = new List<CompilerType> { CompilerType.VisualCpp, CompilerType.clangcl },
                     Defines = ParseDefines("_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS"),
                     CommonFlags = ParseFlags("/bigobj /JMC"),
                     Options = new Dictionary<String, String>
@@ -694,7 +713,7 @@ namespace TypeMake
                 },
                 new Configuration
                 {
-                    MatchingCompilers = new List<CompilerType> { CompilerType.VisualCpp },
+                    MatchingCompilers = new List<CompilerType> { CompilerType.VisualCpp, CompilerType.clangcl },
                     CommonFlags = ParseFlags("/we4172 /we4715")
                 },
                 new Configuration
@@ -752,9 +771,9 @@ namespace TypeMake
                 },
                 new Configuration
                 {
-                    MatchingCompilers = new List<CompilerType> { CompilerType.VisualCpp },
+                    MatchingCompilers = new List<CompilerType> { CompilerType.VisualCpp, CompilerType.clangcl },
                     MatchingCLibraryForms = new List<CLibraryForm> { CLibraryForm.Static },
-                    MatchingConfigurationTypes = new List<ConfigurationType> { Cpp.ConfigurationType.Debug },
+                    MatchingConfigurationTypes = new List<ConfigurationType> { ConfigurationType.Debug },
                     Options = new Dictionary<String, String>
                     {
                         ["vc.ClCompile.RuntimeLibrary"] = "MultiThreadedDebug",
@@ -762,9 +781,9 @@ namespace TypeMake
                 },
                 new Configuration
                 {
-                    MatchingCompilers = new List<CompilerType> { CompilerType.VisualCpp },
+                    MatchingCompilers = new List<CompilerType> { CompilerType.VisualCpp, CompilerType.clangcl },
                     MatchingCLibraryForms = new List<CLibraryForm> { CLibraryForm.Dynamic },
-                    MatchingConfigurationTypes = new List<ConfigurationType> { Cpp.ConfigurationType.Debug },
+                    MatchingConfigurationTypes = new List<ConfigurationType> { ConfigurationType.Debug },
                     Options = new Dictionary<String, String>
                     {
                         ["vc.ClCompile.RuntimeLibrary"] = "MultiThreadedDebugDLL",
@@ -772,9 +791,9 @@ namespace TypeMake
                 },
                 new Configuration
                 {
-                    MatchingCompilers = new List<CompilerType> { CompilerType.VisualCpp },
+                    MatchingCompilers = new List<CompilerType> { CompilerType.VisualCpp, CompilerType.clangcl },
                     MatchingCLibraryForms = new List<CLibraryForm> { CLibraryForm.Static },
-                    MatchingConfigurationTypes = new List<ConfigurationType> { Cpp.ConfigurationType.Release },
+                    MatchingConfigurationTypes = new List<ConfigurationType> { ConfigurationType.Release },
                     Options = new Dictionary<String, String>
                     {
                         ["vc.ClCompile.RuntimeLibrary"] = "MultiThreaded",
@@ -782,9 +801,9 @@ namespace TypeMake
                 },
                 new Configuration
                 {
-                    MatchingCompilers = new List<CompilerType> { CompilerType.VisualCpp },
+                    MatchingCompilers = new List<CompilerType> { CompilerType.VisualCpp, CompilerType.clangcl },
                     MatchingCLibraryForms = new List<CLibraryForm> { CLibraryForm.Dynamic },
-                    MatchingConfigurationTypes = new List<ConfigurationType> { Cpp.ConfigurationType.Release },
+                    MatchingConfigurationTypes = new List<ConfigurationType> { ConfigurationType.Release },
                     Options = new Dictionary<String, String>
                     {
                         ["vc.ClCompile.RuntimeLibrary"] = "MultiThreadedDLL",
@@ -817,19 +836,19 @@ namespace TypeMake
                 },
                 new Configuration
                 {
-                    MatchingConfigurationTypes = new List<ConfigurationType> { Cpp.ConfigurationType.Debug },
+                    MatchingConfigurationTypes = new List<ConfigurationType> { ConfigurationType.Debug },
                     Defines = ParseDefines("DEBUG=1")
                 },
                 new Configuration
                 {
-                    MatchingConfigurationTypes = new List<ConfigurationType> { Cpp.ConfigurationType.Release },
+                    MatchingConfigurationTypes = new List<ConfigurationType> { ConfigurationType.Release },
                     Defines = ParseDefines("NDEBUG")
                 },
                 new Configuration
                 {
                     MatchingCompilers = new List<CompilerType> { CompilerType.clang },
                     MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Windows },
-                    MatchingConfigurationTypes = new List<ConfigurationType> { Cpp.ConfigurationType.Debug },
+                    MatchingConfigurationTypes = new List<ConfigurationType> { ConfigurationType.Debug },
                     Defines = ParseDefines("_DEBUG;_MT;_DLL"),
                     CommonFlags = ParseFlags("-gcodeview-ghash"),
                     LinkerFlags = ParseFlags("-Wl,/debug -Wl,/nodefaultlib:libucrt -Wl,/nodefaultlib:libvcruntime -Wl,/nodefaultlib:libcmt"), //workaround llvm bug choosing C runtime, https://docs.microsoft.com/en-us/cpp/c-runtime-library/crt-library-features?view=vs-2019
@@ -839,7 +858,7 @@ namespace TypeMake
                 {
                     MatchingCompilers = new List<CompilerType> { CompilerType.clang },
                     MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Windows },
-                    MatchingConfigurationTypes = new List<ConfigurationType> { Cpp.ConfigurationType.Release },
+                    MatchingConfigurationTypes = new List<ConfigurationType> { ConfigurationType.Release },
                     Defines = ParseDefines("_MT"),
                     CommonFlags = ParseFlags("-gcodeview-ghash"),
                     LinkerFlags = ParseFlags("-Wl,/debug")
@@ -847,13 +866,13 @@ namespace TypeMake
                 new Configuration
                 {
                     MatchingCompilers = new List<CompilerType> { CompilerType.gcc, CompilerType.clang },
-                    MatchingConfigurationTypes = new List<ConfigurationType> { Cpp.ConfigurationType.Debug },
+                    MatchingConfigurationTypes = new List<ConfigurationType> { ConfigurationType.Debug },
                     CommonFlags = ParseFlags("-O0")
                 },
                 new Configuration
                 {
                     MatchingCompilers = new List<CompilerType> { CompilerType.gcc, CompilerType.clang },
-                    MatchingConfigurationTypes = new List<ConfigurationType> { Cpp.ConfigurationType.Release },
+                    MatchingConfigurationTypes = new List<ConfigurationType> { ConfigurationType.Release },
                     CommonFlags = ParseFlags("-O3")
                 },
                 new Configuration
