@@ -115,7 +115,7 @@ namespace TypeMake.Cpp
                 {
                     if (Lib.Parts.Count == 1)
                     {
-                        if (Lib.Extension == "")
+                        if ((Lib.Extension == "") || (TargetOperatingSystem == OperatingSystemType.Windows))
                         {
                             Libs.Add("-l" + Lib.ToString(PathStyle));
                         }

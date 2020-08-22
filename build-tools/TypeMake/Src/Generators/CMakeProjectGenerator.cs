@@ -252,7 +252,7 @@ namespace TypeMake.Cpp
                 {
                     if (Lib.Parts.Count == 1)
                     {
-                        if (Lib.Extension == "")
+                        if ((Lib.Extension == "") || (TargetOperatingSystem == OperatingSystemType.Windows))
                         {
                             PostObjectFileLinkerFlags.Add(Lib.ToString(PathStringStyle.Unix));
                         }
