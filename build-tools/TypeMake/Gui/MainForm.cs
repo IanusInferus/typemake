@@ -571,14 +571,14 @@ namespace TypeMakeGui
             {
                 if (MessageBox.Show("Generation finished. Open project now?", "Generate", MessageBoxButtons.YesNo, MessageBoxType.Question) == DialogResult.Yes)
                 {
-                    System.Diagnostics.Process.Start(Variables.BuildDirectory / (Make.SolutionName + ".sln"));
+                    System.Diagnostics.Process.Start(Variables.BuildDirectory / (Build.SolutionName + ".sln"));
                 }
             }
             else if ((Variables.HostOperatingSystem == TypeMake.Cpp.OperatingSystemType.MacOS) && ((Variables.TargetOperatingSystem == TypeMake.Cpp.OperatingSystemType.MacOS) || (Variables.TargetOperatingSystem == TypeMake.Cpp.OperatingSystemType.iOS)))
             {
                 if (MessageBox.Show("Generation finished. Open project now?", "Generate", MessageBoxButtons.YesNo, MessageBoxType.Question) == DialogResult.Yes)
                 {
-                    System.Diagnostics.Process.Start(Variables.BuildDirectory / (Make.SolutionName + ".xcodeproj"));
+                    System.Diagnostics.Process.Start(Variables.BuildDirectory / (Build.SolutionName + ".xcodeproj"));
                 }
             }
             else

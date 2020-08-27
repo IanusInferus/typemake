@@ -61,7 +61,7 @@
     <Compile Include="Base\XmlFile.cs" />
     <Compile Include="Bone\BuildScript.cs" />
     <Compile Include="Bone\Generation.cs" />
-    <Compile Include="Make\Make.cs" />
+    <Compile Include="Make\Build.cs" />
     <Compile Include="Bone\RetypemakeScriptReader.cs" />
     <Compile Include="Bone\Program.cs" />
     <Compile Include="Base\PathString.cs" />

@@ -49,9 +49,9 @@ namespace TypeMake
         public List<String> LinkerFlags;
         public List<String> PostLinkerFlags;
 
-        public Make m;
-        public Func<Make.Result> g;
-        public Dictionary<String, Make.ProjectDescription> SelectedProjects;
+        public Build b;
+        public Func<Build.Result> g;
+        public Dictionary<String, Build.ProjectDescription> SelectedProjects;
 
         public bool BuildNow;
     }
