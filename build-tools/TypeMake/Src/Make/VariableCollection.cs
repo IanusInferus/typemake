@@ -433,7 +433,7 @@ namespace TypeMake
                     {
                         DefaultValue = null,
                         IsDirectory = true,
-                        Validator = p => Directory.Exists(p / "modules") && Directory.Exists(p / "products") ? new KeyValuePair<bool, String>(true, "") : new KeyValuePair<bool, string>(false, "modules or products not exist.")
+                        Validator = p => Directory.Exists(p / "build-tools/TypeMake") ? new KeyValuePair<bool, String>(true, "") : new KeyValuePair<bool, string>(false, "build-tools/TypeMake not exist.")
                     });
                 },
                 SetVariableValue = v => Variables.SourceDirectory = v.Path
