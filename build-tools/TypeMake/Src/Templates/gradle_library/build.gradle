@@ -10,6 +10,7 @@ android {
         targetSdkVersion 28
         versionCode 1
         versionName "1.0"
+        consumerProguardFiles ${ConsumerProguardFiles}
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
@@ -37,8 +38,8 @@ android {
 }
 
 dependencies {
-    implementation files('${JarFiles}')
-    implementation project(':${ProjectDependencies}')
+    compileOnly files('${JarFiles}')
+    compileOnly project(':${ProjectDependencies}')
 }
 
 tasks.withType(JavaCompile) {

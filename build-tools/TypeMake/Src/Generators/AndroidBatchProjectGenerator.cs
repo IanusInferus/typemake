@@ -125,6 +125,7 @@ namespace TypeMake.Cpp
                 }
             }
             var ApplicationId = conf.Options.ContainsKey("gradle.applicationId") ? conf.Options["gradle.applicationId"] : (SolutionName + "." + ProjectTargetName).ToLower();
+            var ConsumerProguardFiles = conf.Options.ContainsKey("gradle.consumerProguardFiles") ? conf.Options["gradle.consumerProguardFiles"].Split(';').Select(d => d.AsPath().RelativeTo(BaseDirPath)).ToList() : new List<PathString> { };
             var ManifestSrcFile = conf.Options.ContainsKey("gradle.manifestSrcFile") ? conf.Options["gradle.manifestSrcFile"].AsPath().RelativeTo(BaseDirPath) : (InputDirectory / "AndroidManifest.xml").RelativeTo(BaseDirPath);
             var JavaSrcDirs = conf.Files.Where(f => System.IO.Directory.Exists(f.Path) && System.IO.Directory.EnumerateFiles(f.Path, "*.java", System.IO.SearchOption.AllDirectories).Any()).Select(f => f.Path.RelativeTo(BaseDirPath)).ToList();
             var JarFiles = (conf.Options.ContainsKey("gradle.jarFiles") ? conf.Options["gradle.jarFiles"].Split(';').Select(f => f.AsPath().RelativeTo(BaseDirPath)).ToList() : new List<PathString> { }).ToList();
@@ -195,6 +196,17 @@ namespace TypeMake.Cpp
                         yield return $@"{e(Jar)} uvf {e(ProjectTargetName + "." + Suffix)} -C {e(ResSrcDir.Parent)} res || exit /b 1";
                     }
                     yield return @"";
+                    if (ConsumerProguardFiles.Count > 0)
+                    {
+                        yield return @":: generate proguard.txt";
+                        yield return $@"type NUL > proguard.txt || exit /b 1";
+                        foreach (var ConsumerProguardFile in ConsumerProguardFiles)
+                        {
+                            yield return $@"type {e(ConsumerProguardFile)} >> proguard.txt || exit /b 1";
+                            yield return @"echo. >> proguard.txt || exit /b 1";
+                        }
+                        yield return @"";
+                    }
                 }
                 yield return @":: compile java sources";
                 yield return @"md classes";
@@ -225,6 +237,13 @@ namespace TypeMake.Cpp
                     foreach (var AssetsSrcDir in AssetsSrcDirs)
                     {
                         yield return $@"{e(Jar)} uvf {e(ProjectTargetName + "." + Suffix)} -C {e(AssetsSrcDir.Parent)} assets || exit /b 1";
+                    }
+                }
+                else
+                {
+                    if (ConsumerProguardFiles.Count > 0)
+                    {
+                        yield return $@"{e(Jar)} uvf {e(ProjectTargetName + "." + Suffix)} proguard.txt || exit /b 1";
                     }
                 }
                 yield return $@"{e(Jar)} uvf {e(ProjectTargetName + "." + Suffix)} {JniLibs} || exit /b 1";
@@ -295,6 +314,17 @@ namespace TypeMake.Cpp
                         yield return $@"{e(Jar)} uvf {e(ProjectTargetName + "." + Suffix)} -C {e(ResSrcDir.Parent)} res";
                     }
                     yield return @"";
+                    if (ConsumerProguardFiles.Count > 0)
+                    {
+                        yield return @"# generate proguard.txt";
+                        yield return $@"> proguard.txt";
+                        foreach (var ConsumerProguardFile in ConsumerProguardFiles)
+                        {
+                            yield return $@"cat {e(ConsumerProguardFile)} >> proguard.txt";
+                            yield return @"echo '' >> proguard.txt";
+                        }
+                        yield return @"";
+                    }
                 }
                 yield return @"# compile java sources";
                 yield return @"mkdir classes";
@@ -325,6 +355,13 @@ namespace TypeMake.Cpp
                     foreach (var AssetsSrcDir in AssetsSrcDirs)
                     {
                         yield return $@"{e(Jar)} uvf {e(ProjectTargetName + "." + Suffix)} -C {e(AssetsSrcDir.Parent)} assets";
+                    }
+                }
+                else
+                {
+                    if (ConsumerProguardFiles.Count > 0)
+                    {
+                        yield return $@"{e(Jar)} uvf {e(ProjectTargetName + "." + Suffix)} proguard.txt";
                     }
                 }
                 yield return $@"{e(Jar)} uvf {e(ProjectTargetName + "." + Suffix)} {JniLibs}";

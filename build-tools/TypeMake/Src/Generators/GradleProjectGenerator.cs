@@ -76,7 +76,8 @@ namespace TypeMake.Cpp
             var ArchitectureType = TargetArchitecture.Value.ToString();
             var ProjectTargetName = Project.TargetName ?? ProjectName;
             var ApplicationId = conf.Options.ContainsKey("gradle.applicationId") ? conf.Options["gradle.applicationId"] : (SolutionName + "." + ProjectTargetName).ToLower();
-            var ManifestSrcFile = confDebug.Options.ContainsKey("gradle.manifestSrcFile") ? confDebug.Options["gradle.manifestSrcFile"].AsPath().RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix) : (InputDirectory / "AndroidManifest.xml").RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix);
+            var ConsumerProguardFiles = conf.Options.ContainsKey("gradle.consumerProguardFiles") ? new List<String> { String.Join(", ", conf.Options["gradle.consumerProguardFiles"].Split(';').Select(d => "'" + d.AsPath().RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix) + "'")) } : new List<String> { };
+            var ManifestSrcFile = conf.Options.ContainsKey("gradle.manifestSrcFile") ? conf.Options["gradle.manifestSrcFile"].AsPath().RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix) : (InputDirectory / "AndroidManifest.xml").RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix);
             var JavaSrcDirs = String.Join(", ", conf.Files.Where(f => System.IO.Directory.Exists(f.Path)).Select(f => "'" + f.Path.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix) + "'"));
             var ResSrcDirs = conf.Options.ContainsKey("gradle.resSrcDirs") ? String.Join(", ", conf.Options["gradle.resSrcDirs"].Split(';').Select(d => "'" + d.AsPath().RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix) + "'")) : "'" + (InputDirectory / "res").RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix) + "'";
             var AssetsSrcDirs = conf.Options.ContainsKey("gradle.assetsSrcDirs") ? String.Join(", ", conf.Options["gradle.assetsSrcDirs"].Split(';').Select(d => "'" + d.AsPath().RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix) + "'")) : "'" + (InputDirectory / "assets").RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix) + "'";
@@ -144,6 +145,7 @@ namespace TypeMake.Cpp
             var LibsDebug = String.Join(", ", SoLibraryPathsDebug.Select(p => "'" + p.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix) + "'"));
             var LibsRelease = String.Join(", ", SoLibraryPathsRelease.Select(p => "'" + p.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix) + "'"));
             Results = Results.Select(Line => Line.Replace("${ApplicationId}", ApplicationId));
+            Results = Results.SelectMany(Line => Line.Contains("${ConsumerProguardFiles}") ? ConsumerProguardFiles.Select(v => Line.Replace("${ConsumerProguardFiles}", v)) : new List<String> { Line });
             Results = Results.Select(Line => Line.Replace("${ManifestSrcFile}", ManifestSrcFile));
             Results = Results.Select(Line => Line.Replace("${JavaSrcDirs}", JavaSrcDirs));
             Results = Results.Select(Line => Line.Replace("${ResSrcDirs}", ResSrcDirs));
