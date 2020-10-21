@@ -1,41 +1,17 @@
 https://ninja-build.org/
 https://github.com/ninja-build/ninja/releases
-https://github.com/ninja-build/ninja/releases/download/v1.9.0/ninja-win.zip
-https://github.com/ninja-build/ninja/releases/download/v1.9.0/ninja-mac.zip
+https://github.com/ninja-build/ninja/releases/download/v1.10.1/ninja-win.zip
+https://github.com/ninja-build/ninja/releases/download/v1.10.1/ninja-mac.zip
 
-Linux version build from 0c158431f30a14d771e5c82c1e69eff7c69a08ce
+Linux version build from a1f879b29c9aafe6a2bc0ba885701f8f4f19f772
 Alpine
-g++ 8.2.0
+Python 3.8.2
+g++ 9.3.0
 static libmusl
 
 Patches:
 
-1)https://lists.sr.ht/~sircmpwn/alpine-aports/%3C20190312025245.20168-1-sir%40cmpwn.com%3E
+1)build.ninja
+add '-static' in cflags and ldflags
 
- src/disk_interface.cc | 8 +-------
- 1 file changed, 1 insertion(+), 7 deletions(-)
-
-diff --git a/src/disk_interface.cc b/src/disk_interface.cc
-index d4c2fb0..58e714a 100644
---- a/src/disk_interface.cc
-+++ b/src/disk_interface.cc
-@@ -205,13 +205,7 @@ TimeStamp RealDiskInterface::Stat(const string& path, string* err) const {
- #if defined(__APPLE__) && !defined(_POSIX_C_SOURCE)
-   return ((int64_t)st.st_mtimespec.tv_sec * 1000000000LL +
-           st.st_mtimespec.tv_nsec);
--#elif (_POSIX_C_SOURCE >= 200809L || _XOPEN_SOURCE >= 700 || defined(_BSD_SOURCE) || defined(_SVID_SOURCE) || \
--       defined(__BIONIC__) || (defined (__SVR4) && defined (__sun)) || defined(__FreeBSD__))
--  // For glibc, see "Timestamp files" in the Notes of http://www.kernel.org/doc/man-pages/online/pages/man2/stat.2.html
--  // newlib, uClibc and musl follow the kernel (or Cygwin) headers and define the right macro values above.
--  // For bsd, see https://github.com/freebsd/freebsd/blob/master/sys/sys/stat.h and similar
--  // For bionic, C and POSIX API is always enabled.
--  // For solaris, see https://docs.oracle.com/cd/E88353_01/html/E37841/stat-2.html.
-+#elif defined(st_mtime) // A macro, so we're likely on modern POSIX.
-   return (int64_t)st.st_mtim.tv_sec * 1000000000LL + st.st_mtim.tv_nsec;
- #elif defined(_AIX)
-   return (int64_t)st.st_mtime * 1000000000LL + st.st_mtime_n;
-
-2)build.ninja
-add '-static' in ldflags
-
-3)run strip on ninja binary
+2)run strip on ninja binary
