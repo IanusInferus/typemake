@@ -967,7 +967,8 @@ namespace TypeMake
                         ["xcode.project.TARGETED_DEVICE_FAMILY"] = "1,2",
                         ["xcode.project.SUPPORTS_MACCATALYST"] = "YES",
                         ["xcode.project.IPHONEOS_DEPLOYMENT_TARGET"] = "8.0",
-                        ["xcode.project.MACOSX_DEPLOYMENT_TARGET"] = "10.15"
+                        ["xcode.project.MACOSX_DEPLOYMENT_TARGET"] = "10.15",
+                        ["xcode.target.TARGETED_DEVICE_FAMILY"] = "" //disable iPhone and iPad
                     }
                 });
             }
@@ -1357,7 +1358,14 @@ namespace TypeMake
                 }
                 else
                 {
-                    return $"{ConfigurationType}-iphoneos".AsPath() / OutputFileName;
+                    if (EnableMacCatalyst)
+                    {
+                        return $"{ConfigurationType}-maccatalyst".AsPath() / OutputFileName;
+                    }
+                    else
+                    {
+                        return $"{ConfigurationType}-iphoneos".AsPath() / OutputFileName;
+                    }
                 }
             }
             else if ((Toolchain == ToolchainType.CMake) || (Toolchain == ToolchainType.Ninja) || (Toolchain == ToolchainType.Gradle_CMake) || (Toolchain == ToolchainType.Gradle_Ninja))

@@ -220,7 +220,14 @@ namespace TypeMake
                     }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.MacOS)
                     {
-                        return VariableSpecCreateEnumSelection(Cpp.ToolchainType.XCode, new HashSet<Cpp.ToolchainType> { Cpp.ToolchainType.XCode, Cpp.ToolchainType.Ninja, Cpp.ToolchainType.CMake });
+                        if (Variables.TargetArchitecture == Cpp.ArchitectureType.x64)
+                        {
+                            return VariableSpecCreateEnumSelection(Cpp.ToolchainType.XCode, new HashSet<Cpp.ToolchainType> { Cpp.ToolchainType.XCode, Cpp.ToolchainType.Ninja, Cpp.ToolchainType.CMake });
+                        }
+                        else
+                        {
+                            return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.ToolchainType.XCode.ToString()));
+                        }
                     }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.iOS)
                     {

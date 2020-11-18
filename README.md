@@ -36,8 +36,8 @@ Target Operating System vs Building Operating System
 |       Linux armv7a/arm64       |    WSL+Ninja+gcc   |      Ninja+gcc     |                    |                    |
 |         Linux Unknown **       |    WSL+Ninja+gcc   |      Ninja+gcc     |                    |                    |
 |         MacOS x64/arm64        |                    |                    |        XCode       |                    |
-|         MacOS x64/arm64        |                    |                    |    Ninja+clang     |                    |
-|         MacOS x64/arm64        |                    |                    |   CMake+clang *    |                    |
+|            MacOS x64           |                    |                    |    Ninja+clang     |                    |
+|            MacOS x64           |                    |                    |   CMake+clang *    |                    |
 |  Android x86/x64/armv7a/arm64  |     NDK+Ninja      |     NDK+Ninja      |     NDK+Ninja      |                    |
 |  Android x86/x64/armv7a/arm64  |  NDK+Ninja+Gradle  |  NDK+Ninja+Gradle  |  NDK+Ninja+Gradle  |                    |
 |  Android x86/x64/armv7a/arm64  | NDK+CMake+Gradle * | NDK+CMake+Gradle * | NDK+CMake+Gradle * |                    |
