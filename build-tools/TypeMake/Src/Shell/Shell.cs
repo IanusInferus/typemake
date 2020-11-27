@@ -63,7 +63,7 @@ namespace TypeMake
                         }
                         else if (p == PlatformID.Unix)
                         {
-                            if (File.Exists("/usr/lib/libc.dylib"))
+                            if (File.Exists("/usr/lib/dyld"))
                             {
                                 OperatingSystemValue = OperatingSystemType.MacOS;
                             }

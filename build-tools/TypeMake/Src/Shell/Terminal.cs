@@ -705,25 +705,11 @@ namespace TypeMake
         // Mac don't support \x1B[s and \x1B[u https://stackoverflow.com/questions/25879183/can-terminal-app-be-made-to-respect-ansi-escape-codes
         private void SaveCursor()
         {
-            if (Shell.OperatingSystem == Shell.OperatingSystemType.MacOS)
-            {
-                Console.Write("\x1B" + "7");
-            }
-            else
-            {
-                Console.Write("\x1B[s");
-            }
+            Console.Write("\x1B" + "7");
         }
         private void LoadCursor()
         {
-            if (Shell.OperatingSystem == Shell.OperatingSystemType.MacOS)
-            {
-                Console.Write("\x1B" + "8");
-            }
-            else
-            {
-                Console.Write("\x1B[u");
-            }
+            Console.Write("\x1B" + "8");
         }
         private void ErasePosterior()
         {
