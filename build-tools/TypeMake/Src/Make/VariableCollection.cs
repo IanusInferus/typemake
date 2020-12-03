@@ -209,7 +209,11 @@ namespace TypeMake
                     }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
                     {
-                        if ((Variables.TargetArchitecture == Cpp.ArchitectureType.x86) || (Variables.TargetArchitecture == Cpp.ArchitectureType.x64))
+                        if (Variables.TargetArchitecture == Cpp.ArchitectureType.x64)
+                        {
+                            return VariableSpecCreateEnumSelection(Cpp.ToolchainType.Ninja, new HashSet<Cpp.ToolchainType> { Cpp.ToolchainType.Ninja, Cpp.ToolchainType.CMake, Cpp.ToolchainType.VisualStudio });
+                        }
+                        else if (Variables.TargetArchitecture == Cpp.ArchitectureType.x86)
                         {
                             return VariableSpecCreateEnumSelection(Cpp.ToolchainType.Ninja, new HashSet<Cpp.ToolchainType> { Cpp.ToolchainType.Ninja, Cpp.ToolchainType.CMake });
                         }
@@ -1134,7 +1138,7 @@ namespace TypeMake
                 DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.TargetArchitecture), nameof(Variables.Toolchain), nameof(Variables.Compiler), nameof(Variables.LLVM), "AndroidVariables" },
                 GetVariableSpec = () =>
                 {
-                    if ((Variables.Toolchain == Cpp.ToolchainType.Ninja) || (Variables.Toolchain == Cpp.ToolchainType.Gradle_Ninja) || (Variables.Toolchain == Cpp.ToolchainType.CMake) || (Variables.Toolchain == Cpp.ToolchainType.Gradle_CMake))
+                    if ((Variables.Toolchain == Cpp.ToolchainType.Ninja) || (Variables.Toolchain == Cpp.ToolchainType.Gradle_Ninja) || (Variables.Toolchain == Cpp.ToolchainType.CMake) || (Variables.Toolchain == Cpp.ToolchainType.Gradle_CMake) || ((Variables.Toolchain == Cpp.ToolchainType.VisualStudio) && (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)))
                     {
                         if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
                         {
@@ -1194,7 +1198,7 @@ namespace TypeMake
                 DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.TargetArchitecture), nameof(Variables.Toolchain), nameof(Variables.Compiler), nameof(Variables.LLVM), "AndroidVariables" },
                 GetVariableSpec = () =>
                 {
-                    if ((Variables.Toolchain == Cpp.ToolchainType.Ninja) || (Variables.Toolchain == Cpp.ToolchainType.Gradle_Ninja) || (Variables.Toolchain == Cpp.ToolchainType.CMake) || (Variables.Toolchain == Cpp.ToolchainType.Gradle_CMake))
+                    if ((Variables.Toolchain == Cpp.ToolchainType.Ninja) || (Variables.Toolchain == Cpp.ToolchainType.Gradle_Ninja) || (Variables.Toolchain == Cpp.ToolchainType.CMake) || (Variables.Toolchain == Cpp.ToolchainType.Gradle_CMake) || ((Variables.Toolchain == Cpp.ToolchainType.VisualStudio) && (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)))
                     {
                         if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
                         {
@@ -1254,7 +1258,7 @@ namespace TypeMake
                 DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.TargetArchitecture), nameof(Variables.Toolchain), nameof(Variables.Compiler), nameof(Variables.LLVM), "AndroidVariables" },
                 GetVariableSpec = () =>
                 {
-                    if ((Variables.Toolchain == Cpp.ToolchainType.Ninja) || (Variables.Toolchain == Cpp.ToolchainType.Gradle_Ninja) || (Variables.Toolchain == Cpp.ToolchainType.CMake) || (Variables.Toolchain == Cpp.ToolchainType.Gradle_CMake))
+                    if ((Variables.Toolchain == Cpp.ToolchainType.Ninja) || (Variables.Toolchain == Cpp.ToolchainType.Gradle_Ninja) || (Variables.Toolchain == Cpp.ToolchainType.CMake) || (Variables.Toolchain == Cpp.ToolchainType.Gradle_CMake) || ((Variables.Toolchain == Cpp.ToolchainType.VisualStudio) && (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)))
                     {
                         if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
                         {

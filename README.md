@@ -32,6 +32,7 @@ Target Operating System vs Building Operating System
 |   WinRT x86/x64/armv7a/arm64   |         VS         |                    |                    |                    |
 |          Linux x86/x64         |    WSL+Ninja+gcc   |      Ninja+gcc     |                    |                    |
 |            Linux x64           |   WSL+Ninja+clang  |     Ninja+clang    |                    |                    |
+|            Linux x64           |  WSL+VS+Ninja+gcc  |                    |                    |                    |
 |          Linux x86/x64         |   WSL+CMake+gcc *  |     CMake+gcc *    |                    |                    |
 |       Linux armv7a/arm64       |    WSL+Ninja+gcc   |      Ninja+gcc     |                    |                    |
 |         Linux Unknown **       |    WSL+Ninja+gcc   |      Ninja+gcc     |                    |                    |
@@ -74,7 +75,7 @@ iOS: XCode(11.0) mono(5.x)
 
 Android: JDK(8.x) AndroidSDK(build-tools:28.0.3 platforms:android-28) AndroidNDK(r21d) \[Android Gradle plugin(4.0.0)\] \[CMake(>=3.3.2)\]
 
-Android on Linux(openSUSE 15.1): java-1_8_0-openjdk
+Android on Linux(openSUSE 15.1): java-1_8_0-openjdk-devel
 
 Android on Linux(Ubuntu 18.04): openjdk-8-jdk
 

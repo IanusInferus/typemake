@@ -299,7 +299,7 @@ namespace TypeMake
                             MatchingCompilers = new List<CompilerType> { CompilerType.gcc, CompilerType.clang },
                             MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Linux, OperatingSystemType.Android },
                             MatchingTargetTypes = new List<TargetType> { TargetType.DynamicLibrary },
-                            LinkerFlags = new List<string> { "-Wl,--version-script=" + (SourceDirectory / "products/export.version").RelativeTo((Toolchain == ToolchainType.CMake) || (Toolchain == ToolchainType.Gradle_CMake) ? BuildDirectory / "projects" / GetProjectFileName(ProductName) : BuildDirectory / "projects").ToString(PathStringStyle.Unix) }
+                            LinkerFlags = new List<string> { "-Wl,--version-script=" + (SourceDirectory / "products/export.version").RelativeTo(GetProjectWorkingDirectory(BuildDirectory, ProductName)).ToString(PathStringStyle.Unix) }
                         },
                         new Configuration
                         {
@@ -491,9 +491,9 @@ namespace TypeMake
                 var ProjectTargetType = Project.Definition.TargetType;
                 if (Toolchain == ToolchainType.VisualStudio)
                 {
-                    var VcxprojTemplateText = Resource.GetResourceText(VSVersion == 2019 ? @"Templates\vc16\Default.vcxproj" : @"Templates\vc16\Default.vcxproj");
-                    var VcxprojFilterTemplateText = Resource.GetResourceText(VSVersion == 2019 ? @"Templates\vc16\Default.vcxproj.filters" : @"Templates\vc16\Default.vcxproj.filters");
-                    var g = new VcxprojGenerator(p, Project.Definition.Id, ProjectReferences, InputDirectory, OutputDirectory, VcxprojTemplateText, VcxprojFilterTemplateText, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, WindowsRuntime.Value, Compiler, CLibraryForm, CppLibraryForm);
+                    var VcxprojTemplateText = Resource.GetResourceText(TargetOperatingSystem == OperatingSystemType.Windows ? @"Templates\vc16\Default.vcxproj" : @"Templates\vc16\Linux.vcxproj");
+                    var VcxprojFilterTemplateText = Resource.GetResourceText(@"Templates\vc16\Default.vcxproj.filters");
+                    var g = new VcxprojGenerator(p, Project.Definition.Id, ProjectReferences, BuildDirectory, InputDirectory, OutputDirectory, VcxprojTemplateText, VcxprojFilterTemplateText, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, WindowsRuntime, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, CC, CXX, AR);
                     g.Generate(ForceRegenerate);
                 }
                 else if (Toolchain == ToolchainType.XCode)
@@ -584,8 +584,8 @@ namespace TypeMake
             var CppSortedProjects = SortedProjects.Where(p => (p.TargetType == TargetType.Executable) || (p.TargetType == TargetType.StaticLibrary) || (p.TargetType == TargetType.DynamicLibrary) || (p.TargetType == TargetType.DarwinApplication) || (p.TargetType == TargetType.DarwinStaticFramework) || (p.TargetType == TargetType.DarwinSharedFramework) || (p.TargetType == TargetType.MacBundle)).ToList();
             if (Toolchain == ToolchainType.VisualStudio)
             {
-                var SlnTemplateText = Resource.GetResourceText(VSVersion == 2019 ? @"Templates\vc16\Default.sln" : @"Templates\vc16\Default.sln");
-                var g = new SlnGenerator(SolutionName, GetIdForProject(SolutionName + ".solution"), CppSortedProjects, BuildDirectory, SlnTemplateText, TargetArchitecture);
+                var SlnTemplateText = Resource.GetResourceText(@"Templates\vc16\Default.sln");
+                var g = new SlnGenerator(SolutionName, GetIdForProject(SolutionName + ".solution"), CppSortedProjects, BuildDirectory, SlnTemplateText, TargetOperatingSystem, TargetArchitecture);
                 g.Generate(ForceRegenerate);
             }
             else if (Toolchain == ToolchainType.XCode)
@@ -1156,7 +1156,7 @@ namespace TypeMake
         {
             if (Toolchain == ToolchainType.VisualStudio)
             {
-                return ProjectName + ".vcxproj";
+                return ProjectName + "/" + ProjectName + ".vcxproj";
             }
             else if (Toolchain == ToolchainType.XCode)
             {
@@ -1165,6 +1165,29 @@ namespace TypeMake
             else if ((Toolchain == ToolchainType.CMake) || (Toolchain == ToolchainType.Ninja) || (Toolchain == ToolchainType.Gradle_CMake) || (Toolchain == ToolchainType.Gradle_Ninja))
             {
                 return ProjectName;
+            }
+            else
+            {
+                throw new NotSupportedException();
+            }
+        }
+        private PathString GetProjectWorkingDirectory(PathString BuildDirectory, String ProjectName)
+        {
+            if (Toolchain == ToolchainType.VisualStudio)
+            {
+                return BuildDirectory / "projects" / ProjectName;
+            }
+            else if (Toolchain == ToolchainType.XCode)
+            {
+                return BuildDirectory / "projects";
+            }
+            else if ((Toolchain == ToolchainType.Ninja) || (Toolchain == ToolchainType.Gradle_Ninja))
+            {
+                return BuildDirectory / "projects";
+            }
+            else if ((Toolchain == ToolchainType.CMake) || (Toolchain == ToolchainType.Gradle_CMake))
+            {
+                return BuildDirectory / "projects" / ProjectName;
             }
             else
             {

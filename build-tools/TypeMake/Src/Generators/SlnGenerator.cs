@@ -12,15 +12,17 @@ namespace TypeMake.Cpp
         private String SolutionId;
         private List<ProjectReference> ProjectReferences;
         private PathString OutputDirectory;
+        private OperatingSystemType TargetOperatingSystem;
         private ArchitectureType TargetArchitecture;
         private String SlnTemplateText;
 
-        public SlnGenerator(String SolutionName, String SolutionId, List<ProjectReference> ProjectReferences, PathString OutputDirectory, String SlnTemplateText, ArchitectureType TargetArchitecture)
+        public SlnGenerator(String SolutionName, String SolutionId, List<ProjectReference> ProjectReferences, PathString OutputDirectory, String SlnTemplateText, OperatingSystemType TargetOperatingSystem, ArchitectureType TargetArchitecture)
         {
             this.SolutionName = SolutionName;
             this.SolutionId = SolutionId;
             this.ProjectReferences = ProjectReferences;
             this.OutputDirectory = OutputDirectory.FullPath;
+            this.TargetOperatingSystem = TargetOperatingSystem;
             this.TargetArchitecture = TargetArchitecture;
             this.SlnTemplateText = SlnTemplateText;
         }
@@ -40,7 +42,7 @@ namespace TypeMake.Cpp
 
             foreach (var ConfigurationType in Enum.GetValues(typeof(ConfigurationType)).Cast<ConfigurationType>())
             {
-                var ConfigurationTypeAndArchitecture = $"{ConfigurationType}|{GetArchitectureString(TargetArchitecture)}";
+                var ConfigurationTypeAndArchitecture = $"{ConfigurationType}|{GetArchitectureString(TargetOperatingSystem, TargetArchitecture)}";
                 s.SolutionConfigurationsSection.SetValue(ConfigurationTypeAndArchitecture, ConfigurationTypeAndArchitecture);
             }
 
@@ -93,7 +95,7 @@ namespace TypeMake.Cpp
                 var conf = new SlnPropertySet("{" + Project.Id + "}");
                 foreach (var c in s.SolutionConfigurationsSection)
                 {
-                    var Value = c.Value.Replace("|x86", "|Win32");
+                    var Value = TargetOperatingSystem == OperatingSystemType.Windows ? c.Value.Replace("|x86", "|Win32") : c.Value;
                     conf.SetValue(c.Key + ".ActiveCfg", Value);
                     conf.SetValue(c.Key + ".Build.0", Value);
                 }
@@ -130,11 +132,18 @@ namespace TypeMake.Cpp
             TextFile.WriteToFile(s.FullPath, Text, Encoding.UTF8, !ForceRegenerate);
         }
 
-        public static String GetArchitectureString(ArchitectureType Architecture)
+        public static String GetArchitectureString(OperatingSystemType OperatingSystem, ArchitectureType Architecture)
         {
             if (Architecture == ArchitectureType.x86)
             {
-                return "x86";
+                if (OperatingSystem == OperatingSystemType.Windows)
+                {
+                    return "Win32";
+                }
+                else
+                {
+                    return "x86";
+                }
             }
             else if (Architecture == ArchitectureType.x64)
             {

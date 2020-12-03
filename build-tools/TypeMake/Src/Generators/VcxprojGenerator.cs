@@ -13,6 +13,7 @@ namespace TypeMake.Cpp
         private Project Project;
         private String ProjectId;
         private List<ProjectReference> ProjectReferences;
+        private PathString BuildDirectory;
         private PathString InputDirectory;
         private PathString OutputDirectory;
         private String VcxprojTemplateText;
@@ -21,16 +22,22 @@ namespace TypeMake.Cpp
         private ArchitectureType HostArchitecture;
         private OperatingSystemType TargetOperatingSystem;
         private ArchitectureType? TargetArchitecture;
-        private WindowsRuntimeType WindowsRuntime;
+        private WindowsRuntimeType? WindowsRuntime;
         private CompilerType Compiler;
+        private CLibraryType CLibrary;
         private CLibraryForm CLibraryForm;
+        private CppLibraryType CppLibrary;
         private CppLibraryForm CppLibraryForm;
+        private String CC;
+        private String CXX;
+        private String AR;
 
-        public VcxprojGenerator(Project Project, String ProjectId, List<ProjectReference> ProjectReferences, PathString InputDirectory, PathString OutputDirectory, String VcxprojTemplateText, String VcxprojFilterTemplateText, OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType? TargetArchitecture, WindowsRuntimeType WindowsRuntime, CompilerType Compiler, CLibraryForm CLibraryForm, CppLibraryForm CppLibraryForm)
+        public VcxprojGenerator(Project Project, String ProjectId, List<ProjectReference> ProjectReferences, PathString BuildDirectory, PathString InputDirectory, PathString OutputDirectory, String VcxprojTemplateText, String VcxprojFilterTemplateText, OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType? TargetArchitecture, WindowsRuntimeType? WindowsRuntime, CompilerType Compiler, CLibraryType CLibrary, CLibraryForm CLibraryForm, CppLibraryType CppLibrary, CppLibraryForm CppLibraryForm, String CC, String CXX, String AR)
         {
             this.Project = Project;
             this.ProjectId = ProjectId;
             this.ProjectReferences = ProjectReferences;
+            this.BuildDirectory = BuildDirectory.FullPath;
             this.InputDirectory = InputDirectory.FullPath;
             this.OutputDirectory = OutputDirectory.FullPath;
             this.VcxprojTemplateText = VcxprojTemplateText;
@@ -41,8 +48,13 @@ namespace TypeMake.Cpp
             this.TargetArchitecture = TargetArchitecture;
             this.WindowsRuntime = WindowsRuntime;
             this.Compiler = Compiler;
+            this.CLibrary = CLibrary;
             this.CLibraryForm = CLibraryForm;
+            this.CppLibrary = CppLibrary;
             this.CppLibraryForm = CppLibraryForm;
+            this.CC = CC;
+            this.CXX = CXX;
+            this.AR = AR;
         }
 
         public void Generate(bool ForceRegenerate)
@@ -70,7 +82,7 @@ namespace TypeMake.Cpp
                     if (m.Success)
                     {
                         var Architecture = m.Result("${Architecture}");
-                        if (Architecture != GetArchitectureString(TargetArchitecture.Value))
+                        if (Architecture != GetArchitectureString(TargetOperatingSystem, TargetArchitecture.Value))
                         {
                             e.Remove();
                         }
@@ -86,7 +98,7 @@ namespace TypeMake.Cpp
                         if (m.Success)
                         {
                             var Architecture = m.Result("${Architecture}");
-                            if (Architecture != GetArchitectureString(TargetArchitecture.Value))
+                            if (Architecture != GetArchitectureString(TargetOperatingSystem, TargetArchitecture.Value))
                             {
                                 e.Remove();
                             }
@@ -134,23 +146,34 @@ namespace TypeMake.Cpp
             var g = "{" + ProjectId.ToUpper() + "}";
             GlobalsPropertyGroup.SetElementValue(xn + "ProjectGuid", g);
             GlobalsPropertyGroup.SetElementValue(xn + "RootNamespace", Project.Name);
-            GlobalsPropertyGroup.SetElementValue(xn + "WindowsTargetPlatformVersion", GetWindowsTargetPlatformVersion());
-            if (WindowsRuntime == WindowsRuntimeType.Win32)
+            if (TargetOperatingSystem == OperatingSystemType.Windows)
             {
-                GlobalsPropertyGroup.SetElementValue(xn + "Keyword", "Win32Proj");
+                GlobalsPropertyGroup.SetElementValue(xn + "WindowsTargetPlatformVersion", GetWindowsTargetPlatformVersion());
+                if (WindowsRuntime == WindowsRuntimeType.Win32)
+                {
+                    GlobalsPropertyGroup.SetElementValue(xn + "Keyword", "Win32Proj");
+                }
+                else if (WindowsRuntime == WindowsRuntimeType.WinRT)
+                {
+                    GlobalsPropertyGroup.SetElementValue(xn + "AppContainerApplication", true);
+                    GlobalsPropertyGroup.SetElementValue(xn + "ApplicationType", "Windows Store");
+                    GlobalsPropertyGroup.SetElementValue(xn + "ApplicationTypeRevision", "10.0");
+                }
+                else
+                {
+                    throw new InvalidOperationException();
+                }
             }
-            else if (WindowsRuntime == WindowsRuntimeType.WinRT)
+            else if (TargetOperatingSystem == OperatingSystemType.Linux)
             {
-                GlobalsPropertyGroup.SetElementValue(xn + "AppContainerApplication", true);
-                GlobalsPropertyGroup.SetElementValue(xn + "ApplicationType", "Windows Store");
-                GlobalsPropertyGroup.SetElementValue(xn + "ApplicationTypeRevision", "10.0");
+                GlobalsPropertyGroup.SetElementValue(xn + "Keyword", "Linux");
             }
             else
             {
                 throw new InvalidOperationException();
             }
 
-            var globalConf = Project.Configurations.Merged(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, WindowsRuntime, ToolchainType.VisualStudio, Compiler, CLibraryType.VisualCRuntime, CLibraryForm, CppLibraryType.VisualCppRuntime, CppLibraryForm, null);
+            var globalConf = Project.Configurations.Merged(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, WindowsRuntime, ToolchainType.VisualStudio, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, null);
             foreach (var o in globalConf.Options)
             {
                 var Prefix = "vc.Globals.";
@@ -167,7 +190,7 @@ namespace TypeMake.Cpp
             {
                 foreach (var ConfigurationType in Enum.GetValues(typeof(ConfigurationType)).Cast<ConfigurationType>())
                 {
-                    var Name = ConfigurationType.ToString() + "|" + GetArchitectureString(Architecture);
+                    var Name = ConfigurationType.ToString() + "|" + GetArchitectureString(TargetOperatingSystem, Architecture);
                     if (ProjectConfigurations.ContainsKey(Name))
                     {
                         ExistingConfigurationTypeAndArchitectures.Add(new KeyValuePair<ConfigurationType, ArchitectureType>(ConfigurationType, Architecture), Name);
@@ -181,7 +204,7 @@ namespace TypeMake.Cpp
                 var Architecture = Pair.Key.Value;
                 var Name = Pair.Value;
 
-                var conf = Project.Configurations.Merged(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, Architecture, WindowsRuntime, ToolchainType.VisualStudio, Compiler, CLibraryType.VisualCRuntime, CLibraryForm, CppLibraryType.VisualCppRuntime, CppLibraryForm, ConfigurationType);
+                var conf = Project.Configurations.Merged(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, Architecture, WindowsRuntime, ToolchainType.VisualStudio, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType);
 
                 var PropertyGroupConfiguration = xVcxproj.Elements(xn + "PropertyGroup").Where(e => (e.Attribute("Condition") != null) && (e.Attribute("Condition").Value == "'$(Configuration)|$(Platform)'=='" + Name + "'") && (e.Attribute("Label") != null) && (e.Attribute("Label").Value == "Configuration")).LastOrDefault();
                 if (PropertyGroupConfiguration == null)
@@ -211,6 +234,18 @@ namespace TypeMake.Cpp
                     throw new NotSupportedException("NotSupportedTargetType: " + Project.TargetType.ToString());
                 }
 
+                if (TargetOperatingSystem == OperatingSystemType.Linux)
+                {
+                    if (Compiler == CompilerType.gcc)
+                    {
+                        PropertyGroupConfiguration.SetElementValue(xn + "PlatformToolset", "WSL_1_0");
+                    }
+                    else if (Compiler == CompilerType.clang)
+                    {
+                        PropertyGroupConfiguration.SetElementValue(xn + "PlatformToolset", "WSL_Clang_1_0");
+                    }
+                }
+
                 foreach (var o in conf.Options)
                 {
                     var Prefix = "vc.Configuration.";
@@ -230,28 +265,54 @@ namespace TypeMake.Cpp
 
                 if (conf.OutputDirectory != null)
                 {
-                    var OutDir = conf.OutputDirectory.RelativeTo(BaseDirPath).ToString(PathStringStyle.Windows);
+                    var RelativeOutDir = conf.OutputDirectory.RelativeTo(BuildDirectory);
+                    var OutDir = RelativeOutDir.IsFullPath ? RelativeOutDir.ToString(PathStringStyle.Windows) : "$(SolutionDir)" + RelativeOutDir.ToString(PathStringStyle.Windows);
                     if (!OutDir.EndsWith("\\")) { OutDir += "\\"; }
                     PropertyGroup.SetElementValue(xn + "OutDir", OutDir);
+                    PropertyGroup.SetElementValue(xn + "DebuggerWorkingDirectory", OutDir);
                 }
                 else
                 {
                     if (TargetArchitecture == null)
                     {
                         PropertyGroup.SetElementValue(xn + "OutDir", $"$(SolutionDir){Architecture}_{ConfigurationType}\\");
+                        PropertyGroup.SetElementValue(xn + "DebuggerWorkingDirectory", $"$(SolutionDir){Architecture}_{ConfigurationType}\\");
                     }
                     else
                     {
                         PropertyGroup.SetElementValue(xn + "OutDir", $"$(SolutionDir){ConfigurationType}\\");
+                        PropertyGroup.SetElementValue(xn + "DebuggerWorkingDirectory", $"$(SolutionDir){ConfigurationType}\\");
                     }
                 }
                 if (TargetArchitecture == null)
                 {
-                    PropertyGroup.SetElementValue(xn + "IntDir", $"$(SolutionDir){Architecture}_{ConfigurationType}\\$(ProjectName)\\");
+                    PropertyGroup.SetElementValue(xn + "IntDir", $"$(SolutionDir)projects\\$(ProjectName)\\{Architecture}_{ConfigurationType}\\");
                 }
                 else
                 {
-                    PropertyGroup.SetElementValue(xn + "IntDir", $"$(SolutionDir){ConfigurationType}\\$(ProjectName)\\");
+                    PropertyGroup.SetElementValue(xn + "IntDir", $"$(SolutionDir)projects\\$(ProjectName)\\{ConfigurationType}\\");
+                }
+
+                if (TargetOperatingSystem == OperatingSystemType.Linux)
+                {
+                    if (CC != null)
+                    {
+                        PropertyGroup.SetElementValue(xn + "RemoteCCompileToolExe", CC);
+                    }
+                    if (CXX != null)
+                    {
+                        PropertyGroup.SetElementValue(xn + "RemoteCppCompileToolExe", CXX);
+                        PropertyGroup.SetElementValue(xn + "RemoteLdToolExe", CXX);
+                    }
+                    if (AR != null)
+                    {
+                        PropertyGroup.SetElementValue(xn + "RemoteArToolExe", AR);
+                    }
+                    PropertyGroup.SetElementValue(xn + "EnableIncrementalBuild", "WithNinja");
+                    if (Project.TargetType == TargetType.Executable)
+                    {
+                        PropertyGroup.SetElementValue(xn + "TargetExt", "");
+                    }
                 }
 
                 foreach (var o in conf.Options)
@@ -337,13 +398,29 @@ namespace TypeMake.Cpp
                     {
                         Link.SetElementValue(xn + "AdditionalLibraryDirectories", String.Join(";", LibDirectories) + ";%(AdditionalLibraryDirectories)");
                     }
-                    var Libs = conf.Libs.Select(Lib => Lib.Parts.Count == 1 ? Lib.ToString(PathStringStyle.Windows) : Lib.RelativeTo(BaseDirPath).ToString(PathStringStyle.Windows)).ToList();
-                    if (Libs.Count != 0)
+                    if (TargetOperatingSystem == OperatingSystemType.Windows)
                     {
-                        Link.SetElementValue(xn + "AdditionalDependencies", String.Join(";", Libs) + ";%(AdditionalDependencies)");
+                        var Libs = conf.Libs.Select(Lib => Lib.Parts.Count == 1 ? Lib.ToString(PathStringStyle.Windows) : Lib.RelativeTo(BaseDirPath).ToString(PathStringStyle.Windows)).ToList();
+                        if (Libs.Count != 0)
+                        {
+                            Link.SetElementValue(xn + "AdditionalDependencies", String.Join(";", Libs) + ";%(AdditionalDependencies)");
+                        }
+                    }
+                    else
+                    {
+                        var Libs = conf.Libs.Select(Lib => Lib.Parts.Count == 1 ? Lib.Extension == "" ? "-l" + Lib.ToString(PathStringStyle.Unix) : "-l:" + Lib.ToString(PathStringStyle.Unix) : Lib.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix)).ToList();
+                        Libs.Add("-Wl,--end-group");
+                        if (Libs.Count != 0)
+                        {
+                            Link.SetElementValue(xn + "AdditionalDependencies", String.Join(";", Libs) + ";%(AdditionalDependencies)");
+                        }
                     }
                     var LinkerFlags = conf.LinkerFlags.Select(f => (f == null ? "" : Regex.IsMatch(f, @"^[0-9]+$") ? f : "\"" + f.Replace("\"", "\"\"") + "\"")).ToList();
                     var PostLinkerFlags = conf.PostLinkerFlags.Select(f => (f == null ? "" : Regex.IsMatch(f, @"^[0-9]+$") ? f : "\"" + f.Replace("\"", "\"\"") + "\"")).ToList();
+                    if (TargetOperatingSystem != OperatingSystemType.Windows)
+                    {
+                        PostLinkerFlags.Add("-Wl,--start-group");
+                    }
                     if (LinkerFlags.Count + PostLinkerFlags.Count != 0)
                     {
                         Link.SetElementValue(xn + "AdditionalOptions", String.Join(" ", LinkerFlags.Concat(new List<String> { "%(AdditionalOptions)" }).Concat(PostLinkerFlags)));
@@ -362,14 +439,14 @@ namespace TypeMake.Cpp
 
             var Import = xVcxproj.Elements(xn + "Import").LastOrDefault();
 
-            foreach (var gConf in Project.Configurations.Matches(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, null, WindowsRuntime, ToolchainType.VisualStudio, Compiler, CLibraryType.VisualCRuntime, CLibraryForm, CppLibraryType.VisualCppRuntime, CppLibraryForm, null).GroupBy(conf => Tuple.Create(conf.MatchingConfigurationTypes, conf.MatchingTargetArchitectures?.Intersect(new ArchitectureType[] { ArchitectureType.x86, ArchitectureType.x64, ArchitectureType.armv7a, ArchitectureType.arm64 }).ToList()), new ConfigurationTypesAndArchitecturesComparer()))
+            foreach (var gConf in Project.Configurations.Matches(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, null, WindowsRuntime, ToolchainType.VisualStudio, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, null).GroupBy(conf => Tuple.Create(conf.MatchingConfigurationTypes, conf.MatchingTargetArchitectures?.Intersect(new ArchitectureType[] { ArchitectureType.x86, ArchitectureType.x64, ArchitectureType.armv7a, ArchitectureType.arm64 }).ToList()), new ConfigurationTypesAndArchitecturesComparer()))
             {
                 var MatchingConfigurationTypes = gConf.Key.Item1;
                 var MatchingTargetArchitectures = gConf.Key.Item2;
                 if ((MatchingConfigurationTypes != null) && (MatchingConfigurationTypes.Count == 0)) { continue; }
                 if ((MatchingTargetArchitectures != null) && (MatchingTargetArchitectures.Count == 0)) { continue; }
                 var Conditions = new List<String>();
-                Conditions = GetConditions(MatchingConfigurationTypes, MatchingTargetArchitectures);
+                Conditions = GetConditions(TargetOperatingSystem, MatchingConfigurationTypes, MatchingTargetArchitectures);
 
                 foreach (var Condition in Conditions)
                 {
@@ -398,9 +475,15 @@ namespace TypeMake.Cpp
                         else if ((File.Type == FileType.CSource) || (File.Type == FileType.CppSource))
                         {
                             x = new XElement(xn + "ClCompile", new XAttribute("Include", RelativePathStr));
-                            //x.Add(new XElement(xn + "ObjectFileName", "$(IntDir)" + RelativePath.Replace("..", "__").Replace(":", "_") + ".obj"));
-                            // workaround Visual Studio bug which slows build https://developercommunity.visualstudio.com/idea/586584/vs2017-cc-multi-processor-compilation-does-not-wor.html
-                            x.Add(new XElement(xn + "ObjectFileName", "$(IntDir)" + RelativePath.Parent.ToString(PathStringStyle.Windows).Replace("..", "__").Replace(":", "_") + "\\"));
+                            if (Compiler == CompilerType.VisualCpp)
+                            {
+                                // workaround Visual Studio bug which slows build https://developercommunity.visualstudio.com/idea/586584/vs2017-cc-multi-processor-compilation-does-not-wor.html
+                                x.Add(new XElement(xn + "ObjectFileName", "$(IntDir)" + RelativePath.Parent.ToString(PathStringStyle.Windows).Replace("..", "__").Replace(":", "_") + "\\"));
+                            }
+                            else
+                            {
+                                x.Add(new XElement(xn + "ObjectFileName", "$(IntDir)" + RelativePath.ToString(PathStringStyle.Windows).Replace("..", "__").Replace(":", "_") + ".o"));
+                            }
                         }
                         else if (File.Type == FileType.NatVis)
                         {
@@ -412,7 +495,7 @@ namespace TypeMake.Cpp
                         }
                         if ((File.Type == FileType.CSource) || (File.Type == FileType.CppSource))
                         {
-                            var fileConfs = File.Configurations.Matches(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, null, WindowsRuntime, ToolchainType.VisualStudio, Compiler, CLibraryType.VisualCRuntime, CLibraryForm, CppLibraryType.VisualCppRuntime, CppLibraryForm, null);
+                            var fileConfs = File.Configurations.Matches(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, null, WindowsRuntime, ToolchainType.VisualStudio, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, null);
 
                             foreach (var conf in fileConfs)
                             {
@@ -434,7 +517,7 @@ namespace TypeMake.Cpp
                                         FileMatchingTargetArchitectures = null;
                                     }
                                 }
-                                var FileConditions = GetConditions(FileMatchingConfigurationTypes, FileMatchingTargetArchitectures);
+                                var FileConditions = GetConditions(TargetOperatingSystem, FileMatchingConfigurationTypes, FileMatchingTargetArchitectures);
 
                                 foreach (var FileCondition in FileConditions)
                                 {
@@ -575,7 +658,7 @@ namespace TypeMake.Cpp
 
             var Files = new HashSet<String>(StringComparer.OrdinalIgnoreCase);
             var Filters = new HashSet<String>(StringComparer.OrdinalIgnoreCase);
-            foreach (var conf in Project.Configurations.Matches(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, null, WindowsRuntime, ToolchainType.VisualStudio, Compiler, CLibraryType.VisualCRuntime, CLibraryForm, CppLibraryType.VisualCppRuntime, CppLibraryForm, null))
+            foreach (var conf in Project.Configurations.Matches(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, null, WindowsRuntime, ToolchainType.VisualStudio, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, null))
             {
                 foreach (var f in conf.Files)
                 {
@@ -664,11 +747,18 @@ namespace TypeMake.Cpp
             }
         }
 
-        public static String GetArchitectureString(ArchitectureType Architecture)
+        public static String GetArchitectureString(OperatingSystemType OperatingSystem, ArchitectureType Architecture)
         {
             if (Architecture == ArchitectureType.x86)
             {
-                return "Win32";
+                if (OperatingSystem == OperatingSystemType.Windows)
+                {
+                    return "Win32";
+                }
+                else
+                {
+                    return "x86";
+                }
             }
             else if (Architecture == ArchitectureType.x64)
             {
@@ -729,7 +819,7 @@ namespace TypeMake.Cpp
             }
         }
 
-        private static List<string> GetConditions(List<ConfigurationType> MatchingConfigurationTypes, List<ArchitectureType> MatchingTargetArchitectures)
+        private static List<string> GetConditions(OperatingSystemType OperatingSystem, List<ConfigurationType> MatchingConfigurationTypes, List<ArchitectureType> MatchingTargetArchitectures)
         {
             List<string> Conditions;
             if ((MatchingConfigurationTypes != null) || (MatchingTargetArchitectures != null))
@@ -744,7 +834,7 @@ namespace TypeMake.Cpp
                 if (MatchingTargetArchitectures != null)
                 {
                     Keys = (Keys != "" ? Keys + "|" : "") + "$(Platform)";
-                    Values = MatchingTargetArchitectures.SelectMany(a => Values.Select(v => (v != "" ? v + "|" : "") + GetArchitectureString(a))).ToList();
+                    Values = MatchingTargetArchitectures.SelectMany(a => Values.Select(v => (v != "" ? v + "|" : "") + GetArchitectureString(OperatingSystem, a))).ToList();
                 }
                 Conditions = Values.Select(v => "'" + Keys + "' == '" + v + "'").ToList();
             }

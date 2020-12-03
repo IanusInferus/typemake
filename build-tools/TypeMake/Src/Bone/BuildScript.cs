@@ -119,7 +119,7 @@ namespace TypeMake
                 Lines.Add("set UseMultiToolTask=true");
                 Lines.Add("set EnforceProcessCountAcrossBuilds=true"); //limit process number in spite of cl /MP and MSBuild /m, https://developercommunity.visualstudio.com/idea/436208/limit-cpu-usage-of-visual-studio.html
                 Lines.Add($"set MultiProcMaxCount={MaxProcessCount}");
-                Lines.Add($@"""{VSDir.ToString(PathStringStyle.Windows)}\MSBuild\{MSBuildVersion}\Bin\MSBuild.exe"" {SolutionName}.sln /p:Configuration={Configuration} /p:Platform={Cpp.SlnGenerator.GetArchitectureString(TargetArchitecture)} /m:{MaxProcessCount} || exit /b 1");
+                Lines.Add($@"""{VSDir.ToString(PathStringStyle.Windows)}\MSBuild\{MSBuildVersion}\Bin\MSBuild.exe"" {SolutionName}.sln /p:Configuration={Configuration} /p:Platform={Cpp.SlnGenerator.GetArchitectureString(Cpp.OperatingSystemType.Windows, TargetArchitecture)} /m:{MaxProcessCount} || exit /b 1");
                 Lines.Add("");
                 var BuildPath = BuildDirectory / $"build_{Configuration}.cmd";
                 TextFile.WriteToFile(BuildPath, String.Join("\r\n", Lines), System.Text.Encoding.Default, !ForceRegenerate);

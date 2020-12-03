@@ -84,6 +84,7 @@
     </None>
     <EmbeddedResource Include="Templates\gradle_application\build.gradle" />
     <EmbeddedResource Include="Templates\gradle_library\build.gradle" />
+    <EmbeddedResource Include="Templates\vc16\Linux.vcxproj" />
     <None Include="Templates\xcode9\Default.xcodeproj\ConvertToXml.sh" />
     <EmbeddedResource Include="Templates\xcode9\Default.xcodeproj\project.pbxproj" />
     <None Include="Templates\xcode9\Dummy.m" />
