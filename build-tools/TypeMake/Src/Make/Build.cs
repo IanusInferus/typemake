@@ -984,6 +984,12 @@ namespace TypeMake
         private void FillFilesInDirectory(PathString d, OperatingSystemType TargetOperatingSystem, bool IsTargetOperatingSystemMatched, bool TopOnly, List<Cpp.File> Results)
         {
             if (!Directory.Exists(d)) { return; }
+            var Extensions = d.FileName.Split('.', '_').Skip(1).ToList();
+            var IsTargetOperatingSystemMatchedForCurrentDirectory = IsTargetOperatingSystemMatched;
+            if ((!IsTargetOperatingSystemMatched || !IsOperatingSystemMatchExtensions(Extensions, TargetOperatingSystem)) && !((TargetOperatingSystem == OperatingSystemType.iOS) && EnableMacCatalyst && IsOperatingSystemMatchExtensions(Extensions, OperatingSystemType.MacOS, true)))
+            {
+                IsTargetOperatingSystemMatchedForCurrentDirectory = false;
+            }
             foreach (var FilePathRelative in Directory.EnumerateDirectories(d, "*", SearchOption.TopDirectoryOnly))
             {
                 var FilePath = FilePathRelative.AsPath().FullPath;
@@ -995,13 +1001,13 @@ namespace TypeMake
                 }
                 if (!TopOnly)
                 {
-                    FillFilesInDirectory(FilePathRelative, TargetOperatingSystem, IsTargetOperatingSystemMatched, TopOnly, Results);
+                    FillFilesInDirectory(FilePathRelative, TargetOperatingSystem, IsTargetOperatingSystemMatchedForCurrentDirectory, TopOnly, Results);
                 }
             }
             foreach (var FilePathRelative in Directory.EnumerateFiles(d, "*", SearchOption.TopDirectoryOnly))
             {
                 var FilePath = FilePathRelative.AsPath().FullPath;
-                Results.Add(GetFileByPath(FilePath, TargetOperatingSystem, IsTargetOperatingSystemMatched));
+                Results.Add(GetFileByPath(FilePath, TargetOperatingSystem, IsTargetOperatingSystemMatchedForCurrentDirectory));
             }
         }
         private Cpp.File GetFileByPath(PathString FilePath, OperatingSystemType TargetOperatingSystem, bool IsTargetOperatingSystemMatched)
