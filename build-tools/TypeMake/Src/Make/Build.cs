@@ -719,9 +719,9 @@ namespace TypeMake
                 new Configuration
                 {
                     MatchingCompilers = new List<CompilerType> { CompilerType.gcc, CompilerType.clang },
-                    CommonFlags = ParseFlags("-Werror=return-type -Werror=address -Werror=sequence-point -Werror=format-security -Werror=int-to-pointer-cast -Werror=pointer-to-int-cast -Wformat -Wuninitialized -Winit-self -Wpointer-arith -Wundef"),
-                    CFlags = ParseFlags("-Wstrict-prototypes -Wimplicit-function-declaration"),
-                    CppFlags = ParseFlags("-Wsign-promo")
+                    CommonFlags = ParseFlags("-Wno-unused-function -Wno-comment -Werror=return-type -Werror=address -Werror=sequence-point -Werror=int-to-pointer-cast -Werror=format -Werror=format-security -Werror=init-self -Werror=pointer-arith -Wuninitialized -Wundef -Wformat-nonliteral -Wno-error=uninitialized -Wno-error=undef -Wno-error=format-nonliteral"),
+                    CFlags = ParseFlags("-Werror=strict-prototypes -Werror=implicit-int -Werror=implicit-function-declaration -Werror=pointer-to-int-cast"),
+                    CppFlags = ParseFlags("-Wsign-promo -Wno-error=sign-promo")
                 },
                 new Configuration
                 {
