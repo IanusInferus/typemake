@@ -523,7 +523,7 @@ namespace TypeMake
                             if (Toolchain == ToolchainType.Ninja)
                             {
                                 var Out = OutputDirectory.FileName == "gradle" ? OutputDirectory.Parent / "batch" : OutputDirectory;
-                                var gBatch = new AndroidBatchProjectGenerator(SolutionName, p, ProjectReferences, InputDirectory, Out, BuildDirectory, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType, Jdk, AndroidSdk, AndroidNdk, "28.0.3", 15, 28, Environment.GetFolderPath(Environment.SpecialFolder.UserProfile).AsPath() / ".android/debug.keystore", "android", "androiddebugkey", "android", true);
+                                var gBatch = new AndroidBatchProjectGenerator(SolutionName, p, ProjectReferences, InputDirectory, Out, BuildDirectory, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType, Jdk, AndroidSdk, AndroidNdk, "30.0.3", 15, 28, Environment.GetFolderPath(Environment.SpecialFolder.UserProfile).AsPath() / ".android/debug.keystore", "android", "androiddebugkey", "android", true);
                                 gBatch.Generate(ForceRegenerate);
                             }
                             else
@@ -541,7 +541,7 @@ namespace TypeMake
                             if (Toolchain == ToolchainType.Ninja)
                             {
                                 var Out = OutputDirectory.FileName == "gradle" ? OutputDirectory.Parent / "batch" : OutputDirectory;
-                                var gBatch = new AndroidBatchProjectGenerator(SolutionName, p, ProjectReferences, InputDirectory, Out, BuildDirectory, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType, Jdk, AndroidSdk, AndroidNdk, "28.0.3", 15, 28, Environment.GetFolderPath(Environment.SpecialFolder.UserProfile).AsPath() / ".android/debug.keystore", "android", "androiddebugkey", "android", true);
+                                var gBatch = new AndroidBatchProjectGenerator(SolutionName, p, ProjectReferences, InputDirectory, Out, BuildDirectory, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType, Jdk, AndroidSdk, AndroidNdk, "30.0.3", 15, 28, Environment.GetFolderPath(Environment.SpecialFolder.UserProfile).AsPath() / ".android/debug.keystore", "android", "androiddebugkey", "android", true);
                                 gBatch.Generate(ForceRegenerate);
                             }
                             else
@@ -932,8 +932,8 @@ namespace TypeMake
                     MatchingToolchains = new List<ToolchainType> { ToolchainType.Ninja, ToolchainType.Gradle_Ninja },
                     MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Android },
                     CommonFlags = ParseFlags("-fno-addrsig -fPIE -fPIC -DANDROID -D_FORTIFY_SOURCE=2 -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -Wa,--noexecstack -Werror=fortify-source"),
-                    // https://android.googlesource.com/platform/ndk/+/master/docs/BuildSystemMaintainers.md#Unwinding
-                    LinkerFlags = ParseFlags("-Wl,--exclude-libs,libgcc.a -Wl,--exclude-libs,libatomic.a -Wl,--build-id=sha1 -Wl,--warn-shared-textrel -Wl,--fatal-warnings -Wl,--no-undefined -Wl,-z,noexecstack -Wl,-z,relro -Wl,-z,now")
+                    // https://android.googlesource.com/platform/ndk/+/master/docs/BuildSystemMaintainers.md
+                    LinkerFlags = ParseFlags("-Wl,--no-rosegment -Wl,--exclude-libs,libgcc.a -Wl,--exclude-libs,libgcc_real.a -Wl,--exclude-libs,libatomic.a -Wl,--build-id=sha1 -Wl,--warn-shared-textrel -Wl,--fatal-warnings -Wl,--no-undefined -Wl,-z,noexecstack -Wl,-z,relro -Wl,-z,now")
                 },
                 new Configuration
                 {
@@ -941,6 +941,20 @@ namespace TypeMake
                     MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Android },
                     MatchingTargetArchitectures = new List<ArchitectureType> { ArchitectureType.armv7a },
                     LinkerFlags = ParseFlags("-Wl,--exclude-libs,libunwind.a")
+                },
+                new Configuration
+                {
+                    MatchingToolchains = new List<ToolchainType> { ToolchainType.Ninja, ToolchainType.Gradle_Ninja },
+                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Android },
+                    MatchingTargetArchitectures = new List<ArchitectureType> { ArchitectureType.x86 },
+                    CommonFlags = ParseFlags("-mstackrealign")
+                },
+                new Configuration
+                {
+                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Linux, OperatingSystemType.Android },
+                    MatchingCompilers = new List<CompilerType> { CompilerType.gcc, CompilerType.clang },
+                    MatchingConfigurationTypes = new List<ConfigurationType> { ConfigurationType.Release },
+                    LinkerFlags = ParseFlags("-Wl,--gc-sections")
                 },
                 new Configuration
                 {
