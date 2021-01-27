@@ -73,7 +73,7 @@ Mac: XCode(11.0) mono(5.x)
 
 iOS: XCode(11.0) mono(5.x)
 
-Android: JDK(8.x) AndroidSDK(build-tools:30.0.3 platforms:android-28) AndroidNDK(r22) \[Android Gradle plugin(4.1.0)\] \[CMake(>=3.3.2)\]
+Android: JDK(8.x) AndroidSDK("build-tools;30.0.3" "platforms;android-28" "ndk;22.0.7026061") \[Android Gradle plugin(4.1.0)\] \[CMake(>=3.3.2)\]
 
 Android on Linux(openSUSE 15.1): java-1_8_0-openjdk-devel
 
