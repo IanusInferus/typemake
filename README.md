@@ -57,31 +57,27 @@ Different OSs use different ABIs on the same CPU architecture.
 
 Windows: VS2019 \[LLVM(10.0.0-win64)\] \[[C++ Clang-cl for v142 build tools](https://docs.microsoft.com/en-us/cpp/build/clang-support-msbuild?view=vs-2019)\]
 
-Linux(openSUSE 15.1): \[cmake(>=3.3.2)\] gcc-c++(7.3.1) \[gcc-c++-32bit(7.3.1)\] mono-devel(5.x) glibc(runtime 2.14)
+Linux(openSUSE 15.2): \[cmake(>=3.3.2)\] gcc-c++(7.5.0) \[gcc-c++-32bit(7.5.0)\] mono-devel(6.x) glibc(runtime 2.14)
 
-Linux(Ubuntu 18.04): \[cmake(>=3.3.2)\] g++(7.3.0) \[g++-multilib(7.3.0)\] mono-devel(5.x) glibc(runtime 2.14)
+Linux(openSUSE 15.2) with clang: clang(9.0.1) libc++-devel(9.0.1) llvm(9.0.1)
+
+Linux(Ubuntu 18.04): \[cmake(>=3.3.2)\] g++(7.3.0) \[g++-multilib(7.3.0)\] mono-devel(6.x) glibc(runtime 2.14)
 
 Linux(Ubuntu 18.04) with clang: clang-7 libc++-7-dev libc++abi-7-dev llvm-7-tools (CC=clang-7 CXX=clang++-7 AR=llvm-ar-7)
 
-Linux(Ubuntu 18.04) with musl(x86/x64/armv7a/arm64): musl-cross-make (CC=xxx-linux-musl-gcc CXX=xxx-linux-musl-g++ AR=xxx-linux-musl-ar)
-
-Linux(Alpine 3.9): g++(8.2.0) bash mono-devel(5.x, in edge/testing repo) ninja
+Linux with musl(x86/x64/armv7a/arm64): musl-cross-make (CC=xxx-linux-musl-gcc CXX=xxx-linux-musl-g++ AR=xxx-linux-musl-ar)
 
 Linux GUI: GTK
 
-Mac: XCode(11.0) mono(5.x)
+Mac: XCode(12.0) mono(6.x)
 
-iOS: XCode(11.0) mono(5.x)
+iOS: XCode(12.0) mono(6.x)
 
 Android: JDK(8.x) AndroidSDK("build-tools;30.0.3" "platforms;android-28" "ndk;22.0.7026061") \[Android Gradle plugin(4.1.0)\] \[CMake(>=3.3.2)\]
 
-Android on Linux(openSUSE 15.1): java-1_8_0-openjdk-devel
+Android on Linux(openSUSE 15.2): java-1_8_0-openjdk-devel
 
 Android on Linux(Ubuntu 18.04): openjdk-8-jdk
-
-Android on Linux(Alpine 3.9): openjdk8
-
-Android on Linux(CentOS 7.7): java-1.8.0-openjdk-devel
 
 Android on Android: ninja mono(https://github.com/IanusInferus/termux-mono) {OpenJDK(11.0.1), AndroidSDK, AndroidNDK(r21)}(https://github.com/Lzhiyong/termux-ndk/releases, only Android 10.0 is tested)
 
@@ -100,6 +96,6 @@ To use this repo in a project, just copy 'tools' directory to the project repo.
 
 You may need to customize some code to cope with your project, mainly in directory 'Make' and 'Templates'.
 
-To build a program statically for Linux/Android on x64/arm64/... without libc(glibc/bionic) dependency, you can build [musl-cross-make](https://github.com/richfelker/musl-cross-make) with ([GCC_CONFIG += --enable-default-pie](https://github.com/richfelker/musl-cross-make/issues/47)) and then build your program for Linux with static options(CLibrary=Static).
+To build a program statically for Linux/Android on x64/arm64/... without libc(glibc/bionic) dependency, you can build [musl-cross-make](https://github.com/richfelker/musl-cross-make) with ([GCC_CONFIG += --enable-default-pie](https://github.com/richfelker/musl-cross-make/issues/47)) and then build your program for Linux with static options(CLibraryForm=Static).
 
 Android host support is [Termux](https://github.com/termux/termux-app)-only and is limited.
