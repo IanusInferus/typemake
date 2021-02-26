@@ -924,7 +924,7 @@ namespace TypeMake
                     MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.iOS },
                     Options = new Dictionary<String, String>
                     {
-                        ["xcode.project.IPHONEOS_DEPLOYMENT_TARGET"] = "8.0"
+                        ["xcode.project.IPHONEOS_DEPLOYMENT_TARGET"] = "9.0"
                     }
                 },
                 new Configuration
@@ -980,7 +980,7 @@ namespace TypeMake
                     {
                         ["xcode.project.TARGETED_DEVICE_FAMILY"] = "1,2",
                         ["xcode.project.SUPPORTS_MACCATALYST"] = "YES",
-                        ["xcode.project.IPHONEOS_DEPLOYMENT_TARGET"] = "8.0",
+                        ["xcode.project.IPHONEOS_DEPLOYMENT_TARGET"] = "9.0",
                         ["xcode.project.MACOSX_DEPLOYMENT_TARGET"] = "10.15",
                         ["xcode.target.TARGETED_DEVICE_FAMILY"] = "" //disable iPhone and iPad
                     }
