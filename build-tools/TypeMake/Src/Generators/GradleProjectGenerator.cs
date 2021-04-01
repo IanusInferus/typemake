@@ -232,7 +232,14 @@ namespace TypeMake.Cpp
         }
         public static String GetTargetTripletString(ArchitectureType Architecture)
         {
-            return GetNdkArchitectureString(Architecture) + "-linux-android";
+            if (Architecture == ArchitectureType.armv7a)
+            {
+                return "arm-linux-androideabi";
+            }
+            else
+            {
+                return GetNdkArchitectureString(Architecture) + "-linux-android";
+            }
         }
     }
 }
