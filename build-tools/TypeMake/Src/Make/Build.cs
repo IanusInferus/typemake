@@ -871,9 +871,33 @@ namespace TypeMake
                 },
                 new Configuration
                 {
+                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Windows, OperatingSystemType.Linux, OperatingSystemType.MacOS, OperatingSystemType.iOS },
                     MatchingCompilers = new List<CompilerType> { CompilerType.gcc, CompilerType.clang },
                     MatchingConfigurationTypes = new List<ConfigurationType> { ConfigurationType.Release },
                     CommonFlags = ParseFlags("-O3")
+                },
+                new Configuration
+                {
+                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Android },
+                    MatchingCompilers = new List<CompilerType> { CompilerType.gcc },
+                    MatchingConfigurationTypes = new List<ConfigurationType> { ConfigurationType.Release },
+                    CommonFlags = ParseFlags("-O3")
+                },
+                new Configuration
+                {
+                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Android },
+                    MatchingTargetArchitectures = new List<ArchitectureType> { ArchitectureType.x86, ArchitectureType.x64, ArchitectureType.arm64 },
+                    MatchingCompilers = new List<CompilerType> { CompilerType.clang },
+                    MatchingConfigurationTypes = new List<ConfigurationType> { ConfigurationType.Release },
+                    CommonFlags = ParseFlags("-O3")
+                },
+                new Configuration
+                {
+                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Android },
+                    MatchingTargetArchitectures = new List<ArchitectureType> { ArchitectureType.armv7a },
+                    MatchingCompilers = new List<CompilerType> { CompilerType.clang },
+                    MatchingConfigurationTypes = new List<ConfigurationType> { ConfigurationType.Release },
+                    CommonFlags = ParseFlags("-Oz") // armv7a libraries come with NDK are compiled with -Oz and seem not ABI-compatible with -O2/-O3/-Os on NDK r22
                 },
                 new Configuration
                 {
