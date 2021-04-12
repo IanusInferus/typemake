@@ -17,6 +17,7 @@ namespace TypeMake
         private OperatingSystemType TargetOperatingSystem;
         private ArchitectureType TargetArchitecture;
         private WindowsRuntimeType? WindowsRuntime;
+        private bool EnableiOSSimulator;
         private bool EnableMacCatalyst;
         private ConfigurationType ConfigurationType;
         private ToolchainType Toolchain;
@@ -49,13 +50,14 @@ namespace TypeMake
 
         private Dictionary<String, String> ProjectIds = new Dictionary<String, String>();
 
-        public Build(OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType TargetArchitecture, WindowsRuntimeType? WindowsRuntime, bool EnableMacCatalyst, ToolchainType Toolchain, CompilerType Compiler, CLibraryType CLibrary, CLibraryForm CLibraryForm, CppLibraryType CppLibrary, CppLibraryForm CppLibraryForm, ConfigurationType ConfigurationType, PathString SourceDirectory, PathString BuildDirectory, String XCodeDevelopmentTeam, String XCodeProvisioningProfileSpecifier, PathString VSDir, int VSVersion, bool EnableJava, PathString Jdk, PathString AndroidSdk, PathString AndroidNdk, String CC, String CXX, String AR, String STRIP, List<String> CommonFlags, List<String> CFlags, List<String> CppFlags, List<String> LinkerFlags, List<String> PostLinkerFlags, bool ForceRegenerate, bool EnableNonTargetingOperatingSystemDummy)
+        public Build(OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType TargetArchitecture, WindowsRuntimeType? WindowsRuntime, bool EnableiOSSimulator, bool EnableMacCatalyst, ToolchainType Toolchain, CompilerType Compiler, CLibraryType CLibrary, CLibraryForm CLibraryForm, CppLibraryType CppLibrary, CppLibraryForm CppLibraryForm, ConfigurationType ConfigurationType, PathString SourceDirectory, PathString BuildDirectory, String XCodeDevelopmentTeam, String XCodeProvisioningProfileSpecifier, PathString VSDir, int VSVersion, bool EnableJava, PathString Jdk, PathString AndroidSdk, PathString AndroidNdk, String CC, String CXX, String AR, String STRIP, List<String> CommonFlags, List<String> CFlags, List<String> CppFlags, List<String> LinkerFlags, List<String> PostLinkerFlags, bool ForceRegenerate, bool EnableNonTargetingOperatingSystemDummy)
         {
             this.HostOperatingSystem = HostOperatingSystem;
             this.HostArchitecture = HostArchitecture;
             this.TargetOperatingSystem = TargetOperatingSystem;
             this.TargetArchitecture = TargetArchitecture;
             this.WindowsRuntime = WindowsRuntime;
+            this.EnableiOSSimulator = EnableiOSSimulator;
             this.EnableMacCatalyst = EnableMacCatalyst;
             this.Toolchain = Toolchain;
             this.Compiler = Compiler;
@@ -995,6 +997,17 @@ namespace TypeMake
                     LinkerFlags = ParseFlags("-fcolor-diagnostics -fansi-escape-codes")
                 }
             };
+            if (EnableiOSSimulator)
+            {
+                Configurations.Add(new Configuration
+                {
+                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.iOS },
+                    Options = new Dictionary<String, String>
+                    {
+                        ["xcode.target.SDKROOT"] = "iphonesimulator"
+                    }
+                });
+            }
             if (EnableMacCatalyst)
             {
                 Configurations.Add(new Configuration

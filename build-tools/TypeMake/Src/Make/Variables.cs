@@ -11,6 +11,7 @@ namespace TypeMake
         public String TargetOperatingSystemDistribution;
         public Cpp.ArchitectureType TargetArchitecture;
         public Cpp.WindowsRuntimeType? WindowsRuntime;
+        public bool EnableiOSSimulator;
         public bool EnableMacCatalyst;
         public Cpp.ToolchainType Toolchain;
         public Cpp.CompilerType Compiler;
