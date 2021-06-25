@@ -307,11 +307,11 @@ namespace TypeMake
             Unix
         }
         private static Regex rBackslashBeforeDoubleQuotes = new Regex(@"\\+((?="")|$)", RegexOptions.ExplicitCapture);
-        private static Regex rComplexChars = new Regex(@"[\s!""#$%&'()*,;<>?@\[\\\]^`{|}~]", RegexOptions.ExplicitCapture);
+        private static Regex rComplexChars = new Regex(@"[\s!""#$%&'()*,;<>?@\[\\\]^`{|}~\r\n]", RegexOptions.ExplicitCapture);
         public static String EscapeArgument(String Argument, ArgumentStyle ArgumentStyle)
         {
             //\0 \r \n can not be escaped
-            if (Argument.Any(c => c == '\0' || c == '\r' || c == '\n')) { throw new ArgumentException("InvalidChar"); }
+            if (Argument.Any(c => c == '\0')) { throw new ArgumentException("InvalidChar"); }
             if (ArgumentStyle == ArgumentStyle.Windows)
             {
                 //https://docs.microsoft.com/en-us/cpp/cpp/parsing-cpp-command-line-arguments?view=vs-2017
@@ -341,8 +341,8 @@ namespace TypeMake
         }
         public static String EscapeArgumentForShell(String Argument, ShellArgumentStyle ShellArgumentStyle)
         {
-            //\0 \r \n can not be escaped
-            if (Argument.Any(c => c == '\0' || c == '\r' || c == '\n')) { throw new ArgumentException("InvalidChar"); }
+            //\0 can not be escaped
+            if (Argument.Any(c => c == '\0')) { throw new ArgumentException("InvalidChar"); }
             if (ShellArgumentStyle == ShellArgumentStyle.CMD)
             {
                 //CMD style(batch, without EnableDelayedExpansion)
