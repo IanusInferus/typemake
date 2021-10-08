@@ -41,7 +41,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Base\FileUtils.cs" />
+    <Compile Include="Base\FileSystemUtils.cs" />
     <Compile Include="Base\Hash.cs" />
     <Compile Include="Base\PlistFile.cs" />
     <Compile Include="Base\SlnFile.cs" />
@@ -65,6 +65,7 @@
     <Compile Include="Bone\RetypemakeScriptReader.cs" />
     <Compile Include="Bone\Program.cs" />
     <Compile Include="Base\PathString.cs" />
+    <Compile Include="Make\FileUtils.cs" />
     <Compile Include="Make\VariableCollection.cs" />
     <Compile Include="Make\Variables.cs" />
     <Compile Include="Schema\Variable.cs" />

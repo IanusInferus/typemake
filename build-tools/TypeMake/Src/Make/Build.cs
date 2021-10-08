@@ -121,8 +121,8 @@ namespace TypeMake
                 }
             }
 
-            var Modules = Directory.EnumerateDirectories(SourceDirectory / "modules", "*", SearchOption.TopDirectoryOnly).Select(p => p.AsPath()).Select(p => new { ModuleName = p.FileName, ModulePath = p, VirtualDir = "modules" }).ToList();
-            var Products = Directory.EnumerateDirectories(SourceDirectory / "products", "*", SearchOption.TopDirectoryOnly).Select(p => p.AsPath()).Select(p => new { ProductName = p.FileName, ProductPath = p, VirtualDir = "products" }).ToList();
+            var Modules = FileSystemUtils.GetDirectories(SourceDirectory / "modules", "*", SearchOption.TopDirectoryOnly).Select(p => new { ModuleName = p.FileName, ModulePath = p, VirtualDir = "modules" }).ToList();
+            var Products = FileSystemUtils.GetDirectories(SourceDirectory / "products", "*", SearchOption.TopDirectoryOnly).Select(p => new { ProductName = p.FileName, ProductPath = p, VirtualDir = "products" }).ToList();
 
             if ((CLibrary == CLibraryType.musl) && (CLibraryForm == CLibraryForm.Static))
             {
@@ -1041,9 +1041,9 @@ namespace TypeMake
             {
                 IsTargetOperatingSystemMatchedForCurrentDirectory = false;
             }
-            foreach (var FilePathRelative in Directory.EnumerateDirectories(d, "*", SearchOption.TopDirectoryOnly))
+            foreach (var FilePathRelative in FileSystemUtils.GetDirectories(d, "*", SearchOption.TopDirectoryOnly))
             {
-                var FilePath = FilePathRelative.AsPath().FullPath;
+                var FilePath = FilePathRelative.FullPath;
                 var Ext = FilePath.Extension.ToLowerInvariant();
                 if (Ext == "xcassets")
                 {
@@ -1055,9 +1055,9 @@ namespace TypeMake
                     FillFilesInDirectory(FilePathRelative, TargetOperatingSystem, IsTargetOperatingSystemMatchedForCurrentDirectory, TopOnly, Results);
                 }
             }
-            foreach (var FilePathRelative in Directory.EnumerateFiles(d, "*", SearchOption.TopDirectoryOnly))
+            foreach (var FilePathRelative in FileSystemUtils.GetFiles(d, "*", SearchOption.TopDirectoryOnly))
             {
-                var FilePath = FilePathRelative.AsPath().FullPath;
+                var FilePath = FilePathRelative.FullPath;
                 Results.Add(GetFileByPath(FilePath, TargetOperatingSystem, IsTargetOperatingSystemMatchedForCurrentDirectory));
             }
         }

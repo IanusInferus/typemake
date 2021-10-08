@@ -149,8 +149,8 @@ namespace TypeMake
                 Remaining.RemoveFirst();
                 while (Remaining.Count > 0)
                 {
-                    var l = Directory.GetFileSystemEntries(CurrentPath, Remaining.First.Value);
-                    if (l.Length == 0)
+                    var l = FileSystemUtils.GetFileSystemEntries(CurrentPath, Remaining.First.Value, SearchOption.TopDirectoryOnly).ToList();
+                    if (l.Count == 0)
                     {
                         break;
                     }
@@ -744,7 +744,7 @@ namespace TypeMake
                 {
                     try
                     {
-                        FileSelections = Directory.EnumerateFiles(ConfirmedParts, "*", SearchOption.TopDirectoryOnly).Select(f => f.AsPath().FileName).ToList();
+                        FileSelections = FileSystemUtils.GetFiles(ConfirmedParts, "*", SearchOption.TopDirectoryOnly).Select(f => f.FileName).ToList();
                     }
                     catch (UnauthorizedAccessException)
                     {
@@ -755,7 +755,7 @@ namespace TypeMake
                 {
                     try
                     {
-                        DirectorySelections = Directory.EnumerateDirectories(ConfirmedParts, "*", SearchOption.TopDirectoryOnly).Select(d => d.AsPath().FileName).ToList();
+                        DirectorySelections = FileSystemUtils.GetDirectories(ConfirmedParts, "*", SearchOption.TopDirectoryOnly).Select(d => d.FileName).ToList();
                     }
                     catch (UnauthorizedAccessException)
                     {

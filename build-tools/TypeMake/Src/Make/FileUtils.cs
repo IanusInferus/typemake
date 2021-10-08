@@ -30,9 +30,9 @@ namespace TypeMake
         }
         public static void CopyDirectory(String SourceDirectory, String DestinationDirectory, bool CopyOnlyOnModified)
         {
-            foreach (var f in Directory.EnumerateFiles(SourceDirectory, "*", SearchOption.AllDirectories))
+            foreach (var f in FileSystemUtils.GetFiles(SourceDirectory, "*", SearchOption.AllDirectories))
             {
-                var fNew = DestinationDirectory / f.AsPath().RelativeTo(SourceDirectory);
+                var fNew = DestinationDirectory / f.RelativeTo(SourceDirectory);
                 Copy(f, fNew, CopyOnlyOnModified);
             }
         }

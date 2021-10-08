@@ -865,7 +865,7 @@ namespace TypeMake
                         String DefaultValue = null;
                         if ((Variables.AndroidSdk != null) && (Directory.Exists(Variables.AndroidSdk / "ndk")))
                         {
-                            var NdkVersions = Directory.EnumerateDirectories(Variables.AndroidSdk / "ndk", "*", SearchOption.TopDirectoryOnly).Select(d => d.AsPath()).Where(d => File.Exists(d / "source.properties")).Select(d => d.FileName).ToList();
+                            var NdkVersions = FileSystemUtils.GetDirectories(Variables.AndroidSdk / "ndk", "*", SearchOption.TopDirectoryOnly).Where(d => File.Exists(d / "source.properties")).Select(d => d.FileName).ToList();
                             if (NdkVersions.Count > 0)
                             {
                                 DefaultValue = Variables.AndroidSdk / "ndk" / NdkVersions.Max();
