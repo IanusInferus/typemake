@@ -28,6 +28,7 @@ namespace TypeMake
             if (!Directory.Exists(Path)) { yield break; }
             foreach (var d in GetDirectories(Path, SearchPattern, SearchOption.TopDirectoryOnly))
             {
+                yield return d;
                 if (SearchOption == SearchOption.AllDirectories)
                 {
                     foreach (var f in GetFileSystemEntries(d, SearchPattern, SearchOption.TopDirectoryOnly))
