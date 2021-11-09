@@ -493,8 +493,8 @@ namespace TypeMake
                 var ProjectTargetType = Project.Definition.TargetType;
                 if (Toolchain == ToolchainType.VisualStudio)
                 {
-                    var VcxprojTemplateText = Resource.GetResourceText(TargetOperatingSystem == OperatingSystemType.Windows ? @"Templates\vc16\Default.vcxproj" : @"Templates\vc16\Linux.vcxproj");
-                    var VcxprojFilterTemplateText = Resource.GetResourceText(@"Templates\vc16\Default.vcxproj.filters");
+                    var VcxprojTemplateText = Resource.GetResourceText($@"Templates\{(VSVersion == 2022 ? "vc17" : "vc16")}\{(TargetOperatingSystem == OperatingSystemType.Windows ? "Default" : "Linux")}.vcxproj");
+                    var VcxprojFilterTemplateText = Resource.GetResourceText(VSVersion == 2022 ? @"Templates\vc17\Default.vcxproj.filters" : @"Templates\vc16\Default.vcxproj.filters");
                     var g = new VcxprojGenerator(p, Project.Definition.Id, ProjectReferences, BuildDirectory, InputDirectory, OutputDirectory, VcxprojTemplateText, VcxprojFilterTemplateText, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, WindowsRuntime, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, CC, CXX, AR);
                     g.Generate(ForceRegenerate);
                 }
@@ -586,7 +586,7 @@ namespace TypeMake
             var CppSortedProjects = SortedProjects.Where(p => (p.TargetType == TargetType.Executable) || (p.TargetType == TargetType.StaticLibrary) || (p.TargetType == TargetType.DynamicLibrary) || (p.TargetType == TargetType.DarwinApplication) || (p.TargetType == TargetType.DarwinStaticFramework) || (p.TargetType == TargetType.DarwinSharedFramework) || (p.TargetType == TargetType.MacBundle)).ToList();
             if (Toolchain == ToolchainType.VisualStudio)
             {
-                var SlnTemplateText = Resource.GetResourceText(@"Templates\vc16\Default.sln");
+                var SlnTemplateText = Resource.GetResourceText(VSVersion == 2022 ? @"Templates\vc17\Default.sln" : @"Templates\vc16\Default.sln");
                 var g = new SlnGenerator(SolutionName, GetIdForProject(SolutionName + ".solution"), CppSortedProjects, BuildDirectory, SlnTemplateText, TargetOperatingSystem, TargetArchitecture);
                 g.Generate(ForceRegenerate);
             }

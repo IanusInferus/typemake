@@ -102,7 +102,7 @@ namespace TypeMake
         {
             if (Toolchain == Cpp.ToolchainType.VisualStudio)
             {
-                var MSBuildVersion = VSVersion == 2019 ? "Current" : "15.0";
+                var MSBuildVersion = VSVersion >= 2019 ? "Current" : "15.0";
                 var Lines = new List<String>();
                 Lines.Add("@echo off");
                 Lines.Add("");

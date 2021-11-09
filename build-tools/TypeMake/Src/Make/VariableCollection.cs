@@ -671,30 +671,35 @@ namespace TypeMake
             l.Add(new VariableItem
             {
                 VariableName = nameof(Variables.VSDir),
-                DependentVariableNames = new List<String> { nameof(Variables.HostOperatingSystem), nameof(Variables.TargetOperatingSystem), nameof(PathValidator) },
+                DependentVariableNames = new List<String> { nameof(Variables.HostOperatingSystem), nameof(Variables.TargetOperatingSystem), nameof(Variables.Toolchain), nameof(PathValidator) },
                 GetVariableSpec = () =>
                 {
-                    if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
+                    if ((Variables.Toolchain == Cpp.ToolchainType.VisualStudio) || (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Windows))
                     {
                         String DefaultVSDir = "";
                         if (Variables.HostOperatingSystem == Cpp.OperatingSystemType.Windows)
                         {
-                            var ProgramFiles = Environment.GetEnvironmentVariable("ProgramFiles(x86)");
-                            if (ProgramFiles != "")
+                            ((Action)(() =>
                             {
-                                foreach (var Version in new int[] { 2019 })
+                                foreach (var ProgramFiles in new String[] { Environment.GetEnvironmentVariable("ProgramFiles"), Environment.GetEnvironmentVariable("ProgramFiles(x86)") })
                                 {
-                                    foreach (var d in new String[] { "Enterprise", "Professional", "Community", "BuildTools" })
+                                    if (ProgramFiles != "")
                                     {
-                                        var p = ProgramFiles.AsPath() / $"Microsoft Visual Studio/{Version}" / d;
-                                        if (Directory.Exists(p))
+                                        foreach (var Version in new int[] { 2022, 2019 })
                                         {
-                                            DefaultVSDir = p;
-                                            break;
+                                            foreach (var d in new String[] { "Enterprise", "Professional", "Community", "BuildTools" })
+                                            {
+                                                var p = ProgramFiles.AsPath() / $"Microsoft Visual Studio/{Version}" / d;
+                                                if (Directory.Exists(p))
+                                                {
+                                                    DefaultVSDir = p;
+                                                    return;
+                                                }
+                                            }
                                         }
                                     }
                                 }
-                            }
+                            }))();
                         }
                         return VariableSpec.CreatePath(new PathStringSpec
                         {
@@ -714,7 +719,7 @@ namespace TypeMake
             l.Add(new VariableItem
             {
                 VariableName = nameof(Variables.LLVM),
-                DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.Toolchain), nameof(PathValidator) },
+                DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.Toolchain), nameof(Variables.VSDir), nameof(PathValidator) },
                 GetVariableSpec = () =>
                 {
                     if ((Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Windows) && (Variables.Toolchain == Cpp.ToolchainType.Ninja))
@@ -722,8 +727,7 @@ namespace TypeMake
                         String DefaultLLVMDir = "";
                         if (Variables.HostOperatingSystem == Cpp.OperatingSystemType.Windows)
                         {
-                            var ProgramFiles = Environment.GetEnvironmentVariable("ProgramFiles");
-                            DefaultLLVMDir = ProgramFiles.AsPath() / "LLVM/bin";
+                            DefaultLLVMDir = Variables.VSDir / "VC/Tools/Llvm/x64/bin";
                         }
                         return VariableSpec.CreatePath(new PathStringSpec
                         {
@@ -743,12 +747,12 @@ namespace TypeMake
             l.Add(new VariableItem
             {
                 VariableName = nameof(Variables.VSVersion),
-                DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.VSDir) },
+                DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.Toolchain), nameof(Variables.VSDir) },
                 GetVariableSpec = () =>
                 {
-                    if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
+                    if ((Variables.Toolchain == Cpp.ToolchainType.VisualStudio) || (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Windows))
                     {
-                        var VSVersion = Variables.VSDir.ToString().Contains("2019") ? 2019 : 2019;
+                        var VSVersion = Variables.VSDir.ToString().Contains("2022") ? 2022 : 2019;
                         return VariableSpec.CreateFixed(VariableValue.CreateInteger(VSVersion));
                     }
                     else
