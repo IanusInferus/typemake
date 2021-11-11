@@ -41,9 +41,7 @@ namespace TypeMake.Cpp
     {
         VisualStudio,
         XCode,
-        CMake,
         Ninja,
-        Gradle_CMake,
         Gradle_Ninja
     }
     public enum CompilerType

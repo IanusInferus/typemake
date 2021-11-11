@@ -143,60 +143,9 @@ namespace TypeMake
                 TextFile.WriteToFile(BuildPath, String.Join("\r\n", Lines), System.Text.Encoding.Default, !ForceRegenerate);
             }
         }
-        public static void GenerateBuildScriptLinux(String TargetOperatingSystemDistribution, Cpp.ToolchainType Toolchain, Cpp.OperatingSystemType HostOperatingSystem, PathString BuildDirectory, Cpp.ConfigurationType Configuration, int MaxProcessCount, PathString CMake, PathString Make, PathString Ninja, bool ForceRegenerate, bool NeedInstallStrip)
+        public static void GenerateBuildScriptLinux(String TargetOperatingSystemDistribution, Cpp.ToolchainType Toolchain, Cpp.OperatingSystemType HostOperatingSystem, PathString BuildDirectory, Cpp.ConfigurationType Configuration, int MaxProcessCount, PathString Ninja, bool ForceRegenerate)
         {
-            if (Toolchain == Cpp.ToolchainType.CMake)
-            {
-                var CMakeArguments = new List<String>();
-                CMakeArguments.Add(".");
-                CMakeArguments.Add($"-DCMAKE_BUILD_TYPE={Configuration}");
-
-                if (HostOperatingSystem == Cpp.OperatingSystemType.Windows)
-                {
-                    var Lines = new List<String>();
-                    Lines.Add("@echo off");
-                    Lines.Add("");
-                    Lines.Add("setlocal");
-                    Lines.Add("if \"%SUB_NO_PAUSE_SYMBOL%\"==\"1\" set NO_PAUSE_SYMBOL=1");
-                    Lines.Add("if /I \"%COMSPEC%\" == %CMDCMDLINE% set NO_PAUSE_SYMBOL=1");
-                    Lines.Add("set SUB_NO_PAUSE_SYMBOL=1");
-                    Lines.Add("call :main");
-                    Lines.Add("set EXIT_CODE=%ERRORLEVEL%");
-                    Lines.Add("if not \"%NO_PAUSE_SYMBOL%\"==\"1\" pause");
-                    Lines.Add("exit /b %EXIT_CODE%");
-                    Lines.Add("");
-                    Lines.Add(":main");
-                    Lines.Add("wsl -d " + Shell.EscapeArgumentForShell(TargetOperatingSystemDistribution, Shell.ShellArgumentStyle.CMD) + " " + Shell.EscapeArgumentForShell(CMake, Shell.ShellArgumentStyle.CMD) + " " + String.Join(" ", CMakeArguments.Select(a => Shell.EscapeArgumentForShell(a, Shell.ShellArgumentStyle.CMD))) + " || exit /b 1");
-                    Lines.Add("wsl -d " + Shell.EscapeArgumentForShell(TargetOperatingSystemDistribution, Shell.ShellArgumentStyle.CMD) + " " + Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.CMD) + $" -j{MaxProcessCount} || exit /b 1");
-                    if (NeedInstallStrip)
-                    {
-                        Lines.Add("wsl -d " + Shell.EscapeArgumentForShell(TargetOperatingSystemDistribution, Shell.ShellArgumentStyle.CMD) + " " + Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.CMD) + " install/strip || exit /b 1");
-                    }
-                    Lines.Add("");
-                    var BuildPath = BuildDirectory / "build.cmd";
-                    TextFile.WriteToFile(BuildPath, String.Join("\r\n", Lines), System.Text.Encoding.Default, !ForceRegenerate);
-                }
-                else
-                {
-                    var Lines = new List<String>();
-                    Lines.Add("#!/bin/bash");
-                    Lines.Add("set -e");
-                    Lines.Add(Shell.EscapeArgumentForShell(CMake, Shell.ShellArgumentStyle.Bash) + " " + String.Join(" ", CMakeArguments.Select(a => Shell.EscapeArgumentForShell(a, Shell.ShellArgumentStyle.Bash))));
-                    Lines.Add(Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.Bash) + $" -j{MaxProcessCount}");
-                    if (NeedInstallStrip)
-                    {
-                        Lines.Add(Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.Bash) + " install/strip");
-                    }
-                    Lines.Add("");
-                    var BuildPath = BuildDirectory / "build.sh";
-                    TextFile.WriteToFile(BuildPath, String.Join("\n", Lines), new System.Text.UTF8Encoding(false), !ForceRegenerate);
-                    if (Shell.Execute("chmod", "+x", BuildPath) != 0)
-                    {
-                        throw new InvalidOperationException("ErrorInExecution: chmod");
-                    }
-                }
-            }
-            else if (Toolchain == Cpp.ToolchainType.Ninja)
+            if (Toolchain == Cpp.ToolchainType.Ninja)
             {
                 if (HostOperatingSystem == Cpp.OperatingSystemType.Windows)
                 {
@@ -254,89 +203,9 @@ namespace TypeMake
                 }
             }
         }
-        public static void GenerateBuildScriptAndroid(List<String> GradleProjectNames, Cpp.ToolchainType Toolchain, Cpp.OperatingSystemType HostOperatingSystem, PathString BuildDirectory, Cpp.ArchitectureType TargetArchitecture, Cpp.ConfigurationType Configuration, int MaxProcessCount, PathString AndroidNdk, PathString CMake, PathString Make, PathString Ninja, int ApiLevel, bool ForceRegenerate, bool EnableJava, bool NeedInstallStrip)
+        public static void GenerateBuildScriptAndroid(List<String> GradleProjectNames, Cpp.ToolchainType Toolchain, Cpp.OperatingSystemType HostOperatingSystem, PathString BuildDirectory, Cpp.ArchitectureType TargetArchitecture, Cpp.ConfigurationType Configuration, int MaxProcessCount, PathString AndroidNdk, PathString Ninja, int ApiLevel, bool ForceRegenerate, bool EnableJava)
         {
-            if (Toolchain == Cpp.ToolchainType.Gradle_CMake)
-            {
-                var CMakeArguments = new List<String>();
-                CMakeArguments.Add(".");
-                CMakeArguments.Add("-G");
-                CMakeArguments.Add("Unix Makefiles");
-                CMakeArguments.Add($"-DCMAKE_BUILD_TYPE={Configuration}");
-                CMakeArguments.Add($"-DCMAKE_MAKE_PROGRAM={Make.ToString(PathStringStyle.Unix)}");
-                CMakeArguments.Add($"-DANDROID_NDK={AndroidNdk.ToString(PathStringStyle.Unix)}");
-                CMakeArguments.Add($"-DCMAKE_TOOLCHAIN_FILE={(AndroidNdk / "build/cmake/android.toolchain.cmake").ToString(PathStringStyle.Unix)}");
-                CMakeArguments.Add($"-DANDROID_STL=c++_static");
-                CMakeArguments.Add($"-DANDROID_PLATFORM=android-{ApiLevel}");
-                CMakeArguments.Add($"-DANDROID_ABI={Cpp.GradleProjectGenerator.GetArchitectureString(TargetArchitecture)}");
-                if (TargetArchitecture == Cpp.ArchitectureType.armv7a)
-                {
-                    CMakeArguments.Add($"-DANDROID_ARM_NEON=ON");
-                }
-
-                if (HostOperatingSystem == Cpp.OperatingSystemType.Windows)
-                {
-                    var Lines = new List<String>();
-                    Lines.Add("@echo off");
-                    Lines.Add("");
-                    Lines.Add("setlocal");
-                    Lines.Add("if \"%SUB_NO_PAUSE_SYMBOL%\"==\"1\" set NO_PAUSE_SYMBOL=1");
-                    Lines.Add("if /I \"%COMSPEC%\" == %CMDCMDLINE% set NO_PAUSE_SYMBOL=1");
-                    Lines.Add("set SUB_NO_PAUSE_SYMBOL=1");
-                    Lines.Add("call :main");
-                    Lines.Add("set EXIT_CODE=%ERRORLEVEL%");
-                    Lines.Add("if not \"%NO_PAUSE_SYMBOL%\"==\"1\" pause");
-                    Lines.Add("exit /b %EXIT_CODE%");
-                    Lines.Add("");
-                    Lines.Add(":main");
-                    Lines.Add(Shell.EscapeArgumentForShell(CMake, Shell.ShellArgumentStyle.CMD) + " " + String.Join(" ", CMakeArguments.Select(a => Shell.EscapeArgumentForShell(a, Shell.ShellArgumentStyle.CMD))) + " || exit /b 1");
-                    if (NeedInstallStrip)
-                    {
-                        //https://gitlab.kitware.com/cmake/cmake/issues/16859
-                        Lines.Add("wsl find projects -name cmake_install.cmake ^| xargs sed -i -e 's:$ENV{DESTDIR}/::g'");
-                    }
-                    Lines.Add(Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.CMD) + $" -j{MaxProcessCount} || exit /b 1");
-                    if (NeedInstallStrip)
-                    {
-                        Lines.Add(Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.CMD) + " install/strip || exit /b 1");
-                    }
-                    if (EnableJava)
-                    {
-                        Lines.Add("pushd gradle || exit /b 1");
-                        Lines.Add($@"call .\gradlew.bat --no-daemon assemble{Configuration} || exit /b 1");
-                        Lines.Add("popd");
-                    }
-                    Lines.Add("");
-                    var BuildPath = BuildDirectory / "build.cmd";
-                    TextFile.WriteToFile(BuildPath, String.Join("\r\n", Lines), System.Text.Encoding.Default, !ForceRegenerate);
-                }
-                else
-                {
-                    var Lines = new List<String>();
-                    Lines.Add("#!/bin/bash");
-                    Lines.Add("set -e");
-                    Lines.Add(Shell.EscapeArgumentForShell(CMake, Shell.ShellArgumentStyle.Bash) + " " + String.Join(" ", CMakeArguments.Select(a => Shell.EscapeArgumentForShell(a, Shell.ShellArgumentStyle.Bash))));
-                    Lines.Add(Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.Bash) + $" -j{MaxProcessCount}");
-                    if (NeedInstallStrip)
-                    {
-                        Lines.Add(Shell.EscapeArgumentForShell(Make, Shell.ShellArgumentStyle.Bash) + " install/strip");
-                    }
-                    if (EnableJava)
-                    {
-                        Lines.Add("pushd gradle");
-                        Lines.Add($@"./gradlew --no-daemon assemble{Configuration}");
-                        Lines.Add("popd");
-                    }
-                    Lines.Add("");
-                    var BuildPath = BuildDirectory / "build.sh";
-                    TextFile.WriteToFile(BuildPath, String.Join("\n", Lines), new System.Text.UTF8Encoding(false), !ForceRegenerate);
-                    if (Shell.Execute("chmod", "+x", BuildPath) != 0)
-                    {
-                        throw new InvalidOperationException("ErrorInExecution: chmod");
-                    }
-                }
-            }
-            else if ((Toolchain == Cpp.ToolchainType.Gradle_Ninja) || (Toolchain == Cpp.ToolchainType.Ninja))
+            if ((Toolchain == Cpp.ToolchainType.Gradle_Ninja) || (Toolchain == Cpp.ToolchainType.Ninja))
             {
                 if (HostOperatingSystem == Cpp.OperatingSystemType.Windows)
                 {

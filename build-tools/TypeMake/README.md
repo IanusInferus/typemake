@@ -33,15 +33,12 @@ Target Operating System vs Building Operating System
 |          Linux x86/x64         |    WSL+Ninja+gcc   |      Ninja+gcc     |                    |                    |
 |            Linux x64           |   WSL+Ninja+clang  |     Ninja+clang    |                    |                    |
 |            Linux x64           |  WSL+VS+Ninja+gcc  |                    |                    |                    |
-|          Linux x86/x64         |   WSL+CMake+gcc *  |     CMake+gcc *    |                    |                    |
 |       Linux armv7a/arm64       |    WSL+Ninja+gcc   |      Ninja+gcc     |                    |                    |
-|         Linux Unknown **       |    WSL+Ninja+gcc   |      Ninja+gcc     |                    |                    |
+|         Linux Unknown *        |    WSL+Ninja+gcc   |      Ninja+gcc     |                    |                    |
 |         MacOS x64/arm64        |                    |                    |        XCode       |                    |
 |            MacOS x64           |                    |                    |    Ninja+clang     |                    |
-|            MacOS x64           |                    |                    |   CMake+clang *    |                    |
 |  Android x86/x64/armv7a/arm64  |     NDK+Ninja      |     NDK+Ninja      |     NDK+Ninja      |                    |
 |  Android x86/x64/armv7a/arm64  |  NDK+Ninja+Gradle  |  NDK+Ninja+Gradle  |  NDK+Ninja+Gradle  |                    |
-|  Android x86/x64/armv7a/arm64  | NDK+CMake+Gradle * | NDK+CMake+Gradle * | NDK+CMake+Gradle * |                    |
 |          Android arm64         |                    |                    |                    | Termux+Ninja+clang |
 |          iOS arm64/x64         |                    |                    |        XCode       |                    |
 |     iOS Simulator x64/arm64    |                    |                    |        XCode       |                    |
@@ -50,19 +47,17 @@ Win32 and WinRT targets are both supported, but WinRT only supports libraries an
 
 Different OSs use different ABIs on the same CPU architecture.
 
-\* CMake is supported as a compatibility solution. (Ex. Integration with other projects.)
-
-\** Linux for other CPU architectures are supported by specifying toolchain commands and flags.
+\* Linux for other CPU architectures are supported by specifying toolchain commands and flags.
 
 ## Dependencies
 
 Windows: VS2019/VS2022 \[LLVM(10.0.0-win64/12.0.0-win64)\] \[[C++ Clang-cl for v142/v143 build tools](https://docs.microsoft.com/en-us/cpp/build/clang-support-msbuild)\]
 
-Linux(openSUSE 15.2): \[cmake(>=3.3.2)\] gcc-c++(7.5.0) \[gcc-c++-32bit(7.5.0)\] mono-devel(6.x) glibc(runtime 2.14)
+Linux(openSUSE 15.2): gcc-c++(7.5.0) \[gcc-c++-32bit(7.5.0)\] mono-devel(6.x) glibc(runtime 2.14)
 
 Linux(openSUSE 15.2) with clang: clang(9.0.1) libc++-devel(9.0.1) llvm(9.0.1)
 
-Linux(Ubuntu 18.04): \[cmake(>=3.3.2)\] g++(7.3.0) \[g++-multilib(7.3.0)\] mono-devel(6.x) glibc(runtime 2.14)
+Linux(Ubuntu 18.04): g++(7.3.0) \[g++-multilib(7.3.0)\] mono-devel(6.x) glibc(runtime 2.14)
 
 Linux(Ubuntu 18.04) with clang: clang-7 libc++-7-dev libc++abi-7-dev llvm-7-tools (CC=clang-7 CXX=clang++-7 AR=llvm-ar-7)
 
@@ -74,7 +69,7 @@ Mac: XCode(12.0) mono(6.x)
 
 iOS: XCode(12.0) mono(6.x)
 
-Android: JDK(8.x) AndroidSDK("build-tools;30.0.3" "platforms;android-28" "ndk;22.0.7026061") \[Android Gradle plugin(4.1.0)\] \[CMake(>=3.3.2)\]
+Android: JDK(8.x) AndroidSDK("build-tools;30.0.3" "platforms;android-28" "ndk;22.0.7026061") \[Android Gradle plugin(4.1.0)\]
 
 Android on Linux(openSUSE 15.2): java-1_8_0-openjdk-devel
 

@@ -48,8 +48,6 @@
     <Compile Include="Base\TextFile.cs" />
     <Compile Include="Base\TopologicalSort.cs" />
     <Compile Include="Generators\AndroidBatchProjectGenerator.cs" />
-    <Compile Include="Generators\CMakeProjectGenerator.cs" />
-    <Compile Include="Generators\CMakeSolutionGenerator.cs" />
     <Compile Include="Generators\ConfigurationUtils.cs" />
     <Compile Include="Generators\GradleProjectGenerator.cs" />
     <Compile Include="Generators\NinjaProjectGenerator.cs" />

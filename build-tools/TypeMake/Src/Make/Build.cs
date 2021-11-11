@@ -422,7 +422,6 @@ namespace TypeMake
         {
             public String SolutionName;
             public List<ProjectReference> SortedProjects;
-            public bool NeedInstallStrip;
         }
         public Result Execute(Dictionary<String, ProjectDescription> SelectedProjects)
         {
@@ -483,7 +482,6 @@ namespace TypeMake
                 };
                 ProjectNameToReference.Add(p.Name, Reference);
             }
-            var NeedInstallStrip = false;
             foreach (var Project in SelectedProjects.Values)
             {
                 var p = ProjectDict[Project.Definition.Name];
@@ -504,19 +502,12 @@ namespace TypeMake
                     var g = new PbxprojGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, PbxprojTemplateText, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, CppLibraryForm, XCodeDevelopmentTeam, XCodeProvisioningProfileSpecifier);
                     g.Generate(ForceRegenerate);
                 }
-                else if (Toolchain == ToolchainType.CMake)
-                {
-                    var g = new CMakeProjectGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, WindowsRuntime, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType, false);
-                    var ProjectNeedInstallStrip = false;
-                    g.Generate(ForceRegenerate, out ProjectNeedInstallStrip);
-                    NeedInstallStrip = NeedInstallStrip || ProjectNeedInstallStrip;
-                }
                 else if ((Toolchain == ToolchainType.Ninja) && (TargetOperatingSystem != OperatingSystemType.Android))
                 {
                     var g = new NinjaProjectGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, WindowsRuntime, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType);
                     g.Generate(ForceRegenerate);
                 }
-                else if ((Toolchain == ToolchainType.Gradle_CMake) || (Toolchain == ToolchainType.Gradle_Ninja) || (Toolchain == ToolchainType.Ninja))
+                else if ((Toolchain == ToolchainType.Gradle_Ninja) || (Toolchain == ToolchainType.Ninja))
                 {
                     if (ProjectTargetType == TargetType.GradleApplication)
                     {
@@ -556,14 +547,7 @@ namespace TypeMake
                     }
                     else
                     {
-                        if (Toolchain == ToolchainType.Gradle_CMake)
-                        {
-                            var g = new CMakeProjectGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, WindowsRuntime, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType, HostOperatingSystem == OperatingSystemType.Windows);
-                            var ProjectNeedInstallStrip = false;
-                            g.Generate(ForceRegenerate, out ProjectNeedInstallStrip);
-                            NeedInstallStrip = NeedInstallStrip || ProjectNeedInstallStrip;
-                        }
-                        else if (Toolchain == ToolchainType.Gradle_Ninja)
+                        if (Toolchain == ToolchainType.Gradle_Ninja)
                         {
                             var g = new NinjaProjectGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, WindowsRuntime, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType);
                             g.Generate(ForceRegenerate);
@@ -595,17 +579,12 @@ namespace TypeMake
                 var g = new XcworkspaceGenerator(SolutionName, CppSortedProjects, BuildDirectory);
                 g.Generate(ForceRegenerate);
             }
-            else if (Toolchain == ToolchainType.CMake)
-            {
-                var g = new CMakeSolutionGenerator(SolutionName, CppSortedProjects, BuildDirectory, CC, CXX, AR, STRIP);
-                g.Generate(ForceRegenerate);
-            }
             else if (Toolchain == ToolchainType.Ninja)
             {
                 var g = new NinjaSolutionGenerator(SolutionName, CppSortedProjects, BuildDirectory / "projects", TargetOperatingSystem, CC, CXX, AR, STRIP);
                 g.Generate(ForceRegenerate);
             }
-            else if ((Toolchain == ToolchainType.Gradle_CMake) || (Toolchain == ToolchainType.Gradle_Ninja))
+            else if (Toolchain == ToolchainType.Gradle_Ninja)
             {
                 FileUtils.CopyDirectory(System.Reflection.Assembly.GetEntryAssembly().Location.AsPath().Parent / "Templates/gradle", BuildDirectory / "gradle", !ForceRegenerate);
                 if (HostOperatingSystem != Cpp.OperatingSystemType.Windows)
@@ -614,11 +593,6 @@ namespace TypeMake
                     {
                         throw new InvalidOperationException("ErrorInExecution: chmod");
                     }
-                }
-                if (Toolchain == ToolchainType.Gradle_CMake)
-                {
-                    var g = new CMakeSolutionGenerator(SolutionName, CppSortedProjects, BuildDirectory, CC, CXX, AR, STRIP);
-                    g.Generate(ForceRegenerate);
                 }
                 else if (Toolchain == ToolchainType.Gradle_Ninja)
                 {
@@ -638,7 +612,7 @@ namespace TypeMake
             {
                 throw new NotSupportedException();
             }
-            return new Result { SolutionName = SolutionName, SortedProjects = SortedProjects, NeedInstallStrip = NeedInstallStrip };
+            return new Result { SolutionName = SolutionName, SortedProjects = SortedProjects };
         }
 
         private List<Configuration> GetCommonConfigurations()
@@ -924,7 +898,7 @@ namespace TypeMake
                 {
                     MatchingTargetTypes = new List<TargetType> { TargetType.Executable, TargetType.DynamicLibrary },
                     MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.MacOS },
-                    MatchingToolchains = new List<ToolchainType> { ToolchainType.Ninja, ToolchainType.CMake },
+                    MatchingToolchains = new List<ToolchainType> { ToolchainType.Ninja },
                     LinkerFlags = ParseFlags(@"-Wl,-rpath -Wl,@executable_path")
                 },
                 new Configuration
@@ -1164,7 +1138,7 @@ namespace TypeMake
                 ProjectIds.Add(ProjectName, g);
                 return g;
             }
-            else if ((Toolchain == ToolchainType.CMake) || (Toolchain == ToolchainType.Ninja) || (Toolchain == ToolchainType.Gradle_CMake) || (Toolchain == ToolchainType.Gradle_Ninja))
+            else if ((Toolchain == ToolchainType.Ninja) || (Toolchain == ToolchainType.Gradle_Ninja))
             {
                 return "";
             }
@@ -1219,7 +1193,7 @@ namespace TypeMake
             {
                 return ProjectName + ".xcodeproj";
             }
-            else if ((Toolchain == ToolchainType.CMake) || (Toolchain == ToolchainType.Ninja) || (Toolchain == ToolchainType.Gradle_CMake) || (Toolchain == ToolchainType.Gradle_Ninja))
+            else if ((Toolchain == ToolchainType.Ninja) || (Toolchain == ToolchainType.Gradle_Ninja))
             {
                 return ProjectName;
             }
@@ -1241,10 +1215,6 @@ namespace TypeMake
             else if ((Toolchain == ToolchainType.Ninja) || (Toolchain == ToolchainType.Gradle_Ninja))
             {
                 return BuildDirectory / "projects";
-            }
-            else if ((Toolchain == ToolchainType.CMake) || (Toolchain == ToolchainType.Gradle_CMake))
-            {
-                return BuildDirectory / "projects" / ProjectName;
             }
             else
             {
@@ -1400,7 +1370,7 @@ namespace TypeMake
                     var SimpleProjectName = ProjectName.Split(':').First();
                     return $"batch/{SimpleProjectName}".AsPath() / OutputFileName;
                 }
-                else if ((Toolchain == ToolchainType.Gradle_CMake) || (Toolchain == ToolchainType.Gradle_Ninja))
+                else if (Toolchain == ToolchainType.Gradle_Ninja)
                 {
                     var SimpleProjectName = ProjectName.Split(':').First();
                     if (TargetType == TargetType.GradleApplication)
@@ -1448,7 +1418,7 @@ namespace TypeMake
                     }
                 }
             }
-            else if ((Toolchain == ToolchainType.CMake) || (Toolchain == ToolchainType.Ninja) || (Toolchain == ToolchainType.Gradle_CMake) || (Toolchain == ToolchainType.Gradle_Ninja))
+            else if ((Toolchain == ToolchainType.Ninja) || (Toolchain == ToolchainType.Gradle_Ninja))
             {
                 return $"{ConfigurationType}".AsPath() / OutputFileName;
             }

@@ -222,11 +222,11 @@ namespace TypeMake
                     {
                         if (Variables.TargetArchitecture == Cpp.ArchitectureType.x64)
                         {
-                            return VariableSpecCreateEnumSelection(Cpp.ToolchainType.Ninja, new HashSet<Cpp.ToolchainType> { Cpp.ToolchainType.Ninja, Cpp.ToolchainType.CMake, Cpp.ToolchainType.VisualStudio });
+                            return VariableSpecCreateEnumSelection(Cpp.ToolchainType.Ninja, new HashSet<Cpp.ToolchainType> { Cpp.ToolchainType.Ninja, Cpp.ToolchainType.VisualStudio });
                         }
                         else if (Variables.TargetArchitecture == Cpp.ArchitectureType.x86)
                         {
-                            return VariableSpecCreateEnumSelection(Cpp.ToolchainType.Ninja, new HashSet<Cpp.ToolchainType> { Cpp.ToolchainType.Ninja, Cpp.ToolchainType.CMake });
+                            return VariableSpecCreateEnumSelection(Cpp.ToolchainType.Ninja, new HashSet<Cpp.ToolchainType> { Cpp.ToolchainType.Ninja });
                         }
                         else
                         {
@@ -237,7 +237,7 @@ namespace TypeMake
                     {
                         if (Variables.TargetArchitecture == Cpp.ArchitectureType.x64)
                         {
-                            return VariableSpecCreateEnumSelection(Cpp.ToolchainType.XCode, new HashSet<Cpp.ToolchainType> { Cpp.ToolchainType.XCode, Cpp.ToolchainType.Ninja, Cpp.ToolchainType.CMake });
+                            return VariableSpecCreateEnumSelection(Cpp.ToolchainType.XCode, new HashSet<Cpp.ToolchainType> { Cpp.ToolchainType.XCode, Cpp.ToolchainType.Ninja });
                         }
                         else
                         {
@@ -250,7 +250,7 @@ namespace TypeMake
                     }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
                     {
-                        return VariableSpecCreateEnumSelection(Cpp.ToolchainType.Ninja, new HashSet<Cpp.ToolchainType> { Cpp.ToolchainType.Ninja, Cpp.ToolchainType.Gradle_Ninja, Cpp.ToolchainType.Gradle_CMake });
+                        return VariableSpecCreateEnumSelection(Cpp.ToolchainType.Ninja, new HashSet<Cpp.ToolchainType> { Cpp.ToolchainType.Ninja, Cpp.ToolchainType.Gradle_Ninja });
                     }
                     else
                     {
@@ -892,144 +892,6 @@ namespace TypeMake
 
             l.Add(new VariableItem
             {
-                VariableName = nameof(Variables.CMake),
-                DependentVariableNames = new List<String> { nameof(Variables.HostOperatingSystem), nameof(Variables.TargetOperatingSystem), nameof(Variables.Toolchain), nameof(PathValidator) },
-                GetVariableSpec = () =>
-                {
-                    if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
-                    {
-                        if (Variables.Toolchain == Cpp.ToolchainType.CMake)
-                        {
-                            if (Variables.HostOperatingSystem == Cpp.OperatingSystemType.Windows)
-                            {
-                                return VariableSpec.CreateString(new StringSpec
-                                {
-                                    DefaultValue = "cmake"
-                                });
-                            }
-                            else if (Variables.HostOperatingSystem == Cpp.OperatingSystemType.Linux)
-                            {
-                                return VariableSpec.CreatePath(new PathStringSpec
-                                {
-                                    DefaultValue = Shell.TryLocate("cmake") ?? null,
-                                    Validator = PathValidator
-                                });
-                            }
-                        }
-                    }
-                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.MacOS)
-                    {
-                        if (Variables.Toolchain == Cpp.ToolchainType.CMake)
-                        {
-                            return VariableSpec.CreatePath(new PathStringSpec
-                            {
-                                DefaultValue = Shell.TryLocate("cmake") ?? null,
-                                Validator = PathValidator
-                            });
-                        }
-                    }
-                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
-                    {
-                        if (Variables.Toolchain == Cpp.ToolchainType.Gradle_CMake)
-                        {
-                            if (Variables.HostOperatingSystem == Cpp.OperatingSystemType.Windows)
-                            {
-                                return VariableSpec.CreatePath(new PathStringSpec
-                                {
-                                    DefaultValue = Environment.GetEnvironmentVariable("ProgramFiles").AsPath() / @"CMake\bin\cmake.exe",
-                                    Validator = PathValidator
-                                });
-                            }
-                            else if ((Variables.HostOperatingSystem == Cpp.OperatingSystemType.Linux) || (Variables.HostOperatingSystem == Cpp.OperatingSystemType.Android))
-                            {
-                                return VariableSpec.CreatePath(new PathStringSpec
-                                {
-                                    DefaultValue = Shell.TryLocate("cmake") ?? "",
-                                    Validator = PathValidator
-                                });
-                            }
-                        }
-                    }
-                    return VariableSpec.CreateNotApply(VariableValue.CreatePath(null));
-                },
-                SetVariableValue = v => Variables.CMake = v.OnPath ? v.Path : v.String.AsPath()
-            });
-
-            l.Add(new VariableItem
-            {
-                VariableName = nameof(Variables.Make),
-                DependentVariableNames = new List<String> { nameof(Variables.HostOperatingSystem), nameof(Variables.HostArchitecture), nameof(Variables.TargetOperatingSystem), nameof(Variables.Toolchain), nameof(Variables.AndroidNdk), nameof(PathValidator) },
-                GetVariableSpec = () =>
-                {
-                    if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
-                    {
-                        if (Variables.Toolchain == Cpp.ToolchainType.CMake)
-                        {
-                            if (Variables.HostOperatingSystem == Cpp.OperatingSystemType.Windows)
-                            {
-                                return VariableSpec.CreateString(new StringSpec
-                                {
-                                    DefaultValue = "make"
-                                });
-                            }
-                            else if (Variables.HostOperatingSystem == Cpp.OperatingSystemType.Linux)
-                            {
-                                return VariableSpec.CreatePath(new PathStringSpec
-                                {
-                                    DefaultValue = Shell.TryLocate("make") ?? null,
-                                    Validator = PathValidator
-                                });
-                            }
-                        }
-                    }
-                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.MacOS)
-                    {
-                        if (Variables.Toolchain == Cpp.ToolchainType.CMake)
-                        {
-                            return VariableSpec.CreatePath(new PathStringSpec
-                            {
-                                DefaultValue = Shell.TryLocate("make") ?? null,
-                                Validator = PathValidator
-                            });
-                        }
-                    }
-                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
-                    {
-                        if (Variables.Toolchain == Cpp.ToolchainType.Gradle_CMake)
-                        {
-                            String DefaultMake = null;
-                            if (Variables.HostArchitecture == Cpp.ArchitectureType.x64)
-                            {
-                                if (Variables.HostOperatingSystem == Cpp.OperatingSystemType.Windows)
-                                {
-                                    DefaultMake = Variables.AndroidNdk / @"prebuilt\windows-x86_64\bin\make.exe";
-                                }
-                                else if (Variables.HostOperatingSystem == Cpp.OperatingSystemType.Linux)
-                                {
-                                    DefaultMake = Variables.AndroidNdk / "prebuilt/linux-x86_64/bin/make";
-                                }
-                                else if (Variables.HostOperatingSystem == Cpp.OperatingSystemType.MacOS)
-                                {
-                                    DefaultMake = Variables.AndroidNdk / "prebuilt/darwin-x86_64/bin/make";
-                                }
-                                else if (Variables.HostOperatingSystem == Cpp.OperatingSystemType.Android)
-                                {
-                                    DefaultMake = Variables.AndroidNdk / "prebuilt/linux-aarch64/bin/make";
-                                }
-                            }
-                            return VariableSpec.CreatePath(new PathStringSpec
-                            {
-                                DefaultValue = DefaultMake
-                            });
-                        }
-                    }
-                    return VariableSpec.CreateNotApply(VariableValue.CreatePath(null));
-                },
-                SetVariableValue = v => Variables.Make = v.OnPath ? v.Path : v.String.AsPath()
-            });
-
-            l.Add(new VariableItem
-            {
                 VariableName = nameof(Variables.Ninja),
                 DependentVariableNames = new List<String> { nameof(Variables.HostOperatingSystem), nameof(Variables.TargetOperatingSystem), nameof(Variables.Toolchain), nameof(Variables.SourceDirectory) },
                 GetVariableSpec = () =>
@@ -1090,7 +952,7 @@ namespace TypeMake
                 IsHidden = true,
                 GetVariableSpec = () =>
                 {
-                    if ((Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android) && ((Variables.Toolchain == Cpp.ToolchainType.Gradle_Ninja) || (Variables.Toolchain == Cpp.ToolchainType.Ninja) || (Variables.Toolchain == Cpp.ToolchainType.CMake) || (Variables.Toolchain == Cpp.ToolchainType.Gradle_CMake)))
+                    if ((Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android) && ((Variables.Toolchain == Cpp.ToolchainType.Gradle_Ninja) || (Variables.Toolchain == Cpp.ToolchainType.Ninja)))
                     {
                         if (Variables.HostOperatingSystem == Cpp.OperatingSystemType.Windows)
                         {
@@ -1153,7 +1015,7 @@ namespace TypeMake
                 DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.TargetArchitecture), nameof(Variables.Toolchain), nameof(Variables.Compiler), nameof(Variables.LLVM), "AndroidVariables" },
                 GetVariableSpec = () =>
                 {
-                    if ((Variables.Toolchain == Cpp.ToolchainType.Ninja) || (Variables.Toolchain == Cpp.ToolchainType.Gradle_Ninja) || (Variables.Toolchain == Cpp.ToolchainType.CMake) || (Variables.Toolchain == Cpp.ToolchainType.Gradle_CMake) || ((Variables.Toolchain == Cpp.ToolchainType.VisualStudio) && (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)))
+                    if ((Variables.Toolchain == Cpp.ToolchainType.Ninja) || (Variables.Toolchain == Cpp.ToolchainType.Gradle_Ninja) || ((Variables.Toolchain == Cpp.ToolchainType.VisualStudio) && (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)))
                     {
                         if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
                         {
@@ -1213,7 +1075,7 @@ namespace TypeMake
                 DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.TargetArchitecture), nameof(Variables.Toolchain), nameof(Variables.Compiler), nameof(Variables.LLVM), "AndroidVariables" },
                 GetVariableSpec = () =>
                 {
-                    if ((Variables.Toolchain == Cpp.ToolchainType.Ninja) || (Variables.Toolchain == Cpp.ToolchainType.Gradle_Ninja) || (Variables.Toolchain == Cpp.ToolchainType.CMake) || (Variables.Toolchain == Cpp.ToolchainType.Gradle_CMake) || ((Variables.Toolchain == Cpp.ToolchainType.VisualStudio) && (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)))
+                    if ((Variables.Toolchain == Cpp.ToolchainType.Ninja) || (Variables.Toolchain == Cpp.ToolchainType.Gradle_Ninja) || ((Variables.Toolchain == Cpp.ToolchainType.VisualStudio) && (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)))
                     {
                         if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
                         {
@@ -1273,7 +1135,7 @@ namespace TypeMake
                 DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.TargetArchitecture), nameof(Variables.Toolchain), nameof(Variables.Compiler), nameof(Variables.LLVM), "AndroidVariables" },
                 GetVariableSpec = () =>
                 {
-                    if ((Variables.Toolchain == Cpp.ToolchainType.Ninja) || (Variables.Toolchain == Cpp.ToolchainType.Gradle_Ninja) || (Variables.Toolchain == Cpp.ToolchainType.CMake) || (Variables.Toolchain == Cpp.ToolchainType.Gradle_CMake) || ((Variables.Toolchain == Cpp.ToolchainType.VisualStudio) && (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)))
+                    if ((Variables.Toolchain == Cpp.ToolchainType.Ninja) || (Variables.Toolchain == Cpp.ToolchainType.Gradle_Ninja) || ((Variables.Toolchain == Cpp.ToolchainType.VisualStudio) && (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)))
                     {
                         if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
                         {
@@ -1332,7 +1194,7 @@ namespace TypeMake
                 DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.TargetArchitecture), nameof(Variables.Toolchain), nameof(Variables.Compiler), nameof(Variables.LLVM), "AndroidVariables" },
                 GetVariableSpec = () =>
                 {
-                    if ((Variables.Toolchain == Cpp.ToolchainType.Ninja) || (Variables.Toolchain == Cpp.ToolchainType.Gradle_Ninja) || (Variables.Toolchain == Cpp.ToolchainType.CMake) || (Variables.Toolchain == Cpp.ToolchainType.Gradle_CMake))
+                    if ((Variables.Toolchain == Cpp.ToolchainType.Ninja) || (Variables.Toolchain == Cpp.ToolchainType.Gradle_Ninja))
                     {
                         if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
                         {

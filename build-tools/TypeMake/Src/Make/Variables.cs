@@ -32,8 +32,6 @@ namespace TypeMake
         public PathString VSDir;
         public int VSVersion;
         public PathString LLVM;
-        public PathString CMake;
-        public PathString Make;
         public PathString Ninja;
         public bool EnableJava;
         public PathString Jdk;
