@@ -7,8 +7,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TypeMake", "Src\TypeMake.cs
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TypeMakeTest", "Test\TypeMakeTest.csproj", "{F1701F16-A3D8-4156-87B5-F8030D364231}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TypeMakeGui", "Gui\TypeMakeGui.csproj", "{BDECCB35-6054-49A5-B252-28C06E73394E}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -23,10 +21,6 @@ Global
 		{F1701F16-A3D8-4156-87B5-F8030D364231}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F1701F16-A3D8-4156-87B5-F8030D364231}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F1701F16-A3D8-4156-87B5-F8030D364231}.Release|Any CPU.Build.0 = Release|Any CPU
-		{BDECCB35-6054-49A5-B252-28C06E73394E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{BDECCB35-6054-49A5-B252-28C06E73394E}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{BDECCB35-6054-49A5-B252-28C06E73394E}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{BDECCB35-6054-49A5-B252-28C06E73394E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

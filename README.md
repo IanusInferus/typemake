@@ -12,13 +12,7 @@ The objective of TypeMake is not to implement a general-purpose C++ build tool, 
 
 Windows: typemake.cmd
 
-Windows GUI: typemakegui.cmd
-
 Linux/Mac: ./typemake.sh
-
-Linux GUI: ./typemakegui.sh
-
-Mac GUI: ./typemakegui.command
 
 ## Support matrix
 
@@ -62,8 +56,6 @@ Linux(Ubuntu 18.04): g++(7.3.0) \[g++-multilib(7.3.0)\] mono-devel(6.x) glibc(ru
 Linux(Ubuntu 18.04) with clang: clang-7 libc++-7-dev libc++abi-7-dev llvm-7-tools (CC=clang-7 CXX=clang++-7 AR=llvm-ar-7)
 
 Linux with musl(x86/x64/armv7a/arm64): musl-cross-make (CC=xxx-linux-musl-gcc CXX=xxx-linux-musl-g++ AR=xxx-linux-musl-ar)
-
-Linux GUI: GTK
 
 Mac: XCode(12.0) mono(6.x)
 
