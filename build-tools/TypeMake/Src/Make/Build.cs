@@ -673,7 +673,7 @@ namespace TypeMake
                 new Configuration
                 {
                     MatchingCompilers = new List<CompilerType> { CompilerType.gcc, CompilerType.clang },
-                    CppFlags = ParseFlags("-std=c++2a")
+                    CppFlags = ParseFlags("-std=c++20")
                 },
                 new Configuration
                 {

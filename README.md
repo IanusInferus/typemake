@@ -49,11 +49,11 @@ Windows: VS2019/VS2022 \[LLVM(10.0.0-win64/12.0.0-win64)\] \[[C++ Clang-cl for v
 
 Linux: mono-devel(6.x)
 
-Linux(openSUSE 15.2): gcc9-c++(9.2.1) \[gcc9-c++-32bit(9.2.1)\]
+Linux(openSUSE 15.3): gcc10-c++(10.3.0) \[gcc10-c++-32bit(10.3.0)\] (CC=gcc-10 CXX=g++-10)
 
-Linux(openSUSE 15.2) with clang: clang(9.0.1) libc++-devel(9.0.1) llvm(9.0.1) (Compiler=clang)
+Linux(openSUSE 15.3) with clang: clang(11.0.1) libc++-devel(11.0.1) llvm(11.0.1) (Compiler=clang)
 
-Linux(Ubuntu 20.04): g++(9.3.0) \[g++-multilib(9.3.0)\]
+Linux(Ubuntu 20.04): g++-10(10.3.0) \[g++-10-multilib(10.3.0)\] (CC=gcc-10 CXX=g++-10)
 
 Linux(Ubuntu 20.04) with clang: clang(10.0.0) libc++-dev(10.0.0) libc++abi-dev(10.0.0) llvm(10.0.0) (Compiler=clang)
 
@@ -65,7 +65,7 @@ iOS: XCode(12.0) mono(6.x)
 
 Android: JDK(8.x) AndroidSDK("build-tools;30.0.3" "platforms;android-28" "ndk;23.0.7599858") \[Android Gradle plugin(4.1.0)\]
 
-Android on Linux(openSUSE 15.2): java-1_8_0-openjdk-devel
+Android on Linux(openSUSE 15.3): java-1_8_0-openjdk-devel
 
 Android on Linux(Ubuntu 20.04): openjdk-8-jdk
 
