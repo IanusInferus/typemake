@@ -1,16 +1,15 @@
 ﻿#pragma once
-#include <string>
-#include <memory>
-#include <vector>
-#include <sstream>
-#include <stdexcept>
+
+#ifndef TYPEMAKESAMPLE_USE_MODULE
+#include "typemakesample/core/StringUtilities.inc.hpp"
+#endif
 
 namespace typemakesample
 {
 namespace core
 {
 
-template<typename T>
+TYPEMAKESAMPLE_EXPORT template<typename T>
 std::string ToString(T value)
 {
     std::stringstream s;
@@ -18,7 +17,7 @@ std::string ToString(T value)
     return std::string(s.str());
 }
 
-bool EqualIgnoreCase(const std::string &l, const std::string &r);
+TYPEMAKESAMPLE_EXPORT bool EqualIgnoreCase(const std::string & l, const std::string & r);
 
 }
 }

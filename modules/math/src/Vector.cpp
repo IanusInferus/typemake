@@ -1,4 +1,9 @@
-﻿#include "typemakesample/math/Vector.hpp"
+﻿#ifdef TYPEMAKESAMPLE_USE_MODULE
+import math;
+#include "typemakesample/math/Vector.inc.hpp"
+#else
+#include "typemakesample/math/Vector.hpp"
+#endif
 
 namespace typemakesample
 {
@@ -23,11 +28,6 @@ bool Vector3d::operator ==(Vector3d right)
 bool Vector3d::operator !=(Vector3d right)
 {
     return !(*this == right);
-}
-
-std::ostream & operator <<(std::ostream & stream, const Vector3d & v)
-{
-    return stream << "{" << v.data[0] << " " << v.data[1] << " " << v.data[2] << "}";
 }
 
 }

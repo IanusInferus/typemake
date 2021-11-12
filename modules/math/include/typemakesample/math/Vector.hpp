@@ -1,14 +1,15 @@
 ﻿#pragma once
 
-#include <array>
-#include <ostream>
+#ifndef TYPEMAKESAMPLE_USE_MODULE
+#include "typemakesample/math/Vector.inc.hpp"
+#endif
 
 namespace typemakesample
 {
 namespace math
 {
 
-struct Vector3d
+TYPEMAKESAMPLE_EXPORT struct Vector3d
 {
 public:
     std::array<double, 3> data;
@@ -19,7 +20,10 @@ public:
     bool operator !=(Vector3d right);
 };
 
-std::ostream & operator <<(std::ostream & stream, const Vector3d & v);
+TYPEMAKESAMPLE_EXPORT inline std::ostream & operator <<(std::ostream & stream, const Vector3d & v)
+{
+    return stream << "{" << v.data[0] << " " << v.data[1] << " " << v.data[2] << "}";
+}
 
 }
 }

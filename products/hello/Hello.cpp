@@ -1,5 +1,12 @@
-﻿#include "typemakesample/core/StringUtilities.hpp"
+﻿#ifdef TYPEMAKESAMPLE_USE_MODULE
+import core;
+import math;
+#include "typemakesample/core/StringUtilities.inc.hpp"
+#include "typemakesample/math/Vector.inc.hpp"
+#else
+#include "typemakesample/core/StringUtilities.hpp"
 #include "typemakesample/math/Vector.hpp"
+#endif
 
 #include <cstdio>
 

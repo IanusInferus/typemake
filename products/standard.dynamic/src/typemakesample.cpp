@@ -1,5 +1,10 @@
 ﻿#include "typemakesample.h"
+
+#ifdef TYPEMAKESAMPLE_USE_MODULE
+import math;
+#else
 #include "typemakesample/math/Vector.hpp"
+#endif
 
 using namespace typemakesample::math;
 

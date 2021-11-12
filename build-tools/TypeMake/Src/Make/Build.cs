@@ -638,10 +638,14 @@ namespace TypeMake
                 },
                 new Configuration
                 {
+                    Defines = ParseDefines((Compiler == CompilerType.VisualCpp) && (VSVersion == 2022) && (WindowsRuntime == WindowsRuntimeType.Win32) ? "TYPEMAKESAMPLE_USE_MODULE;TYPEMAKESAMPLE_EXPORT=export" : "TYPEMAKESAMPLE_EXPORT=")
+                },
+                new Configuration
+                {
                     MatchingCompilers = new List<CompilerType> { CompilerType.VisualCpp, CompilerType.clangcl },
                     Options = new Dictionary<String, String>
                     {
-                        ["vc.ClCompile.LanguageStandard"] = "stdcpp17"
+                        ["vc.ClCompile.LanguageStandard"] = WindowsRuntime == WindowsRuntimeType.Win32 ? "stdcpp20" : "stdcpp17"
                     }
                 },
                 new Configuration
@@ -669,7 +673,7 @@ namespace TypeMake
                 new Configuration
                 {
                     MatchingCompilers = new List<CompilerType> { CompilerType.gcc, CompilerType.clang },
-                    CppFlags = ParseFlags("-std=c++17")
+                    CppFlags = ParseFlags("-std=c++2a")
                 },
                 new Configuration
                 {
@@ -1070,6 +1074,17 @@ namespace TypeMake
             else if ((Ext == "cc") || (Ext == "cpp") || (Ext == "cxx"))
             {
                 return new Cpp.File { Path = FilePath, Type = FileType.CppSource, Configurations = Configurations };
+            }
+            else if (Ext == "ixx")
+            {
+                if ((Compiler == CompilerType.VisualCpp) && (VSVersion == 2022) && (WindowsRuntime == WindowsRuntimeType.Win32))
+                {
+                    return new Cpp.File { Path = FilePath, Type = FileType.CppSource, Configurations = Configurations };
+                }
+                else
+                {
+                    return new Cpp.File { Path = FilePath, Type = FileType.Unknown, Configurations = Configurations };
+                }
             }
             else if (Ext == "m")
             {

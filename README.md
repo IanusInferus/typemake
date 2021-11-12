@@ -47,27 +47,29 @@ Different OSs use different ABIs on the same CPU architecture.
 
 Windows: VS2019/VS2022 \[LLVM(10.0.0-win64/12.0.0-win64)\] \[[C++ Clang-cl for v142/v143 build tools](https://docs.microsoft.com/en-us/cpp/build/clang-support-msbuild)\]
 
-Linux(openSUSE 15.2): gcc-c++(7.5.0) \[gcc-c++-32bit(7.5.0)\] mono-devel(6.x) glibc(runtime 2.14)
+Linux: mono-devel(6.x)
 
-Linux(openSUSE 15.2) with clang: clang(9.0.1) libc++-devel(9.0.1) llvm(9.0.1)
+Linux(openSUSE 15.2): gcc9-c++(9.2.1) \[gcc9-c++-32bit(9.2.1)\]
 
-Linux(Ubuntu 18.04): g++(7.3.0) \[g++-multilib(7.3.0)\] mono-devel(6.x) glibc(runtime 2.14)
+Linux(openSUSE 15.2) with clang: clang(9.0.1) libc++-devel(9.0.1) llvm(9.0.1) (Compiler=clang)
 
-Linux(Ubuntu 18.04) with clang: clang-7 libc++-7-dev libc++abi-7-dev llvm-7-tools (CC=clang-7 CXX=clang++-7 AR=llvm-ar-7)
+Linux(Ubuntu 20.04): g++(9.3.0) \[g++-multilib(9.3.0)\]
 
-Linux with musl(x86/x64/armv7a/arm64): musl-cross-make (CC=xxx-linux-musl-gcc CXX=xxx-linux-musl-g++ AR=xxx-linux-musl-ar)
+Linux(Ubuntu 20.04) with clang: clang(10.0.0) libc++-dev(10.0.0) libc++abi-dev(10.0.0) llvm(10.0.0) (Compiler=clang)
+
+Linux with musl(x86/x64/armv7a/arm64): musl-cross-make (CppLibraryForm=Static CC=xxx-linux-musl-gcc CXX=xxx-linux-musl-g++ AR=xxx-linux-musl-ar)
 
 Mac: XCode(12.0) mono(6.x)
 
 iOS: XCode(12.0) mono(6.x)
 
-Android: JDK(8.x) AndroidSDK("build-tools;30.0.3" "platforms;android-28" "ndk;22.0.7026061") \[Android Gradle plugin(4.1.0)\]
+Android: JDK(8.x) AndroidSDK("build-tools;30.0.3" "platforms;android-28" "ndk;23.0.7599858") \[Android Gradle plugin(4.1.0)\]
 
 Android on Linux(openSUSE 15.2): java-1_8_0-openjdk-devel
 
-Android on Linux(Ubuntu 18.04): openjdk-8-jdk
+Android on Linux(Ubuntu 20.04): openjdk-8-jdk
 
-Android on Android: ninja mono(https://github.com/IanusInferus/termux-mono) {OpenJDK(11.0.1), AndroidSDK, AndroidNDK(r21)}(https://github.com/Lzhiyong/termux-ndk/releases, only Android 10.0 is tested)
+Android on Android: ninja mono(https://github.com/IanusInferus/termux-mono) {OpenJDK(11.0.1), AndroidSDK, AndroidNDK(r23)}(https://github.com/Lzhiyong/termux-ndk/releases, only Android 10.0 is tested)
 
 ## Notice
 
