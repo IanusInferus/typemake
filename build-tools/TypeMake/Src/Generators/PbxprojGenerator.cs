@@ -520,6 +520,11 @@ namespace TypeMake.Cpp
                 {
                     BuildSettings["HEADER_SEARCH_PATHS"] = Value.CreateArray(IncludeDirectories.Select(d => Value.CreateString(d)).ToList());
                 }
+                var SystemIncludeDirectories = conf.SystemIncludeDirectories.Select(d => d.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix)).ToList();
+                if (SystemIncludeDirectories.Count != 0)
+                {
+                    BuildSettings["SYSTEM_HEADER_SEARCH_PATHS"] = Value.CreateArray(SystemIncludeDirectories.Select(d => Value.CreateString(d)).ToList());
+                }
                 var Defines = conf.Defines;
                 if (Defines.Count != 0)
                 {

@@ -79,6 +79,14 @@ namespace TypeMake.Cpp
 
             var CommonFlags = new List<String>();
             CommonFlags.AddRange(conf.IncludeDirectories.Select(d => GetFinalPath(d.FullPath)).Select(d => "-I" + d));
+            if ((Compiler == CompilerType.VisualCpp) || (Compiler == CompilerType.clangcl))
+            {
+                CommonFlags.AddRange(conf.SystemIncludeDirectories.Select(d => GetFinalPath(d.FullPath)).SelectMany(d => new String[] { "/external:I", d }));
+            }
+            else
+            {
+                CommonFlags.AddRange(conf.SystemIncludeDirectories.Select(d => GetFinalPath(d.FullPath)).SelectMany(d => new String[] { "-isystem", d }));
+            }
             CommonFlags.AddRange(conf.Defines.Select(d => "-D" + d.Key + (d.Value == null ? "" : "=" + d.Value)));
             CommonFlags.AddRange(conf.CommonFlags);
 

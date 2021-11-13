@@ -61,6 +61,7 @@ namespace TypeMake.Cpp
                 MatchingCppLibraries = CppLibrary == null ? null : new List<CppLibraryType> { CppLibrary.Value },
                 MatchingCppLibraryForms = CppLibraryForm == null ? null : new List<CppLibraryForm> { CppLibraryForm.Value },
                 IncludeDirectories = Matched.SelectMany(c => c.IncludeDirectories).Distinct().ToList(),
+                SystemIncludeDirectories = Matched.SelectMany(c => c.SystemIncludeDirectories).Distinct().ToList(),
                 Defines = Matched.SelectMany(c => c.Defines).ToList(),
                 CommonFlags = Matched.SelectMany(c => c.CommonFlags).ToList(),
                 CFlags = Matched.SelectMany(c => c.CFlags).ToList(),

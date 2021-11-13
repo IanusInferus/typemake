@@ -109,6 +109,7 @@ namespace TypeMake.Cpp
         public List<ConfigurationType> MatchingConfigurationTypes = null;
 
         public List<PathString> IncludeDirectories = new List<PathString> { };
+        public List<PathString> SystemIncludeDirectories = new List<PathString> { };
         public List<KeyValuePair<String, String>> Defines = new List<KeyValuePair<String, String>> { };
         public List<String> CommonFlags = new List<String> { };
         public List<String> CFlags = new List<String> { };

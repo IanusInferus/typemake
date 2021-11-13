@@ -347,7 +347,7 @@ namespace TypeMake.Cpp
                 {
                     ClCompile.SetElementValue(xn + "PreprocessorDefinitions", String.Join(";", Defines.Select(d => d.Key + (d.Value == null ? "" : "=" + d.Value))) + ";%(PreprocessorDefinitions)");
                 }
-                var CompilerFlags = conf.CommonFlags.Concat(conf.CFlags).Concat(conf.CppFlags).ToList();
+                var CompilerFlags = conf.SystemIncludeDirectories.SelectMany(d => new String[] { "/external:I", d.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Windows) }).Concat(conf.CommonFlags).Concat(conf.CFlags).Concat(conf.CppFlags).ToList();
                 if (WindowsRuntime == WindowsRuntimeType.WinRT)
                 {
                     CompilerFlags.Add("/Zc:twoPhase-"); //https://docs.microsoft.com/en-us/cpp/build/reference/zc-twophase?view=vs-2019
@@ -537,7 +537,7 @@ namespace TypeMake.Cpp
                                     {
                                         x.Add(new XElement(xn + "PreprocessorDefinitions", String.Join(";", Defines.Select(d => d.Key + (d.Value == null ? "" : "=" + d.Value))) + ";%(PreprocessorDefinitions)", Attributes));
                                     }
-                                    var CompilerFlags = conf.CommonFlags;
+                                    var CompilerFlags = conf.SystemIncludeDirectories.SelectMany(d => new String[] { "/external:I", d.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Windows) }).Concat(conf.CommonFlags).ToList();
                                     if ((File.Type == FileType.CSource) || (File.Type == FileType.ObjectiveCSource))
                                     {
                                         CompilerFlags = CompilerFlags.Concat(conf.CFlags).ToList();
