@@ -290,7 +290,7 @@ namespace TypeMake
                     }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
                     {
-                        return VariableSpecCreateEnumSelection(Cpp.CompilerType.gcc, new HashSet<Cpp.CompilerType> { Cpp.CompilerType.gcc, Cpp.CompilerType.clang });
+                        return VariableSpecCreateEnumSelection(Cpp.CompilerType.clang, new HashSet<Cpp.CompilerType> { Cpp.CompilerType.gcc, Cpp.CompilerType.clang });
                     }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.MacOS)
                     {
@@ -367,7 +367,7 @@ namespace TypeMake
             l.Add(new VariableItem
             {
                 VariableName = nameof(Variables.CppLibrary),
-                DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.Toolchain) },
+                DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.Toolchain), nameof(Variables.Compiler) },
                 GetVariableSpec = () =>
                 {
                     if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
@@ -376,7 +376,18 @@ namespace TypeMake
                     }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
                     {
-                        return VariableSpecCreateEnumSelection(Cpp.CppLibraryType.libstdcxx, new HashSet<Cpp.CppLibraryType> { Cpp.CppLibraryType.libstdcxx, Cpp.CppLibraryType.libcxx });
+                        if (Variables.Compiler == Cpp.CompilerType.gcc)
+                        {
+                            return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.CppLibraryType.libstdcxx.ToString()));
+                        }
+                        else if (Variables.Compiler == Cpp.CompilerType.clang)
+                        {
+                            return VariableSpecCreateEnumSelection(Cpp.CppLibraryType.libcxx, new HashSet<Cpp.CppLibraryType> { Cpp.CppLibraryType.libstdcxx, Cpp.CppLibraryType.libcxx });
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException();
+                        }
                     }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.MacOS)
                     {
