@@ -799,10 +799,10 @@ namespace TypeMake
                 },
                 new Configuration
                 {
-                    MatchingCompilers = new List<CompilerType> { CompilerType.gcc },
+                    MatchingCompilers = new List<CompilerType> { CompilerType.gcc, CompilerType.clang },
                     MatchingCLibraryForms = new List<CLibraryForm> { CLibraryForm.Dynamic },
                     MatchingCppLibraryForms = new List<CppLibraryForm> { CppLibraryForm.Static },
-                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Linux, OperatingSystemType.Android },
+                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Linux },
                     LinkerFlags = ParseFlags("-static-libgcc")
                 },
                 new Configuration
