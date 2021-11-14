@@ -412,7 +412,7 @@ namespace TypeMake
             l.Add(new VariableItem
             {
                 VariableName = nameof(Variables.CppLibraryForm),
-                DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.Toolchain), nameof(Variables.CLibrary), nameof(Variables.CLibraryForm), nameof(Variables.CppLibrary) },
+                DependentVariableNames = new List<String> { nameof(Variables.CLibrary), nameof(Variables.CLibraryForm), nameof(Variables.CppLibrary) },
                 GetVariableSpec = () =>
                 {
                     if (Variables.CppLibrary == Cpp.CppLibraryType.VisualCppRuntime)
@@ -428,9 +428,9 @@ namespace TypeMake
                     }
                     else if ((Variables.CppLibrary == Cpp.CppLibraryType.libstdcxx) || (Variables.CppLibrary == Cpp.CppLibraryType.libcxx))
                     {
-                        if ((Variables.TargetOperatingSystem == Cpp.OperatingSystemType.MacOS) || (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.iOS))
+                        if (Variables.CLibraryForm == Cpp.CLibraryForm.Static)
                         {
-                            return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.CppLibraryForm.Dynamic.ToString()));
+                            return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.CppLibraryForm.Static.ToString()));
                         }
                         else
                         {
