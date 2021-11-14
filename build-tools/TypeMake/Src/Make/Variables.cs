@@ -22,6 +22,7 @@ namespace TypeMake
         public Cpp.ConfigurationType Configuration;
         public bool EnableCustomSysroot;
         public PathString CustomSysroot;
+        public bool EnableLibcxxCompilation;
         public bool OverwriteRetypemakeScript;
         public bool ForceRegenerate;
         public bool EnablePathCheck;

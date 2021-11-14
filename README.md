@@ -77,6 +77,8 @@ To use this repo in a project, just copy 'tools' directory to the project repo.
 
 You may need to customize some code to cope with your project, mainly in directory 'Make' and 'Templates'.
 
+Static libc++ need to be built manually on most Linux distributions. You need to download the source files according to `lib/libcxx/generic/version.txt` to use it.
+
 ## Android
 
 You need to set a key to build Android release APK and iOS applications/dynamic libraries.
