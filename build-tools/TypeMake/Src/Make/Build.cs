@@ -19,13 +19,13 @@ namespace TypeMake
         private WindowsRuntimeType? WindowsRuntime;
         private bool EnableiOSSimulator;
         private bool EnableMacCatalyst;
-        private ConfigurationType ConfigurationType;
         private ToolchainType Toolchain;
         private CompilerType Compiler;
         private CLibraryType CLibrary;
         private CLibraryForm CLibraryForm;
         private CppLibraryType CppLibrary;
         private CppLibraryForm CppLibraryForm;
+        private ConfigurationType ConfigurationType;
         private bool EnableCustomSysroot;
         private PathString CustomSysroot;
         private bool EnableLibcxxCompilation;
