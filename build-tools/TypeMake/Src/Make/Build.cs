@@ -26,6 +26,8 @@ namespace TypeMake
         private CLibraryForm CLibraryForm;
         private CppLibraryType CppLibrary;
         private CppLibraryForm CppLibraryForm;
+        private bool EnableCustomSysroot;
+        private PathString CustomSysroot;
         private PathString SourceDirectory;
         private PathString BuildDirectory;
         private String XCodeDevelopmentTeam;
@@ -50,7 +52,7 @@ namespace TypeMake
 
         private Dictionary<String, String> ProjectIds = new Dictionary<String, String>();
 
-        public Build(OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType TargetArchitecture, WindowsRuntimeType? WindowsRuntime, bool EnableiOSSimulator, bool EnableMacCatalyst, ToolchainType Toolchain, CompilerType Compiler, CLibraryType CLibrary, CLibraryForm CLibraryForm, CppLibraryType CppLibrary, CppLibraryForm CppLibraryForm, ConfigurationType ConfigurationType, PathString SourceDirectory, PathString BuildDirectory, String XCodeDevelopmentTeam, String XCodeProvisioningProfileSpecifier, PathString VSDir, int VSVersion, bool EnableJava, PathString Jdk, PathString AndroidSdk, PathString AndroidNdk, String CC, String CXX, String AR, String STRIP, List<String> CommonFlags, List<String> CFlags, List<String> CppFlags, List<String> LinkerFlags, List<String> PostLinkerFlags, bool ForceRegenerate, bool EnableNonTargetingOperatingSystemDummy)
+        public Build(OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType TargetArchitecture, WindowsRuntimeType? WindowsRuntime, bool EnableiOSSimulator, bool EnableMacCatalyst, ToolchainType Toolchain, CompilerType Compiler, CLibraryType CLibrary, CLibraryForm CLibraryForm, CppLibraryType CppLibrary, CppLibraryForm CppLibraryForm, ConfigurationType ConfigurationType, bool EnableCustomSysroot, PathString CustomSysroot, PathString SourceDirectory, PathString BuildDirectory, String XCodeDevelopmentTeam, String XCodeProvisioningProfileSpecifier, PathString VSDir, int VSVersion, bool EnableJava, PathString Jdk, PathString AndroidSdk, PathString AndroidNdk, String CC, String CXX, String AR, String STRIP, List<String> CommonFlags, List<String> CFlags, List<String> CppFlags, List<String> LinkerFlags, List<String> PostLinkerFlags, bool ForceRegenerate, bool EnableNonTargetingOperatingSystemDummy)
         {
             this.HostOperatingSystem = HostOperatingSystem;
             this.HostArchitecture = HostArchitecture;
@@ -66,6 +68,8 @@ namespace TypeMake
             this.CppLibrary = CppLibrary;
             this.CppLibraryForm = CppLibraryForm;
             this.ConfigurationType = ConfigurationType;
+            this.EnableCustomSysroot = EnableCustomSysroot;
+            this.CustomSysroot = CustomSysroot;
             this.SourceDirectory = SourceDirectory.FullPath;
             this.BuildDirectory = BuildDirectory.FullPath;
             this.XCodeDevelopmentTeam = XCodeDevelopmentTeam;
@@ -998,6 +1002,29 @@ namespace TypeMake
                         ["xcode.project.IPHONEOS_DEPLOYMENT_TARGET"] = "9.0",
                         ["xcode.project.MACOSX_DEPLOYMENT_TARGET"] = "10.15",
                         ["xcode.target.TARGETED_DEVICE_FAMILY"] = "" //disable iPhone and iPad
+                    }
+                });
+            }
+            if (EnableCustomSysroot)
+            {
+                // for gcc, a custom sysroot is not enough for cross-compiling, you'll need to configure and build gcc with custom options. run `g++ -v` for configuration used to build the system g++
+                // on the other hand, clang is natively a cross-compiler https://clang.llvm.org/docs/CrossCompilation.html
+                Configurations.AddRange(new List<Configuration>
+                {
+                    new Configuration
+                    {
+                        MatchingCompilers = new List<CompilerType> { CompilerType.clang },
+                        MatchingTargetArchitectures = new List<ArchitectureType> { ArchitectureType.x64 },
+                        CommonFlags = new List<String> { $"--sysroot={CustomSysroot.ToString(PathStringStyle.Unix)}" },
+                        LinkerFlags = new List<String> { $"--sysroot={CustomSysroot.ToString(PathStringStyle.Unix)}" }
+                    },
+                    new Configuration
+                    {
+                        MatchingCompilers = new List<CompilerType> { CompilerType.clang },
+                        MatchingTargetArchitectures = new List<ArchitectureType> { ArchitectureType.x64 },
+                        MatchingCLibraries = new List<CLibraryType> { CLibraryType.glibc },
+                        CommonFlags = new List<String> { $"--gcc-toolchain={(CustomSysroot / "usr").ToString(PathStringStyle.Unix)}" },
+                        LinkerFlags = new List<String> { $"--gcc-toolchain={(CustomSysroot / "usr").ToString(PathStringStyle.Unix)}" }
                     }
                 });
             }

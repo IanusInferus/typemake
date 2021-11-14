@@ -73,6 +73,12 @@ Android on Android: ninja mono(https://github.com/IanusInferus/termux-mono) {Ope
 
 ## Notice
 
+To use this repo in a project, just copy 'tools' directory to the project repo.
+
+You may need to customize some code to cope with your project, mainly in directory 'Make' and 'Templates'.
+
+## Android
+
 You need to set a key to build Android release APK and iOS applications/dynamic libraries.
 
 With Android Ninja toolchain, you can generate a debug key if you don't already have one.
@@ -82,10 +88,20 @@ With Android Ninja toolchain, you can generate a debug key if you don't already 
 
 You need to set Configuration - Debugger - Debug type to Native/Dual to debug C++ code in Android Studio.
 
-To use this repo in a project, just copy 'tools' directory to the project repo.
-
-You may need to customize some code to cope with your project, mainly in directory 'Make' and 'Templates'.
-
-To build a program statically for Linux/Android on x64/arm64/... without libc(glibc/bionic) dependency, you can build [musl-cross-make](https://github.com/richfelker/musl-cross-make) with ([GCC_CONFIG += --enable-default-pie](https://github.com/richfelker/musl-cross-make/issues/47)) and then build your program for Linux with static options(CLibraryForm=Static).
-
 Android host support is [Termux](https://github.com/termux/termux-app)-only and is limited.
+
+## Linux glibc dependency
+
+glibc dependency is notorious in the Linux community. Unlike kernel32.dll of Windows, glibc provides both an operating system interface(POSIX) and a C standard library(C99, C11, etc) and it is backward-compatible but not forward-compatible, meaning that a program compiled on an old system will run on a new system but not vice versa.
+
+One may think that we can link glibc statically to solve this problem, but glibc is [not usable when linked statically](https://stackoverflow.com/questions/57476533/why-is-statically-linking-glibc-discouraged).
+
+To link a C library statically on Linux (and Android), you need [libmusl](https://www.musl-libc.org/). You can build [musl-cross-make](https://github.com/richfelker/musl-cross-make) with ([GCC_CONFIG += --enable-default-pie](https://github.com/richfelker/musl-cross-make/issues/47)) and then build your program for Linux with static options(CLibraryForm=Static). But this method does not apply to dynamic libraries as libmusl does not have a dynamic linker in its static library.
+
+An alternative solution for Linux is to create a custom sysroot from an old Linux distribution with desired old version glibc and use clang to compile against it. You can also try gcc, but newer gcc and libstdc++ [depend on newer glibc](https://gcc.gnu.org/onlinedocs/libstdc++/faq.html#faq.linux_glibc), which breaks easily and you need to compile everything. For clang, you only need to compile libc++, libc++abi and other libraries you use, not the compiler and related tools. This method is what Google uses for Android NDK, except for that they use bionic rather than glibc.
+
+Yet another solution for Linux is to use [glibc_version_header](https://github.com/wheybags/glibc_version_header), which forces code to use older glibc symbols. This method works for small projects, but when you reference third-party libraries from the system package manager, newer glibc symbols will slip in.
+
+As a last resort, one can build programs on a machine with a distribution with an older version of glibc, say CentOS 6.x. The problem is that it will not be very portable. You may need to carry it around or open a virtual machine to do a build.
+
+By the way, docker is not a solution to this problem, as glibc depends on kernel version tightly, and we have to [run a Docker image that was based on the same or older kernel version as the host](https://github.com/boostorg/filesystem/issues/164), in which case, we can run our program directly on the host.
