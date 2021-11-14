@@ -1122,14 +1122,12 @@ namespace TypeMake
                     new Configuration
                     {
                         MatchingCompilers = new List<CompilerType> { CompilerType.clang },
-                        MatchingTargetArchitectures = new List<ArchitectureType> { ArchitectureType.x64 },
                         CommonFlags = new List<String> { $"--sysroot={CustomSysroot.ToString(PathStringStyle.Unix)}" },
                         LinkerFlags = new List<String> { $"--sysroot={CustomSysroot.ToString(PathStringStyle.Unix)}" }
                     },
                     new Configuration
                     {
                         MatchingCompilers = new List<CompilerType> { CompilerType.clang },
-                        MatchingTargetArchitectures = new List<ArchitectureType> { ArchitectureType.x64 },
                         MatchingCLibraries = new List<CLibraryType> { CLibraryType.glibc },
                         CommonFlags = new List<String> { $"--gcc-toolchain={(CustomSysroot / "usr").ToString(PathStringStyle.Unix)}" },
                         LinkerFlags = new List<String> { $"--gcc-toolchain={(CustomSysroot / "usr").ToString(PathStringStyle.Unix)}" }

@@ -59,6 +59,8 @@ Linux(Ubuntu 20.04) with clang: clang(10.0.0) libc++-dev(10.0.0) libc++abi-dev(1
 
 Linux with musl(x86/x64/armv7a/arm64): musl-cross-make (CppLibraryForm=Static CC=xxx-linux-musl-gcc CXX=xxx-linux-musl-g++ AR=xxx-linux-musl-ar)
 
+Linux with musl and clang(x64): musl libc toolchain (Compiler=clang CLibraryForm=Static EnableCustomSysroot=True)
+
 Mac: XCode(12.0) mono(6.x)
 
 iOS: XCode(12.0) mono(6.x)
@@ -98,7 +100,7 @@ glibc dependency is notorious in the Linux community. Unlike kernel32.dll of Win
 
 One may think that we can link glibc statically to solve this problem, but glibc is [not usable when linked statically](https://stackoverflow.com/questions/57476533/why-is-statically-linking-glibc-discouraged).
 
-To link a C library statically on Linux (and Android), you need [libmusl](https://www.musl-libc.org/). You can build [musl-cross-make](https://github.com/richfelker/musl-cross-make) with ([GCC_CONFIG += --enable-default-pie](https://github.com/richfelker/musl-cross-make/issues/47)) and then build your program for Linux with static options(CLibraryForm=Static). But this method does not apply to dynamic libraries as libmusl does not have a dynamic linker in its static library.
+To link a C library statically on Linux (and Android), you need [libmusl](https://www.musl-libc.org/). You can build [musl-cross-make](https://github.com/richfelker/musl-cross-make) with ([GCC_CONFIG += --enable-default-pie](https://github.com/richfelker/musl-cross-make/issues/47)) and then build your program for Linux with its gcc. Another version [musl libc toolchain](https://musl.cc/) is prebuilt and can also be used as a sysroot for clang(x86_64-linux-musl-native.tgz). But this method does not apply to dynamic libraries as libmusl does not have a dynamic linker in its static library.
 
 An alternative solution for Linux is to create a custom sysroot from an old Linux distribution with desired old version glibc and use clang to compile against it. You can also try gcc, but newer gcc and libstdc++ [depend on newer glibc](https://gcc.gnu.org/onlinedocs/libstdc++/faq.html#faq.linux_glibc), which breaks easily and you need to compile everything. For clang, you only need to compile libc++, libc++abi and other libraries you use, not the compiler and related tools. This method is what Google uses for Android NDK, except for that they use bionic rather than glibc.
 
