@@ -51,15 +51,15 @@ Linux: mono-devel(6.x)
 
 Linux(openSUSE 15.3): gcc10-c++(10.3.0) \[gcc10-c++-32bit(10.3.0)\] (CC=gcc-10 CXX=g++-10)
 
-Linux(openSUSE 15.3) with clang: clang(11.0.1) libc++-devel(11.0.1) llvm(11.0.1) (Compiler=clang)
+Linux(openSUSE 15.3) with clang: clang(11.0.1) libc++-devel(11.0.1) llvm(11.0.1) lld(11.0.1) (Compiler=clang)
 
 Linux(Ubuntu 20.04): g++-10(10.3.0) \[g++-10-multilib(10.3.0)\] (CC=gcc-10 CXX=g++-10)
 
-Linux(Ubuntu 20.04) with clang: clang(10.0.0) libc++-dev(10.0.0) libc++abi-dev(10.0.0) llvm(10.0.0) (Compiler=clang)
+Linux(Ubuntu 20.04) with clang: clang(10.0.0) libc++-dev(10.0.0) libc++abi-dev(10.0.0) llvm(10.0.0) lld(10.0.0) (Compiler=clang)
 
 Linux with musl(x86/x64/armv7a/arm64): musl-cross-make (CppLibraryForm=Static CC=xxx-linux-musl-gcc CXX=xxx-linux-musl-g++ AR=xxx-linux-musl-ar)
 
-Linux with musl and clang(x64): musl libc toolchain (Compiler=clang CLibraryForm=Static EnableCustomSysroot=True)
+Linux with musl and clang(x86/x64/armv7a/arm64): musl libc toolchain (Compiler=clang CLibraryForm=Static EnableCustomSysroot=True) (See `lib/sysroot/HowToGetSysroot.md` for cross-compilation)
 
 Mac: XCode(12.0) mono(6.x)
 

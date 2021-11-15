@@ -1006,6 +1006,12 @@ namespace TypeMake
                 },
                 new Configuration
                 {
+                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Linux },
+                    MatchingCompilers = new List<CompilerType> { CompilerType.clang },
+                    LinkerFlags = ParseFlags("-fuse-ld=lld")
+                },
+                new Configuration
+                {
                     MatchingTargetTypes = new List<TargetType> { TargetType.Executable, TargetType.DynamicLibrary },
                     MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Linux },
                     LinkerFlags = ParseFlags(@"-Wl,-rpath -Wl,$ORIGIN")
