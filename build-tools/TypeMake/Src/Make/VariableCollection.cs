@@ -500,15 +500,25 @@ namespace TypeMake
             l.Add(new VariableItem
             {
                 VariableName = nameof(Variables.EnableLibcxxCompilation),
-                DependentVariableNames = new List<String> { nameof(Variables.CppLibrary), nameof(Variables.CppLibraryForm), nameof(Variables.Configuration) },
+                DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.CppLibrary), nameof(Variables.CppLibraryForm), nameof(Variables.Configuration) },
                 GetVariableSpec = () =>
                 {
                     if ((Variables.CppLibrary == Cpp.CppLibraryType.libcxx) && (Variables.CppLibraryForm == Cpp.CppLibraryForm.Static))
                     {
-                        return VariableSpec.CreateBoolean(new BooleanSpec
+                        if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
                         {
-                            DefaultValue = Variables.Configuration == Cpp.ConfigurationType.Release
-                        });
+                            return VariableSpec.CreateBoolean(new BooleanSpec
+                            {
+                                DefaultValue = Variables.Configuration == Cpp.ConfigurationType.Release
+                            });
+                        }
+                        else
+                        {
+                            return VariableSpec.CreateBoolean(new BooleanSpec
+                            {
+                                DefaultValue = true
+                            });
+                        }
                     }
                     else
                     {
