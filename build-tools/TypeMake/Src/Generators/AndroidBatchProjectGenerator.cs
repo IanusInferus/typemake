@@ -136,10 +136,11 @@ namespace TypeMake.Cpp
             {
                 Func<String, String> e = s => Shell.EscapeArgumentForShell(s, Shell.ShellArgumentStyle.CMD);
 
+                var Java = Jdk / "bin/java.exe";
                 var Javac = Jdk / "bin/javac.exe";
                 var Jar = Jdk / "bin/jar.exe";
                 var Aapt2 = AndroidSdk / "build-tools" / BuildToolVersion / "aapt2.exe";
-                var D8 = AndroidSdk / "build-tools" / BuildToolVersion / "d8.bat";
+                var D8Jar = AndroidSdk / "build-tools" / BuildToolVersion / "lib/d8.jar";
                 var ZipAlign = AndroidSdk / "build-tools" / BuildToolVersion / "zipalign.exe";
                 var ApkSigner = AndroidSdk / "build-tools" / BuildToolVersion / "apksigner.bat";
                 var AndroidJar = AndroidSdk / $"platforms/android-{TargetSdkVersion}" / "android.jar";
@@ -219,7 +220,7 @@ namespace TypeMake.Cpp
                 {
                     yield return $@"dir /A:-D /S /B {e(JavaSrcDir / "*.java")} >> java_source_list.txt || exit /b 1";
                 }
-                yield return $@"{e(Javac)} -source 1.8 -target 1.8 -parameters -g -encoding utf-8 -d classes{String.Join("", JavaSrcDirs.Select(d => " -sourcepath " + e(d)))} -sourcepath gen {"-cp " + e(String.Join(";", new List<PathString> { AndroidJar }.Concat(JarFiles)))} @java_source_list.txt || exit /b 1";
+                yield return $@"{e(Javac)} -source 11 -target 11 -parameters -g -encoding utf-8 -d classes{String.Join("", JavaSrcDirs.Select(d => " -sourcepath " + e(d)))} -sourcepath gen {"-cp " + e(String.Join(";", new List<PathString> { AndroidJar }.Concat(JarFiles)))} @java_source_list.txt || exit /b 1";
                 yield return @"";
                 yield return @":: package class files to jar";
                 yield return $@"{e(Jar)} cvfM classes.jar -C classes . || exit /b 1";
@@ -227,7 +228,7 @@ namespace TypeMake.Cpp
                 if (Project.TargetType == TargetType.GradleApplication)
                 {
                     yield return @":: convert jar to dex";
-                    yield return $@"call {e(D8)} --min-api {MinSdkVersion} --lib {e(AndroidJar)}{(IsDebug ? " --debug" : "")} classes.jar{(JarFiles.Count > 0 ? " " + String.Join(" ", JarFiles.Select(f => e(f))) : "")} || exit /b 1";
+                    yield return $@"{e(Java)} -cp {e(D8Jar)} com.android.tools.r8.D8 --min-api {MinSdkVersion} --lib {e(AndroidJar)}{(IsDebug ? " --debug" : "")} classes.jar{(JarFiles.Count > 0 ? " " + String.Join(" ", JarFiles.Select(f => e(f))) : "")} || exit /b 1";
                     yield return @"";
                 }
                 yield return @":: add files to apk/aar";
@@ -263,10 +264,11 @@ namespace TypeMake.Cpp
             {
                 Func<String, String> e = s => Shell.EscapeArgumentForShell(s, Shell.ShellArgumentStyle.Bash);
 
+                var Java = Jdk / "bin/java";
                 var Javac = Jdk / "bin/javac";
                 var Jar = Jdk / "bin/jar";
                 var Aapt2 = AndroidSdk / "build-tools" / BuildToolVersion / "aapt2";
-                var D8 = AndroidSdk / "build-tools" / BuildToolVersion / "d8";
+                var D8Jar = AndroidSdk / "build-tools" / BuildToolVersion / "lib/d8.jar";
                 var ZipAlign = AndroidSdk / "build-tools" / BuildToolVersion / "zipalign";
                 var ApkSigner = AndroidSdk / "build-tools" / BuildToolVersion / "apksigner";
                 var AndroidJar = AndroidSdk / $"platforms/android-{TargetSdkVersion}" / "android.jar";
@@ -337,7 +339,7 @@ namespace TypeMake.Cpp
                 {
                     yield return $@"find {e(JavaSrcDir)} -type f -name *.java >> java_source_list.txt";
                 }
-                yield return $@"{e(Javac)} -source 1.8 -target 1.8 -parameters -g -encoding utf-8 -d classes{String.Join("", JavaSrcDirs.Select(d => " -sourcepath " + e(d)))} -sourcepath gen {"-cp " + e(String.Join(":", new List<PathString> { AndroidJar }.Concat(JarFiles)))} @java_source_list.txt";
+                yield return $@"{e(Javac)} -source 11 -target 11 -parameters -g -encoding utf-8 -d classes{String.Join("", JavaSrcDirs.Select(d => " -sourcepath " + e(d)))} -sourcepath gen {"-cp " + e(String.Join(":", new List<PathString> { AndroidJar }.Concat(JarFiles)))} @java_source_list.txt";
                 yield return @"";
                 yield return @"# package class files to jar";
                 yield return $@"{e(Jar)} cvfM classes.jar -C classes .";
@@ -345,7 +347,7 @@ namespace TypeMake.Cpp
                 if (Project.TargetType == TargetType.GradleApplication)
                 {
                     yield return @"# convert jar to dex";
-                    yield return $@"{e(D8)} --min-api {MinSdkVersion} --lib {e(AndroidJar)}{(IsDebug ? " --debug" : "")} classes.jar{(JarFiles.Count > 0 ? " " + String.Join(" ", JarFiles.Select(f => e(f))) : "")}";
+                    yield return $@"{e(Java)} -cp {e(D8Jar)} com.android.tools.r8.D8 --min-api {MinSdkVersion} --lib {e(AndroidJar)}{(IsDebug ? " --debug" : "")} classes.jar{(JarFiles.Count > 0 ? " " + String.Join(" ", JarFiles.Select(f => e(f))) : "")}";
                     yield return @"";
                 }
                 yield return @"# add files to apk/aar";
