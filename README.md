@@ -45,7 +45,7 @@ Different OSs use different ABIs on the same CPU architecture.
 
 ## Dependencies
 
-Windows: VS2019/VS2022 \[LLVM(10.0.0-win64/12.0.0-win64)\] \[[C++ Clang-cl for v142/v143 build tools](https://docs.microsoft.com/en-us/cpp/build/clang-support-msbuild)\]
+Windows: VS2019/VS2022 .Net(4.8) \[LLVM(10.0.0-win64/12.0.0-win64)\] \[[C++ Clang-cl for v142/v143 build tools](https://docs.microsoft.com/en-us/cpp/build/clang-support-msbuild)\]
 
 Linux: mono-devel(6.x)
 

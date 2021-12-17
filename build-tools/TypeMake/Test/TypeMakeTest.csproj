@@ -1,7 +1,7 @@
 ﻿<Project>
 
   <PropertyGroup>
-    <TargetFramework>net461</TargetFramework>
+    <TargetFramework>net48</TargetFramework>
     <IsPackable>false</IsPackable>
     <BaseIntermediateOutputPath>..\..\..\build\TypeMake\Obj\$(MSBuildProjectName)</BaseIntermediateOutputPath>
     <OutputPath>..\..\..\build\TypeMake\Bin\</OutputPath>

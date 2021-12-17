@@ -26,8 +26,8 @@ exit /b 1
 :MSBuild_Found
 
 if "%1"=="--quiet" (
-  !MSBuild! TypeMakeTest.sln /t:Build /p:Configuration=Release /m /nologo /consoleloggerparameters:ErrorsOnly || exit /b 1
+  !MSBuild! TypeMakeTest.sln /restore /t:Build /p:Configuration=Release /m /nologo /consoleloggerparameters:ErrorsOnly || exit /b 1
 ) else (
   echo MSBuild=!MSBuild!
-  !MSBuild! TypeMakeTest.sln /t:Rebuild /p:Configuration=Release /m || exit /b 1
+  !MSBuild! TypeMakeTest.sln /restore /t:Rebuild /p:Configuration=Release /m || exit /b 1
 )
