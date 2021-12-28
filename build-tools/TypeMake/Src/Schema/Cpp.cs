@@ -30,6 +30,7 @@ namespace TypeMake.Cpp
         x64,
         armv7a,
         arm64,
+        riscv64,
         Unknown
     }
     public enum WindowsRuntimeType

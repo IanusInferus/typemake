@@ -24,11 +24,8 @@ Target Operating System vs Building Operating System
 |         Windows x86/x64        |     VS+clang-cl    |                    |                    |                    |
 |         Windows x86/x64        |     Ninja+clang    |                    |                    |                    |
 |   WinRT x86/x64/armv7a/arm64   |         VS         |                    |                    |                    |
-|          Linux x86/x64         |    WSL+Ninja+gcc   |      Ninja+gcc     |                    |                    |
-|            Linux x64           |   WSL+Ninja+clang  |     Ninja+clang    |                    |                    |
+|             Linux *            | WSL+Ninja+clang/gcc|   Ninja+clang/gcc  |                    |                    |
 |            Linux x64           |  WSL+VS+Ninja+gcc  |                    |                    |                    |
-|       Linux armv7a/arm64       |    WSL+Ninja+gcc   |      Ninja+gcc     |                    |                    |
-|         Linux Unknown *        |    WSL+Ninja+gcc   |      Ninja+gcc     |                    |                    |
 |         MacOS x64/arm64        |                    |                    |        XCode       |                    |
 |            MacOS x64           |                    |                    |    Ninja+clang     |                    |
 |  Android x86/x64/armv7a/arm64  |     NDK+Ninja      |     NDK+Ninja      |     NDK+Ninja      |                    |
@@ -41,7 +38,7 @@ Win32 and WinRT targets are both supported, but WinRT only supports libraries an
 
 Different OSs use different ABIs on the same CPU architecture.
 
-\* Linux for other CPU architectures are supported by specifying toolchain commands and flags.
+\* Supported CPU architectures for Linux are x86/x64/armv7a/arm64/riscv64. For non-x64 CPU architectures, it is neccessary to specify toolchain commands and flags.
 
 ## Dependencies
 
@@ -49,17 +46,17 @@ Windows: VS2019/VS2022 .Net(4.8) \[LLVM(10.0.0-win64/12.0.0-win64)\] \[[C++ Clan
 
 Linux: mono-devel(6.x)
 
-Linux(openSUSE 15.3): gcc10-c++(10.3.0) \[gcc10-c++-32bit(10.3.0)\] (CC=gcc-10 CXX=g++-10)
-
 Linux(openSUSE 15.3) with clang: clang(11.0.1) libc++-devel(11.0.1) llvm(11.0.1) lld(11.0.1) [gcc10(10.3.0, x64-only)] (Compiler=clang)
 
-Linux(Ubuntu 20.04): g++-10(10.3.0) \[g++-10-multilib(10.3.0)\] (CC=gcc-10 CXX=g++-10)
+Linux(openSUSE 15.3) with gcc: gcc10-c++(10.3.0) \[gcc10-c++-32bit(10.3.0)\] (CC=gcc-10 CXX=g++-10)
 
 Linux(Ubuntu 20.04) with clang: clang(10.0.0) libc++-dev(10.0.0) libc++abi-dev(10.0.0) llvm(10.0.0) lld(10.0.0) [gcc10(10.3.0, x64-only)] (Compiler=clang)
 
-Linux with musl(x86/x64/armv7a/arm64): musl-cross-make (CppLibraryForm=Static CC=xxx-linux-musl-gcc CXX=xxx-linux-musl-g++ AR=xxx-linux-musl-ar)
+Linux(Ubuntu 20.04) with gcc: g++-10(10.3.0) \[g++-10-multilib(10.3.0)\] (CC=gcc-10 CXX=g++-10)
 
-Linux with musl and clang(x86/x64/armv7a/arm64): musl libc toolchain (Compiler=clang CLibraryForm=Static EnableCustomSysroot=True) (See `lib/sysroot/HowToGetSysroot.md` for cross-compilation)
+Linux with musl and clang(x86/x64/armv7a/arm64/riscv64): musl libc toolchain (Compiler=clang CLibraryForm=Static EnableCustomSysroot=True) (See `lib/sysroot/HowToGetSysroot.md` for cross-compilation)
+
+Linux with musl and gcc(x86/x64/armv7a/arm64/riscv64): musl-cross-make (CppLibraryForm=Static CC=xxx-linux-musl-gcc CXX=xxx-linux-musl-g++ AR=xxx-linux-musl-ar)
 
 Mac: XCode(12.0) mono(6.x)
 

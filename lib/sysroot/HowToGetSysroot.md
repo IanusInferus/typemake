@@ -36,14 +36,19 @@ Download toolchain from [musl libc toolchain](https://musl.cc/). Choose the ones
 
 For cross-compilation, additional flags are needed both in compiler flags (CommonFlags) and linker flags (LinkerFlags).
 
-For example, if we place the sysroots in `/root`, we need to add the following flags for x86, arm64, armv7a and mipsel respectively.
+For example, if we place the sysroots in `/root`, we need to add the following flags for x64, arm64, riscv64, x86, armv7a and mipsel respectively.
 
-    -target i686-linux-musl --prefix=/root/i686-linux-musl-native/usr/lib/gcc/i686-linux-musl/10.2.1 -L/root/i686-linux-musl-native/usr/lib/gcc/i686-linux-musl/10.2.1
-    -target aarch64-linux-musl --prefix=/root/aarch64-linux-musl-native/usr/lib/gcc/aarch64-linux-musl/10.2.1 -L/root/aarch64-linux-musl-native/usr/lib/gcc/aarch64-linux-musl/10.2.1
-    -target arm-linux-musleabihf --prefix=/root/arm-linux-musleabihf-native/usr/lib/gcc/arm-linux-musleabihf/10.2.1 -L/root/arm-linux-musleabihf-native/usr/lib/gcc/arm-linux-musleabihf/10.2.1
-    -target mipsel-linux-musl --prefix=/root/mipsel-linux-musl-native/usr/lib/gcc/mipsel-linux-musl/10.2.1 -L/root/mipsel-linux-musl-native/usr/lib/gcc/mipsel-linux-musl/10.2.1
+    -target x86_64-linux-musl --prefix=/root/x86_64-linux-musl-native/usr/lib/gcc/x86_64-linux-musl/11.2.1 -L/root/x86_64-linux-musl-native/usr/lib/gcc/x86_64-linux-musl/11.2.1
+    -target aarch64-linux-musl --prefix=/root/aarch64-linux-musl-native/usr/lib/gcc/aarch64-linux-musl/11.2.1 -L/root/aarch64-linux-musl-native/usr/lib/gcc/aarch64-linux-musl/11.2.1
+    -target riscv64-linux-musl --prefix=/root/riscv64-linux-musl-native/usr/lib/gcc/riscv64-linux-musl/11.2.1 -L/root/riscv64-linux-musl-native/usr/lib/gcc/riscv64-linux-musl/11.2.1
 
-For some architectures such as mipsel, `-latomic` is needed in linker flags (LinkerFlags).
+    -target i686-linux-musl --prefix=/root/i686-linux-musl-native/usr/lib/gcc/i686-linux-musl/11.2.1 -L/root/i686-linux-musl-native/usr/lib/gcc/i686-linux-musl/11.2.1
+    -target arm-linux-musleabihf --prefix=/root/arm-linux-musleabihf-native/usr/lib/gcc/arm-linux-musleabihf/11.2.1 -L/root/arm-linux-musleabihf-native/usr/lib/gcc/arm-linux-musleabihf/11.2.1
+    -target mipsel-linux-musl --prefix=/root/mipsel-linux-musl-native/usr/lib/gcc/mipsel-linux-musl/11.2.1 -L/root/mipsel-linux-musl-native/usr/lib/gcc/mipsel-linux-musl/11.2.1
+
+For riscv64, `-mno-relax` is needed in compiler flags (CommonFlags).
+
+For mipsel, `-latomic` is needed in linker flags (LinkerFlags).
 
 ## Debug
 
