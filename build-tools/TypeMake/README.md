@@ -58,9 +58,9 @@ Linux with musl and clang(x86/x64/armv7a/arm64/riscv64): musl libc toolchain (Co
 
 Linux with musl and gcc(x86/x64/armv7a/arm64/riscv64): musl-cross-make (CppLibraryForm=Static CC=xxx-linux-musl-gcc CXX=xxx-linux-musl-g++ AR=xxx-linux-musl-ar)
 
-Mac: XCode(12.0) mono(6.x)
+Mac: XCode(13.0) mono(6.x)
 
-iOS: XCode(12.0) mono(6.x)
+iOS: XCode(13.0) mono(6.x)
 
 Android: JDK(11.x) AndroidSDK("build-tools;31.0.0" "platforms;android-28" "ndk;23.0.7599858") \[Android Gradle plugin(4.1.0)\]
 
