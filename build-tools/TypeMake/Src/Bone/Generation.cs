@@ -119,7 +119,7 @@ namespace TypeMake
                 {
                     TextFile.WriteToFile(v.BuildDirectory / "gradle/local.properties", $"sdk.dir={v.AndroidSdk.ToString(PathStringStyle.Unix)}", new System.Text.UTF8Encoding(false), !v.ForceRegenerate);
                 }
-                BuildScript.GenerateBuildScriptAndroid(GradleProjectNames, v.Toolchain, v.HostOperatingSystem, v.BuildDirectory, v.TargetArchitecture, v.Configuration, v.MaxProcessCount, v.AndroidNdk, v.Ninja, 17, v.ForceRegenerate, v.EnableJava);
+                BuildScript.GenerateBuildScriptAndroid(GradleProjectNames, v.Toolchain, v.HostOperatingSystem, v.BuildDirectory, v.TargetArchitecture, v.Configuration, v.MaxProcessCount, v.AndroidNdk, v.Ninja, 21, v.ForceRegenerate, v.EnableJava);
                 if (v.BuildNow)
                 {
                     using (var d = Shell.PushDirectory(v.BuildDirectory))

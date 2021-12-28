@@ -62,7 +62,7 @@ Mac: XCode(13.0) mono(6.x)
 
 iOS: XCode(13.0) mono(6.x)
 
-Android: JDK(11.x) AndroidSDK("build-tools;31.0.0" "platforms;android-28" "ndk;23.0.7599858") \[Android Gradle plugin(4.1.0)\]
+Android: JDK(11.x) AndroidSDK("build-tools;31.0.0" "platforms;android-28" "ndk;23.0.7599858") \[Android Gradle plugin(7.0.0)\]
 
 Android on Linux(openSUSE 15.3): java-11-openjdk-devel
 

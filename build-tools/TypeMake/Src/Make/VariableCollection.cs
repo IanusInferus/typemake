@@ -1025,7 +1025,7 @@ namespace TypeMake
             var Host = "";
             var ExeSuffix = "";
             var TargetPrefix = "";
-            var ApiLevel = 17;
+            var ApiLevel = 21;
             var ToolchainPath = "".AsPath();
 
             l.Add(new VariableItem
@@ -1064,22 +1064,18 @@ namespace TypeMake
                         if (Variables.TargetArchitecture == Cpp.ArchitectureType.x86)
                         {
                             TargetPrefix = "i686";
-                            ApiLevel = 21;
                         }
                         else if (Variables.TargetArchitecture == Cpp.ArchitectureType.x64)
                         {
                             TargetPrefix = "x86_64";
-                            ApiLevel = 21;
                         }
                         else if (Variables.TargetArchitecture == Cpp.ArchitectureType.armv7a)
                         {
                             TargetPrefix = "armv7a";
-                            ApiLevel = 17;
                         }
                         else if (Variables.TargetArchitecture == Cpp.ArchitectureType.arm64)
                         {
                             TargetPrefix = "aarch64";
-                            ApiLevel = 21;
                         }
                         ToolchainPath = Variables.AndroidNdk / $"toolchains/llvm/prebuilt/{Host}";
                     }
