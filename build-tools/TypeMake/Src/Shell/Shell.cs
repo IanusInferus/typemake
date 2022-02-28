@@ -282,7 +282,7 @@ namespace TypeMake
                     {
                         throw new InvalidOperationException("BashNotFound");
                     }
-                    return CreateExecuteLineStartInfoInner(BashPath, "-c " + EscapeArgument(ProgramPath) + (Arguments == "" ? "" : " " + Arguments));
+                    return CreateExecuteLineStartInfoInner(BashPath, "-c " + EscapeArgument(EscapeArgument(ProgramPath) + (Arguments == "" ? "" : " " + Arguments)));
                 }
             }
             return CreateExecuteLineStartInfoInner(ProgramPath, Arguments);
