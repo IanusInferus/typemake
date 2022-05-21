@@ -117,7 +117,7 @@ namespace TypeMake
                 Lines.Add("");
                 Lines.Add(":main");
                 Lines.Add($"set MultiProcMaxCount={MaxProcessCount}");
-                Lines.Add($@"""{VSDir.ToString(PathStringStyle.Windows)}\MSBuild\{MSBuildVersion}\Bin\MSBuild.exe"" {SolutionName}.sln /p:Configuration={Configuration} /p:Platform={Cpp.SlnGenerator.GetArchitectureString(Cpp.OperatingSystemType.Windows, TargetArchitecture)} /m:{MaxProcessCount} || exit /b 1");
+                Lines.Add($@"""{VSDir.ToString(PathStringStyle.Windows)}\MSBuild\{MSBuildVersion}\Bin\MSBuild.exe"" {SolutionName}.sln /restore /p:RestorePackagesConfig=true /p:Configuration={Configuration} /p:Platform={Cpp.SlnGenerator.GetArchitectureString(Cpp.OperatingSystemType.Windows, TargetArchitecture)} /m:{MaxProcessCount} || exit /b 1");
                 Lines.Add("");
                 var BuildPath = BuildDirectory / $"build_{Configuration}.cmd";
                 TextFile.WriteToFile(BuildPath, String.Join("\r\n", Lines), System.Text.Encoding.Default, !ForceRegenerate);

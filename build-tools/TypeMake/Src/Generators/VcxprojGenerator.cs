@@ -18,6 +18,7 @@ namespace TypeMake.Cpp
         private PathString OutputDirectory;
         private String VcxprojTemplateText;
         private String VcxprojFilterTemplateText;
+        private String PackagesConfigText;
         private OperatingSystemType HostOperatingSystem;
         private ArchitectureType HostArchitecture;
         private OperatingSystemType TargetOperatingSystem;
@@ -32,9 +33,13 @@ namespace TypeMake.Cpp
         private String CXX;
         private String AR;
 
-        public VcxprojGenerator(Project Project, String ProjectId, List<ProjectReference> ProjectReferences, PathString BuildDirectory, PathString InputDirectory, PathString OutputDirectory, String VcxprojTemplateText, String VcxprojFilterTemplateText, OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType? TargetArchitecture, WindowsRuntimeType? WindowsRuntime, CompilerType Compiler, CLibraryType CLibrary, CLibraryForm CLibraryForm, CppLibraryType CppLibrary, CppLibraryForm CppLibraryForm, String CC, String CXX, String AR)
+        public VcxprojGenerator(Project Project, String ProjectId, List<ProjectReference> ProjectReferences, PathString BuildDirectory, PathString InputDirectory, PathString OutputDirectory, String VcxprojTemplateText, String VcxprojFilterTemplateText, String PackagesConfigText, OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType? TargetArchitecture, WindowsRuntimeType? WindowsRuntime, CompilerType Compiler, CLibraryType CLibrary, CLibraryForm CLibraryForm, CppLibraryType CppLibrary, CppLibraryForm CppLibraryForm, String CC, String CXX, String AR)
         {
-            this.Project = Project;
+            this.Project = new Project { Id = Project.Id, Name = Project.Name, VirtualDir = Project.VirtualDir, FilePath = Project.FilePath, TargetType = Project.TargetType, TargetName = Project.TargetName, Configurations = Project.Configurations.ToList() };
+            if (WindowsRuntime == WindowsRuntimeType.WinRT)
+            {
+                this.Project.Configurations.Add(new Configuration { Files = new List<File> { new File { Path = OutputDirectory / "packages.config", Type = FileType.Unknown } } });
+            }
             this.ProjectId = ProjectId;
             this.ProjectReferences = ProjectReferences;
             this.BuildDirectory = BuildDirectory.FullPath;
@@ -42,6 +47,7 @@ namespace TypeMake.Cpp
             this.OutputDirectory = OutputDirectory.FullPath;
             this.VcxprojTemplateText = VcxprojTemplateText;
             this.VcxprojFilterTemplateText = VcxprojFilterTemplateText;
+            this.PackagesConfigText = PackagesConfigText;
             this.HostOperatingSystem = HostOperatingSystem;
             this.HostArchitecture = HostArchitecture;
             this.TargetOperatingSystem = TargetOperatingSystem;
@@ -61,6 +67,7 @@ namespace TypeMake.Cpp
         {
             GenerateVcxproj(ForceRegenerate);
             GenerateVcxprojFilters(ForceRegenerate);
+            GeneratePackagesConfig(ForceRegenerate);
         }
 
         private void GenerateVcxproj(bool ForceRegenerate)
@@ -348,10 +355,6 @@ namespace TypeMake.Cpp
                     ClCompile.SetElementValue(xn + "PreprocessorDefinitions", String.Join(";", Defines.Select(d => d.Key + (d.Value == null ? "" : "=" + d.Value))) + ";%(PreprocessorDefinitions)");
                 }
                 var CompilerFlags = conf.SystemIncludeDirectories.SelectMany(d => new String[] { "/external:I", d.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Windows) }).Concat(conf.CommonFlags).Concat(conf.CFlags).Concat(conf.CppFlags).ToList();
-                if (WindowsRuntime == WindowsRuntimeType.WinRT)
-                {
-                    CompilerFlags.Add("/Zc:twoPhase-"); //https://docs.microsoft.com/en-us/cpp/build/reference/zc-twophase?view=vs-2019
-                }
                 if (CompilerFlags.Count != 0)
                 {
                     ClCompile.SetElementValue(xn + "AdditionalOptions", "%(AdditionalOptions) " + String.Join(" ", CompilerFlags.Select(f => (f == null ? "" : Regex.IsMatch(f, @"^[0-9]+$") ? f : "\"" + f.Replace("\"", "\"\"\"") + "\""))));
@@ -731,6 +734,13 @@ namespace TypeMake.Cpp
             TextFile.WriteToFile(FilterPath, sFilter, Encoding.UTF8, !ForceRegenerate);
         }
 
+        private void GeneratePackagesConfig(bool ForceRegenerate)
+        {
+            if (PackagesConfigText == null) { return; }
+            var ConfigPath = OutputDirectory / "packages.config";
+            TextFile.WriteToFile(ConfigPath, PackagesConfigText, Encoding.UTF8, !ForceRegenerate);
+        }
+
         private static void Trim(XElement x)
         {
             var TextNodes = x.DescendantNodesAndSelf().Where(n => n.NodeType == XmlNodeType.Text).Select(n => (XText)(n)).ToArray();
@@ -796,7 +806,7 @@ namespace TypeMake.Cpp
                         }
                         if (Value == null)
                         {
-                            WindowsTargetPlatformVersion = "10.0.10240.0";
+                            WindowsTargetPlatformVersion = "10.0.18362.0";
                         }
                         else
                         {
@@ -815,7 +825,7 @@ namespace TypeMake.Cpp
             }
             else
             {
-                return "10.0.10240.0";
+                return "10.0.18362.0";
             }
         }
 

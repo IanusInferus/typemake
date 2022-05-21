@@ -603,9 +603,10 @@ namespace TypeMake
                 var ProjectTargetType = Project.Definition.TargetType;
                 if (Toolchain == ToolchainType.VisualStudio)
                 {
-                    var VcxprojTemplateText = Resource.GetResourceText($@"Templates\{(VSVersion == 2022 ? "vc17" : throw new NotSupportedException())}\{(TargetOperatingSystem == OperatingSystemType.Windows ? "Default" : "Linux")}.vcxproj");
+                    var VcxprojTemplateText = Resource.GetResourceText($@"Templates\{(VSVersion == 2022 ? "vc17" : throw new NotSupportedException())}\{(TargetOperatingSystem == OperatingSystemType.Windows ? WindowsRuntime == WindowsRuntimeType.WinRT ? "WinRT" : "Default" : "Linux")}.vcxproj");
                     var VcxprojFilterTemplateText = Resource.GetResourceText(VSVersion == 2022 ? @"Templates\vc17\Default.vcxproj.filters" : throw new NotSupportedException());
-                    var g = new VcxprojGenerator(p, Project.Definition.Id, ProjectReferences, BuildDirectory, InputDirectory, OutputDirectory, VcxprojTemplateText, VcxprojFilterTemplateText, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, WindowsRuntime, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, CC, CXX, AR);
+                    var PackagesConfigText = WindowsRuntime == WindowsRuntimeType.WinRT ? Resource.GetResourceText(VSVersion == 2022 ? @"Templates\vc17\packages.config" : throw new NotSupportedException()) : null;
+                    var g = new VcxprojGenerator(p, Project.Definition.Id, ProjectReferences, BuildDirectory, InputDirectory, OutputDirectory, VcxprojTemplateText, VcxprojFilterTemplateText, PackagesConfigText, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, WindowsRuntime, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, CC, CXX, AR);
                     g.Generate(ForceRegenerate);
                 }
                 else if (Toolchain == ToolchainType.XCode)
@@ -750,14 +751,14 @@ namespace TypeMake
                 },
                 new Configuration
                 {
-                    Defines = ParseDefines((Compiler == CompilerType.VisualCpp) && (VSVersion == 2022) && (WindowsRuntime == WindowsRuntimeType.Win32) ? "TYPEMAKESAMPLE_USE_MODULE;TYPEMAKESAMPLE_EXPORT=export" : "TYPEMAKESAMPLE_EXPORT=")
+                    Defines = ParseDefines(Compiler == CompilerType.VisualCpp ? "TYPEMAKESAMPLE_USE_MODULE;TYPEMAKESAMPLE_EXPORT=export" : "TYPEMAKESAMPLE_EXPORT=")
                 },
                 new Configuration
                 {
                     MatchingCompilers = new List<CompilerType> { CompilerType.VisualCpp, CompilerType.clangcl },
                     Options = new Dictionary<String, String>
                     {
-                        ["vc.ClCompile.LanguageStandard"] = WindowsRuntime == WindowsRuntimeType.Win32 ? "stdcpp20" : "stdcpp17"
+                        ["vc.ClCompile.LanguageStandard"] = "stdcpp20"
                     }
                 },
                 new Configuration
@@ -1216,7 +1217,7 @@ namespace TypeMake
             }
             else if (Ext == "ixx")
             {
-                if ((Compiler == CompilerType.VisualCpp) && (VSVersion == 2022) && (WindowsRuntime == WindowsRuntimeType.Win32))
+                if (Compiler == CompilerType.VisualCpp)
                 {
                     return new Cpp.File { Path = FilePath, Type = FileType.CppSource, Configurations = Configurations };
                 }
