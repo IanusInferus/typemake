@@ -75,15 +75,11 @@
     <Compile Include="Templates\Resource.cs" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Templates\vc16\Default.sln" />
-    <EmbeddedResource Include="Templates\vc16\Default.vcxproj.filters" />
-    <EmbeddedResource Include="Templates\vc16\Default.vcxproj" />
     <None Include="Templates\gradle\**">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <EmbeddedResource Include="Templates\gradle_application\build.gradle" />
     <EmbeddedResource Include="Templates\gradle_library\build.gradle" />
-    <EmbeddedResource Include="Templates\vc16\Linux.vcxproj" />
     <EmbeddedResource Include="Templates\vc17\Default.vcxproj" />
     <EmbeddedResource Include="Templates\vc17\Linux.vcxproj" />
     <None Include="Templates\xcode9\Default.xcodeproj\ConvertToXml.sh" />

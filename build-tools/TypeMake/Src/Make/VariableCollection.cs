@@ -768,7 +768,7 @@ namespace TypeMake
                                 {
                                     if (ProgramFiles != "")
                                     {
-                                        foreach (var Version in new int[] { 2022, 2019 })
+                                        foreach (var Version in new int[] { 2022 })
                                         {
                                             foreach (var d in new String[] { "Enterprise", "Professional", "Community", "BuildTools" })
                                             {
@@ -835,7 +835,7 @@ namespace TypeMake
                 {
                     if ((Variables.Toolchain == Cpp.ToolchainType.VisualStudio) || (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Windows))
                     {
-                        var VSVersion = Variables.VSDir.ToString().Contains("2022") ? 2022 : 2019;
+                        var VSVersion = Variables.VSDir.ToString().Contains("2022") ? 2022 : 2022;
                         return VariableSpec.CreateFixed(VariableValue.CreateInteger(VSVersion));
                     }
                     else

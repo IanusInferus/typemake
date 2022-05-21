@@ -11,7 +11,7 @@ exit /b %EXIT_CODE%
 
 :main
 for %%f in ("%ProgramFiles%" "%ProgramFiles(x86)%") do (
-  for %%v in (2022 2019) do (
+  for %%v in (2022) do (
     for %%p in (Enterprise Professional Community BuildTools) do (
       if exist "%%~f\Microsoft Visual Studio\%%v\%%p\MSBuild\Current\Bin\MSBuild.exe" (
         set MSBuild="%%~f\Microsoft Visual Studio\%%v\%%p\MSBuild\Current\Bin\MSBuild.exe"
