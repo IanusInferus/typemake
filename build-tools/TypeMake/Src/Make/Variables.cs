@@ -20,6 +20,7 @@ namespace TypeMake
         public Cpp.CppLibraryType CppLibrary;
         public Cpp.CppLibraryForm CppLibraryForm;
         public Cpp.ConfigurationType Configuration;
+        public bool EnableModule;
         public bool EnableCustomSysroot;
         public PathString CustomSysroot;
         public bool EnableLibcxxCompilation;

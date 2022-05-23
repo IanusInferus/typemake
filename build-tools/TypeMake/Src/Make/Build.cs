@@ -26,6 +26,7 @@ namespace TypeMake
         private CppLibraryType CppLibrary;
         private CppLibraryForm CppLibraryForm;
         private ConfigurationType ConfigurationType;
+        private bool EnableModule;
         private bool EnableCustomSysroot;
         private PathString CustomSysroot;
         private bool EnableLibcxxCompilation;
@@ -53,7 +54,7 @@ namespace TypeMake
 
         private Dictionary<String, String> ProjectIds = new Dictionary<String, String>();
 
-        public Build(OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType TargetArchitecture, WindowsRuntimeType? WindowsRuntime, bool EnableiOSSimulator, bool EnableMacCatalyst, ToolchainType Toolchain, CompilerType Compiler, CLibraryType CLibrary, CLibraryForm CLibraryForm, CppLibraryType CppLibrary, CppLibraryForm CppLibraryForm, ConfigurationType ConfigurationType, bool EnableCustomSysroot, PathString CustomSysroot, bool EnableLibcxxCompilation, PathString SourceDirectory, PathString BuildDirectory, String XCodeDevelopmentTeam, String XCodeProvisioningProfileSpecifier, PathString VSDir, int VSVersion, bool EnableJava, PathString Jdk, PathString AndroidSdk, PathString AndroidNdk, String CC, String CXX, String AR, String STRIP, List<String> CommonFlags, List<String> CFlags, List<String> CppFlags, List<String> LinkerFlags, List<String> PostLinkerFlags, bool ForceRegenerate, bool EnableNonTargetingOperatingSystemDummy)
+        public Build(OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType TargetArchitecture, WindowsRuntimeType? WindowsRuntime, bool EnableiOSSimulator, bool EnableMacCatalyst, ToolchainType Toolchain, CompilerType Compiler, CLibraryType CLibrary, CLibraryForm CLibraryForm, CppLibraryType CppLibrary, CppLibraryForm CppLibraryForm, ConfigurationType ConfigurationType, bool EnableModule, bool EnableCustomSysroot, PathString CustomSysroot, bool EnableLibcxxCompilation, PathString SourceDirectory, PathString BuildDirectory, String XCodeDevelopmentTeam, String XCodeProvisioningProfileSpecifier, PathString VSDir, int VSVersion, bool EnableJava, PathString Jdk, PathString AndroidSdk, PathString AndroidNdk, String CC, String CXX, String AR, String STRIP, List<String> CommonFlags, List<String> CFlags, List<String> CppFlags, List<String> LinkerFlags, List<String> PostLinkerFlags, bool ForceRegenerate, bool EnableNonTargetingOperatingSystemDummy)
         {
             this.HostOperatingSystem = HostOperatingSystem;
             this.HostArchitecture = HostArchitecture;
@@ -69,6 +70,7 @@ namespace TypeMake
             this.CppLibrary = CppLibrary;
             this.CppLibraryForm = CppLibraryForm;
             this.ConfigurationType = ConfigurationType;
+            this.EnableModule = EnableModule;
             this.EnableCustomSysroot = EnableCustomSysroot;
             this.CustomSysroot = CustomSysroot;
             this.EnableLibcxxCompilation = EnableLibcxxCompilation;
@@ -751,14 +753,15 @@ namespace TypeMake
                 },
                 new Configuration
                 {
-                    Defines = ParseDefines(Compiler == CompilerType.VisualCpp ? "TYPEMAKESAMPLE_USE_MODULE;TYPEMAKESAMPLE_EXPORT=export" : "TYPEMAKESAMPLE_EXPORT=")
+                    Defines = ParseDefines(EnableModule ? "TYPEMAKESAMPLE_USE_MODULE;TYPEMAKESAMPLE_EXPORT=export" : "TYPEMAKESAMPLE_EXPORT=")
                 },
                 new Configuration
                 {
                     MatchingCompilers = new List<CompilerType> { CompilerType.VisualCpp, CompilerType.clangcl },
                     Options = new Dictionary<String, String>
                     {
-                        ["vc.ClCompile.LanguageStandard"] = "stdcpp20"
+                        ["vc.ClCompile.LanguageStandard"] = EnableModule ? "stdcpplatest" : "stdcpp20",
+                        ["vc.ClCompile.EnableModules"] = EnableModule ? "true" : "false"
                     }
                 },
                 new Configuration
@@ -791,7 +794,6 @@ namespace TypeMake
                 new Configuration
                 {
                     MatchingCompilers = new List<CompilerType> { CompilerType.VisualCpp, CompilerType.clangcl },
-                    Defines = ParseDefines("_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS"),
                     CommonFlags = ParseFlags("/bigobj /JMC"),
                     Options = new Dictionary<String, String>
                     {
@@ -808,6 +810,11 @@ namespace TypeMake
                 {
                     MatchingCompilers = new List<CompilerType> { CompilerType.VisualCpp, CompilerType.clangcl },
                     CommonFlags = ParseFlags("/we4172 /we4715")
+                },
+                new Configuration
+                {
+                    MatchingCompilers = new List<CompilerType> { CompilerType.VisualCpp, CompilerType.clangcl },
+                    CommonFlags = ParseFlags(EnableModule ? "/wd5050" : "") //suppress C5050 for _GUARDOVERFLOW_CRT_ALLOCATORS=1 and _M_FP_PRECISE
                 },
                 new Configuration
                 {
@@ -1217,7 +1224,7 @@ namespace TypeMake
             }
             else if (Ext == "ixx")
             {
-                if (Compiler == CompilerType.VisualCpp)
+                if (EnableModule)
                 {
                     return new Cpp.File { Path = FilePath, Type = FileType.CppSource, Configurations = Configurations };
                 }

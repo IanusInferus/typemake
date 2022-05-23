@@ -1,7 +1,14 @@
 ﻿#pragma once
 
-#ifndef TYPEMAKESAMPLE_USE_MODULE
-#include "typemakesample/core/StringUtilities.inc.hpp"
+#ifdef TYPEMAKESAMPLE_USE_MODULE
+import std.core;
+import std.memory;
+#else
+#   include <string>
+#   include <memory>
+#   include <vector>
+#   include <sstream>
+#   include <stdexcept>
 #endif
 
 namespace typemakesample

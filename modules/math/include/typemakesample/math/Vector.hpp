@@ -1,7 +1,10 @@
 ﻿#pragma once
 
-#ifndef TYPEMAKESAMPLE_USE_MODULE
-#include "typemakesample/math/Vector.inc.hpp"
+#ifdef TYPEMAKESAMPLE_USE_MODULE
+import std.core;
+#else
+#   include <array>
+#   include <ostream>
 #endif
 
 namespace typemakesample

@@ -1,8 +1,8 @@
 ﻿#ifdef TYPEMAKESAMPLE_USE_MODULE
 import math;
-#include "typemakesample/math/Vector.inc.hpp"
+import std.core;
 #else
-#include "typemakesample/math/Vector.hpp"
+#   include "typemakesample/math/Vector.hpp"
 #endif
 
 namespace typemakesample

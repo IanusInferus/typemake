@@ -1,7 +1,7 @@
 ﻿#ifdef TYPEMAKESAMPLE_USE_MODULE
 import math;
 #else
-#include "typemakesample/math/Vector.hpp"
+#   include "typemakesample/math/Vector.hpp"
 #endif
 
 #include <cassert>
