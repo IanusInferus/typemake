@@ -21,7 +21,7 @@ for %%f in ("%ProgramFiles%" "%ProgramFiles(x86)%") do (
   )
 )
 echo MSBuild not found.
-echo You need to install Visual Studio 2019/2022 or add MSBuild environment variable.
+echo You need to install Visual Studio 2022 or add MSBuild environment variable.
 exit /b 1
 :MSBuild_Found
 
