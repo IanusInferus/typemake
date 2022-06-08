@@ -244,6 +244,25 @@ namespace TypeMake.Cpp
                 }
                 RuleName = "ar";
             }
+            else if (Project.TargetType == TargetType.IntermediateStaticLibrary)
+            {
+                if (TargetOperatingSystem == OperatingSystemType.Windows)
+                {
+                    TargetName = (Project.TargetName ?? Project.Name) + ".lib";
+                }
+                else
+                {
+                    TargetName = "lib" + (Project.TargetName ?? Project.Name) + ".a";
+                }
+                if ((TargetOperatingSystem == OperatingSystemType.Linux) || (TargetOperatingSystem == OperatingSystemType.Android))
+                {
+                    RuleName = "arthin";
+                }
+                else
+                {
+                    RuleName = "ar";
+                }
+            }
             else if (Project.TargetType == TargetType.DynamicLibrary)
             {
                 if (TargetOperatingSystem == OperatingSystemType.Windows)

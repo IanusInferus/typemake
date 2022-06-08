@@ -189,7 +189,7 @@ namespace TypeMake
                         Name = ModuleName,
                         VirtualDir = "lib",
                         FilePath = BuildDirectory / "projects" / GetProjectFileName(ModuleName),
-                        TargetType = TargetType.StaticLibrary,
+                        TargetType = TargetType.IntermediateStaticLibrary,
                         Configurations = new List<Configuration>
                         {
                             new Configuration
@@ -265,7 +265,7 @@ namespace TypeMake
                             Name = ModuleName,
                             VirtualDir = m.VirtualDir,
                             FilePath = BuildDirectory / "projects" / GetProjectFileName(ModuleName),
-                            TargetType = TargetType.StaticLibrary,
+                            TargetType = TargetType.IntermediateStaticLibrary,
                             Configurations = new List<Configuration>
                             {
                                 new Configuration
@@ -560,7 +560,7 @@ namespace TypeMake
                 {
                     throw new InvalidOperationException($"UnresolvedDependencies: {Project.Definition.Name} -> {String.Join(" ", Unresolved)}");
                 }
-                var TransitiveDepedentProjectNames = GetTransitiveProjectDependencies(Project.Definition.Name, Dependencies, ProjectName => SelectedProjects[ProjectName].Definition.TargetType == TargetType.StaticLibrary, out _);
+                var TransitiveDepedentProjectNames = GetTransitiveProjectDependencies(Project.Definition.Name, Dependencies, ProjectName => (SelectedProjects[ProjectName].Definition.TargetType == TargetType.StaticLibrary) || (SelectedProjects[ProjectName].Definition.TargetType == TargetType.IntermediateStaticLibrary), out _);
                 var DependentProjectExportConfigurations = TransitiveDepedentProjectNames.SelectMany(d => SelectedProjects[d].ExportConfigurations).ToList();
                 var p = new Project
                 {
@@ -682,7 +682,7 @@ namespace TypeMake
             var GradleProjectNames = SelectedProjects.Values.Where(Project => (Project.Definition.TargetType == TargetType.GradleLibrary) || (Project.Definition.TargetType == TargetType.GradleApplication)).Select(Project => Project.Definition.Name).ToList();
             var ProjectDependencies = ProjectNameToFullDependentProjectNames.ToDictionary(p => ProjectNameToReference[p.Key], p => p.Value.Select(n => ProjectNameToReference[n]).ToList());
             var SortedProjects = ProjectDependencies.Keys.PartialOrderBy(p => ProjectDependencies.ContainsKey(p) ? ProjectDependencies[p] : null).ToList();
-            var CppSortedProjects = SortedProjects.Where(p => (p.TargetType == TargetType.Executable) || (p.TargetType == TargetType.StaticLibrary) || (p.TargetType == TargetType.DynamicLibrary) || (p.TargetType == TargetType.DarwinApplication) || (p.TargetType == TargetType.DarwinStaticFramework) || (p.TargetType == TargetType.DarwinSharedFramework) || (p.TargetType == TargetType.MacBundle)).ToList();
+            var CppSortedProjects = SortedProjects.Where(p => (p.TargetType == TargetType.Executable) || (p.TargetType == TargetType.StaticLibrary) || (p.TargetType == TargetType.IntermediateStaticLibrary) || (p.TargetType == TargetType.DynamicLibrary) || (p.TargetType == TargetType.DarwinApplication) || (p.TargetType == TargetType.DarwinStaticFramework) || (p.TargetType == TargetType.DarwinSharedFramework) || (p.TargetType == TargetType.MacBundle)).ToList();
             if (Toolchain == ToolchainType.VisualStudio)
             {
                 var SlnTemplateText = Resource.GetResourceText(VSVersion == 2022 ? @"Templates\vc17\Default.sln" : throw new NotSupportedException());
@@ -744,7 +744,7 @@ namespace TypeMake
                 },
                 new Configuration
                 {
-                    MatchingTargetTypes = new List<TargetType> { TargetType.StaticLibrary },
+                    MatchingTargetTypes = new List<TargetType> { TargetType.StaticLibrary, TargetType.IntermediateStaticLibrary },
                     MatchingCompilers = new List<CompilerType> { CompilerType.clangcl },
                     Options = new Dictionary<String, String>
                     {
@@ -1391,7 +1391,7 @@ namespace TypeMake
                 {
                     return TargetName + ".exe";
                 }
-                else if (TargetType == TargetType.StaticLibrary)
+                else if ((TargetType == TargetType.StaticLibrary) || (TargetType == TargetType.IntermediateStaticLibrary))
                 {
                     return TargetName + ".lib";
                 }
@@ -1410,7 +1410,7 @@ namespace TypeMake
                 {
                     return TargetName;
                 }
-                else if (TargetType == TargetType.StaticLibrary)
+                else if ((TargetType == TargetType.StaticLibrary) || (TargetType == TargetType.IntermediateStaticLibrary))
                 {
                     return "lib" + TargetName + ".a";
                 }
@@ -1429,7 +1429,7 @@ namespace TypeMake
                 {
                     return TargetName;
                 }
-                else if (TargetType == TargetType.StaticLibrary)
+                else if ((TargetType == TargetType.StaticLibrary) || (TargetType == TargetType.IntermediateStaticLibrary))
                 {
                     return "lib" + TargetName + ".a";
                 }
@@ -1464,7 +1464,7 @@ namespace TypeMake
                 {
                     return TargetName;
                 }
-                else if (TargetType == TargetType.StaticLibrary)
+                else if ((TargetType == TargetType.StaticLibrary) || (TargetType == TargetType.IntermediateStaticLibrary))
                 {
                     return "lib" + TargetName + ".a";
                 }
@@ -1491,7 +1491,7 @@ namespace TypeMake
                 {
                     return TargetName;
                 }
-                else if (TargetType == TargetType.StaticLibrary)
+                else if ((TargetType == TargetType.StaticLibrary) || (TargetType == TargetType.IntermediateStaticLibrary))
                 {
                     return "lib" + TargetName + ".a";
                 }

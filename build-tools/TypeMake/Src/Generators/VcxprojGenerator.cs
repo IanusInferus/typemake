@@ -228,7 +228,7 @@ namespace TypeMake.Cpp
                 {
                     PropertyGroupConfiguration.SetElementValue(xn + "ConfigurationType", "Application");
                 }
-                else if (Project.TargetType == TargetType.StaticLibrary)
+                else if ((Project.TargetType == TargetType.StaticLibrary) || (Project.TargetType == TargetType.IntermediateStaticLibrary))
                 {
                     PropertyGroupConfiguration.SetElementValue(xn + "ConfigurationType", "StaticLibrary");
                 }
@@ -369,7 +369,7 @@ namespace TypeMake.Cpp
                     }
                 }
 
-                if (Project.TargetType == TargetType.StaticLibrary)
+                if ((Project.TargetType == TargetType.StaticLibrary) || (Project.TargetType == TargetType.IntermediateStaticLibrary))
                 {
                     var Lib = ItemDefinitionGroup.Element(xn + "Lib");
                     if (Lib == null)

@@ -126,7 +126,7 @@ namespace TypeMake.Cpp
                     FileObject.Add("isa", Value.CreateString("PBXReferenceProxy"));
                     var FileType = "";
                     var DefaultPath = "";
-                    if (Project.TargetType == TargetType.StaticLibrary)
+                    if ((Project.TargetType == TargetType.StaticLibrary) || (Project.TargetType == TargetType.IntermediateStaticLibrary))
                     {
                         FileType = "archive.ar";
                         DefaultPath = "lib" + Project.TargetName + ".a";
@@ -465,7 +465,7 @@ namespace TypeMake.Cpp
                     TargetFile.Dict["explicitFileType"] = Value.CreateString("compiled.mach-o.executable");
                     TargetFile.Dict["path"] = Value.CreateString(ProductName);
                 }
-                else if (Project.TargetType == TargetType.StaticLibrary)
+                else if ((Project.TargetType == TargetType.StaticLibrary) || (Project.TargetType == TargetType.IntermediateStaticLibrary))
                 {
                     Target["productType"] = Value.CreateString("com.apple.product-type.library.static");
                     TargetFile.Dict["explicitFileType"] = Value.CreateString("archive.ar");
@@ -546,7 +546,7 @@ namespace TypeMake.Cpp
                     var LibDirectories = conf.LibDirectories.Select(d => d.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Unix)).ToList();
                     foreach (var Project in ProjectReferences)
                     {
-                        if ((Project.TargetType == TargetType.StaticLibrary) || (Project.TargetType == TargetType.DynamicLibrary))
+                        if ((Project.TargetType == TargetType.StaticLibrary) || (Project.TargetType == TargetType.IntermediateStaticLibrary) || (Project.TargetType == TargetType.DynamicLibrary))
                         {
                             if (Project.OutputFilePath.ContainsKey(ConfigurationType))
                             {
@@ -585,7 +585,7 @@ namespace TypeMake.Cpp
                         var PrelinkLibs = conf.Libs;
                         foreach (var Project in ProjectReferences)
                         {
-                            if (Project.TargetType == TargetType.StaticLibrary)
+                            if ((Project.TargetType == TargetType.StaticLibrary) || (Project.TargetType == TargetType.IntermediateStaticLibrary))
                             {
                                 if (Project.OutputFilePath.ContainsKey(ConfigurationType))
                                 {
@@ -840,7 +840,7 @@ namespace TypeMake.Cpp
                     FileObject.Add("isa", Value.CreateString("PBXFileReference"));
                     var FileType = "";
                     var DefaultPath = "";
-                    if (Project.TargetType == TargetType.StaticLibrary)
+                    if ((Project.TargetType == TargetType.StaticLibrary) || (Project.TargetType == TargetType.IntermediateStaticLibrary))
                     {
                         FileType = "archive.ar";
                         DefaultPath = "lib" + Project.TargetName + ".a";

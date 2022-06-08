@@ -8,6 +8,7 @@ namespace TypeMake.Cpp
     {
         Executable,
         StaticLibrary,
+        IntermediateStaticLibrary,
         DynamicLibrary,
         DarwinApplication,
         DarwinStaticFramework,
