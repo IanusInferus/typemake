@@ -354,7 +354,7 @@ namespace TypeMake.Cpp
                 {
                     ClCompile.SetElementValue(xn + "PreprocessorDefinitions", String.Join(";", Defines.Select(d => d.Key + (d.Value == null ? "" : "=" + d.Value))) + ";%(PreprocessorDefinitions)");
                 }
-                var CompilerFlags = conf.SystemIncludeDirectories.SelectMany(d => new String[] { "/external:I", d.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Windows) }).Concat(conf.CommonFlags).Concat(conf.CFlags).Concat(conf.CppFlags).ToList();
+                var CompilerFlags = conf.SystemIncludeDirectories.SelectMany(d => new String[] { "/external:I", d.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Windows) }).Concat(conf.CommonFlags).Concat(conf.CppFlags).ToList();
                 if (CompilerFlags.Count != 0)
                 {
                     ClCompile.SetElementValue(xn + "AdditionalOptions", "%(AdditionalOptions) " + String.Join(" ", CompilerFlags.Select(f => (f == null ? "" : Regex.IsMatch(f, @"^[0-9]+$") ? f : "\"" + f.Replace("\"", "\"\"\"") + "\""))));
@@ -442,14 +442,13 @@ namespace TypeMake.Cpp
 
             var Import = xVcxproj.Elements(xn + "Import").LastOrDefault();
 
-            foreach (var gConf in Project.Configurations.Matches(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, null, WindowsRuntime, ToolchainType.VisualStudio, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, null).GroupBy(conf => Tuple.Create(conf.MatchingConfigurationTypes, conf.MatchingTargetArchitectures?.Intersect(new ArchitectureType[] { ArchitectureType.x86, ArchitectureType.x64, ArchitectureType.armv7a, ArchitectureType.arm64 }).ToList()), new ConfigurationTypesAndArchitecturesComparer()))
+            foreach (var gConf in Project.Configurations.Matches(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, WindowsRuntime, ToolchainType.VisualStudio, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, null).GroupBy(conf => Tuple.Create(conf.MatchingConfigurationTypes, conf.MatchingTargetArchitectures?.Intersect(new ArchitectureType[] { ArchitectureType.x86, ArchitectureType.x64, ArchitectureType.armv7a, ArchitectureType.arm64 }).ToList()), new ConfigurationTypesAndArchitecturesComparer()))
             {
                 var MatchingConfigurationTypes = gConf.Key.Item1;
                 var MatchingTargetArchitectures = gConf.Key.Item2;
                 if ((MatchingConfigurationTypes != null) && (MatchingConfigurationTypes.Count == 0)) { continue; }
                 if ((MatchingTargetArchitectures != null) && (MatchingTargetArchitectures.Count == 0)) { continue; }
-                var Conditions = new List<String>();
-                Conditions = GetConditions(TargetOperatingSystem, MatchingConfigurationTypes, MatchingTargetArchitectures);
+                var Conditions = GetConditions(TargetOperatingSystem, MatchingConfigurationTypes, MatchingTargetArchitectures);
 
                 foreach (var Condition in Conditions)
                 {
@@ -462,10 +461,12 @@ namespace TypeMake.Cpp
                     {
                         xVcxproj.Add(FileItemGroup);
                     }
-                    if (Condition != null)
+                    if (Condition.Item1 != null)
                     {
-                        FileItemGroup.Add(new XAttribute("Condition", Condition));
+                        FileItemGroup.Add(new XAttribute("Condition", Condition.Item1));
                     }
+
+                    var ProjectConfMatched = Project.Configurations.Matches(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, Condition.Item3 ?? TargetArchitecture, WindowsRuntime, ToolchainType.VisualStudio, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, Condition.Item2).ToList();
                     foreach (var File in gConf.SelectMany(conf => conf.Files))
                     {
                         var RelativePath = File.Path.FullPath.RelativeTo(BaseDirPath);
@@ -498,9 +499,13 @@ namespace TypeMake.Cpp
                         }
                         if ((File.Type == FileType.CSource) || (File.Type == FileType.CppSource))
                         {
-                            var fileConfs = File.Configurations.Matches(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, null, WindowsRuntime, ToolchainType.VisualStudio, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, null);
+                            var FileConfs = File.Configurations.Matches(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, Condition.Item3, WindowsRuntime, ToolchainType.VisualStudio, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, Condition.Item2).ToList();
+                            if (FileConfs.Count == 0)
+                            {
+                                FileConfs.Add(new Configuration { MatchingConfigurationTypes = MatchingConfigurationTypes, MatchingTargetArchitectures = MatchingTargetArchitectures });
+                            }
 
-                            foreach (var conf in fileConfs)
+                            foreach (var conf in FileConfs)
                             {
                                 var FileMatchingConfigurationTypes = conf.MatchingConfigurationTypes;
                                 var FileMatchingTargetArchitectures = conf.MatchingTargetArchitectures;
@@ -525,9 +530,9 @@ namespace TypeMake.Cpp
                                 foreach (var FileCondition in FileConditions)
                                 {
                                     var Attributes = new XAttribute[] { };
-                                    if (FileCondition != null)
+                                    if (FileCondition.Item1 != null)
                                     {
-                                        Attributes = new XAttribute[] { new XAttribute("Condition", FileCondition) };
+                                        Attributes = new XAttribute[] { new XAttribute("Condition", FileCondition.Item1) };
                                     }
 
                                     var IncludeDirectories = conf.IncludeDirectories.Select(d => d.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Windows)).ToList();
@@ -543,15 +548,18 @@ namespace TypeMake.Cpp
                                     var CompilerFlags = conf.SystemIncludeDirectories.SelectMany(d => new String[] { "/external:I", d.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Windows) }).Concat(conf.CommonFlags).ToList();
                                     if ((File.Type == FileType.CSource) || (File.Type == FileType.ObjectiveCSource))
                                     {
-                                        CompilerFlags = CompilerFlags.Concat(conf.CFlags).ToList();
+                                        var ProjectConfMatchedMatchedMatched = ProjectConfMatched.Matches(null, null, null, null, FileCondition.Item3, null, null, null, null, null, null, null, FileCondition.Item2).ToList();
+                                        var ProjectCFlags = ProjectConfMatchedMatchedMatched.SelectMany(c => c.SystemIncludeDirectories.SelectMany(d => new String[] { "/external:I", d.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Windows) }).Concat(c.CommonFlags).Concat(c.CFlags)).ToList();
+                                        CompilerFlags = ProjectCFlags.Concat(CompilerFlags.Concat(conf.CFlags)).ToList();
+                                        x.Add(new XElement(xn + "AdditionalOptions", String.Join(" ", CompilerFlags.Select(f => (f == null ? "" : Regex.IsMatch(f, @"^[0-9]+$") ? f : "\"" + f.Replace("\"", "\"\"\"") + "\""))), Attributes));
                                     }
                                     else if ((File.Type == FileType.CppSource) || (File.Type == FileType.ObjectiveCppSource))
                                     {
                                         CompilerFlags = CompilerFlags.Concat(conf.CppFlags).ToList();
-                                    }
-                                    if (CompilerFlags.Count != 0)
-                                    {
-                                        x.Add(new XElement(xn + "AdditionalOptions", "%(AdditionalOptions) " + String.Join(" ", CompilerFlags.Select(f => (f == null ? "" : Regex.IsMatch(f, @"^[0-9]+$") ? f : "\"" + f.Replace("\"", "\"\"\"") + "\""))), Attributes));
+                                        if (CompilerFlags.Count != 0)
+                                        {
+                                            x.Add(new XElement(xn + "AdditionalOptions", "%(AdditionalOptions) " + String.Join(" ", CompilerFlags.Select(f => (f == null ? "" : Regex.IsMatch(f, @"^[0-9]+$") ? f : "\"" + f.Replace("\"", "\"\"\"") + "\""))), Attributes));
+                                        }
                                     }
 
                                     foreach (var o in conf.Options)
@@ -829,28 +837,28 @@ namespace TypeMake.Cpp
             }
         }
 
-        private static List<string> GetConditions(OperatingSystemType OperatingSystem, List<ConfigurationType> MatchingConfigurationTypes, List<ArchitectureType> MatchingTargetArchitectures)
+        private static List<Tuple<String, ConfigurationType?, ArchitectureType?>> GetConditions(OperatingSystemType OperatingSystem, List<ConfigurationType> MatchingConfigurationTypes, List<ArchitectureType> MatchingTargetArchitectures)
         {
-            List<string> Conditions;
+            List<Tuple<String, ConfigurationType?, ArchitectureType?>> Conditions;
             if ((MatchingConfigurationTypes != null) || (MatchingTargetArchitectures != null))
             {
                 var Keys = "";
-                var Values = new List<String> { "" };
+                var Values = new List<Tuple<String, ConfigurationType?, ArchitectureType?>> { Tuple.Create<String, ConfigurationType?, ArchitectureType?>("", null, null) };
                 if (MatchingConfigurationTypes != null)
                 {
                     Keys = (Keys != "" ? Keys + "|" : "") + "$(Configuration)";
-                    Values = MatchingConfigurationTypes.SelectMany(t => Values.Select(v => (v != "" ? v + "|" : "") + t.ToString())).ToList();
+                    Values = MatchingConfigurationTypes.SelectMany(t => Values.Select(v => Tuple.Create<String, ConfigurationType?, ArchitectureType?>((v.Item1 != "" ? v.Item1 + "|" : "") + t.ToString(), t, v.Item3))).ToList();
                 }
                 if (MatchingTargetArchitectures != null)
                 {
                     Keys = (Keys != "" ? Keys + "|" : "") + "$(Platform)";
-                    Values = MatchingTargetArchitectures.SelectMany(a => Values.Select(v => (v != "" ? v + "|" : "") + GetArchitectureString(OperatingSystem, a))).ToList();
+                    Values = MatchingTargetArchitectures.SelectMany(a => Values.Select(v => Tuple.Create<String, ConfigurationType?, ArchitectureType?>((v.Item1 != "" ? v + "|" : "") + GetArchitectureString(OperatingSystem, a), v.Item2, a))).ToList();
                 }
-                Conditions = Values.Select(v => "'" + Keys + "' == '" + v + "'").ToList();
+                Conditions = Values.Select(v => Tuple.Create<String, ConfigurationType?, ArchitectureType?>("'" + Keys + "' == '" + v.Item1 + "'", v.Item2, v.Item3)).ToList();
             }
             else
             {
-                Conditions = new List<String> { null };
+                Conditions = new List<Tuple<String, ConfigurationType?, ArchitectureType?>> { Tuple.Create<String, ConfigurationType?, ArchitectureType?>(null, null, null) };
             }
 
             return Conditions;
