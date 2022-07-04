@@ -80,7 +80,7 @@ Static libc++ need to be built manually on most Linux distributions. You need to
 
 ## Android
 
-You need to set a key to build Android release APK and iOS applications/dynamic libraries.
+You need to set a key to build Android release APK.
 
 With Android Ninja toolchain, you can generate a debug key if you don't already have one.
 
@@ -90,6 +90,10 @@ With Android Ninja toolchain, you can generate a debug key if you don't already 
 You need to set Configuration - Debugger - Debug type to Native/Dual to debug C++ code in Android Studio.
 
 Android host support is [Termux](https://github.com/termux/termux-app)-only and is limited.
+
+## iOS
+
+You need to set XCodeDevelopmentTeam and XCodeProvisioningProfileSpecifier to build iOS applications.
 
 ## Linux glibc dependency
 
