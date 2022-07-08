@@ -11,9 +11,7 @@ namespace TypeMake.Cpp
         IntermediateStaticLibrary,
         DynamicLibrary,
         DarwinApplication,
-        DarwinStaticFramework,
         DarwinSharedFramework,
-        MacBundle,
         GradleApplication,
         GradleLibrary
     }

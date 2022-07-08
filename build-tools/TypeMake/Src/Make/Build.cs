@@ -410,7 +410,7 @@ namespace TypeMake
                         new Configuration
                         {
                             MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.MacOS, OperatingSystemType.iOS },
-                            MatchingTargetTypes = new List<TargetType> { TargetType.DarwinApplication, TargetType.DarwinApplication, TargetType.DarwinStaticFramework, TargetType.DarwinSharedFramework, TargetType.MacBundle },
+                            MatchingTargetTypes = new List<TargetType> { TargetType.DarwinApplication, TargetType.DarwinApplication, TargetType.DarwinSharedFramework },
                             Options = new Dictionary<String, String>
                             {
                                 ["xcode.target.PRODUCT_BUNDLE_IDENTIFIER"] = SolutionName + "." + TargetName
@@ -682,7 +682,7 @@ namespace TypeMake
             var GradleProjectNames = SelectedProjects.Values.Where(Project => (Project.Definition.TargetType == TargetType.GradleLibrary) || (Project.Definition.TargetType == TargetType.GradleApplication)).Select(Project => Project.Definition.Name).ToList();
             var ProjectDependencies = ProjectNameToFullDependentProjectNames.ToDictionary(p => ProjectNameToReference[p.Key], p => p.Value.Select(n => ProjectNameToReference[n]).ToList());
             var SortedProjects = ProjectDependencies.Keys.PartialOrderBy(p => ProjectDependencies.ContainsKey(p) ? ProjectDependencies[p] : null).ToList();
-            var CppSortedProjects = SortedProjects.Where(p => (p.TargetType == TargetType.Executable) || (p.TargetType == TargetType.StaticLibrary) || (p.TargetType == TargetType.IntermediateStaticLibrary) || (p.TargetType == TargetType.DynamicLibrary) || (p.TargetType == TargetType.DarwinApplication) || (p.TargetType == TargetType.DarwinStaticFramework) || (p.TargetType == TargetType.DarwinSharedFramework) || (p.TargetType == TargetType.MacBundle)).ToList();
+            var CppSortedProjects = SortedProjects.Where(p => (p.TargetType == TargetType.Executable) || (p.TargetType == TargetType.StaticLibrary) || (p.TargetType == TargetType.IntermediateStaticLibrary) || (p.TargetType == TargetType.DynamicLibrary) || (p.TargetType == TargetType.DarwinApplication) || (p.TargetType == TargetType.DarwinSharedFramework)).ToList();
             if (Toolchain == ToolchainType.VisualStudio)
             {
                 var SlnTemplateText = Resource.GetResourceText(VSVersion == 2022 ? @"Templates\vc17\Default.sln" : throw new NotSupportedException());
@@ -1441,17 +1441,9 @@ namespace TypeMake
                 {
                     return TargetName + ".app";
                 }
-                else if (TargetType == TargetType.DarwinStaticFramework)
-                {
-                    return TargetName + ".framework";
-                }
                 else if (TargetType == TargetType.DarwinSharedFramework)
                 {
                     return TargetName + ".framework";
-                }
-                else if (TargetType == TargetType.MacBundle)
-                {
-                    return TargetName + ".bundle";
                 }
                 else
                 {
@@ -1502,10 +1494,6 @@ namespace TypeMake
                 else if (TargetType == TargetType.DarwinApplication)
                 {
                     return TargetName + ".app";
-                }
-                else if (TargetType == TargetType.DarwinStaticFramework)
-                {
-                    return TargetName + ".framework";
                 }
                 else if (TargetType == TargetType.DarwinSharedFramework)
                 {
