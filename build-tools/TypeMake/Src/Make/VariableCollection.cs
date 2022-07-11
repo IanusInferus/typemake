@@ -1147,10 +1147,9 @@ namespace TypeMake
                         }
                         else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.MacOS)
                         {
-                            var DefaultCC = "clang";
                             return VariableSpec.CreateString(new StringSpec
                             {
-                                DefaultValue = DefaultCC
+                                DefaultValue = "clang"
                             });
                         }
                         else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
@@ -1207,10 +1206,9 @@ namespace TypeMake
                         }
                         else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.MacOS)
                         {
-                            var DefaultCXX = "clang++";
                             return VariableSpec.CreateString(new StringSpec
                             {
-                                DefaultValue = DefaultCXX
+                                DefaultValue = "clang++"
                             });
                         }
                         else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
@@ -1266,10 +1264,9 @@ namespace TypeMake
                         }
                         else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.MacOS)
                         {
-                            var DefaultAR = "ar";
                             return VariableSpec.CreateString(new StringSpec
                             {
-                                DefaultValue = DefaultAR
+                                DefaultValue = "ar"
                             });
                         }
                         else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
@@ -1299,33 +1296,32 @@ namespace TypeMake
                         }
                         else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
                         {
-                            var DefaultAR = "strip";
+                            var DefaultSTRIP = "strip";
                             if (Variables.Compiler == Cpp.CompilerType.gcc)
                             {
                                 if (Variables.TargetArchitecture == Cpp.ArchitectureType.armv7a)
                                 {
-                                    DefaultAR = "arm-linux-gnueabihf-strip";
+                                    DefaultSTRIP = "arm-linux-gnueabihf-strip";
                                 }
                                 else if (Variables.TargetArchitecture == Cpp.ArchitectureType.arm64)
                                 {
-                                    DefaultAR = "aarch64-linux-gnu-strip";
+                                    DefaultSTRIP = "aarch64-linux-gnu-strip";
                                 }
                             }
                             else if (Variables.Compiler == Cpp.CompilerType.clang)
                             {
-                                DefaultAR = "llvm-strip";
+                                DefaultSTRIP = "llvm-strip";
                             }
                             return VariableSpec.CreateString(new StringSpec
                             {
-                                DefaultValue = DefaultAR
+                                DefaultValue = DefaultSTRIP
                             });
                         }
                         else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.MacOS)
                         {
-                            var DefaultAR = "strip";
                             return VariableSpec.CreateString(new StringSpec
                             {
-                                DefaultValue = DefaultAR
+                                DefaultValue = "strip"
                             });
                         }
                         else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android)

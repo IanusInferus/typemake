@@ -12,7 +12,7 @@ The objective of TypeMake is not to implement a general-purpose C++ build tool, 
 
 Windows: typemake.cmd
 
-Linux/Mac: ./typemake.sh
+Linux/MacOS/Android: ./typemake.sh
 
 ## Support matrix
 
@@ -58,7 +58,7 @@ Linux with musl and clang(x86/x64/armv7a/arm64/riscv64): musl libc toolchain (Co
 
 Linux with musl and gcc(x86/x64/armv7a/arm64/riscv64): musl-cross-make (CppLibraryForm=Static CC=xxx-linux-musl-gcc CXX=xxx-linux-musl-g++ AR=xxx-linux-musl-ar)
 
-Mac: XCode(13.0) mono(6.12)
+MacOS: XCode(13.0) mono(6.12)
 
 iOS: XCode(13.0) mono(6.12)
 
