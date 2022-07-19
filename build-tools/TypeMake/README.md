@@ -46,11 +46,11 @@ Windows: VS2022 .Net(4.8) \[LLVM(12.0.0-win64)\] \[[C++ Clang-cl for v143 build 
 
 Linux: mono-devel(6.12)
 
-Linux(openSUSE 15.3) with clang: clang(11.0.1) libc++-devel(11.0.1) llvm(11.0.1) lld(11.0.1) [gcc10(10.3.0, x64-only)] (Compiler=clang)
+Linux(openSUSE 15.4) with clang: clang(13.0.1) libc++-devel(13.0.1) llvm(13.0.1) lld(13.0.1) [gcc11(x64-only)] (Compiler=clang)
 
-Linux(openSUSE 15.3) with gcc: gcc10-c++(10.3.0) \[gcc10-c++-32bit(10.3.0)\] (CC=gcc-10 CXX=g++-10)
+Linux(openSUSE 15.4) with gcc: gcc11-c++(11.3.0) \[gcc11-c++-32bit(11.3.0)\] (CC=gcc-11 CXX=g++-11)
 
-Linux(Ubuntu 20.04) with clang: clang(10.0.0) libc++-dev(10.0.0) libc++abi-dev(10.0.0) llvm(10.0.0) lld(10.0.0) [gcc10(10.3.0, x64-only)] (Compiler=clang)
+Linux(Ubuntu 20.04) with clang: clang-12(12.0.0) libc++-12-dev(12.0.0) libc++abi-12-dev(12.0.0) llvm-12(12.0.0) lld-12(12.0.0) [gcc-10(x64-only)] (Compiler=clang CC=clang-12 CXX=clang++-12 AR=llvm-ar-12 STRIP=llvm-strip-12)
 
 Linux(Ubuntu 20.04) with gcc: g++-10(10.3.0) \[g++-10-multilib(10.3.0)\] (CC=gcc-10 CXX=g++-10)
 
@@ -64,7 +64,7 @@ iOS: XCode(13.0) mono(6.12)
 
 Android: JDK(11.x) AndroidSDK("build-tools;33.0.0" "platforms;android-28" "ndk;25.0.8775105") \[Android Gradle plugin(7.2.0)\]
 
-Android on Linux(openSUSE 15.3): java-11-openjdk-devel
+Android on Linux(openSUSE 15.4): java-11-openjdk-devel
 
 Android on Linux(Ubuntu 20.04): openjdk-11-jdk
 
