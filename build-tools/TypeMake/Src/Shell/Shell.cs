@@ -43,6 +43,7 @@ namespace TypeMake
         {
             x86,
             x86_64,
+            arm64,
             Unknown
         }
 
@@ -92,11 +93,44 @@ namespace TypeMake
         {
             get
             {
+                var os = OperatingSystem;
                 lock (OperatingSystemArchitectureLockee)
                 {
                     if (OperatingSystemArchitectureValue == null)
                     {
-                        if (Environment.Is64BitOperatingSystem)
+                        if (os == OperatingSystemType.MacOS)
+                        {
+                            var p = ExecuteAndGetOutput("uname", "-m");
+                            if (p.Key == 0)
+                            {
+                                var v = p.Value.Trim('\n');
+                                if (v == "x86_64")
+                                {
+                                    var p2 = ExecuteAndGetOutput("sysctl", "-in", "sysctl.proc_translated");
+                                    if ((p2.Key == 0) && (int.Parse(p2.Value.Trim('\n')) == 1))
+                                    {
+                                        OperatingSystemArchitectureValue = OperatingSystemArchitectureType.arm64;
+                                    }
+                                    else
+                                    {
+                                        OperatingSystemArchitectureValue = OperatingSystemArchitectureType.x86_64;
+                                    }
+                                }
+                                else if (v == "arm64")
+                                {
+                                    OperatingSystemArchitectureValue = OperatingSystemArchitectureType.arm64;
+                                }
+                                else
+                                {
+                                    throw new NotSupportedException();
+                                }
+                            }
+                            else
+                            {
+                                throw new NotSupportedException();
+                            }
+                        }
+                        else if (Environment.Is64BitOperatingSystem)
                         {
                             OperatingSystemArchitectureValue = OperatingSystemArchitectureType.x86_64;
                         }

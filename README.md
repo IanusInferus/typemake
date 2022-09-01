@@ -18,7 +18,7 @@ Linux/MacOS/Android: ./typemake.sh
 
 Target Operating System vs Building Operating System
 
-|                                |    Windows 10 x64    |       Linux x64      |       MacOS x64      |    Android arm64     |
+|                                |    Windows 10 x64    |       Linux x64      |    MacOS x64/arm64   |    Android arm64     |
 | :----------------------------: | :------------------: | :------------------: | :------------------: | :------------------: |
 |  Windows x86/x64/armv7a/arm64  |          VS          |                      |                      |                      |
 |         Windows x86/x64        |      VS+clang-cl     |                      |                      |                      |

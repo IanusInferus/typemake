@@ -66,6 +66,10 @@ namespace TypeMake
                         {
                             return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.ArchitectureType.x86.ToString()));
                         }
+                        else if (Shell.OperatingSystemArchitecture == Shell.OperatingSystemArchitectureType.arm64)
+                        {
+                            return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.ArchitectureType.arm64.ToString()));
+                        }
                         else
                         {
                             throw new InvalidOperationException("UnknownHostArchitecture");
@@ -116,7 +120,7 @@ namespace TypeMake
             l.Add(new VariableItem
             {
                 VariableName = nameof(Variables.TargetArchitecture),
-                DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem) },
+                DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.HostArchitecture) },
                 GetVariableSpec = () =>
                 {
                     if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
@@ -129,7 +133,7 @@ namespace TypeMake
                     }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.MacOS)
                     {
-                        return VariableSpecCreateEnumSelection(Cpp.ArchitectureType.x64, new HashSet<Cpp.ArchitectureType> { Cpp.ArchitectureType.x64, Cpp.ArchitectureType.arm64 });
+                        return VariableSpecCreateEnumSelection(Variables.HostArchitecture, new HashSet<Cpp.ArchitectureType> { Cpp.ArchitectureType.x64, Cpp.ArchitectureType.arm64 });
                     }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.iOS)
                     {
@@ -948,7 +952,7 @@ namespace TypeMake
                         {
                             DefaultValue = Variables.HostOperatingSystem == Cpp.OperatingSystemType.Windows ? (Environment.GetEnvironmentVariable("LocalAppData").AsPath() / "Android/sdk") : "".AsPath(),
                             IsDirectory = true,
-                            Validator = PathValidator ?? (p => Directory.Exists(p / "tools") ? new KeyValuePair<bool, String>(true, "") : new KeyValuePair<bool, String>(false, "No tools directory inside."))
+                            Validator = PathValidator ?? (p => Directory.Exists(p / "platform-tools") ? new KeyValuePair<bool, String>(true, "") : new KeyValuePair<bool, String>(false, "No tools directory inside."))
                         });
                     }
                     else
