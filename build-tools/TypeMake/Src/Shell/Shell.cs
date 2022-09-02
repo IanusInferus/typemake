@@ -107,7 +107,8 @@ namespace TypeMake
                                 if (v == "x86_64")
                                 {
                                     var p2 = ExecuteAndGetOutput("sysctl", "-in", "sysctl.proc_translated");
-                                    if ((p2.Key == 0) && (int.Parse(p2.Value.Trim('\n')) == 1))
+                                    var v2 = p2.Value.Trim('\n');
+                                    if ((p2.Key == 0) && int.TryParse(v2, out var v2i) && (v2i == 1))
                                     {
                                         OperatingSystemArchitectureValue = OperatingSystemArchitectureType.arm64;
                                     }
