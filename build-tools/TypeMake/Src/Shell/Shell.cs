@@ -146,6 +146,56 @@ namespace TypeMake
             }
         }
 
+        private static Object ProcessArchitectureLockee = new Object();
+        private static OperatingSystemArchitectureType? ProcessArchitectureValue = null;
+        public static OperatingSystemArchitectureType ProcessArchitecture
+        {
+            get
+            {
+                var os = OperatingSystem;
+                lock (ProcessArchitectureLockee)
+                {
+                    if (ProcessArchitectureValue == null)
+                    {
+                        if (os == OperatingSystemType.MacOS)
+                        {
+                            var p = ExecuteAndGetOutput("uname", "-m");
+                            if (p.Key == 0)
+                            {
+                                var v = p.Value.Trim('\n');
+                                if (v == "x86_64")
+                                {
+                                    ProcessArchitectureValue = OperatingSystemArchitectureType.x86_64;
+                                }
+                                else if (v == "arm64")
+                                {
+                                    ProcessArchitectureValue = OperatingSystemArchitectureType.arm64;
+                                }
+                                else
+                                {
+                                    throw new NotSupportedException();
+                                }
+                            }
+                            else
+                            {
+                                throw new NotSupportedException();
+                            }
+                        }
+                        else if (Environment.Is64BitProcess)
+                        {
+                            ProcessArchitectureValue = OperatingSystemArchitectureType.x86_64;
+                        }
+                        else
+                        {
+                            ProcessArchitectureValue = OperatingSystemArchitectureType.x86;
+                        }
+                        //other architecture not supported now
+                    }
+                    return ProcessArchitectureValue.Value;
+                }
+            }
+        }
+
         public static PathString TryLocate(String ProgramName)
         {
             foreach (var Dir in Environment.GetEnvironmentVariable("PATH").Split(Path.PathSeparator))

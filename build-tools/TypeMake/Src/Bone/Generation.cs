@@ -80,9 +80,24 @@ namespace TypeMake
                     {
                         if (v.HostOperatingSystem == Cpp.OperatingSystemType.MacOS)
                         {
-                            if (Shell.Execute("./build.sh") != 0)
+                            if ((v.HostArchitecture == Cpp.ArchitectureType.arm64) && (Shell.ProcessArchitecture == Shell.OperatingSystemArchitectureType.x86_64))
                             {
-                                throw new InvalidOperationException("ErrorInExecution: ./build.sh");
+                                var BashPath = Shell.TryLocate("bash");
+                                if (BashPath == null)
+                                {
+                                    throw new InvalidOperationException("BashNotFound");
+                                }
+                                if (Shell.Execute("arch", "-arch", "arm64", BashPath, "-c", "./build.sh") != 0)
+                                {
+                                    throw new InvalidOperationException("ErrorInExecution: ./build.sh");
+                                }
+                            }
+                            else
+                            {
+                                if (Shell.Execute("./build.sh") != 0)
+                                {
+                                    throw new InvalidOperationException("ErrorInExecution: ./build.sh");
+                                }
                             }
                         }
                         else
@@ -101,9 +116,24 @@ namespace TypeMake
                     {
                         if (v.HostOperatingSystem == Cpp.OperatingSystemType.MacOS)
                         {
-                            if (Shell.Execute("./build.sh") != 0)
+                            if ((v.HostArchitecture == Cpp.ArchitectureType.arm64) && (Shell.ProcessArchitecture == Shell.OperatingSystemArchitectureType.x86_64))
                             {
-                                throw new InvalidOperationException("ErrorInExecution: ./build.sh");
+                                var BashPath = Shell.TryLocate("bash");
+                                if (BashPath == null)
+                                {
+                                    throw new InvalidOperationException("BashNotFound");
+                                }
+                                if (Shell.Execute("arch", "-arch", "arm64", BashPath, "-c", "./build.sh") != 0)
+                                {
+                                    throw new InvalidOperationException("ErrorInExecution: ./build.sh");
+                                }
+                            }
+                            else
+                            {
+                                if (Shell.Execute("./build.sh") != 0)
+                                {
+                                    throw new InvalidOperationException("ErrorInExecution: ./build.sh");
+                                }
                             }
                         }
                         else
