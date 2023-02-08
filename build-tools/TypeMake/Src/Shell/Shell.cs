@@ -515,7 +515,7 @@ namespace TypeMake
                 if (Options.Validator == null) { break; }
                 var ValidationResult = Options.Validator(v);
                 if (ValidationResult.Key) { break; }
-                var ValidationMessage = ValidationResult.Value == "" ? "Variable '" + Name + "' invalid." : "Variable '" + Name + "' invalid. " + ValidationResult.Value;
+                var ValidationMessage = "Variable '" + Name + "=" + (Options.IsPassword ? "[***]" : v) + "' invalid." + (ValidationResult.Value == "" ? "" : " " + ValidationResult.Value);
                 if (Options.Quiet) { throw new InvalidOperationException(ValidationMessage); }
                 if (Options.OnInteraction != null) { Options.OnInteraction(); }
                 var PromptText = ValidationMessage + " Input" + (d == "" ? "" : " " + d) + ": ";
