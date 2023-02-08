@@ -347,7 +347,30 @@ namespace TypeMake
         }
         public static ProcessStartInfo CreateExecuteStartInfo(String ProgramPath, params String[] Arguments)
         {
+#if NET5_0_OR_GREATER
+            if (OperatingSystem == OperatingSystemType.Windows)
+            {
+                if (ProgramPath.EndsWith(".cmd", StringComparison.OrdinalIgnoreCase) || ProgramPath.EndsWith(".bat", StringComparison.OrdinalIgnoreCase))
+                {
+                    return CreateExecuteLineStartInfoInner("cmd", (new String[] { "/C", EscapeArgument(ProgramPath) }).Concat(Arguments).ToArray());
+                }
+            }
+            else
+            {
+                if (ProgramPath.EndsWith(".sh", StringComparison.Ordinal))
+                {
+                    var BashPath = TryLocate("bash");
+                    if (BashPath == null)
+                    {
+                        throw new InvalidOperationException("BashNotFound");
+                    }
+                    return CreateExecuteLineStartInfoInner(BashPath, (new String[] { "-c", EscapeArgument(EscapeArgument(ProgramPath)) }).Concat(Arguments).ToArray());
+                }
+            }
+            return CreateExecuteLineStartInfoInner(ProgramPath, Arguments);
+#else
             return CreateExecuteLineStartInfo(ProgramPath, String.Join(" ", Arguments.Select(arg => EscapeArgument(arg))));
+#endif
         }
         public static ProcessStartInfo CreateExecuteLineStartInfo(String ProgramPath, String Arguments)
         {
@@ -372,6 +395,21 @@ namespace TypeMake
             }
             return CreateExecuteLineStartInfoInner(ProgramPath, Arguments);
         }
+#if NET5_0_OR_GREATER
+        private static ProcessStartInfo CreateExecuteLineStartInfoInner(String ProgramPath, String[] Arguments)
+        {
+            var psi = new ProcessStartInfo()
+            {
+                FileName = ProgramPath,
+                UseShellExecute = false
+            };
+            foreach (var arg in Arguments)
+            {
+                psi.ArgumentList.Add(arg);
+            }
+            return psi;
+        }
+#endif
         private static ProcessStartInfo CreateExecuteLineStartInfoInner(String ProgramPath, String Arguments)
         {
             var psi = new ProcessStartInfo()
