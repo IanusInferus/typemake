@@ -352,7 +352,7 @@ namespace TypeMake
             {
                 if (ProgramPath.EndsWith(".cmd", StringComparison.OrdinalIgnoreCase) || ProgramPath.EndsWith(".bat", StringComparison.OrdinalIgnoreCase))
                 {
-                    return CreateExecuteLineStartInfoInner("cmd", (new String[] { "/C", EscapeArgument(ProgramPath) }).Concat(Arguments).ToArray());
+                    return CreateExecuteLineStartInfoInner("cmd", (new String[] { "/C", ProgramPath }).Concat(Arguments).ToArray());
                 }
             }
             else
@@ -364,7 +364,7 @@ namespace TypeMake
                     {
                         throw new InvalidOperationException("BashNotFound");
                     }
-                    return CreateExecuteLineStartInfoInner(BashPath, (new String[] { "-c", EscapeArgument(EscapeArgument(ProgramPath)) }).Concat(Arguments).ToArray());
+                    return CreateExecuteLineStartInfoInner(BashPath, new String[] { "-c", EscapeArgument(ProgramPath) + (Arguments.Length == 0 ? "" : " " + String.Join(" ", Arguments.Select(a => EscapeArgument(a)))) });
                 }
             }
             return CreateExecuteLineStartInfoInner(ProgramPath, Arguments);
