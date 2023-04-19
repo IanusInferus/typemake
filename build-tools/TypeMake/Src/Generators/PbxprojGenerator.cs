@@ -152,7 +152,7 @@ namespace TypeMake.Cpp
                     }
                     else
                     {
-                        BuildSettings["CODE_SIGN_IDENTITY"] = Value.CreateString("");
+                        BuildSettings["CODE_SIGN_IDENTITY"] = Value.CreateString("-");
                         BuildSettings["CODE_SIGN_STYLE"] = Value.CreateString("Automatic");
                         BuildSettings["DEVELOPMENT_TEAM"] = Value.CreateString("");
                         BuildSettings["PROVISIONING_PROFILE_SPECIFIER"] = Value.CreateString("");
