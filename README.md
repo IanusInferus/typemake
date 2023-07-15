@@ -18,27 +18,27 @@ Linux/MacOS/Android: ./typemake.sh
 
 Target Operating System vs Building Operating System
 
-|                                |    Windows 10 x64    |       Linux x64      |    MacOS x64/arm64   |    Android arm64     |
-| :----------------------------: | :------------------: | :------------------: | :------------------: | :------------------: |
-|  Windows x86/x64/armv7a/arm64  |          VS          |                      |                      |                      |
-|         Windows x86/x64        |      VS+clang-cl     |                      |                      |                      |
-|         Windows x86/x64        |      Ninja+clang     |                      |                      |                      |
-|   WinRT x86/x64/armv7a/arm64   |          VS          |                      |                      |                      |
-|             Linux *            |  WSL+Ninja+clang/gcc |    Ninja+clang/gcc   |                      |                      |
-|            Linux x64           |WSL+VS+Ninja+clang/gcc|                      |                      |                      |
-|         MacOS x64/arm64        |                      |                      |         XCode        |                      |
-|            MacOS x64           |                      |                      |     Ninja+clang      |                      |
-|  Android x86/x64/armv7a/arm64  |      NDK+Ninja       |      NDK+Ninja       |      NDK+Ninja       |                      |
-|  Android x86/x64/armv7a/arm64  |   NDK+Ninja+Gradle   |   NDK+Ninja+Gradle   |   NDK+Ninja+Gradle   |                      |
-|          Android arm64         |                      |                      |                      |  Termux+Ninja+clang  |
-|          iOS arm64/x64         |                      |                      |         XCode        |                      |
-|     iOS Simulator x64/arm64    |                      |                      |         XCode        |                      |
+|                                        |    Windows 10 x64    |       Linux x64      |    MacOS x64/arm64   |    Android arm64     |
+| :------------------------------------: | :------------------: | :------------------: | :------------------: | :------------------: |
+|      Windows x86/x64/armv7a/arm64      |          VS          |                      |                      |                      |
+|             Windows x86/x64            |      VS+clang-cl     |                      |                      |                      |
+|             Windows x86/x64            |      Ninja+clang     |                      |                      |                      |
+|       WinRT x86/x64/armv7a/arm64       |          VS          |                      |                      |                      |
+|  Linux x86/x64/armv7a/arm64/riscv64 *  |  WSL+Ninja+clang/gcc |    Ninja+clang/gcc   |                      |                      |
+|                Linux x64               |WSL+VS+Ninja+clang/gcc|                      |                      |                      |
+|             MacOS x64/arm64            |                      |                      |         XCode        |                      |
+|                MacOS x64               |                      |                      |     Ninja+clang      |                      |
+|  Android x86/x64/armv7a/arm64/riscv64  |      NDK+Ninja       |      NDK+Ninja       |      NDK+Ninja       |                      |
+|  Android x86/x64/armv7a/arm64/riscv64  |   NDK+Ninja+Gradle   |   NDK+Ninja+Gradle   |   NDK+Ninja+Gradle   |                      |
+|              Android arm64             |                      |                      |                      |  Termux+Ninja+clang  |
+|              iOS arm64/x64             |                      |                      |         XCode        |                      |
+|         iOS Simulator x64/arm64        |                      |                      |         XCode        |                      |
 
 Win32 and WinRT targets are both supported, but WinRT only supports libraries and not applications.
 
 Different OSs use different ABIs on the same CPU architecture.
 
-\* Supported CPU architectures for Linux are x86/x64/armv7a/arm64/riscv64. For non-x64 CPU architectures, it is neccessary to specify toolchain commands and flags.
+\* For non-x64 CPU architectures, it is neccessary to specify toolchain commands and flags.
 
 ## Dependencies
 

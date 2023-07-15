@@ -141,7 +141,7 @@ namespace TypeMake
                     }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
                     {
-                        return VariableSpecCreateEnumSelection(Cpp.ArchitectureType.arm64, new HashSet<Cpp.ArchitectureType> { Cpp.ArchitectureType.x86, Cpp.ArchitectureType.x64, Cpp.ArchitectureType.armv7a, Cpp.ArchitectureType.arm64 });
+                        return VariableSpecCreateEnumSelection(Cpp.ArchitectureType.arm64, new HashSet<Cpp.ArchitectureType> { Cpp.ArchitectureType.x86, Cpp.ArchitectureType.x64, Cpp.ArchitectureType.armv7a, Cpp.ArchitectureType.arm64, Cpp.ArchitectureType.riscv64 });
                     }
                     else
                     {
@@ -1098,6 +1098,10 @@ namespace TypeMake
                         else if (Variables.TargetArchitecture == Cpp.ArchitectureType.arm64)
                         {
                             TargetPrefix = "aarch64";
+                        }
+                        else if (Variables.TargetArchitecture == Cpp.ArchitectureType.riscv64)
+                        {
+                            TargetPrefix = "riscv64";
                         }
                         ToolchainPath = Variables.AndroidNdk / $"toolchains/llvm/prebuilt/{Host}";
                     }

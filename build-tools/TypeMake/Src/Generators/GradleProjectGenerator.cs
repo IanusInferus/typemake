@@ -179,6 +179,10 @@ namespace TypeMake.Cpp
             {
                 return "arm64-v8a";
             }
+            else if (Architecture == Cpp.ArchitectureType.riscv64)
+            {
+                return "riscv64";
+            }
             else
             {
                 throw new NotSupportedException("NotSupportedArchitecture: " + Architecture.ToString());
@@ -224,6 +228,10 @@ namespace TypeMake.Cpp
             else if (Architecture == Cpp.ArchitectureType.arm64)
             {
                 return "aarch64";
+            }
+            else if (Architecture == ArchitectureType.riscv64)
+            {
+                return "riscv64";
             }
             else
             {
