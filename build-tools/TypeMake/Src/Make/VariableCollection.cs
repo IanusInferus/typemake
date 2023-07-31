@@ -213,9 +213,16 @@ namespace TypeMake
                 {
                     if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
                     {
-                        if ((Variables.WindowsRuntime == Cpp.WindowsRuntimeType.Win32) && ((Variables.TargetArchitecture == Cpp.ArchitectureType.x86) || (Variables.TargetArchitecture == Cpp.ArchitectureType.x64)))
+                        if (Variables.WindowsRuntime == Cpp.WindowsRuntimeType.Win32)
                         {
-                            return VariableSpecCreateEnumSelection(Cpp.ToolchainType.VisualStudio, new HashSet<Cpp.ToolchainType> { Cpp.ToolchainType.VisualStudio, Cpp.ToolchainType.Ninja });
+                            if ((Variables.TargetArchitecture == Cpp.ArchitectureType.x86) || (Variables.TargetArchitecture == Cpp.ArchitectureType.x64) || (Variables.TargetArchitecture == Cpp.ArchitectureType.arm64))
+                            {
+                                return VariableSpecCreateEnumSelection(Cpp.ToolchainType.VisualStudio, new HashSet<Cpp.ToolchainType> { Cpp.ToolchainType.VisualStudio, Cpp.ToolchainType.Ninja });
+                            }
+                            else
+                            {
+                                return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.ToolchainType.VisualStudio.ToString()));
+                            }
                         }
                         else
                         {
@@ -267,7 +274,7 @@ namespace TypeMake
             l.Add(new VariableItem
             {
                 VariableName = nameof(Variables.Compiler),
-                DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.WindowsRuntime) },
+                DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.TargetArchitecture), nameof(Variables.WindowsRuntime) },
                 GetVariableSpec = () =>
                 {
                     if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
@@ -276,7 +283,14 @@ namespace TypeMake
                         {
                             if (Variables.WindowsRuntime == Cpp.WindowsRuntimeType.Win32)
                             {
-                                return VariableSpecCreateEnumSelection(Cpp.CompilerType.VisualCpp, new HashSet<Cpp.CompilerType> { Cpp.CompilerType.VisualCpp, Cpp.CompilerType.clangcl });
+                                if ((Variables.TargetArchitecture == Cpp.ArchitectureType.x86) || (Variables.TargetArchitecture == Cpp.ArchitectureType.x64) || (Variables.TargetArchitecture == Cpp.ArchitectureType.arm64))
+                                {
+                                    return VariableSpecCreateEnumSelection(Cpp.CompilerType.VisualCpp, new HashSet<Cpp.CompilerType> { Cpp.CompilerType.VisualCpp, Cpp.CompilerType.clangcl });
+                                }
+                                else
+                                {
+                                    return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.CompilerType.VisualCpp.ToString()));
+                                }
                             }
                             else
                             {
@@ -779,7 +793,7 @@ namespace TypeMake
                 DependentVariableNames = new List<String> { nameof(Variables.HostOperatingSystem), nameof(Variables.TargetOperatingSystem), nameof(Variables.Toolchain), nameof(PathValidator) },
                 GetVariableSpec = () =>
                 {
-                    if ((Variables.Toolchain == Cpp.ToolchainType.VisualStudio) || (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Windows))
+                    if (Variables.Toolchain == Cpp.ToolchainType.VisualStudio)
                     {
                         String DefaultVSDir = "";
                         if (Variables.HostOperatingSystem == Cpp.OperatingSystemType.Windows)
@@ -823,6 +837,25 @@ namespace TypeMake
 
             l.Add(new VariableItem
             {
+                VariableName = nameof(Variables.VSVersion),
+                DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.Toolchain), nameof(Variables.VSDir) },
+                GetVariableSpec = () =>
+                {
+                    if (Variables.Toolchain == Cpp.ToolchainType.VisualStudio)
+                    {
+                        var VSVersion = Variables.VSDir.ToString().Contains("2022") ? 2022 : 2022;
+                        return VariableSpec.CreateFixed(VariableValue.CreateInteger(VSVersion));
+                    }
+                    else
+                    {
+                        return VariableSpec.CreateNotApply(VariableValue.CreatePath(null));
+                    }
+                },
+                SetVariableValue = v => Variables.VSVersion = v.Integer
+            });
+
+            l.Add(new VariableItem
+            {
                 VariableName = nameof(Variables.LLVM),
                 DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.Toolchain), nameof(Variables.VSDir), nameof(PathValidator) },
                 GetVariableSpec = () =>
@@ -830,10 +863,35 @@ namespace TypeMake
                     if ((Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Windows) && (Variables.Toolchain == Cpp.ToolchainType.Ninja))
                     {
                         String DefaultLLVMDir = "";
-                        if (Variables.HostOperatingSystem == Cpp.OperatingSystemType.Windows)
+                        ((Action)(() =>
                         {
-                            DefaultLLVMDir = Variables.VSDir / "VC/Tools/Llvm/x64/bin";
-                        }
+                            foreach (var ProgramFiles in new String[] { Environment.GetEnvironmentVariable("ProgramFiles"), Environment.GetEnvironmentVariable("ProgramFiles(x86)") })
+                            {
+                                if (ProgramFiles != "")
+                                {
+                                    {
+                                        var p = ProgramFiles.AsPath() / "LLVM/bin";
+                                        if (Directory.Exists(p))
+                                        {
+                                            DefaultLLVMDir = p;
+                                            return;
+                                        }
+                                    }
+                                    foreach (var Version in new int[] { 2022 })
+                                    {
+                                        foreach (var d in new String[] { "Enterprise", "Professional", "Community", "BuildTools" })
+                                        {
+                                            var p = ProgramFiles.AsPath() / $"Microsoft Visual Studio/{Version}" / d / "VC/Tools/Llvm/x64/bin";
+                                            if (Directory.Exists(p))
+                                            {
+                                                DefaultLLVMDir = p;
+                                                return;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }))();
                         return VariableSpec.CreatePath(new PathStringSpec
                         {
                             DefaultValue = DefaultLLVMDir,
@@ -847,25 +905,6 @@ namespace TypeMake
                     }
                 },
                 SetVariableValue = v => Variables.LLVM = v.Path
-            });
-
-            l.Add(new VariableItem
-            {
-                VariableName = nameof(Variables.VSVersion),
-                DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.Toolchain), nameof(Variables.VSDir) },
-                GetVariableSpec = () =>
-                {
-                    if ((Variables.Toolchain == Cpp.ToolchainType.VisualStudio) || (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Windows))
-                    {
-                        var VSVersion = Variables.VSDir.ToString().Contains("2022") ? 2022 : 2022;
-                        return VariableSpec.CreateFixed(VariableValue.CreateInteger(VSVersion));
-                    }
-                    else
-                    {
-                        return VariableSpec.CreateNotApply(VariableValue.CreatePath(null));
-                    }
-                },
-                SetVariableValue = v => Variables.VSVersion = v.Integer
             });
 
             l.Add(new VariableItem

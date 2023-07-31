@@ -21,8 +21,8 @@ Target Operating System vs Building Operating System
 |                                        |    Windows 10 x64    |       Linux x64      |    MacOS x64/arm64   |    Android arm64     |
 | :------------------------------------: | :------------------: | :------------------: | :------------------: | :------------------: |
 |      Windows x86/x64/armv7a/arm64      |          VS          |                      |                      |                      |
-|             Windows x86/x64            |      VS+clang-cl     |                      |                      |                      |
-|             Windows x86/x64            |      Ninja+clang     |                      |                      |                      |
+|          Windows x86/x64/arm64         |      VS+clang-cl     |                      |                      |                      |
+|          Windows x86/x64/arm64         |      Ninja+clang     |                      |                      |                      |
 |       WinRT x86/x64/armv7a/arm64       |          VS          |                      |                      |                      |
 |  Linux x86/x64/armv7a/arm64/riscv64 *  |  WSL+Ninja+clang/gcc |    Ninja+clang/gcc   |                      |                      |
 |                Linux x64               |WSL+VS+Ninja+clang/gcc|                      |                      |                      |

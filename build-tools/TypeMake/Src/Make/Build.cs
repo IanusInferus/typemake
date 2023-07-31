@@ -1018,6 +1018,15 @@ namespace TypeMake
                 },
                 new Configuration
                 {
+                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Windows },
+                    MatchingTargetArchitectures = new List<ArchitectureType> { ArchitectureType.arm64 },
+                    MatchingToolchains = new List<ToolchainType> { ToolchainType.Ninja },
+                    MatchingCompilers = new List<CompilerType> { CompilerType.clang },
+                    CommonFlags = ParseFlags("--target=arm64-pc-windows-msvc"),
+                    LinkerFlags = ParseFlags("--target=arm64-pc-windows-msvc")
+                },
+                new Configuration
+                {
                     MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Linux },
                     MatchingCompilers = new List<CompilerType> { CompilerType.clang },
                     LinkerFlags = ParseFlags("-fuse-ld=lld")
