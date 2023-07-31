@@ -36,6 +36,7 @@ namespace TypeMake
         private String XCodeProvisioningProfileSpecifier;
         private PathString VSDir;
         private int VSVersion;
+        private PathString LLVM;
         private bool EnableJava;
         private PathString Jdk;
         private PathString AndroidSdk;
@@ -54,7 +55,7 @@ namespace TypeMake
 
         private Dictionary<String, String> ProjectIds = new Dictionary<String, String>();
 
-        public Build(OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType TargetArchitecture, WindowsRuntimeType? WindowsRuntime, bool EnableiOSSimulator, bool EnableMacCatalyst, ToolchainType Toolchain, CompilerType Compiler, CLibraryType CLibrary, CLibraryForm CLibraryForm, CppLibraryType CppLibrary, CppLibraryForm CppLibraryForm, ConfigurationType ConfigurationType, bool EnableModule, bool EnableCustomSysroot, PathString CustomSysroot, bool EnableLibcxxCompilation, PathString SourceDirectory, PathString BuildDirectory, String XCodeDevelopmentTeam, String XCodeProvisioningProfileSpecifier, PathString VSDir, int VSVersion, bool EnableJava, PathString Jdk, PathString AndroidSdk, PathString AndroidNdk, String CC, String CXX, String AR, String STRIP, List<String> CommonFlags, List<String> CFlags, List<String> CppFlags, List<String> LinkerFlags, List<String> PostLinkerFlags, bool ForceRegenerate, bool EnableNonTargetingOperatingSystemDummy)
+        public Build(OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType TargetArchitecture, WindowsRuntimeType? WindowsRuntime, bool EnableiOSSimulator, bool EnableMacCatalyst, ToolchainType Toolchain, CompilerType Compiler, CLibraryType CLibrary, CLibraryForm CLibraryForm, CppLibraryType CppLibrary, CppLibraryForm CppLibraryForm, ConfigurationType ConfigurationType, bool EnableModule, bool EnableCustomSysroot, PathString CustomSysroot, bool EnableLibcxxCompilation, PathString SourceDirectory, PathString BuildDirectory, String XCodeDevelopmentTeam, String XCodeProvisioningProfileSpecifier, PathString VSDir, int VSVersion, PathString LLVM, bool EnableJava, PathString Jdk, PathString AndroidSdk, PathString AndroidNdk, String CC, String CXX, String AR, String STRIP, List<String> CommonFlags, List<String> CFlags, List<String> CppFlags, List<String> LinkerFlags, List<String> PostLinkerFlags, bool ForceRegenerate, bool EnableNonTargetingOperatingSystemDummy)
         {
             this.HostOperatingSystem = HostOperatingSystem;
             this.HostArchitecture = HostArchitecture;
@@ -80,6 +81,7 @@ namespace TypeMake
             this.XCodeProvisioningProfileSpecifier = XCodeProvisioningProfileSpecifier;
             this.VSDir = VSDir;
             this.VSVersion = VSVersion;
+            this.LLVM = LLVM;
             this.EnableJava = EnableJava;
             this.Jdk = Jdk;
             this.AndroidSdk = AndroidSdk;
@@ -760,6 +762,7 @@ namespace TypeMake
                     MatchingCompilers = new List<CompilerType> { CompilerType.VisualCpp, CompilerType.clangcl },
                     Options = new Dictionary<String, String>
                     {
+                        ["vc.ClCompile.LanguageStandard_C"] = "stdc17",
                         ["vc.ClCompile.LanguageStandard"] = EnableModule ? "stdcpplatest" : "stdcpp20",
                         ["vc.ClCompile.EnableModules"] = EnableModule ? "true" : "false"
                     }
@@ -789,6 +792,7 @@ namespace TypeMake
                 new Configuration
                 {
                     MatchingCompilers = new List<CompilerType> { CompilerType.gcc, CompilerType.clang },
+                    CFlags = ParseFlags("-std=c17"),
                     CppFlags = ParseFlags("-std=c++20")
                 },
                 new Configuration
