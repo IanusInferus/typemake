@@ -20,19 +20,29 @@ namespace TypeMake
                 BuildScript.GenerateBuildScriptWindows(v.Toolchain, v.BuildDirectory, r.SolutionName, v.TargetArchitecture, Cpp.ConfigurationType.Release, v.MaxProcessCount, v.VSDir, v.VSVersion, v.Ninja, v.ForceRegenerate);
                 if (v.BuildNow)
                 {
-                    if (v.HostOperatingSystem == Cpp.OperatingSystemType.Windows)
+                    using (var d = Shell.PushDirectory(v.BuildDirectory))
                     {
-                        using (var d = Shell.PushDirectory(v.BuildDirectory))
+                        if (v.HostOperatingSystem == Cpp.OperatingSystemType.Windows)
                         {
-                            if (Shell.Execute($"build_{v.Configuration}.cmd") != 0)
+                            if (v.Toolchain == Cpp.ToolchainType.VisualStudio)
                             {
-                                throw new InvalidOperationException("ErrorInExecution: " + $"build_{v.Configuration}.cmd");
+                                if (Shell.Execute($"build_{v.Configuration}.cmd") != 0)
+                                {
+                                    throw new InvalidOperationException("ErrorInExecution: " + $"build_{v.Configuration}.cmd");
+                                }
+                            }
+                            else
+                            {
+                                if (Shell.Execute($"build.cmd") != 0)
+                                {
+                                    throw new InvalidOperationException("ErrorInExecution: build.cmd");
+                                }
                             }
                         }
-                    }
-                    else
-                    {
-                        WriteLineError("Cross compiling to Windows is not supported.");
+                        else
+                        {
+                            WriteLineError("Cross compiling to Windows is not supported.");
+                        }
                     }
                 }
             }
