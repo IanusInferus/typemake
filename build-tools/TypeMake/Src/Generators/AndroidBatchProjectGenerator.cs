@@ -31,13 +31,14 @@ namespace TypeMake.Cpp
         private String BuildToolVersion;
         private int MinSdkVersion;
         private int TargetSdkVersion;
+        private int NdkVersion;
         private PathString KeyStore;
         private String KeyStorePass;
         private String KeyAlias;
         private String KeyPass;
         private bool IsDebug;
 
-        public AndroidBatchProjectGenerator(String SolutionName, Project Project, List<ProjectReference> ProjectReferences, PathString InputDirectory, PathString OutputDirectory, PathString SolutionOutputDirectory, OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType? TargetArchitecture, ToolchainType Toolchain, CompilerType Compiler, CLibraryType CLibrary, CLibraryForm CLibraryForm, CppLibraryType CppLibrary, CppLibraryForm CppLibraryForm, ConfigurationType? ConfigurationType, PathString Jdk, PathString AndroidSdk, PathString AndroidNdk, String BuildToolVersion, int MinSdkVersion, int TargetSdkVersion, PathString KeyStore, String KeyStorePass, String KeyAlias, String KeyPass, bool IsDebug)
+        public AndroidBatchProjectGenerator(String SolutionName, Project Project, List<ProjectReference> ProjectReferences, PathString InputDirectory, PathString OutputDirectory, PathString SolutionOutputDirectory, OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType? TargetArchitecture, ToolchainType Toolchain, CompilerType Compiler, CLibraryType CLibrary, CLibraryForm CLibraryForm, CppLibraryType CppLibrary, CppLibraryForm CppLibraryForm, ConfigurationType? ConfigurationType, PathString Jdk, PathString AndroidSdk, PathString AndroidNdk, String BuildToolVersion, int MinSdkVersion, int TargetSdkVersion, int NdkVersion, PathString KeyStore, String KeyStorePass, String KeyAlias, String KeyPass, bool IsDebug)
         {
             this.SolutionName = SolutionName;
             this.ProjectName = Project.Name.Split(':').First();
@@ -71,6 +72,7 @@ namespace TypeMake.Cpp
             this.BuildToolVersion = BuildToolVersion;
             this.MinSdkVersion = MinSdkVersion;
             this.TargetSdkVersion = TargetSdkVersion;
+            this.NdkVersion = NdkVersion;
             this.KeyStore = KeyStore;
             this.KeyStorePass = KeyStorePass;
             this.KeyAlias = KeyAlias;
@@ -82,6 +84,40 @@ namespace TypeMake.Cpp
         {
             var BuildBatchPath = OutputDirectory / ProjectName / (HostOperatingSystem == OperatingSystemType.Windows ? "build.cmd" : "build.sh");
             var BaseDirPath = BuildBatchPath.Parent;
+
+            if (Project.TargetType == TargetType.GradleLibrary)
+            {
+                var ProjectTargetName = Project.TargetName ?? ProjectName;
+
+                var PrefabJsonContent = String.Join("\n", $@"
+                |{{
+                |  ""name"": ""{ProjectTargetName}"",
+                |  ""schema_version"": 2,
+                |  ""dependencies"": []
+                |}}
+                ".Replace("\r\n", "\n").Split('\n').Select(Line => Line.TrimStart()).Where(Line => Line.StartsWith("|")).Select(Line => Line.Substring(1)));
+                TextFile.WriteToFile(OutputDirectory / ProjectName / "prefab/prefab.json", PrefabJsonContent, new UTF8Encoding(false), !ForceRegenerate);
+
+                var ModuleJsonContent = String.Join("\n", $@"
+                |{{
+                |  ""export_libraries"": [],
+                |  ""android"": {{}}
+                |}}
+                ".Replace("\r\n", "\n").Split('\n').Select(Line => Line.TrimStart()).Where(Line => Line.StartsWith("|")).Select(Line => Line.Substring(1)));
+                TextFile.WriteToFile(OutputDirectory / ProjectName / "prefab/modules" / ProjectTargetName / "module.json", ModuleJsonContent, new UTF8Encoding(false), !ForceRegenerate);
+
+                var Stl = CppLibraryForm == CppLibraryForm.Static ? "none" : "c++_shared";
+                var AbiJsonContent = String.Join("\n", $@"
+                |{{
+                |  ""abi"": ""{GetArchitectureString(TargetArchitecture)}"",
+                |  ""api"": {MinSdkVersion},
+                |  ""ndk"": {NdkVersion},
+                |  ""stl"": ""{Stl}"",
+                |  ""static"": false
+                |}}
+                ".Replace("\r\n", "\n").Split('\n').Select(Line => Line.TrimStart()).Where(Line => Line.StartsWith("|")).Select(Line => Line.Substring(1)));
+                TextFile.WriteToFile(OutputDirectory / ProjectName / "prefab/modules" / ProjectTargetName / $"libs/android.{GetArchitectureString(TargetArchitecture)}" / "abi.json", AbiJsonContent, new UTF8Encoding(false), !ForceRegenerate);
+            }
 
             var Lines = GenerateLines(BuildBatchPath, BaseDirPath).ToList();
             TextFile.WriteToFile(BuildBatchPath, String.Join(HostOperatingSystem == OperatingSystemType.Windows ? "\r\n" : "\n", Lines), new UTF8Encoding(false), !ForceRegenerate);
@@ -131,6 +167,7 @@ namespace TypeMake.Cpp
             var JarFiles = (conf.Options.ContainsKey("gradle.jarFiles") ? conf.Options["gradle.jarFiles"].Split(';').Select(f => f.AsPath().RelativeTo(BaseDirPath)).ToList() : new List<PathString> { }).ToList();
             var ResSrcDirs = conf.Options.ContainsKey("gradle.resSrcDirs") ? conf.Options["gradle.resSrcDirs"].Split(';').Select(d => d.AsPath().RelativeTo(BaseDirPath)).ToList() : System.IO.Directory.Exists(InputDirectory / "res") ? new List<PathString> { (InputDirectory / "res").RelativeTo(BaseDirPath) } : new List<PathString> { };
             var AssetsSrcDirs = conf.Options.ContainsKey("gradle.assetsSrcDirs") ? conf.Options["gradle.assetsSrcDirs"].Split(';').Select(d => d.AsPath().RelativeTo(BaseDirPath)).ToList() : System.IO.Directory.Exists(InputDirectory / "assets") ? new List<PathString> { (InputDirectory / "assets").RelativeTo(BaseDirPath) } : new List<PathString> { };
+            var PrefabHeaderDirs = conf.Options.ContainsKey("gradle.prefabHeaderDirs") ? conf.Options["gradle.prefabHeaderDirs"].Split(';').Select(d => d.AsPath().RelativeTo(BaseDirPath)).ToList() : new List<PathString> { };
 
             if (HostOperatingSystem == Cpp.OperatingSystemType.Windows)
             {
@@ -167,11 +204,18 @@ namespace TypeMake.Cpp
                 yield return $@"md {JniLibs}\{Abi} || exit /b 1";
                 if ((CppLibrary == CppLibraryType.libcxx) && (CppLibraryForm == CppLibraryForm.Dynamic))
                 {
-                    yield return $@"copy {e(LibcxxSo)} {JniLibs}\{Abi}\ || exit /b 1";
+                    yield return $@"copy /Y {e(LibcxxSo)} {JniLibs}\{Abi}\ || exit /b 1";
                 }
                 foreach (var LibPath in SoLibraryPaths)
                 {
                     yield return $@"{e(Strip)} {e(LibPath)} -o {e(JniLibs.AsPath() / Abi / LibPath.FileName)} --discard-all --strip-all || exit /b 1";
+                }
+                if (Project.TargetType == TargetType.GradleLibrary)
+                {
+                    foreach (var LibPath in SoLibraryPaths)
+                    {
+                        yield return $@"copy /Y {e(JniLibs.AsPath() / Abi / LibPath.FileName)} {"prefab/modules".AsPath() / ProjectTargetName / $"libs/android.{GetArchitectureString(TargetArchitecture)}"}\ || exit /b 1";
+                    }
                 }
                 yield return @"";
                 if (ResSrcDirs.Count > 0)
@@ -220,7 +264,7 @@ namespace TypeMake.Cpp
                 {
                     yield return $@"dir /A:-D /S /B {e(JavaSrcDir / "*.java")} >> java_source_list.txt || exit /b 1";
                 }
-                yield return $@"{e(Javac)} -source 11 -target 11 -parameters -g -encoding utf-8 -d classes{String.Join("", JavaSrcDirs.Select(d => " -sourcepath " + e(d)))} -sourcepath gen {"-cp " + e(String.Join(";", new List<PathString> { AndroidJar }.Concat(JarFiles)))} @java_source_list.txt || exit /b 1";
+                yield return $@"{e(Javac)} --release 8 -parameters -g -encoding utf-8 -d classes{String.Join("", JavaSrcDirs.Select(d => " -sourcepath " + e(d)))} -sourcepath gen {"-cp " + e(String.Join(";", new List<PathString> { AndroidJar }.Concat(JarFiles)))} @java_source_list.txt || exit /b 1";
                 yield return @"";
                 yield return @":: package class files to jar";
                 yield return $@"{e(Jar)} cvfM classes.jar -C classes . || exit /b 1";
@@ -246,6 +290,14 @@ namespace TypeMake.Cpp
                     {
                         yield return $@"{e(Jar)} uvf {e(ProjectTargetName + "." + Suffix)} proguard.txt || exit /b 1";
                     }
+                }
+                if (Project.TargetType == TargetType.GradleLibrary)
+                {
+                    foreach (var PrefabHeaderDir in PrefabHeaderDirs)
+                    {
+                        yield return $@"xcopy /I /E /Y {PrefabHeaderDir}\ {"prefab/modules".AsPath() / ProjectTargetName / "include"} || exit /b 1";
+                    }
+                    yield return $@"{e(Jar)} uvf {e(ProjectTargetName + "." + Suffix)} prefab || exit /b 1";
                 }
                 yield return $@"{e(Jar)} uvf {e(ProjectTargetName + "." + Suffix)} {JniLibs} || exit /b 1";
                 yield return @"";
@@ -286,11 +338,18 @@ namespace TypeMake.Cpp
                 yield return $@"mkdir -p {JniLibs}/{Abi}";
                 if ((CppLibrary == CppLibraryType.libcxx) && (CppLibraryForm == CppLibraryForm.Dynamic))
                 {
-                    yield return $@"cp {e(LibcxxSo)} {JniLibs}/{Abi}/";
+                    yield return $@"cp -f {e(LibcxxSo)} {JniLibs}/{Abi}/";
                 }
                 foreach (var LibPath in SoLibraryPaths)
                 {
                     yield return $@"{e(Strip)} {e(LibPath)} -o {e(JniLibs.AsPath() / Abi / LibPath.FileName)} --discard-all --strip-all";
+                }
+                if (Project.TargetType == TargetType.GradleLibrary)
+                {
+                    foreach (var LibPath in SoLibraryPaths)
+                    {
+                        yield return $@"cp -f {e(JniLibs.AsPath() / Abi / LibPath.FileName)} {"prefab/modules".AsPath() / ProjectTargetName / $"libs/android.{GetArchitectureString(TargetArchitecture)}"}/";
+                    }
                 }
                 yield return @"";
                 if (ResSrcDirs.Count > 0)
@@ -339,7 +398,7 @@ namespace TypeMake.Cpp
                 {
                     yield return $@"find {e(JavaSrcDir)} -type f -name *.java >> java_source_list.txt";
                 }
-                yield return $@"{e(Javac)} -source 11 -target 11 -parameters -g -encoding utf-8 -d classes{String.Join("", JavaSrcDirs.Select(d => " -sourcepath " + e(d)))} -sourcepath gen {"-cp " + e(String.Join(":", new List<PathString> { AndroidJar }.Concat(JarFiles)))} @java_source_list.txt";
+                yield return $@"{e(Javac)} --release 8 -parameters -g -encoding utf-8 -d classes{String.Join("", JavaSrcDirs.Select(d => " -sourcepath " + e(d)))} -sourcepath gen {"-cp " + e(String.Join(":", new List<PathString> { AndroidJar }.Concat(JarFiles)))} @java_source_list.txt";
                 yield return @"";
                 yield return @"# package class files to jar";
                 yield return $@"{e(Jar)} cvfM classes.jar -C classes .";
@@ -365,6 +424,15 @@ namespace TypeMake.Cpp
                     {
                         yield return $@"{e(Jar)} uvf {e(ProjectTargetName + "." + Suffix)} proguard.txt";
                     }
+                }
+                if (Project.TargetType == TargetType.GradleLibrary)
+                {
+                    yield return $@"mkdir -p {"prefab/modules".AsPath() / ProjectTargetName / "include"}";
+                    foreach (var PrefabHeaderDir in PrefabHeaderDirs)
+                    {
+                        yield return $@"cp -rf {PrefabHeaderDir}/* {"prefab/modules".AsPath() / ProjectTargetName / "include"}/";
+                    }
+                    yield return $@"{e(Jar)} uvf {e(ProjectTargetName + "." + Suffix)} prefab";
                 }
                 yield return $@"{e(Jar)} uvf {e(ProjectTargetName + "." + Suffix)} {JniLibs}";
                 yield return @"";
