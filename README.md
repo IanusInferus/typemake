@@ -29,7 +29,6 @@ Target Operating System vs Building Operating System
 |             MacOS x64/arm64            |                      |                      |         XCode        |                      |
 |                MacOS x64               |                      |                      |     Ninja+clang      |                      |
 |  Android x86/x64/armv7a/arm64/riscv64  |      NDK+Ninja       |      NDK+Ninja       |      NDK+Ninja       |                      |
-|  Android x86/x64/armv7a/arm64/riscv64  |   NDK+Ninja+Gradle   |   NDK+Ninja+Gradle   |   NDK+Ninja+Gradle   |                      |
 |              Android arm64             |                      |                      |                      |  Termux+Ninja+clang  |
 |              iOS arm64/x64             |                      |                      |         XCode        |                      |
 |         iOS Simulator x64/arm64        |                      |                      |         XCode        |                      |
@@ -62,7 +61,7 @@ MacOS: XCode(13.0) mono(6.12)
 
 iOS: XCode(13.0) mono(6.12)
 
-Android: JDK(11.x) AndroidSDK("build-tools;33.0.0" "platforms;android-28" "ndk;25.0.8775105") \[Android Gradle plugin(7.2.0)\]
+Android: JDK(11.x) AndroidSDK("build-tools;33.0.0" "platforms;android-28" "ndk;25.0.8775105")
 
 Android on Linux(openSUSE 15.4): java-11-openjdk-devel
 

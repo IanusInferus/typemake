@@ -624,56 +624,30 @@ namespace TypeMake
                     var g = new NinjaProjectGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, WindowsRuntime, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType);
                     g.Generate(ForceRegenerate);
                 }
-                else if ((Toolchain == ToolchainType.Gradle_Ninja) || (Toolchain == ToolchainType.Ninja))
+                else if (Toolchain == ToolchainType.Ninja)
                 {
                     if (ProjectTargetType == TargetType.GradleApplication)
                     {
                         if (EnableJava)
                         {
-                            if (Toolchain == ToolchainType.Ninja)
-                            {
-                                var Out = OutputDirectory.FileName == "gradle" ? OutputDirectory.Parent / "batch" : OutputDirectory;
-                                var gBatch = new AndroidBatchProjectGenerator(SolutionName, p, ProjectReferences, InputDirectory, Out, BuildDirectory, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType, Jdk, AndroidSdk, AndroidNdk, "33.0.0", 21, 28, 25, Environment.GetFolderPath(Environment.SpecialFolder.UserProfile).AsPath() / ".android/debug.keystore", "android", "androiddebugkey", "android", true);
-                                gBatch.Generate(ForceRegenerate);
-                            }
-                            else
-                            {
-                                var BuildGradleTemplateText = Resource.GetResourceText(@"Templates\gradle_application\build.gradle");
-                                var gGradle = new GradleProjectGenerator(SolutionName, p, ProjectReferences, InputDirectory, OutputDirectory, BuildDirectory, BuildGradleTemplateText, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType, AndroidNdk);
-                                gGradle.Generate(ForceRegenerate);
-                            }
+                            var Out = OutputDirectory.FileName == "gradle" ? OutputDirectory.Parent / "batch" : OutputDirectory;
+                            var gBatch = new AndroidBatchProjectGenerator(SolutionName, p, ProjectReferences, InputDirectory, Out, BuildDirectory, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType, Jdk, AndroidSdk, AndroidNdk, "33.0.0", 21, 28, 25, Environment.GetFolderPath(Environment.SpecialFolder.UserProfile).AsPath() / ".android/debug.keystore", "android", "androiddebugkey", "android", true);
+                            gBatch.Generate(ForceRegenerate);
                         }
                     }
                     else if (ProjectTargetType == TargetType.GradleLibrary)
                     {
                         if (EnableJava)
                         {
-                            if (Toolchain == ToolchainType.Ninja)
-                            {
-                                var Out = OutputDirectory.FileName == "gradle" ? OutputDirectory.Parent / "batch" : OutputDirectory;
-                                var gBatch = new AndroidBatchProjectGenerator(SolutionName, p, ProjectReferences, InputDirectory, Out, BuildDirectory, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType, Jdk, AndroidSdk, AndroidNdk, "33.0.0", 21, 28, 25, Environment.GetFolderPath(Environment.SpecialFolder.UserProfile).AsPath() / ".android/debug.keystore", "android", "androiddebugkey", "android", true);
-                                gBatch.Generate(ForceRegenerate);
-                            }
-                            else
-                            {
-                                var BuildGradleTemplateText = Resource.GetResourceText(@"Templates\gradle_library\build.gradle");
-                                var gGradle = new GradleProjectGenerator(SolutionName, p, ProjectReferences, InputDirectory, OutputDirectory, BuildDirectory, BuildGradleTemplateText, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType, AndroidNdk);
-                                gGradle.Generate(ForceRegenerate);
-                            }
+                            var Out = OutputDirectory.FileName == "gradle" ? OutputDirectory.Parent / "batch" : OutputDirectory;
+                            var gBatch = new AndroidBatchProjectGenerator(SolutionName, p, ProjectReferences, InputDirectory, Out, BuildDirectory, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType, Jdk, AndroidSdk, AndroidNdk, "33.0.0", 21, 28, 25, Environment.GetFolderPath(Environment.SpecialFolder.UserProfile).AsPath() / ".android/debug.keystore", "android", "androiddebugkey", "android", true);
+                            gBatch.Generate(ForceRegenerate);
                         }
                     }
                     else
                     {
-                        if (Toolchain == ToolchainType.Gradle_Ninja)
-                        {
-                            var g = new NinjaProjectGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, WindowsRuntime, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType);
-                            g.Generate(ForceRegenerate);
-                        }
-                        else if (Toolchain == ToolchainType.Ninja)
-                        {
-                            var g = new NinjaProjectGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, WindowsRuntime, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType);
-                            g.Generate(ForceRegenerate);
-                        }
+                        var g = new NinjaProjectGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, WindowsRuntime, Toolchain, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, ConfigurationType);
+                        g.Generate(ForceRegenerate);
                     }
                 }
                 else
@@ -700,30 +674,6 @@ namespace TypeMake
             {
                 var g = new NinjaSolutionGenerator(SolutionName, CppSortedProjects, BuildDirectory / "projects", TargetOperatingSystem, CC, CXX, AR, STRIP);
                 g.Generate(ForceRegenerate);
-            }
-            else if (Toolchain == ToolchainType.Gradle_Ninja)
-            {
-                FileUtils.CopyDirectory(System.Reflection.Assembly.GetEntryAssembly().Location.AsPath().Parent / "Templates/gradle", BuildDirectory / "gradle", !ForceRegenerate);
-                if (HostOperatingSystem != Cpp.OperatingSystemType.Windows)
-                {
-                    if (Shell.Execute("chmod", "+x", BuildDirectory / "gradle/gradlew") != 0)
-                    {
-                        throw new InvalidOperationException("ErrorInExecution: chmod");
-                    }
-                }
-                else if (Toolchain == ToolchainType.Gradle_Ninja)
-                {
-                    var g = new NinjaSolutionGenerator(SolutionName, CppSortedProjects, BuildDirectory / "projects", TargetOperatingSystem, CC, CXX, AR, STRIP);
-                    g.Generate(ForceRegenerate);
-                }
-                if (GradleProjectNames.Count > 0)
-                {
-                    TextFile.WriteToFile(BuildDirectory / "gradle/settings.gradle", "include " + String.Join(", ", GradleProjectNames.Select(n => "':" + n.Split(':').First() + "'")), new UTF8Encoding(false), !ForceRegenerate);
-                }
-                else
-                {
-                    TextFile.WriteToFile(BuildDirectory / "gradle/settings.gradle", "", new UTF8Encoding(false), !ForceRegenerate);
-                }
             }
             else
             {
@@ -1072,7 +1022,7 @@ namespace TypeMake
                 },
                 new Configuration
                 {
-                    MatchingToolchains = new List<ToolchainType> { ToolchainType.Ninja, ToolchainType.Gradle_Ninja },
+                    MatchingToolchains = new List<ToolchainType> { ToolchainType.Ninja },
                     MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Android },
                     CommonFlags = ParseFlags("-fno-addrsig -fPIE -fPIC -DANDROID -D_FORTIFY_SOURCE=2 -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -Wa,--noexecstack -Werror=fortify-source"),
                     // https://android.googlesource.com/platform/ndk/+/master/docs/BuildSystemMaintainers.md
@@ -1080,14 +1030,14 @@ namespace TypeMake
                 },
                 new Configuration
                 {
-                    MatchingToolchains = new List<ToolchainType> { ToolchainType.Ninja, ToolchainType.Gradle_Ninja },
+                    MatchingToolchains = new List<ToolchainType> { ToolchainType.Ninja },
                     MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Android },
                     MatchingTargetArchitectures = new List<ArchitectureType> { ArchitectureType.armv7a },
                     LinkerFlags = ParseFlags("-Wl,--exclude-libs,libunwind.a")
                 },
                 new Configuration
                 {
-                    MatchingToolchains = new List<ToolchainType> { ToolchainType.Ninja, ToolchainType.Gradle_Ninja },
+                    MatchingToolchains = new List<ToolchainType> { ToolchainType.Ninja },
                     MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Android },
                     MatchingTargetArchitectures = new List<ArchitectureType> { ArchitectureType.x86 },
                     CommonFlags = ParseFlags("-mstackrealign")
@@ -1101,14 +1051,14 @@ namespace TypeMake
                 },
                 new Configuration
                 {
-                    MatchingToolchains = new List<ToolchainType> { ToolchainType.Ninja, ToolchainType.Gradle_Ninja },
+                    MatchingToolchains = new List<ToolchainType> { ToolchainType.Ninja },
                     MatchingCompilers = new List<CompilerType> { CompilerType.gcc },
                     CommonFlags = ParseFlags("-fdiagnostics-color"),
                     LinkerFlags = ParseFlags("-fdiagnostics-color")
                 },
                 new Configuration
                 {
-                    MatchingToolchains = new List<ToolchainType> { ToolchainType.Ninja, ToolchainType.Gradle_Ninja },
+                    MatchingToolchains = new List<ToolchainType> { ToolchainType.Ninja },
                     MatchingCompilers = new List<CompilerType> { CompilerType.clang },
                     CommonFlags = ParseFlags("-fcolor-diagnostics -fansi-escape-codes"),
                     LinkerFlags = ParseFlags("-fcolor-diagnostics -fansi-escape-codes")
@@ -1313,7 +1263,7 @@ namespace TypeMake
                 ProjectIds.Add(ProjectName, g);
                 return g;
             }
-            else if ((Toolchain == ToolchainType.Ninja) || (Toolchain == ToolchainType.Gradle_Ninja))
+            else if (Toolchain == ToolchainType.Ninja)
             {
                 return "";
             }
@@ -1368,7 +1318,7 @@ namespace TypeMake
             {
                 return ProjectName + ".xcodeproj";
             }
-            else if ((Toolchain == ToolchainType.Ninja) || (Toolchain == ToolchainType.Gradle_Ninja))
+            else if (Toolchain == ToolchainType.Ninja)
             {
                 return ProjectName;
             }
@@ -1387,7 +1337,7 @@ namespace TypeMake
             {
                 return BuildDirectory / "projects";
             }
-            else if ((Toolchain == ToolchainType.Ninja) || (Toolchain == ToolchainType.Gradle_Ninja))
+            else if (Toolchain == ToolchainType.Ninja)
             {
                 return BuildDirectory / "projects";
             }
@@ -1533,23 +1483,6 @@ namespace TypeMake
                     var SimpleProjectName = ProjectName.Split(':').First();
                     return $"batch/{SimpleProjectName}".AsPath() / OutputFileName;
                 }
-                else if (Toolchain == ToolchainType.Gradle_Ninja)
-                {
-                    var SimpleProjectName = ProjectName.Split(':').First();
-                    if (TargetType == TargetType.GradleApplication)
-                    {
-                        return $"gradle/{SimpleProjectName}/build/outputs/apk/{ConfigurationType.ToString().ToLowerInvariant()}/{OutputFileName.AsPath().FileNameWithoutExtension}-{ConfigurationType.ToString().ToLowerInvariant()}.apk".AsPath();
-                    }
-                    else if (TargetType == TargetType.GradleLibrary)
-                    {
-                        var Unsigned = ConfigurationType == ConfigurationType.Release ? "-unsigned" : "";
-                        return $"gradle/{SimpleProjectName}/build/outputs/aar/{OutputFileName.AsPath().FileNameWithoutExtension}-{ConfigurationType.ToString().ToLowerInvariant()}{Unsigned}.aar".AsPath();
-                    }
-                    else
-                    {
-                        throw new NotSupportedException();
-                    }
-                }
                 else
                 {
                     throw new NotSupportedException();
@@ -1581,7 +1514,7 @@ namespace TypeMake
                     }
                 }
             }
-            else if ((Toolchain == ToolchainType.Ninja) || (Toolchain == ToolchainType.Gradle_Ninja))
+            else if (Toolchain == ToolchainType.Ninja)
             {
                 return $"{ConfigurationType}".AsPath() / OutputFileName;
             }

@@ -499,6 +499,33 @@ namespace TypeMake.Cpp
                 throw new NotSupportedException("NotSupportedHost: " + OperatingSystem.ToString() + " " + Architecture.ToString());
             }
         }
+        public static String GetNdkArchitectureString(ArchitectureType Architecture)
+        {
+            if (Architecture == Cpp.ArchitectureType.x86)
+            {
+                return "i686";
+            }
+            else if (Architecture == Cpp.ArchitectureType.x64)
+            {
+                return "x86_64";
+            }
+            else if (Architecture == Cpp.ArchitectureType.armv7a)
+            {
+                return "arm";
+            }
+            else if (Architecture == Cpp.ArchitectureType.arm64)
+            {
+                return "aarch64";
+            }
+            else if (Architecture == ArchitectureType.riscv64)
+            {
+                return "riscv64";
+            }
+            else
+            {
+                throw new NotSupportedException("NotSupportedArchitecture: " + Architecture.ToString());
+            }
+        }
         public static String GetTargetTripletString(ArchitectureType Architecture)
         {
             if (Architecture == Cpp.ArchitectureType.x86)

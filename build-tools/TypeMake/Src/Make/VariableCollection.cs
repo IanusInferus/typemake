@@ -261,7 +261,7 @@ namespace TypeMake
                     }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
                     {
-                        return VariableSpecCreateEnumSelection(Cpp.ToolchainType.Ninja, new HashSet<Cpp.ToolchainType> { Cpp.ToolchainType.Ninja, Cpp.ToolchainType.Gradle_Ninja });
+                        return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.ToolchainType.Ninja.ToString()));
                     }
                     else
                     {
@@ -644,7 +644,7 @@ namespace TypeMake
                     }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
                     {
-                        DefaultBuildDir = Variables.SourceDirectory / $"build/android_{Variables.TargetArchitecture}_{Variables.Toolchain.ToString().Replace("Gradle_", "G")}_{Variables.Configuration}";
+                        DefaultBuildDir = Variables.SourceDirectory / $"build/android_{Variables.TargetArchitecture}_{Variables.Toolchain}_{Variables.Configuration}";
                     }
                     else
                     {
@@ -1040,7 +1040,7 @@ namespace TypeMake
                 DependentVariableNames = new List<String> { nameof(Variables.HostOperatingSystem), nameof(Variables.TargetOperatingSystem), nameof(Variables.Toolchain), nameof(Variables.SourceDirectory) },
                 GetVariableSpec = () =>
                 {
-                    if ((Variables.Toolchain == Cpp.ToolchainType.Ninja) || (Variables.Toolchain == Cpp.ToolchainType.Gradle_Ninja))
+                    if (Variables.Toolchain == Cpp.ToolchainType.Ninja)
                     {
                         if (Variables.HostOperatingSystem == Cpp.OperatingSystemType.Windows)
                         {
@@ -1096,7 +1096,7 @@ namespace TypeMake
                 IsHidden = true,
                 GetVariableSpec = () =>
                 {
-                    if ((Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android) && ((Variables.Toolchain == Cpp.ToolchainType.Gradle_Ninja) || (Variables.Toolchain == Cpp.ToolchainType.Ninja)))
+                    if ((Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android) && (Variables.Toolchain == Cpp.ToolchainType.Ninja))
                     {
                         if (Variables.HostOperatingSystem == Cpp.OperatingSystemType.Windows)
                         {
@@ -1159,7 +1159,7 @@ namespace TypeMake
                 DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.TargetArchitecture), nameof(Variables.Toolchain), nameof(Variables.Compiler), nameof(Variables.LLVM), "AndroidVariables" },
                 GetVariableSpec = () =>
                 {
-                    if ((Variables.Toolchain == Cpp.ToolchainType.Ninja) || (Variables.Toolchain == Cpp.ToolchainType.Gradle_Ninja) || ((Variables.Toolchain == Cpp.ToolchainType.VisualStudio) && (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)))
+                    if ((Variables.Toolchain == Cpp.ToolchainType.Ninja) || ((Variables.Toolchain == Cpp.ToolchainType.VisualStudio) && (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)))
                     {
                         if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
                         {
@@ -1218,7 +1218,7 @@ namespace TypeMake
                 DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.TargetArchitecture), nameof(Variables.Toolchain), nameof(Variables.Compiler), nameof(Variables.LLVM), "AndroidVariables" },
                 GetVariableSpec = () =>
                 {
-                    if ((Variables.Toolchain == Cpp.ToolchainType.Ninja) || (Variables.Toolchain == Cpp.ToolchainType.Gradle_Ninja) || ((Variables.Toolchain == Cpp.ToolchainType.VisualStudio) && (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)))
+                    if ((Variables.Toolchain == Cpp.ToolchainType.Ninja) || ((Variables.Toolchain == Cpp.ToolchainType.VisualStudio) && (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)))
                     {
                         if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
                         {
@@ -1277,7 +1277,7 @@ namespace TypeMake
                 DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.TargetArchitecture), nameof(Variables.Toolchain), nameof(Variables.Compiler), nameof(Variables.LLVM), "AndroidVariables" },
                 GetVariableSpec = () =>
                 {
-                    if ((Variables.Toolchain == Cpp.ToolchainType.Ninja) || (Variables.Toolchain == Cpp.ToolchainType.Gradle_Ninja) || ((Variables.Toolchain == Cpp.ToolchainType.VisualStudio) && (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)))
+                    if ((Variables.Toolchain == Cpp.ToolchainType.Ninja) || ((Variables.Toolchain == Cpp.ToolchainType.VisualStudio) && (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)))
                     {
                         if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
                         {
@@ -1335,7 +1335,7 @@ namespace TypeMake
                 DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.TargetArchitecture), nameof(Variables.Toolchain), nameof(Variables.Compiler), nameof(Variables.LLVM), "AndroidVariables" },
                 GetVariableSpec = () =>
                 {
-                    if ((Variables.Toolchain == Cpp.ToolchainType.Ninja) || (Variables.Toolchain == Cpp.ToolchainType.Gradle_Ninja))
+                    if (Variables.Toolchain == Cpp.ToolchainType.Ninja)
                     {
                         if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Windows)
                         {
