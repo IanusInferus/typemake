@@ -61,11 +61,11 @@ MacOS: XCode(13.0) mono(6.12)
 
 iOS: XCode(13.0) mono(6.12)
 
-Android: JDK(11.x) AndroidSDK("build-tools;33.0.0" "platforms;android-28" "ndk;25.0.8775105")
+Android: JDK(17.x) AndroidSDK("build-tools;34.0.0" "platforms;android-28" "ndk;26.0.10792818")
 
-Android on Linux(openSUSE 15.4): java-11-openjdk-devel
+Android on Linux(openSUSE 15.4): java-17-openjdk-devel
 
-Android on Linux(Ubuntu 20.04): openjdk-11-jdk
+Android on Linux(Ubuntu 20.04): openjdk-17-jdk
 
 Android on Android: ninja mono(https://github.com/IanusInferus/termux-mono) {OpenJDK(11.0.1), AndroidSDK, AndroidNDK(r23)}(https://github.com/Lzhiyong/termux-ndk/releases, only Android 10.0 is tested)
 
