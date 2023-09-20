@@ -45,9 +45,9 @@ Windows: VS2022 .Net(4.8) \[LLVM(12.0.0-win64)\] \[[C++ Clang-cl for v143 build 
 
 Linux: mono-devel(6.12)
 
-Linux(openSUSE 15.4) with clang: clang(13.0.1) libc++-devel(13.0.1) llvm(13.0.1) lld(13.0.1) [gcc11(x64-only)] (Compiler=clang)
+Linux(openSUSE 15.4) with clang: clang15(15.0.7) libc++-devel(15.0.7) llvm15(15.0.7) lld15(15.0.7) [gcc12(x64-only)] (Compiler=clang CC=clang-15 CXX=clang++-15 AR=llvm-ar STRIP=llvm-strip)
 
-Linux(openSUSE 15.4) with gcc: gcc11-c++(11.3.0) \[gcc11-c++-32bit(11.3.0)\] (CC=gcc-11 CXX=g++-11)
+Linux(openSUSE 15.4) with gcc: gcc12-c++(12.3.0) \[gcc12-c++-32bit(12.3.0)\] (CC=gcc-12 CXX=g++-11)
 
 Linux(Ubuntu 20.04) with clang: clang-12(12.0.0) libc++-12-dev(12.0.0) libc++abi-12-dev(12.0.0) llvm-12(12.0.0) lld-12(12.0.0) [gcc-10(x64-only)] (Compiler=clang CC=clang-12 CXX=clang++-12 AR=llvm-ar-12 STRIP=llvm-strip-12)
 
@@ -57,9 +57,9 @@ Linux with musl and clang(x86/x64/armv7a/arm64/riscv64): musl libc toolchain (Co
 
 Linux with musl and gcc(x86/x64/armv7a/arm64/riscv64): musl-cross-make (CppLibraryForm=Static CC=xxx-linux-musl-gcc CXX=xxx-linux-musl-g++ AR=xxx-linux-musl-ar)
 
-MacOS: XCode(13.0) mono(6.12)
+MacOS: XCode(15) mono(6.12)
 
-iOS: XCode(13.0) mono(6.12)
+iOS: XCode(15) mono(6.12)
 
 Android: JDK(17.x) AndroidSDK("build-tools;34.0.0" "platforms;android-28" "ndk;26.0.10792818")
 

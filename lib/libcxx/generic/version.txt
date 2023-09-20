@@ -1,8 +1,9 @@
 # http://releases.llvm.org/download.html
 
-wget https://github.com/llvm/llvm-project/releases/download/llvmorg-11.0.0/libcxx-11.0.0.src.tar.xz
-wget https://github.com/llvm/llvm-project/releases/download/llvmorg-11.0.0/libcxxabi-11.0.0.src.tar.xz
+wget https://github.com/llvm/llvm-project/releases/download/llvmorg-17.0.1/libcxx-17.0.1.src.tar.xz
+wget https://github.com/llvm/llvm-project/releases/download/llvmorg-17.0.1/libcxxabi-17.0.1.src.tar.xz
 
 mkdir -p ../../../build/lib/libcxx/generic
-tar xf libcxx-11.0.0.src.tar.xz --directory=../../../build/lib/libcxx/generic
-tar xf libcxxabi-11.0.0.src.tar.xz --directory=../../../build/lib/libcxx/generic
+tar xf libcxx-17.0.1.src.tar.xz --directory=../../../build/lib/libcxx/generic
+tar xf libcxxabi-17.0.1.src.tar.xz --directory=../../../build/lib/libcxx/generic
+>../../../build/lib/libcxx/generic/libcxx-17.0.1.src/include/__config_site

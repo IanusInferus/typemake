@@ -180,8 +180,57 @@ namespace TypeMake
                 }
                 var libcxxDir = libcxxDirs.Single();
                 var libcxxabiDir = libcxxabiDirs.Single();
-                var libcxxSources = GetFilesInDirectory(libcxxDir / "include", TargetOperatingSystem, true).Concat(GetFilesInDirectory(libcxxDir / "src", TargetOperatingSystem, true).Where(f => !f.Path.In(libcxxDir / "src/support") || f.Path.In(libcxxDir / "src/support/runtime"))).ToList();
+                var libcxxSources = GetFilesInDirectory(libcxxDir / "include", TargetOperatingSystem, true).Concat(GetFilesInDirectory(libcxxDir / "src", TargetOperatingSystem, true).Where(f => (!f.Path.In(libcxxDir / "src/support") || f.Path.In(libcxxDir / "src/support/runtime"))).Where(f => !f.Path.In(libcxxDir / "src/pstl") || ((TargetOperatingSystem == OperatingSystemType.MacOS) || (TargetOperatingSystem == OperatingSystemType.iOS)))).ToList();
                 var libcxxabiSources = GetFilesInDirectory(libcxxabiDir / "include", TargetOperatingSystem, true).Concat(GetFilesInDirectory(libcxxabiDir / "src", TargetOperatingSystem, true)).ToList();
+
+                var Configurations = new List<Configuration>
+                {
+                    new Configuration
+                    {
+                        MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.MacOS, OperatingSystemType.iOS },
+                        IncludeDirectories = new List<PathString> { libcxxDir / "include" },
+                        Defines = ParseDefines("_LIBCPP_DISABLE_VISIBILITY_ANNOTATIONS;_LIBCPP_DISABLE_AVAILABILITY;_LIBCPP_HIDDEN=__attribute__ ((__visibility__(\"hidden\")))"),
+                        CppFlags = new List<String> { "-nostdinc++" },
+                        LinkerFlags = new List<String> { "-nostdlib++", "-lc++abi" }
+                    },
+                    new Configuration
+                    {
+                        MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Linux, OperatingSystemType.Android },
+                        IncludeDirectories = new List<PathString> { libcxxabiDir / "include", libcxxDir / "include" },
+                        Defines = ParseDefines("_LIBCPP_DISABLE_VISIBILITY_ANNOTATIONS;_LIBCPP_DISABLE_AVAILABILITY;_LIBCPP_HIDDEN=__attribute__ ((__visibility__(\"hidden\")))"),
+                        CppFlags = new List<String> { "-nostdinc++" },
+                        LinkerFlags = new List<String> { "-nostdlib++" }
+                    },
+                    new Configuration
+                    {
+                        MatchingCLibraries = new List<CLibraryType> { CLibraryType.musl },
+                        Defines = ParseDefines("_LIBCPP_HAS_MUSL_LIBC")
+                    },
+                    new Configuration
+                    {
+                        Defines = ParseDefines("_LIBCPP_ABI_VERSION=2;_LIBCPP_ABI_NAMESPACE=__2;_LIBCPP_ENABLE_ASSERTIONS_DEFAULT=0")
+                    },
+                    new Configuration
+                    {
+                        MatchingConfigurationTypes = new List<ConfigurationType> { ConfigurationType.Debug },
+                        Defines = ParseDefines("_LIBCPP_ENABLE_HARDENED_MODE_DEFAULT=0;_LIBCPP_ENABLE_DEBUG_MODE_DEFAULT=1")
+                    },
+                    new Configuration
+                    {
+                        MatchingConfigurationTypes = new List<ConfigurationType> { ConfigurationType.Release },
+                        Defines = ParseDefines("_LIBCPP_ENABLE_HARDENED_MODE_DEFAULT=1;_LIBCPP_ENABLE_DEBUG_MODE_DEFAULT=0")
+                    },
+                    new Configuration
+                    {
+                        MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Windows, OperatingSystemType.Linux, OperatingSystemType.Android },
+                        Defines = ParseDefines("_LIBCPP_PSTL_CPU_BACKEND_THREAD")
+                    },
+                    new Configuration
+                    {
+                        MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.MacOS, OperatingSystemType.iOS },
+                        Defines = ParseDefines("_LIBCPP_PSTL_CPU_BACKEND_LIBDISPATCH")
+                    }
+                };
 
                 Projects.Add(new ProjectDescription
                 {
@@ -192,59 +241,26 @@ namespace TypeMake
                         VirtualDir = "lib",
                         FilePath = BuildDirectory / "projects" / GetProjectFileName(ModuleName),
                         TargetType = TargetType.IntermediateStaticLibrary,
-                        Configurations = new List<Configuration>
+                        Configurations = (new List<Configuration>
                         {
                             new Configuration
                             {
                                 MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.MacOS, OperatingSystemType.iOS },
-                                IncludeDirectories = new List<PathString> { libcxxDir / "include" },
-                                Defines = ParseDefines("_LIBCPP_BUILDING_LIBRARY;_LIBCPP_BUILDING_HAS_NO_ABI_LIBRARY;_LIBCPP_DISABLE_VISIBILITY_ANNOTATIONS;_LIBCPP_DISABLE_AVAILABILITY;_LIBCPP_HIDDEN=__attribute__ ((__visibility__(\"hidden\")))"),
-                                CppFlags = new List<String> { "-nostdinc++" },
+                                IncludeDirectories = new List<PathString> { libcxxDir / "include", libcxxDir / "src" },
+                                Defines = ParseDefines("_LIBCPP_BUILDING_LIBRARY;_LIBCPP_BUILDING_HAS_NO_ABI_LIBRARY"),
                                 Files = libcxxSources
                             },
                             new Configuration
                             {
-                                MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Linux },
-                                IncludeDirectories = new List<PathString> { libcxxabiDir / "include", libcxxDir / "include" },
-                                Defines = ParseDefines("_LIBCPP_BUILDING_LIBRARY;LIBCXX_BUILDING_LIBCXXABI;_LIBCPP_DISABLE_VISIBILITY_ANNOTATIONS;_LIBCPP_DISABLE_AVAILABILITY;_LIBCPP_HIDDEN=__attribute__ ((__visibility__(\"hidden\")))"),
-                                CppFlags = new List<String> { "-nostdinc++" },
+                                MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Linux, OperatingSystemType.Android },
+                                IncludeDirectories = new List<PathString> { libcxxabiDir / "include", libcxxDir / "include", libcxxDir / "src" },
+                                Defines = ParseDefines("_LIBCPP_BUILDING_LIBRARY;LIBCXX_BUILDING_LIBCXXABI"),
                                 Files = libcxxSources.Concat(libcxxabiSources).ToList()
                             },
-                            new Configuration
-                            {
-                                MatchingCLibraries = new List<CLibraryType> { CLibraryType.musl },
-                                Defines = ParseDefines("_LIBCPP_HAS_MUSL_LIBC")
-                            }
-                        }
+                        }).Concat(Configurations).ToList()
                     },
                     BaseConfigurations = GetCommonConfigurations(),
-                    ExportConfigurations = new List<Configuration>
-                    {
-                        new Configuration
-                        {
-                            MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.MacOS, OperatingSystemType.iOS },
-                            MatchingCppLibraryForms = new List<CppLibraryForm> { CppLibraryForm.Static },
-                            IncludeDirectories = new List<PathString> { libcxxDir / "include" },
-                            Defines = ParseDefines("_LIBCPP_DISABLE_VISIBILITY_ANNOTATIONS;_LIBCPP_DISABLE_AVAILABILITY;_LIBCPP_HIDDEN=__attribute__ ((__visibility__(\"hidden\")))"),
-                            CppFlags = new List<String> { "-nostdinc++" },
-                            LinkerFlags = new List<String> { "-nostdlib++", "-lc++abi" }
-                        },
-                        new Configuration
-                        {
-                            MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Linux },
-                            MatchingCppLibraries = new List<CppLibraryType> { CppLibraryType.libcxx },
-                            MatchingCppLibraryForms = new List<CppLibraryForm> { CppLibraryForm.Static },
-                            IncludeDirectories = new List<PathString> { libcxxabiDir / "include", libcxxDir / "include" },
-                            Defines = ParseDefines("_LIBCPP_DISABLE_VISIBILITY_ANNOTATIONS;_LIBCPP_DISABLE_AVAILABILITY;_LIBCPP_HIDDEN=__attribute__ ((__visibility__(\"hidden\")))"),
-                            CppFlags = new List<String> { "-nostdinc++" },
-                            LinkerFlags = new List<String> { "-nostdlib++" }
-                        },
-                        new Configuration
-                        {
-                            MatchingCLibraries = new List<CLibraryType> { CLibraryType.musl },
-                            Defines = ParseDefines("_LIBCPP_HAS_MUSL_LIBC")
-                        }
-                    },
+                    ExportConfigurations = Configurations,
                     PhysicalPath = InputDirectory,
                     DependentProjectToRequirement = DependentModuleToRequirement
                 });
@@ -415,7 +431,7 @@ namespace TypeMake
                             MatchingTargetTypes = new List<TargetType> { TargetType.DarwinApplication, TargetType.DarwinApplication, TargetType.DarwinSharedFramework },
                             Options = new Dictionary<String, String>
                             {
-                                ["xcode.target.PRODUCT_BUNDLE_IDENTIFIER"] = SolutionName + "." + TargetName
+                                ["xcode.target.PRODUCT_BUNDLE_IDENTIFIER"] = (SolutionName + "." + TargetName).ToLowerInvariant()
                             }
                         }
                     };
@@ -820,8 +836,8 @@ namespace TypeMake
                 {
                     MatchingCompilers = new List<CompilerType> { CompilerType.clang },
                     MatchingCppLibraries = new List<CppLibraryType> { CppLibraryType.libcxx },
-                    CppFlags = ParseFlags("-stdlib=libc++"),
-                    LinkerFlags = ParseFlags("-stdlib=libc++")
+                    CppFlags = ParseFlags(EnableLibcxxCompilation ? "" : "-stdlib=libc++"),
+                    LinkerFlags = ParseFlags(EnableLibcxxCompilation ? "" : "-stdlib=libc++")
                 },
                 new Configuration
                 {
@@ -886,7 +902,7 @@ namespace TypeMake
                     MatchingCppLibraries = new List<CppLibraryType> { CppLibraryType.libstdcxx, CppLibraryType.libcxx },
                     MatchingCppLibraryForms = new List<CppLibraryForm> { CppLibraryForm.Static },
                     MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Linux, OperatingSystemType.Android },
-                    LinkerFlags = ParseFlags("-static-libstdc++")
+                    LinkerFlags = ParseFlags(EnableLibcxxCompilation ? "" : "-static-libstdc++")
                 },
                 new Configuration
                 {
@@ -1009,7 +1025,7 @@ namespace TypeMake
                     MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.MacOS },
                     Options = new Dictionary<String, String>
                     {
-                        ["xcode.project.MACOSX_DEPLOYMENT_TARGET"] = "10.10"
+                        ["xcode.project.MACOSX_DEPLOYMENT_TARGET"] = "10.13"
                     }
                 },
                 new Configuration
@@ -1017,7 +1033,7 @@ namespace TypeMake
                     MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.iOS },
                     Options = new Dictionary<String, String>
                     {
-                        ["xcode.project.IPHONEOS_DEPLOYMENT_TARGET"] = "9.0"
+                        ["xcode.project.IPHONEOS_DEPLOYMENT_TARGET"] = "12.0"
                     }
                 },
                 new Configuration
