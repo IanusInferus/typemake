@@ -216,6 +216,13 @@ namespace TypeMake.Cpp
                             BuildSettings["TARGETED_DEVICE_FAMILY"] = Value.CreateString("1,2");
                         }
                     }
+                    else if (TargetOperatingSystem == OperatingSystemType.visionOS)
+                    {
+                        if ((Project.TargetType == TargetType.DynamicLibrary) || (Project.TargetType == TargetType.DarwinApplication) || (Project.TargetType == TargetType.DarwinSharedFramework))
+                        {
+                            BuildSettings["TARGETED_DEVICE_FAMILY"] = Value.CreateString("7");
+                        }
+                    }
 
                     foreach (var o in conf.Options)
                     {
@@ -481,6 +488,10 @@ namespace TypeMake.Cpp
                 else if (TargetOperatingSystem == OperatingSystemType.iOS)
                 {
                     BuildSettings["SDKROOT"] = Value.CreateString("iphoneos");
+                }
+                else if (TargetOperatingSystem == OperatingSystemType.visionOS)
+                {
+                    BuildSettings["SDKROOT"] = Value.CreateString("xros");
                 }
                 else
                 {

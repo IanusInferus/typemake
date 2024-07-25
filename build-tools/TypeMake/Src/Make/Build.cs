@@ -182,14 +182,14 @@ namespace TypeMake
                 }
                 var libcxxDir = libcxxDirs.Single();
                 var libcxxabiDir = libcxxabiDirs.Single();
-                var libcxxSources = GetFilesInDirectory(libcxxDir / "include", TargetOperatingSystem, true).Concat(GetFilesInDirectory(libcxxDir / "src", TargetOperatingSystem, true).Where(f => (!f.Path.In(libcxxDir / "src/support") || f.Path.In(libcxxDir / "src/support/runtime"))).Where(f => !f.Path.In(libcxxDir / "src/pstl") || ((TargetOperatingSystem == OperatingSystemType.MacOS) || (TargetOperatingSystem == OperatingSystemType.iOS)))).ToList();
+                var libcxxSources = GetFilesInDirectory(libcxxDir / "include", TargetOperatingSystem, true).Concat(GetFilesInDirectory(libcxxDir / "src", TargetOperatingSystem, true).Where(f => (!f.Path.In(libcxxDir / "src/support") || f.Path.In(libcxxDir / "src/support/runtime"))).Where(f => !f.Path.In(libcxxDir / "src/pstl") || ((TargetOperatingSystem == OperatingSystemType.MacOS) || (TargetOperatingSystem == OperatingSystemType.iOS) || (TargetOperatingSystem == OperatingSystemType.visionOS)))).ToList();
                 var libcxxabiSources = GetFilesInDirectory(libcxxabiDir / "include", TargetOperatingSystem, true).Concat(GetFilesInDirectory(libcxxabiDir / "src", TargetOperatingSystem, true)).ToList();
 
                 var Configurations = new List<Configuration>
                 {
                     new Configuration
                     {
-                        MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.MacOS, OperatingSystemType.iOS },
+                        MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.MacOS, OperatingSystemType.iOS, OperatingSystemType.visionOS },
                         IncludeDirectories = new List<PathString> { libcxxDir / "include" },
                         Defines = ParseDefines("_LIBCPP_DISABLE_VISIBILITY_ANNOTATIONS;_LIBCPP_DISABLE_AVAILABILITY;_LIBCPP_HIDDEN=__attribute__ ((__visibility__(\"hidden\")))"),
                         CppFlags = new List<String> { "-nostdinc++" },
@@ -229,7 +229,7 @@ namespace TypeMake
                     },
                     new Configuration
                     {
-                        MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.MacOS, OperatingSystemType.iOS },
+                        MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.MacOS, OperatingSystemType.iOS, OperatingSystemType.visionOS },
                         Defines = ParseDefines("_LIBCPP_PSTL_CPU_BACKEND_LIBDISPATCH")
                     }
                 };
@@ -247,7 +247,7 @@ namespace TypeMake
                         {
                             new Configuration
                             {
-                                MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.MacOS, OperatingSystemType.iOS },
+                                MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.MacOS, OperatingSystemType.iOS, OperatingSystemType.visionOS },
                                 IncludeDirectories = new List<PathString> { libcxxDir / "include", libcxxDir / "src" },
                                 Defines = ParseDefines("_LIBCPP_BUILDING_LIBRARY;_LIBCPP_BUILDING_HAS_NO_ABI_LIBRARY"),
                                 Files = libcxxSources
@@ -306,7 +306,7 @@ namespace TypeMake
                         PhysicalPath = InputDirectory,
                         DependentProjectToRequirement = DependentModuleToRequirement
                     });
-                    if (!((TargetOperatingSystem == OperatingSystemType.Android) || (TargetOperatingSystem == OperatingSystemType.iOS) || ((TargetOperatingSystem == OperatingSystemType.Windows) && (WindowsRuntime == WindowsRuntimeType.WinRT))))
+                    if (!((TargetOperatingSystem == OperatingSystemType.Android) || (TargetOperatingSystem == OperatingSystemType.iOS) || (TargetOperatingSystem == OperatingSystemType.visionOS) || ((TargetOperatingSystem == OperatingSystemType.Windows) && (WindowsRuntime == WindowsRuntimeType.WinRT))))
                     {
                         foreach (var TestFile in GetFilesInDirectory(InputDirectory / "test", TargetOperatingSystem, IsTargetOperatingSystemMatched))
                         {
@@ -377,7 +377,7 @@ namespace TypeMake
                 {
                     IsTargetOperatingSystemMatched = false;
                 }
-                if ((ProductTargetType == TargetType.Executable) && (TargetOperatingSystem == OperatingSystemType.iOS))
+                if ((ProductTargetType == TargetType.Executable) && ((TargetOperatingSystem == OperatingSystemType.iOS) || (TargetOperatingSystem == OperatingSystemType.visionOS)))
                 {
                     IsTargetOperatingSystemMatched = false;
                 }
@@ -429,7 +429,7 @@ namespace TypeMake
                         },
                         new Configuration
                         {
-                            MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.MacOS, OperatingSystemType.iOS },
+                            MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.MacOS, OperatingSystemType.iOS, OperatingSystemType.visionOS },
                             MatchingTargetTypes = new List<TargetType> { TargetType.DarwinApplication, TargetType.DarwinApplication, TargetType.DarwinSharedFramework },
                             Options = new Dictionary<String, String>
                             {
@@ -437,7 +437,7 @@ namespace TypeMake
                             }
                         }
                     };
-                    if ((TargetOperatingSystem != OperatingSystemType.iOS) || (ProductTargetType != TargetType.DynamicLibrary))
+                    if (((TargetOperatingSystem != OperatingSystemType.iOS) && (TargetOperatingSystem != OperatingSystemType.visionOS)) || (ProductTargetType != TargetType.DynamicLibrary))
                     {
                         Projects.Add(new ProjectDescription
                         {
@@ -463,7 +463,7 @@ namespace TypeMake
                             DependentProjectToRequirement = DependentModuleToRequirement
                         });
                     }
-                    if (((TargetOperatingSystem == OperatingSystemType.MacOS) || (TargetOperatingSystem == OperatingSystemType.iOS)) && (Toolchain == ToolchainType.XCode) && (ProductTargetType == TargetType.DynamicLibrary))
+                    if (((TargetOperatingSystem == OperatingSystemType.MacOS) || (TargetOperatingSystem == OperatingSystemType.iOS) || (TargetOperatingSystem == OperatingSystemType.visionOS)) && (Toolchain == ToolchainType.XCode) && (ProductTargetType == TargetType.DynamicLibrary))
                     {
                         var FrameworkTargetType = TargetType.DarwinSharedFramework;
                         var FrameworkName = ProductName + ".framework";
@@ -943,7 +943,7 @@ namespace TypeMake
                 },
                 new Configuration
                 {
-                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Windows, OperatingSystemType.Linux, OperatingSystemType.MacOS, OperatingSystemType.iOS },
+                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Windows, OperatingSystemType.Linux, OperatingSystemType.MacOS, OperatingSystemType.iOS, OperatingSystemType.visionOS },
                     MatchingCompilers = new List<CompilerType> { CompilerType.gcc, CompilerType.clang },
                     MatchingConfigurationTypes = new List<ConfigurationType> { ConfigurationType.Release },
                     CommonFlags = ParseFlags("-O3")
@@ -1036,6 +1036,14 @@ namespace TypeMake
                     Options = new Dictionary<String, String>
                     {
                         ["xcode.project.IPHONEOS_DEPLOYMENT_TARGET"] = "12.0"
+                    }
+                },
+                new Configuration
+                {
+                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.visionOS },
+                    Options = new Dictionary<String, String>
+                    {
+                        ["xcode.project.XROS_DEPLOYMENT_TARGET"] = "2.0"
                     }
                 },
                 new Configuration
@@ -1187,7 +1195,7 @@ namespace TypeMake
                     Configurations.Add(new Configuration { Options = new Dictionary<String, String> { ["xcode.buildFile.platformFilter"] = "maccatalyst" } });
                 }
             }
-            if (((TargetOperatingSystem == OperatingSystemType.MacOS) || (TargetOperatingSystem == OperatingSystemType.iOS)) && Extensions.Contains("mm"))
+            if (((TargetOperatingSystem == OperatingSystemType.MacOS) || (TargetOperatingSystem == OperatingSystemType.iOS) || (TargetOperatingSystem == OperatingSystemType.visionOS)) && Extensions.Contains("mm"))
             {
                 return new Cpp.File { Path = FilePath, Type = FileType.ObjectiveCppSource, Configurations = Configurations };
             }
@@ -1216,7 +1224,7 @@ namespace TypeMake
             }
             else if (Ext == "m")
             {
-                if ((TargetOperatingSystem == OperatingSystemType.iOS) || (TargetOperatingSystem == OperatingSystemType.MacOS))
+                if ((TargetOperatingSystem == OperatingSystemType.MacOS) || (TargetOperatingSystem == OperatingSystemType.iOS) || (TargetOperatingSystem == OperatingSystemType.visionOS))
                 {
                     return new Cpp.File { Path = FilePath, Type = FileType.ObjectiveCSource, Configurations = Configurations };
                 }
@@ -1227,7 +1235,7 @@ namespace TypeMake
             }
             else if (Ext == "mm")
             {
-                if ((TargetOperatingSystem == OperatingSystemType.iOS) || (TargetOperatingSystem == OperatingSystemType.MacOS))
+                if ((TargetOperatingSystem == OperatingSystemType.MacOS) || (TargetOperatingSystem == OperatingSystemType.iOS) || (TargetOperatingSystem == OperatingSystemType.visionOS))
                 {
                     return new Cpp.File { Path = FilePath, Type = FileType.ObjectiveCppSource, Configurations = Configurations };
                 }
@@ -1404,7 +1412,7 @@ namespace TypeMake
                     throw new NotSupportedException();
                 }
             }
-            else if (TargetOperatingSystem == OperatingSystemType.MacOS)
+            else if ((TargetOperatingSystem == OperatingSystemType.MacOS) || (TargetOperatingSystem == OperatingSystemType.iOS) || (TargetOperatingSystem == OperatingSystemType.visionOS))
             {
                 if (TargetType == TargetType.Executable)
                 {
@@ -1458,33 +1466,6 @@ namespace TypeMake
                     throw new NotSupportedException();
                 }
             }
-            else if (TargetOperatingSystem == OperatingSystemType.iOS)
-            {
-                if (TargetType == TargetType.Executable)
-                {
-                    return TargetName;
-                }
-                else if ((TargetType == TargetType.StaticLibrary) || (TargetType == TargetType.IntermediateStaticLibrary))
-                {
-                    return "lib" + TargetName + ".a";
-                }
-                else if (TargetType == TargetType.DynamicLibrary)
-                {
-                    return "lib" + TargetName + ".dylib";
-                }
-                else if (TargetType == TargetType.DarwinApplication)
-                {
-                    return TargetName + ".app";
-                }
-                else if (TargetType == TargetType.DarwinSharedFramework)
-                {
-                    return TargetName + ".framework";
-                }
-                else
-                {
-                    throw new NotSupportedException();
-                }
-            }
             else
             {
                 throw new NotSupportedException();
@@ -1520,7 +1501,7 @@ namespace TypeMake
                 {
                     return $"{ConfigurationType}".AsPath() / OutputFileName;
                 }
-                else
+                else if (TargetOperatingSystem == OperatingSystemType.iOS)
                 {
                     if (EnableMacCatalyst)
                     {
@@ -1530,6 +1511,14 @@ namespace TypeMake
                     {
                         return $"{ConfigurationType}-iphoneos".AsPath() / OutputFileName;
                     }
+                }
+                else if (TargetOperatingSystem == OperatingSystemType.visionOS)
+                {
+                    return $"{ConfigurationType}-xros".AsPath() / OutputFileName;
+                }
+                else
+                {
+                    throw new InvalidOperationException();
                 }
             }
             else if (Toolchain == ToolchainType.Ninja)

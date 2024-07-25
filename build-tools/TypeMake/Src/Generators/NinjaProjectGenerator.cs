@@ -269,7 +269,7 @@ namespace TypeMake.Cpp
                 {
                     TargetName = (Project.TargetName ?? Project.Name) + ".dll";
                 }
-                else if ((TargetOperatingSystem == OperatingSystemType.MacOS) || (TargetOperatingSystem == OperatingSystemType.iOS))
+                else if ((TargetOperatingSystem == OperatingSystemType.MacOS) || (TargetOperatingSystem == OperatingSystemType.iOS) || (TargetOperatingSystem == OperatingSystemType.visionOS))
                 {
                     TargetName = "lib" + (Project.TargetName ?? Project.Name) + ".dylib";
                 }

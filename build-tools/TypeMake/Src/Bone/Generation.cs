@@ -117,7 +117,7 @@ namespace TypeMake
                     }
                 }
             }
-            else if (v.TargetOperatingSystem == Cpp.OperatingSystemType.iOS)
+            else if ((v.TargetOperatingSystem == Cpp.OperatingSystemType.iOS) || (v.TargetOperatingSystem == Cpp.OperatingSystemType.visionOS))
             {
                 BuildScript.GenerateBuildScriptXCode(v.HostOperatingSystem, v.BuildDirectory, v.Configuration, v.MaxProcessCount, v.XCodeDir, CppSortedProjectNames, v.ForceRegenerate);
                 if (v.BuildNow)

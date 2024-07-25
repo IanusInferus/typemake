@@ -21,7 +21,8 @@ namespace TypeMake.Cpp
         Linux,
         MacOS,
         Android,
-        iOS
+        iOS,
+        visionOS
     }
     public enum ArchitectureType
     {

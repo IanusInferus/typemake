@@ -32,6 +32,7 @@ Target Operating System vs Building Operating System
 |              Android arm64             |                      |                      |                      |  Termux+Ninja+clang  |
 |              iOS arm64/x64             |                      |                      |         XCode        |                      |
 |         iOS Simulator x64/arm64        |                      |                      |         XCode        |                      |
+|             visionOS arm64             |                      |                      |  XCode(MacOS arm64)  |                      |
 
 Win32 and WinRT targets are both supported, but WinRT only supports libraries and not applications.
 

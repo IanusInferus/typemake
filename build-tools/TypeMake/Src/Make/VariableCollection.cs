@@ -135,13 +135,17 @@ namespace TypeMake
                     {
                         return VariableSpecCreateEnumSelection(Variables.HostArchitecture, new HashSet<Cpp.ArchitectureType> { Cpp.ArchitectureType.x64, Cpp.ArchitectureType.arm64 });
                     }
+                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
+                    {
+                        return VariableSpecCreateEnumSelection(Cpp.ArchitectureType.arm64, new HashSet<Cpp.ArchitectureType> { Cpp.ArchitectureType.x86, Cpp.ArchitectureType.x64, Cpp.ArchitectureType.armv7a, Cpp.ArchitectureType.arm64, Cpp.ArchitectureType.riscv64 });
+                    }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.iOS)
                     {
                         return VariableSpecCreateEnumSelection(Cpp.ArchitectureType.arm64, new HashSet<Cpp.ArchitectureType> { Cpp.ArchitectureType.x64, Cpp.ArchitectureType.armv7a, Cpp.ArchitectureType.arm64 });
                     }
-                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
+                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.visionOS)
                     {
-                        return VariableSpecCreateEnumSelection(Cpp.ArchitectureType.arm64, new HashSet<Cpp.ArchitectureType> { Cpp.ArchitectureType.x86, Cpp.ArchitectureType.x64, Cpp.ArchitectureType.armv7a, Cpp.ArchitectureType.arm64, Cpp.ArchitectureType.riscv64 });
+                        return VariableSpecCreateEnumSelection(Cpp.ArchitectureType.arm64, new HashSet<Cpp.ArchitectureType> { Cpp.ArchitectureType.arm64 });
                     }
                     else
                     {
@@ -255,13 +259,17 @@ namespace TypeMake
                             return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.ToolchainType.XCode.ToString()));
                         }
                     }
+                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
+                    {
+                        return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.ToolchainType.Ninja.ToString()));
+                    }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.iOS)
                     {
                         return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.ToolchainType.XCode.ToString()));
                     }
-                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
+                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.visionOS)
                     {
-                        return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.ToolchainType.Ninja.ToString()));
+                        return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.ToolchainType.XCode.ToString()));
                     }
                     else
                     {
@@ -314,11 +322,15 @@ namespace TypeMake
                     {
                         return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.CompilerType.clang.ToString()));
                     }
+                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
+                    {
+                        return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.CompilerType.clang.ToString()));
+                    }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.iOS)
                     {
                         return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.CompilerType.clang.ToString()));
                     }
-                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
+                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.visionOS)
                     {
                         return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.CompilerType.clang.ToString()));
                     }
@@ -348,13 +360,17 @@ namespace TypeMake
                     {
                         return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.CLibraryType.libSystem.ToString()));
                     }
+                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
+                    {
+                        return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.CLibraryType.Bionic.ToString()));
+                    }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.iOS)
                     {
                         return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.CLibraryType.libSystem.ToString()));
                     }
-                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
+                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.visionOS)
                     {
-                        return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.CLibraryType.Bionic.ToString()));
+                        return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.CLibraryType.libSystem.ToString()));
                     }
                     else
                     {
@@ -411,11 +427,15 @@ namespace TypeMake
                     {
                         return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.CppLibraryType.libcxx.ToString()));
                     }
+                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
+                    {
+                        return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.CppLibraryType.libcxx.ToString()));
+                    }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.iOS)
                     {
                         return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.CppLibraryType.libcxx.ToString()));
                     }
-                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
+                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.visionOS)
                     {
                         return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.CppLibraryType.libcxx.ToString()));
                     }
@@ -638,13 +658,17 @@ namespace TypeMake
                             DefaultBuildDir = Variables.SourceDirectory / $"build/mac_{Variables.TargetArchitecture}_{Variables.Toolchain}_{Variables.Configuration}";
                         }
                     }
+                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
+                    {
+                        DefaultBuildDir = Variables.SourceDirectory / $"build/android_{Variables.TargetArchitecture}_{Variables.Toolchain}_{Variables.Configuration}";
+                    }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.iOS)
                     {
                         DefaultBuildDir = Variables.SourceDirectory / $"build/ios_{Variables.TargetArchitecture}";
                     }
-                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
+                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.visionOS)
                     {
-                        DefaultBuildDir = Variables.SourceDirectory / $"build/android_{Variables.TargetArchitecture}_{Variables.Toolchain}_{Variables.Configuration}";
+                        DefaultBuildDir = Variables.SourceDirectory / $"build/visionos_{Variables.TargetArchitecture}";
                     }
                     else
                     {
@@ -736,7 +760,7 @@ namespace TypeMake
                 DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.Toolchain) },
                 GetVariableSpec = () =>
                 {
-                    if (((Variables.TargetOperatingSystem == Cpp.OperatingSystemType.MacOS) && (Variables.Toolchain == Cpp.ToolchainType.XCode)) || (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.iOS))
+                    if (((Variables.TargetOperatingSystem == Cpp.OperatingSystemType.MacOS) && (Variables.Toolchain == Cpp.ToolchainType.XCode)) || (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.iOS) || (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.visionOS))
                     {
                         return VariableSpec.CreateString(new StringSpec
                         {
@@ -757,7 +781,7 @@ namespace TypeMake
                 DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.Toolchain) },
                 GetVariableSpec = () =>
                 {
-                    if (((Variables.TargetOperatingSystem == Cpp.OperatingSystemType.MacOS) && (Variables.Toolchain == Cpp.ToolchainType.XCode)) || (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.iOS))
+                    if (((Variables.TargetOperatingSystem == Cpp.OperatingSystemType.MacOS) && (Variables.Toolchain == Cpp.ToolchainType.XCode)) || (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.iOS) || (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.visionOS))
                     {
                         return VariableSpec.CreateString(new StringSpec
                         {
@@ -962,7 +986,7 @@ namespace TypeMake
                 DependentVariableNames = new List<String> { nameof(Variables.HostOperatingSystem), nameof(Variables.TargetOperatingSystem), nameof(Variables.EnableJava), nameof(PathValidator) },
                 GetVariableSpec = () =>
                 {
-                    if (Variables.EnableJava && (Variables.TargetOperatingSystem != Cpp.OperatingSystemType.iOS))
+                    if (Variables.EnableJava && ((Variables.TargetOperatingSystem != Cpp.OperatingSystemType.iOS) && (Variables.TargetOperatingSystem != Cpp.OperatingSystemType.visionOS)))
                     {
                         var DefaultJdk = Environment.GetEnvironmentVariable("JAVA_HOME").AsPath();
                         if (Variables.HostOperatingSystem == Cpp.OperatingSystemType.MacOS)
