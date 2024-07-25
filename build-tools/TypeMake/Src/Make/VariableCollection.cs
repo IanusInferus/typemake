@@ -790,7 +790,7 @@ namespace TypeMake
             l.Add(new VariableItem
             {
                 VariableName = nameof(Variables.VSDir),
-                DependentVariableNames = new List<String> { nameof(Variables.HostOperatingSystem), nameof(Variables.TargetOperatingSystem), nameof(Variables.Toolchain), nameof(PathValidator) },
+                DependentVariableNames = new List<String> { nameof(Variables.HostOperatingSystem), nameof(Variables.Toolchain), nameof(PathValidator) },
                 GetVariableSpec = () =>
                 {
                     if (Variables.Toolchain == Cpp.ToolchainType.VisualStudio)
@@ -852,6 +852,34 @@ namespace TypeMake
                     }
                 },
                 SetVariableValue = v => Variables.VSVersion = v.Integer
+            });
+
+            l.Add(new VariableItem
+            {
+                VariableName = nameof(Variables.XCodeDir),
+                DependentVariableNames = new List<String> { nameof(Variables.HostOperatingSystem), nameof(Variables.Toolchain), nameof(PathValidator) },
+                GetVariableSpec = () =>
+                {
+                    if (Variables.Toolchain == Cpp.ToolchainType.XCode)
+                    {
+                        String DefaultXCodeDir = "";
+                        if (Variables.HostOperatingSystem == Cpp.OperatingSystemType.MacOS)
+                        {
+                            DefaultXCodeDir = "/Applications/Xcode.app";
+                        }
+                        return VariableSpec.CreatePath(new PathStringSpec
+                        {
+                            DefaultValue = DefaultXCodeDir,
+                            IsDirectory = true,
+                            Validator = PathValidator
+                        });
+                    }
+                    else
+                    {
+                        return VariableSpec.CreateNotApply(VariableValue.CreatePath(null));
+                    }
+                },
+                SetVariableValue = v => Variables.XCodeDir = v.Path
             });
 
             l.Add(new VariableItem
@@ -1492,10 +1520,10 @@ namespace TypeMake
             l.Add(new VariableItem
             {
                 VariableName = nameof(Variables.SelectedProjects),
-                DependentVariableNames = new List<String> { nameof(Variables.HostOperatingSystem), nameof(Variables.HostArchitecture), nameof(Variables.TargetOperatingSystem), nameof(Variables.TargetArchitecture), nameof(Variables.WindowsRuntime), nameof(Variables.EnableiOSSimulator), nameof(Variables.EnableMacCatalyst), nameof(Variables.Toolchain), nameof(Variables.Compiler), nameof(Variables.CLibrary), nameof(Variables.CLibraryForm), nameof(Variables.CppLibrary), nameof(Variables.CppLibraryForm), nameof(Variables.Configuration), nameof(Variables.EnableModule), nameof(Variables.EnableCustomSysroot), nameof(Variables.CustomSysroot), nameof(Variables.EnableLibcxxCompilation), nameof(Variables.SourceDirectory), nameof(Variables.BuildDirectory), nameof(Variables.XCodeDevelopmentTeam), nameof(Variables.XCodeProvisioningProfileSpecifier), nameof(Variables.VSDir), nameof(Variables.VSVersion), nameof(Variables.LLVM), nameof(Variables.Jdk), nameof(Variables.AndroidSdk), nameof(Variables.AndroidNdk), nameof(Variables.CC), nameof(Variables.CXX), nameof(Variables.AR), nameof(Variables.STRIP), nameof(Variables.CommonFlags), nameof(Variables.CFlags), nameof(Variables.CppFlags), nameof(Variables.LinkerFlags), nameof(Variables.PostLinkerFlags), nameof(Variables.ForceRegenerate), nameof(Variables.EnableNonTargetingOperatingSystemDummy) },
+                DependentVariableNames = new List<String> { nameof(Variables.HostOperatingSystem), nameof(Variables.HostArchitecture), nameof(Variables.TargetOperatingSystem), nameof(Variables.TargetArchitecture), nameof(Variables.WindowsRuntime), nameof(Variables.EnableiOSSimulator), nameof(Variables.EnableMacCatalyst), nameof(Variables.Toolchain), nameof(Variables.Compiler), nameof(Variables.CLibrary), nameof(Variables.CLibraryForm), nameof(Variables.CppLibrary), nameof(Variables.CppLibraryForm), nameof(Variables.Configuration), nameof(Variables.EnableModule), nameof(Variables.EnableCustomSysroot), nameof(Variables.CustomSysroot), nameof(Variables.EnableLibcxxCompilation), nameof(Variables.SourceDirectory), nameof(Variables.BuildDirectory), nameof(Variables.XCodeDevelopmentTeam), nameof(Variables.XCodeProvisioningProfileSpecifier), nameof(Variables.VSDir), nameof(Variables.VSVersion), nameof(Variables.XCodeDir), nameof(Variables.LLVM), nameof(Variables.Jdk), nameof(Variables.AndroidSdk), nameof(Variables.AndroidNdk), nameof(Variables.CC), nameof(Variables.CXX), nameof(Variables.AR), nameof(Variables.STRIP), nameof(Variables.CommonFlags), nameof(Variables.CFlags), nameof(Variables.CppFlags), nameof(Variables.LinkerFlags), nameof(Variables.PostLinkerFlags), nameof(Variables.ForceRegenerate), nameof(Variables.EnableNonTargetingOperatingSystemDummy) },
                 GetVariableSpec = () =>
                 {
-                    var b = new Build(Variables.HostOperatingSystem, Variables.HostArchitecture, Variables.TargetOperatingSystem, Variables.TargetArchitecture, Variables.WindowsRuntime, Variables.EnableiOSSimulator, Variables.EnableMacCatalyst, Variables.Toolchain, Variables.Compiler, Variables.CLibrary, Variables.CLibraryForm, Variables.CppLibrary, Variables.CppLibraryForm, Variables.Configuration, Variables.EnableModule, Variables.EnableCustomSysroot, Variables.CustomSysroot, Variables.EnableLibcxxCompilation, Variables.SourceDirectory, Variables.BuildDirectory, Variables.XCodeDevelopmentTeam, Variables.XCodeProvisioningProfileSpecifier, Variables.VSDir, Variables.VSVersion, Variables.LLVM, Variables.EnableJava, Variables.Jdk, Variables.AndroidSdk, Variables.AndroidNdk, Variables.CC, Variables.CXX, Variables.AR, Variables.STRIP, Variables.CommonFlags, Variables.CFlags, Variables.CppFlags, Variables.LinkerFlags, Variables.PostLinkerFlags, Variables.ForceRegenerate, Variables.EnableNonTargetingOperatingSystemDummy);
+                    var b = new Build(Variables.HostOperatingSystem, Variables.HostArchitecture, Variables.TargetOperatingSystem, Variables.TargetArchitecture, Variables.WindowsRuntime, Variables.EnableiOSSimulator, Variables.EnableMacCatalyst, Variables.Toolchain, Variables.Compiler, Variables.CLibrary, Variables.CLibraryForm, Variables.CppLibrary, Variables.CppLibraryForm, Variables.Configuration, Variables.EnableModule, Variables.EnableCustomSysroot, Variables.CustomSysroot, Variables.EnableLibcxxCompilation, Variables.SourceDirectory, Variables.BuildDirectory, Variables.XCodeDevelopmentTeam, Variables.XCodeProvisioningProfileSpecifier, Variables.VSDir, Variables.VSVersion, Variables.XCodeDir, Variables.LLVM, Variables.EnableJava, Variables.Jdk, Variables.AndroidSdk, Variables.AndroidNdk, Variables.CC, Variables.CXX, Variables.AR, Variables.STRIP, Variables.CommonFlags, Variables.CFlags, Variables.CppFlags, Variables.LinkerFlags, Variables.PostLinkerFlags, Variables.ForceRegenerate, Variables.EnableNonTargetingOperatingSystemDummy);
                     Variables.b = b;
                     Projects = b.GetAvailableProjects();
                     var ProjectSet = new HashSet<String>(Projects.Values.Select(t => t.Definition.Name), StringComparer.OrdinalIgnoreCase);

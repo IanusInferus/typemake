@@ -35,6 +35,7 @@ namespace TypeMake
         public String XCodeProvisioningProfileSpecifier;
         public PathString VSDir;
         public int VSVersion;
+        public PathString XCodeDir;
         public PathString LLVM;
         public PathString Ninja;
         public bool EnableJava;

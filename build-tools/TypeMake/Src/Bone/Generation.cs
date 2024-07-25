@@ -78,7 +78,7 @@ namespace TypeMake
             {
                 if (v.Toolchain == Cpp.ToolchainType.XCode)
                 {
-                    BuildScript.GenerateBuildScriptXCode(v.HostOperatingSystem, v.BuildDirectory, v.Configuration, v.MaxProcessCount, CppSortedProjectNames, v.ForceRegenerate);
+                    BuildScript.GenerateBuildScriptXCode(v.HostOperatingSystem, v.BuildDirectory, v.Configuration, v.MaxProcessCount, v.XCodeDir, CppSortedProjectNames, v.ForceRegenerate);
                 }
                 else
                 {
@@ -119,7 +119,7 @@ namespace TypeMake
             }
             else if (v.TargetOperatingSystem == Cpp.OperatingSystemType.iOS)
             {
-                BuildScript.GenerateBuildScriptXCode(v.HostOperatingSystem, v.BuildDirectory, v.Configuration, v.MaxProcessCount, CppSortedProjectNames, v.ForceRegenerate);
+                BuildScript.GenerateBuildScriptXCode(v.HostOperatingSystem, v.BuildDirectory, v.Configuration, v.MaxProcessCount, v.XCodeDir, CppSortedProjectNames, v.ForceRegenerate);
                 if (v.BuildNow)
                 {
                     using (var d = Shell.PushDirectory(v.BuildDirectory))
