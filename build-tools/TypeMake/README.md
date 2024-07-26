@@ -62,7 +62,7 @@ MacOS: XCode(15) mono(6.12)
 
 iOS: XCode(15) mono(6.12)
 
-Android: JDK(17.x) AndroidSDK("build-tools;34.0.0" "platforms;android-28" "ndk;26.0.10792818")
+Android: JDK(17.x) AndroidSDK("build-tools;35.0.0" "platforms;android-28" "ndk;27.0.12077973")
 
 Android on Linux(openSUSE 15.4): java-17-openjdk-devel
 
