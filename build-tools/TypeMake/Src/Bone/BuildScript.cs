@@ -190,7 +190,7 @@ namespace TypeMake
             Lines.Add("set -e");
             foreach (var CppSortedProjectName in CppSortedProjectNames)
             {
-                Lines.Add($"{XCodeDir / "Contents/Developer/usr/bin/xcodebuild"} -project projects/{CppSortedProjectName}.xcodeproj -configuration {Configuration} -jobs {MaxProcessCount}");
+                Lines.Add($"{Shell.EscapeArgumentForShell(XCodeDir / "Contents/Developer/usr/bin/xcodebuild", Shell.ShellArgumentStyle.Bash)} -project projects/{CppSortedProjectName}.xcodeproj -configuration {Configuration} -jobs {MaxProcessCount}");
             }
             Lines.Add("");
             var BuildPath = BuildDirectory / "build.sh";
