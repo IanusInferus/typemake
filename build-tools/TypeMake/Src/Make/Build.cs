@@ -1130,10 +1130,8 @@ namespace TypeMake
                     },
                     new Configuration
                     {
-                        MatchingCompilers = new List<CompilerType> { CompilerType.clang },
-                        MatchingCLibraries = new List<CLibraryType> { CLibraryType.glibc },
-                        CommonFlags = new List<String> { $"--gcc-toolchain={(CustomSysroot / "usr").ToString(PathStringStyle.Unix)}" },
-                        LinkerFlags = new List<String> { $"--gcc-toolchain={(CustomSysroot / "usr").ToString(PathStringStyle.Unix)}" }
+                        MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Linux },
+                        Defines = ParseDefines("_LIBCPP_HAS_NO_C11_ALIGNED_ALLOC")
                     }
                 });
             }
