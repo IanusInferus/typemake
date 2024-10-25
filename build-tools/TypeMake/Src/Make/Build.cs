@@ -824,6 +824,12 @@ namespace TypeMake
                 },
                 new Configuration
                 {
+                    MatchingCLibraries = new List<CLibraryType> { CLibraryType.libc },
+                    CommonFlags = new List<String> { "-pthread" },
+                    LinkerFlags = new List<String> { "-pthread" }
+                },
+                new Configuration
+                {
                     MatchingCompilers = new List<CompilerType> { CompilerType.gcc, CompilerType.clang },
                     MatchingTargetArchitectures = new List<ArchitectureType> { ArchitectureType.armv7a },
                     CommonFlags = ParseFlags("-mfpu=neon")
@@ -885,7 +891,7 @@ namespace TypeMake
                 {
                     MatchingCompilers = new List<CompilerType> { CompilerType.gcc, CompilerType.clang },
                     MatchingCLibraries = new List<CLibraryType> { CLibraryType.musl },
-                    MatchingCppLibraryForms = new List<CppLibraryForm> { CppLibraryForm.Static },
+                    MatchingCLibraryForms = new List<CLibraryForm> { CppLibraryForm.Static },
                     CommonFlags = ParseFlags("-static"),
                     LinkerFlags = ParseFlags("-static -Wl,-static")
                 },
