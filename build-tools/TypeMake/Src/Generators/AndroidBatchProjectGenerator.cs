@@ -327,7 +327,7 @@ namespace TypeMake.Cpp
                 var Strip = AndroidNdk / $"toolchains/llvm/prebuilt/{GetHostArchitectureString(HostOperatingSystem, HostArchitecture)}/bin/llvm-strip";
                 var LibcxxSo = AndroidNdk / $"toolchains/llvm/prebuilt/{GetHostArchitectureString(HostOperatingSystem, HostArchitecture)}/sysroot/usr/lib/{GetTargetTripletString(TargetArchitecture)}/libc++_shared.so";
 
-                yield return @"#!/bin/bash";
+                yield return @"#!/usr/bin/env bash";
                 yield return @"set -e";
                 yield return @"";
                 yield return $@"[ -d {JniLibs} ] && rm -rf {JniLibs}";

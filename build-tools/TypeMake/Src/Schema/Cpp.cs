@@ -22,7 +22,8 @@ namespace TypeMake.Cpp
         MacOS,
         Android,
         iOS,
-        visionOS
+        visionOS,
+        FreeBSD
     }
     public enum ArchitectureType
     {
@@ -57,7 +58,8 @@ namespace TypeMake.Cpp
         glibc,
         musl,
         libSystem,
-        Bionic
+        Bionic,
+        libc //FreeBSD
     }
     public enum CLibraryForm
     {

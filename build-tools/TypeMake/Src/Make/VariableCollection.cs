@@ -38,6 +38,10 @@ namespace TypeMake
                     {
                         return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.OperatingSystemType.MacOS.ToString()));
                     }
+                    else if (Shell.OperatingSystem == Shell.OperatingSystemType.FreeBSD)
+                    {
+                        return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.OperatingSystemType.FreeBSD.ToString()));
+                    }
                     else
                     {
                         throw new InvalidOperationException("UnknownHostOperatingSystem");
@@ -146,6 +150,10 @@ namespace TypeMake
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.visionOS)
                     {
                         return VariableSpecCreateEnumSelection(Cpp.ArchitectureType.arm64, new HashSet<Cpp.ArchitectureType> { Cpp.ArchitectureType.arm64 });
+                    }
+                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.FreeBSD)
+                    {
+                        return VariableSpecCreateEnumSelection(Cpp.ArchitectureType.x64, new HashSet<Cpp.ArchitectureType> { Cpp.ArchitectureType.x64, Cpp.ArchitectureType.arm64 });
                     }
                     else
                     {
@@ -271,6 +279,10 @@ namespace TypeMake
                     {
                         return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.ToolchainType.XCode.ToString()));
                     }
+                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.FreeBSD)
+                    {
+                        return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.ToolchainType.Ninja.ToString()));
+                    }
                     else
                     {
                         throw new InvalidOperationException();
@@ -334,6 +346,10 @@ namespace TypeMake
                     {
                         return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.CompilerType.clang.ToString()));
                     }
+                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.FreeBSD)
+                    {
+                        return VariableSpecCreateEnumSelection(Cpp.CompilerType.clang, new HashSet<Cpp.CompilerType> { Cpp.CompilerType.gcc, Cpp.CompilerType.clang });
+                    }
                     else
                     {
                         throw new InvalidOperationException();
@@ -372,6 +388,10 @@ namespace TypeMake
                     {
                         return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.CLibraryType.libSystem.ToString()));
                     }
+                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.FreeBSD)
+                    {
+                        return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.CLibraryType.libc.ToString()));
+                    }
                     else
                     {
                         throw new InvalidOperationException();
@@ -386,7 +406,7 @@ namespace TypeMake
                 DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.Toolchain), nameof(Variables.CLibrary) },
                 GetVariableSpec = () =>
                 {
-                    if (((Variables.WindowsRuntime == Cpp.WindowsRuntimeType.Win32) && (Variables.CLibrary == Cpp.CLibraryType.VisualCRuntime)) || (Variables.CLibrary == Cpp.CLibraryType.musl))
+                    if (((Variables.WindowsRuntime == Cpp.WindowsRuntimeType.Win32) && (Variables.CLibrary == Cpp.CLibraryType.VisualCRuntime)) || (Variables.CLibrary == Cpp.CLibraryType.musl) || (Variables.CLibrary == Cpp.CLibraryType.libc))
                     {
                         return VariableSpecCreateEnumSelection(Cpp.CLibraryForm.Dynamic, new HashSet<Cpp.CLibraryForm> { Cpp.CLibraryForm.Static, Cpp.CLibraryForm.Dynamic });
                     }
@@ -436,6 +456,10 @@ namespace TypeMake
                         return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.CppLibraryType.libcxx.ToString()));
                     }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.visionOS)
+                    {
+                        return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.CppLibraryType.libcxx.ToString()));
+                    }
+                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.FreeBSD)
                     {
                         return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.CppLibraryType.libcxx.ToString()));
                     }
@@ -669,6 +693,10 @@ namespace TypeMake
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.visionOS)
                     {
                         DefaultBuildDir = Variables.SourceDirectory / $"build/visionos_{Variables.TargetArchitecture}";
+                    }
+                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.FreeBSD)
+                    {
+                        DefaultBuildDir = Variables.SourceDirectory / $"build/freebsd_{Variables.TargetArchitecture}_{Variables.Toolchain}_{Variables.Compiler}_{Variables.CLibrary}_{Variables.Configuration}";
                     }
                     else
                     {
@@ -1125,6 +1153,14 @@ namespace TypeMake
                                 DefaultValue = Ninja
                             });
                         }
+                        else if (Variables.HostOperatingSystem == Cpp.OperatingSystemType.FreeBSD)
+                        {
+                            var Ninja = Shell.TryLocate("ninja");
+                            return VariableSpec.CreatePath(new PathStringSpec
+                            {
+                                DefaultValue = Ninja
+                            });
+                        }
                         else
                         {
                             throw new InvalidOperationException("HostOperatingSystemNotSupported");
@@ -1258,6 +1294,22 @@ namespace TypeMake
                                 DefaultValue = $"{ToolchainPath / "bin/clang"}{ExeSuffix} --target={TargetPrefix}-linux-androideabi{ApiLevel} --sysroot={ToolchainPath / "sysroot"}"
                             });
                         }
+                        else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.FreeBSD)
+                        {
+                            var DefaultCC = "clang";
+                            if (Variables.Compiler == Cpp.CompilerType.gcc)
+                            {
+                                DefaultCC = "gcc";
+                            }
+                            else if (Variables.Compiler == Cpp.CompilerType.clang)
+                            {
+                                DefaultCC = "clang";
+                            }
+                            return VariableSpec.CreateString(new StringSpec
+                            {
+                                DefaultValue = DefaultCC
+                            });
+                        }
                     }
                     return VariableSpec.CreateNotApply(VariableValue.CreateString(null));
                 },
@@ -1317,6 +1369,22 @@ namespace TypeMake
                                 DefaultValue = $"{ToolchainPath / "bin/clang++"}{ExeSuffix} --target={TargetPrefix}-linux-androideabi{ApiLevel} --sysroot={ToolchainPath / "sysroot"}"
                             });
                         }
+                        else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.FreeBSD)
+                        {
+                            var DefaultCXX = "clang++";
+                            if (Variables.Compiler == Cpp.CompilerType.gcc)
+                            {
+                                DefaultCXX = "g++";
+                            }
+                            else if (Variables.Compiler == Cpp.CompilerType.clang)
+                            {
+                                DefaultCXX = "clang++";
+                            }
+                            return VariableSpec.CreateString(new StringSpec
+                            {
+                                DefaultValue = DefaultCXX
+                            });
+                        }
                     }
                     return VariableSpec.CreateNotApply(VariableValue.CreateString(null));
                 },
@@ -1343,6 +1411,7 @@ namespace TypeMake
                             var DefaultAR = "ar";
                             if (Variables.Compiler == Cpp.CompilerType.gcc)
                             {
+                                DefaultAR = "ar";
                                 if (Variables.TargetArchitecture == Cpp.ArchitectureType.armv7a)
                                 {
                                     DefaultAR = "arm-linux-gnueabihf-ar";
@@ -1375,6 +1444,22 @@ namespace TypeMake
                                 DefaultValue = $"{ToolchainPath / "bin/llvm-ar"}{ExeSuffix}"
                             });
                         }
+                        else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.FreeBSD)
+                        {
+                            var DefaultAR = "llvm-ar";
+                            if (Variables.Compiler == Cpp.CompilerType.gcc)
+                            {
+                                DefaultAR = "ar";
+                            }
+                            else if (Variables.Compiler == Cpp.CompilerType.clang)
+                            {
+                                DefaultAR = "llvm-ar";
+                            }
+                            return VariableSpec.CreateString(new StringSpec
+                            {
+                                DefaultValue = DefaultAR
+                            });
+                        }
                     }
                     return VariableSpec.CreateNotApply(VariableValue.CreateString(null));
                 },
@@ -1398,6 +1483,7 @@ namespace TypeMake
                             var DefaultSTRIP = "strip";
                             if (Variables.Compiler == Cpp.CompilerType.gcc)
                             {
+                                DefaultSTRIP = "strip";
                                 if (Variables.TargetArchitecture == Cpp.ArchitectureType.armv7a)
                                 {
                                     DefaultSTRIP = "arm-linux-gnueabihf-strip";
@@ -1428,6 +1514,22 @@ namespace TypeMake
                             return VariableSpec.CreateString(new StringSpec
                             {
                                 DefaultValue = $"{ToolchainPath / "bin/llvm-strip"}{ExeSuffix}"
+                            });
+                        }
+                        else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.FreeBSD)
+                        {
+                            var DefaultSTRIP = "llvm-strip";
+                            if (Variables.Compiler == Cpp.CompilerType.gcc)
+                            {
+                                DefaultSTRIP = "strip";
+                            }
+                            else if (Variables.Compiler == Cpp.CompilerType.clang)
+                            {
+                                DefaultSTRIP = "llvm-strip";
+                            }
+                            return VariableSpec.CreateString(new StringSpec
+                            {
+                                DefaultValue = DefaultSTRIP
                             });
                         }
                     }

@@ -18,21 +18,22 @@ Linux/MacOS/Android: ./typemake.sh
 
 Target Operating System vs Building Operating System
 
-|                                        |    Windows 10 x64    |       Linux x64      |    MacOS x64/arm64   |    Android arm64     |
-| :------------------------------------: | :------------------: | :------------------: | :------------------: | :------------------: |
-|      Windows x86/x64/armv7a/arm64      |          VS          |                      |                      |                      |
-|          Windows x86/x64/arm64         |      VS+clang-cl     |                      |                      |                      |
-|          Windows x86/x64/arm64         |      Ninja+clang     |                      |                      |                      |
-|       WinRT x86/x64/armv7a/arm64       |          VS          |                      |                      |                      |
-|  Linux x86/x64/armv7a/arm64/riscv64 *  |  WSL+Ninja+clang/gcc |    Ninja+clang/gcc   |                      |                      |
-|                Linux x64               |WSL+VS+Ninja+clang/gcc|                      |                      |                      |
-|             MacOS x64/arm64            |                      |                      |         XCode        |                      |
-|                MacOS x64               |                      |                      |     Ninja+clang      |                      |
-|  Android x86/x64/armv7a/arm64/riscv64  |      NDK+Ninja       |      NDK+Ninja       |      NDK+Ninja       |                      |
-|              Android arm64             |                      |                      |                      |  Termux+Ninja+clang  |
-|              iOS arm64/x64             |                      |                      |         XCode        |                      |
-|         iOS Simulator x64/arm64        |                      |                      |         XCode        |                      |
-|             visionOS arm64             |                      |                      |  XCode(MacOS arm64)  |                      |
+|                                        |    Windows 10 x64    |       Linux x64      |    MacOS x64/arm64   |    Android arm64     |      FreeBSD x64     |
+| :------------------------------------: | :------------------: | :------------------: | :------------------: | :------------------: | :------------------: |
+|      Windows x86/x64/armv7a/arm64      |          VS          |                      |                      |                      |                      |
+|          Windows x86/x64/arm64         |      VS+clang-cl     |                      |                      |                      |                      |
+|          Windows x86/x64/arm64         |      Ninja+clang     |                      |                      |                      |                      |
+|       WinRT x86/x64/armv7a/arm64       |          VS          |                      |                      |                      |                      |
+|  Linux x86/x64/armv7a/arm64/riscv64 *  |  WSL+Ninja+clang/gcc |    Ninja+clang/gcc   |                      |                      |                      |
+|                Linux x64               |WSL+VS+Ninja+clang/gcc|                      |                      |                      |                      |
+|             MacOS x64/arm64            |                      |                      |         XCode        |                      |                      |
+|                MacOS x64               |                      |                      |     Ninja+clang      |                      |                      |
+|  Android x86/x64/armv7a/arm64/riscv64  |      NDK+Ninja       |      NDK+Ninja       |      NDK+Ninja       |                      |                      |
+|              Android arm64             |                      |                      |                      |  Termux+Ninja+clang  |                      |
+|              iOS arm64/x64             |                      |                      |         XCode        |                      |                      |
+|         iOS Simulator x64/arm64        |                      |                      |         XCode        |                      |                      |
+|             visionOS arm64             |                      |                      |  XCode(MacOS arm64)  |                      |                      |
+|               FreeBSD x64              |                      |                      |                      |                      |    Ninja+clang/gcc   |
 
 Win32 and WinRT targets are both supported, but WinRT only supports libraries and not applications.
 
@@ -69,6 +70,12 @@ Android on Linux(openSUSE 15.4): java-17-openjdk-devel
 Android on Linux(Ubuntu 20.04): openjdk-17-jdk
 
 Android on Android: ninja mono(https://github.com/IanusInferus/termux-mono) {OpenJDK(11.0.1), AndroidSDK, AndroidNDK(r23)}(https://github.com/Lzhiyong/termux-ndk/releases, only Android 10.0 is tested)
+
+FreeBSD(14.1-RELEASE): mono6.8 ninja(1.11.1)
+
+FreeBSD(14.1-RELEASE) with clang: llvm19(19.1.1)
+
+FreeBSD(14.1-RELEASE) with gcc: gcc14 (CC=gcc14 CXX=g++14)
 
 ## Notice
 

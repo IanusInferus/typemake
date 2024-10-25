@@ -46,9 +46,9 @@ namespace TypeMake
                     }
                 }
             }
-            else if (v.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)
+            else if ((v.TargetOperatingSystem == Cpp.OperatingSystemType.Linux) || (v.TargetOperatingSystem == Cpp.OperatingSystemType.FreeBSD))
             {
-                BuildScript.GenerateBuildScriptLinux(v.TargetOperatingSystemDistribution, v.Toolchain, v.HostOperatingSystem, v.BuildDirectory, v.Configuration, v.MaxProcessCount, v.Ninja, v.ForceRegenerate);
+                BuildScript.GenerateBuildScriptUnix(v.TargetOperatingSystemDistribution, v.Toolchain, v.HostOperatingSystem, v.BuildDirectory, v.Configuration, v.MaxProcessCount, v.Ninja, v.ForceRegenerate);
                 if (v.BuildNow)
                 {
                     using (var d = Shell.PushDirectory(v.BuildDirectory))
@@ -60,7 +60,7 @@ namespace TypeMake
                                 throw new InvalidOperationException("ErrorInExecution: " + @".\build.cmd");
                             }
                         }
-                        else if (v.HostOperatingSystem == Cpp.OperatingSystemType.Linux)
+                        else if ((v.HostOperatingSystem == Cpp.OperatingSystemType.Linux) || (v.HostOperatingSystem == Cpp.OperatingSystemType.FreeBSD))
                         {
                             if (Shell.Execute("./build.sh") != 0)
                             {
@@ -69,7 +69,7 @@ namespace TypeMake
                         }
                         else
                         {
-                            WriteLineError("Cross compiling to Linux is not supported.");
+                            WriteLineError($"Cross compiling to {v.TargetOperatingSystem} is not supported.");
                         }
                     }
                 }
@@ -82,7 +82,7 @@ namespace TypeMake
                 }
                 else
                 {
-                    BuildScript.GenerateBuildScriptLinux("Mac", v.Toolchain, v.HostOperatingSystem, v.BuildDirectory, v.Configuration, v.MaxProcessCount, v.Ninja, v.ForceRegenerate);
+                    BuildScript.GenerateBuildScriptUnix("Mac", v.Toolchain, v.HostOperatingSystem, v.BuildDirectory, v.Configuration, v.MaxProcessCount, v.Ninja, v.ForceRegenerate);
                 }
                 if (v.BuildNow)
                 {

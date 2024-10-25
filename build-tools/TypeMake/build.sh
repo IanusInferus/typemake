@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -e
 
 MSBUILD=$(command -v msbuild) || MSBUILD=$(command -v xbuild) || {

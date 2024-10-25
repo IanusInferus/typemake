@@ -59,7 +59,7 @@ namespace TypeMake
             else
             {
                 var Lines = new List<String>();
-                Lines.Add("#!/bin/bash");
+                Lines.Add("#!/usr/bin/env bash");
                 Lines.Add("set -e");
                 foreach (var p in Memory.Variables)
                 {
@@ -143,7 +143,7 @@ namespace TypeMake
                 TextFile.WriteToFile(BuildPath, String.Join("\r\n", Lines), System.Text.Encoding.Default, !ForceRegenerate);
             }
         }
-        public static void GenerateBuildScriptLinux(String TargetOperatingSystemDistribution, Cpp.ToolchainType Toolchain, Cpp.OperatingSystemType HostOperatingSystem, PathString BuildDirectory, Cpp.ConfigurationType Configuration, int MaxProcessCount, PathString Ninja, bool ForceRegenerate)
+        public static void GenerateBuildScriptUnix(String TargetOperatingSystemDistribution, Cpp.ToolchainType Toolchain, Cpp.OperatingSystemType HostOperatingSystem, PathString BuildDirectory, Cpp.ConfigurationType Configuration, int MaxProcessCount, PathString Ninja, bool ForceRegenerate)
         {
             if (Toolchain == Cpp.ToolchainType.Ninja)
             {
@@ -170,7 +170,7 @@ namespace TypeMake
                 else
                 {
                     var Lines = new List<String>();
-                    Lines.Add("#!/bin/bash");
+                    Lines.Add("#!/usr/bin/env bash");
                     Lines.Add("set -e");
                     Lines.Add(Shell.EscapeArgumentForShell(Ninja.RelativeTo(BuildDirectory).ToString(PathStringStyle.Unix), Shell.ShellArgumentStyle.Bash) + $" -j{MaxProcessCount} -C projects -f build.ninja");
                     Lines.Add("");
@@ -186,7 +186,7 @@ namespace TypeMake
         public static void GenerateBuildScriptXCode(Cpp.OperatingSystemType HostOperatingSystem, PathString BuildDirectory, Cpp.ConfigurationType Configuration, int MaxProcessCount, PathString XCodeDir, List<String> CppSortedProjectNames, bool ForceRegenerate)
         {
             var Lines = new List<String>();
-            Lines.Add("#!/bin/bash");
+            Lines.Add("#!/usr/bin/env bash");
             Lines.Add("set -e");
             foreach (var CppSortedProjectName in CppSortedProjectNames)
             {
@@ -240,7 +240,7 @@ namespace TypeMake
                 else
                 {
                     var Lines = new List<String>();
-                    Lines.Add("#!/bin/bash");
+                    Lines.Add("#!/usr/bin/env bash");
                     Lines.Add("set -e");
                     Lines.Add(Shell.EscapeArgumentForShell(Ninja.RelativeTo(BuildDirectory).ToString(PathStringStyle.Unix), Shell.ShellArgumentStyle.Bash) + $" -j{MaxProcessCount} -C projects -f build.ninja");
                     if (EnableJava)

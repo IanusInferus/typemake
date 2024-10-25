@@ -62,7 +62,7 @@ namespace TypeMake.Cpp
             yield return "  command = $ar crs $out $in";
             yield return "  description = AR $out";
             yield return "";
-            if ((TargetOperatingSystem == OperatingSystemType.Linux) || (TargetOperatingSystem == OperatingSystemType.Android))
+            if ((TargetOperatingSystem == OperatingSystemType.Linux) || (TargetOperatingSystem == OperatingSystemType.Android) || (TargetOperatingSystem == OperatingSystemType.FreeBSD))
             {
                 yield return "rule arthin";
                 yield return "  command = $ar crs -T $out $in";

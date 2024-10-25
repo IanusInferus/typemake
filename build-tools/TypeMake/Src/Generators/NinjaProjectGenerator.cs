@@ -105,7 +105,7 @@ namespace TypeMake.Cpp
                     {
                         LinkerFlags.Add("-Wl,-install_name," + "lib" + (Project.TargetName ?? Project.Name) + ".dylib");
                     }
-                    else if ((TargetOperatingSystem == OperatingSystemType.Linux) || (TargetOperatingSystem == OperatingSystemType.Android))
+                    else if ((TargetOperatingSystem == OperatingSystemType.Linux) || (TargetOperatingSystem == OperatingSystemType.Android) || (TargetOperatingSystem == OperatingSystemType.FreeBSD))
                     {
                         LinkerFlags.Add("-Wl,-soname=" + "lib" + (Project.TargetName ?? Project.Name) + ".so");
                     }
@@ -115,7 +115,7 @@ namespace TypeMake.Cpp
                 LinkerFlags.AddRange(conf.LibDirectories.Select(d => GetFinalPath(d.FullPath)).Select(d => "-L" + (d.Contains(" ") ? "\"" + d + "\"" : d)));
                 LinkerFlags.AddRange(conf.LinkerFlags);
                 PostLinkerFlags.AddRange(conf.PostLinkerFlags);
-                if ((TargetOperatingSystem == OperatingSystemType.Linux) || (TargetOperatingSystem == OperatingSystemType.Android))
+                if ((TargetOperatingSystem == OperatingSystemType.Linux) || (TargetOperatingSystem == OperatingSystemType.Android) || (TargetOperatingSystem == OperatingSystemType.FreeBSD))
                 {
                     Libs.Add("-Wl,--start-group");
                 }
@@ -165,7 +165,7 @@ namespace TypeMake.Cpp
                         }
                     }
                 }
-                if ((TargetOperatingSystem == OperatingSystemType.Linux) || (TargetOperatingSystem == OperatingSystemType.Android))
+                if ((TargetOperatingSystem == OperatingSystemType.Linux) || (TargetOperatingSystem == OperatingSystemType.Android) || (TargetOperatingSystem == OperatingSystemType.FreeBSD))
                 {
                     Libs.Add("-Wl,--end-group");
                 }
@@ -254,7 +254,7 @@ namespace TypeMake.Cpp
                 {
                     TargetName = "lib" + (Project.TargetName ?? Project.Name) + ".a";
                 }
-                if ((TargetOperatingSystem == OperatingSystemType.Linux) || (TargetOperatingSystem == OperatingSystemType.Android))
+                if ((TargetOperatingSystem == OperatingSystemType.Linux) || (TargetOperatingSystem == OperatingSystemType.Android) || (TargetOperatingSystem == OperatingSystemType.FreeBSD))
                 {
                     RuleName = "arthin";
                 }
@@ -287,7 +287,7 @@ namespace TypeMake.Cpp
             yield return "";
 
             var TargetPath = GetFinalPath((conf.OutputDirectory != null ? conf.OutputDirectory : (OutputDirectory / ".." / $"{ConfigurationType}")) / TargetName);
-            if (((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary)) && (ConfigurationType == ConfigurationType.Release) && ((TargetOperatingSystem == OperatingSystemType.Linux) || (TargetOperatingSystem == OperatingSystemType.MacOS) || (TargetOperatingSystem == OperatingSystemType.Android)))
+            if (((Project.TargetType == TargetType.Executable) || (Project.TargetType == TargetType.DynamicLibrary)) && (ConfigurationType == ConfigurationType.Release) && ((TargetOperatingSystem == OperatingSystemType.Linux) || (TargetOperatingSystem == OperatingSystemType.MacOS) || (TargetOperatingSystem == OperatingSystemType.Android) || (TargetOperatingSystem == OperatingSystemType.FreeBSD)))
             {
                 var SymbolPath = GetFinalPath(((conf.OutputDirectory != null ? conf.OutputDirectory : (OutputDirectory / ".." / $"{ConfigurationType}")) + "_symbol") / TargetName);
                 yield return $"build {NinjaEscape(SymbolPath)}: {RuleName} {String.Join(" ", ObjectFilePaths.Select(p => NinjaEscape(p)))}" + (Dependencies.Count > 0 ? " | " + String.Join(" ", Dependencies.Select(p => NinjaEscape(p))) : "");

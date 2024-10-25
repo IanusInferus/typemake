@@ -37,6 +37,7 @@ namespace TypeMake
             Windows,
             Linux,
             MacOS,
+            FreeBSD,
             Unknown
         }
         public enum OperatingSystemArchitectureType
@@ -64,7 +65,11 @@ namespace TypeMake
                         }
                         else if (p == PlatformID.Unix)
                         {
-                            if (File.Exists("/usr/lib/dyld"))
+                            if (File.Exists("/bin/freebsd-version"))
+                            {
+                                OperatingSystemValue = OperatingSystemType.FreeBSD;
+                            }
+                            else if (File.Exists("/usr/lib/dyld"))
                             {
                                 OperatingSystemValue = OperatingSystemType.MacOS;
                             }
