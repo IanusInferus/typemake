@@ -692,7 +692,7 @@ namespace TypeMake
             }
             else if (Toolchain == ToolchainType.Ninja)
             {
-                var g = new NinjaSolutionGenerator(SolutionName, CppSortedProjects, BuildDirectory / "projects", TargetOperatingSystem, CC, CXX, AR, STRIP);
+                var g = new NinjaSolutionGenerator(SolutionName, CppSortedProjects, BuildDirectory / "projects", HostOperatingSystem, TargetOperatingSystem, CC, CXX, AR, STRIP);
                 g.Generate(ForceRegenerate);
             }
             else
@@ -893,7 +893,7 @@ namespace TypeMake
                 {
                     MatchingCompilers = new List<CompilerType> { CompilerType.gcc, CompilerType.clang },
                     MatchingCLibraries = new List<CLibraryType> { CLibraryType.musl },
-                    MatchingCLibraryForms = new List<CLibraryForm> { CppLibraryForm.Static },
+                    MatchingCLibraryForms = new List<CLibraryForm> { CLibraryForm.Static },
                     CommonFlags = ParseFlags("-static"),
                     LinkerFlags = ParseFlags("-static -Wl,-static")
                 },
