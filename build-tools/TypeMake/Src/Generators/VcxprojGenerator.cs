@@ -22,6 +22,7 @@ namespace TypeMake.Cpp
         private OperatingSystemType HostOperatingSystem;
         private ArchitectureType HostArchitecture;
         private OperatingSystemType TargetOperatingSystem;
+        private String TargetOperatingSystemDistribution;
         private ArchitectureType? TargetArchitecture;
         private WindowsRuntimeType? WindowsRuntime;
         private CompilerType Compiler;
@@ -33,7 +34,7 @@ namespace TypeMake.Cpp
         private String CXX;
         private String AR;
 
-        public VcxprojGenerator(Project Project, String ProjectId, List<ProjectReference> ProjectReferences, PathString BuildDirectory, PathString InputDirectory, PathString OutputDirectory, String VcxprojTemplateText, String VcxprojFilterTemplateText, String PackagesConfigText, OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType? TargetArchitecture, WindowsRuntimeType? WindowsRuntime, CompilerType Compiler, CLibraryType CLibrary, CLibraryForm CLibraryForm, CppLibraryType CppLibrary, CppLibraryForm CppLibraryForm, String CC, String CXX, String AR)
+        public VcxprojGenerator(Project Project, String ProjectId, List<ProjectReference> ProjectReferences, PathString BuildDirectory, PathString InputDirectory, PathString OutputDirectory, String VcxprojTemplateText, String VcxprojFilterTemplateText, String PackagesConfigText, OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, String TargetOperatingSystemDistribution, ArchitectureType? TargetArchitecture, WindowsRuntimeType? WindowsRuntime, CompilerType Compiler, CLibraryType CLibrary, CLibraryForm CLibraryForm, CppLibraryType CppLibrary, CppLibraryForm CppLibraryForm, String CC, String CXX, String AR)
         {
             this.Project = new Project { Id = Project.Id, Name = Project.Name, VirtualDir = Project.VirtualDir, FilePath = Project.FilePath, TargetType = Project.TargetType, TargetName = Project.TargetName, Configurations = Project.Configurations.ToList() };
             if (WindowsRuntime == WindowsRuntimeType.WinRT)
@@ -51,6 +52,7 @@ namespace TypeMake.Cpp
             this.HostOperatingSystem = HostOperatingSystem;
             this.HostArchitecture = HostArchitecture;
             this.TargetOperatingSystem = TargetOperatingSystem;
+            this.TargetOperatingSystemDistribution = TargetOperatingSystemDistribution;
             this.TargetArchitecture = TargetArchitecture;
             this.WindowsRuntime = WindowsRuntime;
             this.Compiler = Compiler;
@@ -320,6 +322,7 @@ namespace TypeMake.Cpp
                     {
                         PropertyGroup.SetElementValue(xn + "TargetExt", "");
                     }
+                    PropertyGroup.SetElementValue(xn + "WSLPath", TargetOperatingSystemDistribution);
                 }
 
                 foreach (var o in conf.Options)

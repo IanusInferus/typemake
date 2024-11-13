@@ -15,6 +15,7 @@ namespace TypeMake
         private OperatingSystemType HostOperatingSystem;
         private ArchitectureType HostArchitecture;
         private OperatingSystemType TargetOperatingSystem;
+        private String TargetOperatingSystemDistribution;
         private ArchitectureType TargetArchitecture;
         private WindowsRuntimeType? WindowsRuntime;
         private bool EnableiOSSimulator;
@@ -56,11 +57,12 @@ namespace TypeMake
 
         private Dictionary<String, String> ProjectIds = new Dictionary<String, String>();
 
-        public Build(OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, ArchitectureType TargetArchitecture, WindowsRuntimeType? WindowsRuntime, bool EnableiOSSimulator, bool EnableMacCatalyst, ToolchainType Toolchain, CompilerType Compiler, CLibraryType CLibrary, CLibraryForm CLibraryForm, CppLibraryType CppLibrary, CppLibraryForm CppLibraryForm, ConfigurationType ConfigurationType, bool EnableModule, bool EnableCustomSysroot, PathString CustomSysroot, bool EnableLibcxxCompilation, PathString SourceDirectory, PathString BuildDirectory, String XCodeDevelopmentTeam, String XCodeProvisioningProfileSpecifier, PathString VSDir, int VSVersion, PathString XCodeDir, PathString LLVM, bool EnableJava, PathString Jdk, PathString AndroidSdk, PathString AndroidNdk, String CC, String CXX, String AR, String STRIP, List<String> CommonFlags, List<String> CFlags, List<String> CppFlags, List<String> LinkerFlags, List<String> PostLinkerFlags, bool ForceRegenerate, bool EnableNonTargetingOperatingSystemDummy)
+        public Build(OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, String TargetOperatingSystemDistribution, ArchitectureType TargetArchitecture, WindowsRuntimeType? WindowsRuntime, bool EnableiOSSimulator, bool EnableMacCatalyst, ToolchainType Toolchain, CompilerType Compiler, CLibraryType CLibrary, CLibraryForm CLibraryForm, CppLibraryType CppLibrary, CppLibraryForm CppLibraryForm, ConfigurationType ConfigurationType, bool EnableModule, bool EnableCustomSysroot, PathString CustomSysroot, bool EnableLibcxxCompilation, PathString SourceDirectory, PathString BuildDirectory, String XCodeDevelopmentTeam, String XCodeProvisioningProfileSpecifier, PathString VSDir, int VSVersion, PathString XCodeDir, PathString LLVM, bool EnableJava, PathString Jdk, PathString AndroidSdk, PathString AndroidNdk, String CC, String CXX, String AR, String STRIP, List<String> CommonFlags, List<String> CFlags, List<String> CppFlags, List<String> LinkerFlags, List<String> PostLinkerFlags, bool ForceRegenerate, bool EnableNonTargetingOperatingSystemDummy)
         {
             this.HostOperatingSystem = HostOperatingSystem;
             this.HostArchitecture = HostArchitecture;
             this.TargetOperatingSystem = TargetOperatingSystem;
+            this.TargetOperatingSystemDistribution = TargetOperatingSystemDistribution;
             this.TargetArchitecture = TargetArchitecture;
             this.WindowsRuntime = WindowsRuntime;
             this.EnableiOSSimulator = EnableiOSSimulator;
@@ -628,7 +630,7 @@ namespace TypeMake
                     var VcxprojTemplateText = Resource.GetResourceText($@"Templates\{(VSVersion == 2022 ? "vc17" : throw new NotSupportedException())}\{(TargetOperatingSystem == OperatingSystemType.Windows ? WindowsRuntime == WindowsRuntimeType.WinRT ? "WinRT" : "Default" : "Linux")}.vcxproj");
                     var VcxprojFilterTemplateText = Resource.GetResourceText(VSVersion == 2022 ? @"Templates\vc17\Default.vcxproj.filters" : throw new NotSupportedException());
                     var PackagesConfigText = WindowsRuntime == WindowsRuntimeType.WinRT ? Resource.GetResourceText(VSVersion == 2022 ? @"Templates\vc17\packages.config" : throw new NotSupportedException()) : null;
-                    var g = new VcxprojGenerator(p, Project.Definition.Id, ProjectReferences, BuildDirectory, InputDirectory, OutputDirectory, VcxprojTemplateText, VcxprojFilterTemplateText, PackagesConfigText, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, WindowsRuntime, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, CC, CXX, AR);
+                    var g = new VcxprojGenerator(p, Project.Definition.Id, ProjectReferences, BuildDirectory, InputDirectory, OutputDirectory, VcxprojTemplateText, VcxprojFilterTemplateText, PackagesConfigText, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetOperatingSystemDistribution, TargetArchitecture, WindowsRuntime, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, CC, CXX, AR);
                     g.Generate(ForceRegenerate);
                 }
                 else if (Toolchain == ToolchainType.XCode)
