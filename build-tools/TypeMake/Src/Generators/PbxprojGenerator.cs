@@ -262,7 +262,7 @@ namespace TypeMake.Cpp
                                 {
                                     FileFlags = FileFlags.Concat(FileConf.CppFlags).ToList();
                                 }
-                                FileFlags = FileFlags.Concat(FileConf.Defines.Select(d => d.Value == null ? d.Key : Regex.IsMatch(d.Value, @"^[A-Za-z0-9]+$") ? "-D" + d.Key + "=" + d.Value : "'-D" + d.Key + "=" + d.Value + "'")).ToList();
+                                FileFlags = FileFlags.Concat(FileConf.Defines.Select(d => d.Value == null ? "-D" + d.Key : Regex.IsMatch(d.Value, @"^[A-Za-z0-9]+$") ? "-D" + d.Key + "=" + d.Value : "'-D" + d.Key + "=" + d.Value + "'")).ToList();
 
                                 if (FileFlags.Count > 0)
                                 {
