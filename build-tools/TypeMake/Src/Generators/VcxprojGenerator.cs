@@ -502,7 +502,7 @@ namespace TypeMake.Cpp
                         }
                         if ((File.Type == FileType.CSource) || (File.Type == FileType.CppSource))
                         {
-                            var FileConfs = File.Configurations.Matches(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, Condition.Item3, WindowsRuntime, ToolchainType.VisualStudio, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, Condition.Item2).ToList();
+                            var FileConfs = File.Configurations.Matches(Project.TargetType, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, Condition.Item3 ?? TargetArchitecture, WindowsRuntime, ToolchainType.VisualStudio, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, Condition.Item2).ToList();
                             if (FileConfs.Count == 0)
                             {
                                 FileConfs.Add(new Configuration { MatchingConfigurationTypes = MatchingConfigurationTypes, MatchingTargetArchitectures = MatchingTargetArchitectures });
