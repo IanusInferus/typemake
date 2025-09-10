@@ -685,6 +685,10 @@ namespace TypeMake.Cpp
                     {
                         Dir = Dir.Substring(3);
                     }
+                    if (Dir == "..")
+                    {
+                        Dir = ".";
+                    }
                     if (!Filters.Contains(Dir))
                     {
                         var CurrentDir = Dir.AsPath();
