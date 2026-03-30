@@ -627,9 +627,9 @@ namespace TypeMake
                 var ProjectTargetType = Project.Definition.TargetType;
                 if (Toolchain == ToolchainType.VisualStudio)
                 {
-                    var VcxprojTemplateText = Resource.GetResourceText($@"Templates\{(VSVersion == 2022 ? "vc17" : throw new NotSupportedException())}\{(TargetOperatingSystem == OperatingSystemType.Windows ? WindowsRuntime == WindowsRuntimeType.WinRT ? "WinRT" : "Default" : "Linux")}.vcxproj");
-                    var VcxprojFilterTemplateText = Resource.GetResourceText(VSVersion == 2022 ? @"Templates\vc17\Default.vcxproj.filters" : throw new NotSupportedException());
-                    var PackagesConfigText = WindowsRuntime == WindowsRuntimeType.WinRT ? Resource.GetResourceText(VSVersion == 2022 ? @"Templates\vc17\packages.config" : throw new NotSupportedException()) : null;
+                    var VcxprojTemplateText = Resource.GetResourceText($@"Templates\{(VSVersion == 18 ? "vc18" : VSVersion == 2022 ? "vc17" : throw new NotSupportedException())}\{(TargetOperatingSystem == OperatingSystemType.Windows ? WindowsRuntime == WindowsRuntimeType.WinRT ? "WinRT" : "Default" : "Linux")}.vcxproj");
+                    var VcxprojFilterTemplateText = Resource.GetResourceText(VSVersion == 18 ? @"Templates\vc18\Default.vcxproj.filters" : VSVersion == 2022 ? @"Templates\vc17\Default.vcxproj.filters" : throw new NotSupportedException());
+                    var PackagesConfigText = WindowsRuntime == WindowsRuntimeType.WinRT ? Resource.GetResourceText(VSVersion == 18 ? @"Templates\vc18\packages.config" : VSVersion == 2022 ? @"Templates\vc17\packages.config" : throw new NotSupportedException()) : null;
                     var g = new VcxprojGenerator(p, Project.Definition.Id, ProjectReferences, BuildDirectory, InputDirectory, OutputDirectory, VcxprojTemplateText, VcxprojFilterTemplateText, PackagesConfigText, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetOperatingSystemDistribution, TargetArchitecture, WindowsRuntime, Compiler, CLibrary, CLibraryForm, CppLibrary, CppLibraryForm, CC, CXX, AR);
                     g.Generate(ForceRegenerate);
                 }
@@ -681,9 +681,17 @@ namespace TypeMake
             var CppSortedProjects = SortedProjects.Where(p => (p.TargetType == TargetType.Executable) || (p.TargetType == TargetType.StaticLibrary) || (p.TargetType == TargetType.IntermediateStaticLibrary) || (p.TargetType == TargetType.DynamicLibrary) || (p.TargetType == TargetType.DarwinApplication) || (p.TargetType == TargetType.DarwinSharedFramework)).ToList();
             if (Toolchain == ToolchainType.VisualStudio)
             {
-                var SlnTemplateText = Resource.GetResourceText(VSVersion == 2022 ? @"Templates\vc17\Default.sln" : throw new NotSupportedException());
-                var g = new SlnGenerator(SolutionName, GetIdForProject(SolutionName + ".solution"), CppSortedProjects, BuildDirectory, SlnTemplateText, TargetOperatingSystem, TargetArchitecture);
-                g.Generate(ForceRegenerate);
+                if (VSVersion == 18)
+                {
+                    var g = new SlnxGenerator(SolutionName, GetIdForProject(SolutionName + ".solution"), CppSortedProjects, BuildDirectory, TargetOperatingSystem, TargetArchitecture);
+                    g.Generate(ForceRegenerate);
+                }
+                else
+                {
+                    var SlnTemplateText = Resource.GetResourceText(VSVersion == 2022 ? @"Templates\vc17\Default.sln" : throw new NotSupportedException());
+                    var g = new SlnGenerator(SolutionName, GetIdForProject(SolutionName + ".solution"), CppSortedProjects, BuildDirectory, SlnTemplateText, TargetOperatingSystem, TargetArchitecture);
+                    g.Generate(ForceRegenerate);
+                }
             }
             else if (Toolchain == ToolchainType.XCode)
             {

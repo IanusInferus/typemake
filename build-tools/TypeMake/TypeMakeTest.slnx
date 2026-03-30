@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Src/TypeMake.csproj" Id="565c4358-6d10-45b2-80b6-3cd5489c086d" />
+  <Project Path="Test/TypeMakeTest.csproj" />
+</Solution>

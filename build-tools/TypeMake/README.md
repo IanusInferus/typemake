@@ -43,7 +43,7 @@ Different OSs use different ABIs on the same CPU architecture.
 
 ## Dependencies
 
-Windows: VS2022 .Net(4.8) \[LLVM(12.0.0-win64)\] \[[C++ Clang-cl for v143 build tools](https://docs.microsoft.com/en-us/cpp/build/clang-support-msbuild)\]
+Windows: VS2026/VS2022 .Net(4.8) \[[clang-cl](https://docs.microsoft.com/en-us/cpp/build/clang-support-msbuild)\]
 
 Linux: mono-devel(6.12)
 

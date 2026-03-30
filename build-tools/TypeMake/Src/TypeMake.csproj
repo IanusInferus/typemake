@@ -52,6 +52,7 @@
     <Compile Include="Generators\NinjaProjectGenerator.cs" />
     <Compile Include="Generators\NinjaSolutionGenerator.cs" />
     <Compile Include="Generators\PbxprojGenerator.cs" />
+    <Compile Include="Generators\SlnxGenerator.cs" />
     <Compile Include="Generators\XcworkspaceGenerator.cs" />
     <Compile Include="Generators\SlnGenerator.cs" />
     <Compile Include="Generators\VcxprojGenerator.cs" />
@@ -74,11 +75,6 @@
     <Compile Include="Templates\Resource.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Templates\xcode9\Default.xcodeproj\ConvertToXml.sh" />
-    <EmbeddedResource Include="Templates\xcode9\Default.xcodeproj\project.pbxproj" />
-    <None Include="Templates\xcode9\Dummy.m" />
-  </ItemGroup>
-  <ItemGroup>
     <EmbeddedResource Include="Templates\vc17\Default.sln" />
     <EmbeddedResource Include="Templates\vc17\Default.vcxproj" />
     <EmbeddedResource Include="Templates\vc17\Default.vcxproj.filters" />
@@ -86,6 +82,15 @@
     <EmbeddedResource Include="Templates\vc17\Linux.vcxproj" />
     <EmbeddedResource Include="Templates\vc17\packages.config" />
     <EmbeddedResource Include="Templates\vc17\WinRT.vcxproj" />
+    <EmbeddedResource Include="Templates\vc18\Default.vcxproj" />
+    <EmbeddedResource Include="Templates\vc18\Default.vcxproj.filters" />
+    <EmbeddedResource Include="Templates\vc18\Dummy.cpp" />
+    <EmbeddedResource Include="Templates\vc18\Linux.vcxproj" />
+    <EmbeddedResource Include="Templates\vc18\packages.config" />
+    <EmbeddedResource Include="Templates\vc18\WinRT.vcxproj" />
+    <EmbeddedResource Include="Templates\xcode9\Default.xcodeproj\ConvertToXml.sh" />
+    <EmbeddedResource Include="Templates\xcode9\Default.xcodeproj\project.pbxproj" />
+    <EmbeddedResource Include="Templates\xcode9\Dummy.m" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
