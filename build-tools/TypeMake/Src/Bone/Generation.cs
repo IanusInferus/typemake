@@ -185,6 +185,34 @@ namespace TypeMake
                     }
                 }
             }
+            else if (v.TargetOperatingSystem == Cpp.OperatingSystemType.HarmonyOS)
+            {
+                BuildScript.GenerateBuildScriptHarmonyOS(v.Toolchain, v.HostOperatingSystem, v.BuildDirectory, v.TargetArchitecture, v.Configuration, v.MaxProcessCount, v.HmsSdk, v.Ninja, v.ForceRegenerate);
+                if (v.BuildNow)
+                {
+                    using (var d = Shell.PushDirectory(v.BuildDirectory))
+                    {
+                        if (v.HostOperatingSystem == Cpp.OperatingSystemType.Windows)
+                        {
+                            if (Shell.Execute(@".\build.cmd") != 0)
+                            {
+                                throw new InvalidOperationException("ErrorInExecution: " + @".\build.cmd");
+                            }
+                        }
+                        else if ((v.HostOperatingSystem == Cpp.OperatingSystemType.Linux) || (v.HostOperatingSystem == Cpp.OperatingSystemType.MacOS) || (v.HostOperatingSystem == Cpp.OperatingSystemType.Android))
+                        {
+                            if (Shell.Execute("./build.sh") != 0)
+                            {
+                                throw new InvalidOperationException("ErrorInExecution: ./build.sh");
+                            }
+                        }
+                        else
+                        {
+                            WriteLineError("Cross compiling to Android is not supported.");
+                        }
+                    }
+                }
+            }
             else
             {
                 throw new InvalidOperationException();

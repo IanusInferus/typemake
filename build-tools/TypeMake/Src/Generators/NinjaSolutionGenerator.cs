@@ -44,10 +44,10 @@ namespace TypeMake.Cpp
 
             yield return "ninja_required_version = 1.3";
             yield return "";
-            yield return "cc = " + CC;
-            yield return "cxx = " + CXX;
-            yield return "ar = " + AR;
-            yield return "strip = " + STRIP;
+            yield return "cc = " + NinjaEscape(CC);
+            yield return "cxx = " + NinjaEscape(CXX);
+            yield return "ar = " + NinjaEscape(AR);
+            yield return "strip = " + NinjaEscape(STRIP);
             yield return "fileflags = ";
             yield return "";
             yield return "rule cc";
@@ -80,7 +80,7 @@ namespace TypeMake.Cpp
             yield return "  command = $ar crs $out $in";
             yield return "  description = AR $out";
             yield return "";
-            if ((TargetOperatingSystem == OperatingSystemType.Linux) || (TargetOperatingSystem == OperatingSystemType.Android))
+            if ((TargetOperatingSystem == OperatingSystemType.Linux) || (TargetOperatingSystem == OperatingSystemType.Android) || (TargetOperatingSystem == OperatingSystemType.FreeBSD) || (TargetOperatingSystem == OperatingSystemType.HarmonyOS))
             {
                 yield return "rule arthin";
                 yield return "  command = $ar crs -T $out $in";

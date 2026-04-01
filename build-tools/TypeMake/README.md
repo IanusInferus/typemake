@@ -34,6 +34,7 @@ Target Operating System vs Building Operating System
 |         iOS Simulator x64/arm64        |                      |                      |         XCode        |                      |                      |
 |             visionOS arm64             |                      |                      |  XCode(MacOS arm64)  |                      |                      |
 |               FreeBSD x64              |                      |                      |                      |                      |    Ninja+clang/gcc   |
+|       HarmonyOS x64/armv7a/arm64       |     Ninja+clang      |     Ninja+clang      |     Ninja+clang      |                      |                      |
 
 Win32 and WinRT targets are both supported, but WinRT only supports libraries and not applications.
 
@@ -76,6 +77,8 @@ FreeBSD(14.1-RELEASE): mono6.8 ninja(1.11.1)
 FreeBSD(14.1-RELEASE) with clang: llvm19(19.1.1)
 
 FreeBSD(14.1-RELEASE) with gcc: gcc14 (CC=gcc14 CXX=g++14)
+
+HarmonyOS: "DevEco Studio"/"Command Line Tools"(6.0.2)
 
 ## Notice
 

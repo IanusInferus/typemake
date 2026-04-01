@@ -23,7 +23,8 @@ namespace TypeMake.Cpp
         Android,
         iOS,
         visionOS,
-        FreeBSD
+        FreeBSD,
+        HarmonyOS
     }
     public enum ArchitectureType
     {

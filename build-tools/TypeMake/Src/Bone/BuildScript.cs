@@ -263,6 +263,46 @@ namespace TypeMake
                 }
             }
         }
+        public static void GenerateBuildScriptHarmonyOS(Cpp.ToolchainType Toolchain, Cpp.OperatingSystemType HostOperatingSystem, PathString BuildDirectory, Cpp.ArchitectureType TargetArchitecture, Cpp.ConfigurationType Configuration, int MaxProcessCount, PathString HmsSdk, PathString Ninja, bool ForceRegenerate)
+        {
+            if (Toolchain == Cpp.ToolchainType.Ninja)
+            {
+                if (HostOperatingSystem == Cpp.OperatingSystemType.Windows)
+                {
+                    var Lines = new List<String>();
+                    Lines.Add("@echo off");
+                    Lines.Add("");
+                    Lines.Add("setlocal");
+                    Lines.Add("if \"%SUB_NO_PAUSE_SYMBOL%\"==\"1\" set NO_PAUSE_SYMBOL=1");
+                    Lines.Add("if /I \"%COMSPEC%\" == %CMDCMDLINE% set NO_PAUSE_SYMBOL=1");
+                    Lines.Add("set SUB_NO_PAUSE_SYMBOL=1");
+                    Lines.Add("call :main");
+                    Lines.Add("set EXIT_CODE=%ERRORLEVEL%");
+                    Lines.Add("if not \"%NO_PAUSE_SYMBOL%\"==\"1\" pause");
+                    Lines.Add("exit /b %EXIT_CODE%");
+                    Lines.Add("");
+                    Lines.Add(":main");
+                    Lines.Add(Shell.EscapeArgumentForShell(Ninja.RelativeTo(BuildDirectory).ToString(PathStringStyle.Windows), Shell.ShellArgumentStyle.CMD) + $" -j{MaxProcessCount} -C projects -f build.ninja || exit /b 1");
+                    Lines.Add("");
+                    var BuildPath = BuildDirectory / "build.cmd";
+                    TextFile.WriteToFile(BuildPath, String.Join("\r\n", Lines), System.Text.Encoding.Default, !ForceRegenerate);
+                }
+                else
+                {
+                    var Lines = new List<String>();
+                    Lines.Add("#!/usr/bin/env bash");
+                    Lines.Add("set -e");
+                    Lines.Add(Shell.EscapeArgumentForShell(Ninja.RelativeTo(BuildDirectory).ToString(PathStringStyle.Unix), Shell.ShellArgumentStyle.Bash) + $" -j{MaxProcessCount} -C projects -f build.ninja");
+                    Lines.Add("");
+                    var BuildPath = BuildDirectory / "build.sh";
+                    TextFile.WriteToFile(BuildPath, String.Join("\n", Lines), new System.Text.UTF8Encoding(false), !ForceRegenerate);
+                    if (Shell.Execute("chmod", "+x", BuildPath) != 0)
+                    {
+                        throw new InvalidOperationException("ErrorInExecution: chmod");
+                    }
+                }
+            }
+        }
 
         private static void WriteLineError(String Line)
         {

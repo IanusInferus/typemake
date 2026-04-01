@@ -155,6 +155,10 @@ namespace TypeMake
                     {
                         return VariableSpecCreateEnumSelection(Cpp.ArchitectureType.x64, new HashSet<Cpp.ArchitectureType> { Cpp.ArchitectureType.x64, Cpp.ArchitectureType.arm64 });
                     }
+                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.HarmonyOS)
+                    {
+                        return VariableSpecCreateEnumSelection(Cpp.ArchitectureType.arm64, new HashSet<Cpp.ArchitectureType> { Cpp.ArchitectureType.x64, Cpp.ArchitectureType.armv7a, Cpp.ArchitectureType.arm64 });
+                    }
                     else
                     {
                         throw new InvalidOperationException();
@@ -283,6 +287,10 @@ namespace TypeMake
                     {
                         return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.ToolchainType.Ninja.ToString()));
                     }
+                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.HarmonyOS)
+                    {
+                        return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.ToolchainType.Ninja.ToString()));
+                    }
                     else
                     {
                         throw new InvalidOperationException();
@@ -350,6 +358,10 @@ namespace TypeMake
                     {
                         return VariableSpecCreateEnumSelection(Cpp.CompilerType.clang, new HashSet<Cpp.CompilerType> { Cpp.CompilerType.gcc, Cpp.CompilerType.clang });
                     }
+                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.HarmonyOS)
+                    {
+                        return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.CompilerType.clang.ToString()));
+                    }
                     else
                     {
                         throw new InvalidOperationException();
@@ -391,6 +403,10 @@ namespace TypeMake
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.FreeBSD)
                     {
                         return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.CLibraryType.libc.ToString()));
+                    }
+                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.HarmonyOS)
+                    {
+                        return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.CLibraryType.musl.ToString()));
                     }
                     else
                     {
@@ -460,6 +476,10 @@ namespace TypeMake
                         return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.CppLibraryType.libcxx.ToString()));
                     }
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.FreeBSD)
+                    {
+                        return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.CppLibraryType.libcxx.ToString()));
+                    }
+                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.HarmonyOS)
                     {
                         return VariableSpec.CreateFixed(VariableValue.CreateString(Cpp.CppLibraryType.libcxx.ToString()));
                     }
@@ -585,7 +605,7 @@ namespace TypeMake
                 {
                     if ((Variables.CppLibrary == Cpp.CppLibraryType.libcxx) && (Variables.CppLibraryForm == Cpp.CppLibraryForm.Static))
                     {
-                        if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
+                        if ((Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android) || (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.HarmonyOS))
                         {
                             return VariableSpec.CreateBoolean(new BooleanSpec
                             {
@@ -697,6 +717,10 @@ namespace TypeMake
                     else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.FreeBSD)
                     {
                         DefaultBuildDir = Variables.SourceDirectory / $"build/freebsd_{Variables.TargetArchitecture}_{Variables.Toolchain}_{Variables.Compiler}_{Variables.CLibrary}_{Variables.Configuration}";
+                    }
+                    else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.HarmonyOS)
+                    {
+                        DefaultBuildDir = Variables.SourceDirectory / $"build/hms_{Variables.TargetArchitecture}_{Variables.Toolchain}_{Variables.Configuration}";
                     }
                     else
                     {
@@ -1114,6 +1138,30 @@ namespace TypeMake
                 SetVariableValue = v => Variables.AndroidNdk = v.Path
             });
 
+
+            l.Add(new VariableItem
+            {
+                VariableName = nameof(Variables.HmsSdk),
+                DependentVariableNames = new List<String> { nameof(Variables.HostOperatingSystem), nameof(Variables.TargetOperatingSystem), nameof(PathValidator) },
+                GetVariableSpec = () =>
+                {
+                    if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.HarmonyOS)
+                    {
+                        return VariableSpec.CreatePath(new PathStringSpec
+                        {
+                            DefaultValue = Variables.HostOperatingSystem == Cpp.OperatingSystemType.Windows ? (Environment.GetEnvironmentVariable("LocalAppData").AsPath() / "Huawei/DevEco Studio/sdk/default") : "".AsPath(),
+                            IsDirectory = true,
+                            Validator = PathValidator ?? (p => Directory.Exists(p / "hms") && Directory.Exists(p / "openharmony") ? new KeyValuePair<bool, String>(true, "") : new KeyValuePair<bool, String>(false, "No tools directory inside."))
+                        });
+                    }
+                    else
+                    {
+                        return VariableSpec.CreateNotApply(VariableValue.CreatePath(null));
+                    }
+                },
+                SetVariableValue = v => Variables.HmsSdk = v.Path
+            });
+
             l.Add(new VariableItem
             {
                 VariableName = nameof(Variables.Ninja),
@@ -1154,6 +1202,14 @@ namespace TypeMake
                             });
                         }
                         else if (Variables.HostOperatingSystem == Cpp.OperatingSystemType.FreeBSD)
+                        {
+                            var Ninja = Shell.TryLocate("ninja");
+                            return VariableSpec.CreatePath(new PathStringSpec
+                            {
+                                DefaultValue = Ninja
+                            });
+                        }
+                        else if (Variables.HostOperatingSystem == Cpp.OperatingSystemType.HarmonyOS)
                         {
                             var Ninja = Shell.TryLocate("ninja");
                             return VariableSpec.CreatePath(new PathStringSpec
@@ -1230,6 +1286,10 @@ namespace TypeMake
                         {
                             TargetPrefix = "riscv64";
                         }
+                        else
+                        {
+                            throw new InvalidOperationException("TargetArchitectureNotSupported");
+                        }
                         ToolchainPath = Variables.AndroidNdk / $"toolchains/llvm/prebuilt/{Host}";
                     }
 
@@ -1243,8 +1303,59 @@ namespace TypeMake
 
             l.Add(new VariableItem
             {
+                VariableName = "HmsVariables",
+                DependentVariableNames = new List<String> { nameof(Variables.HostOperatingSystem), nameof(Variables.TargetOperatingSystem), nameof(Variables.TargetArchitecture), nameof(Variables.Toolchain), nameof(Variables.HmsSdk) },
+                IsHidden = true,
+                GetVariableSpec = () =>
+                {
+                    if ((Variables.TargetOperatingSystem == Cpp.OperatingSystemType.HarmonyOS) && (Variables.Toolchain == Cpp.ToolchainType.Ninja))
+                    {
+                        if (Variables.HostOperatingSystem == Cpp.OperatingSystemType.Windows)
+                        {
+                            Host = "windows-x86_64";
+                            ExeSuffix = ".exe";
+                        }
+                        else if (Variables.HostOperatingSystem == Cpp.OperatingSystemType.Linux)
+                        {
+                            Host = "linux-x86_64";
+                            ExeSuffix = "";
+                        }
+                        else if (Variables.HostOperatingSystem == Cpp.OperatingSystemType.MacOS)
+                        {
+                            Host = "darwin-x86_64";
+                            ExeSuffix = "";
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException("HostOperatingSystemNotSupported");
+                        }
+                        if (Variables.TargetArchitecture == Cpp.ArchitectureType.x64)
+                        {
+                            TargetPrefix = "x86_64";
+                        }
+                        else if (Variables.TargetArchitecture == Cpp.ArchitectureType.armv7a)
+                        {
+                            TargetPrefix = "arm";
+                        }
+                        else if (Variables.TargetArchitecture == Cpp.ArchitectureType.arm64)
+                        {
+                            TargetPrefix = "aarch64";
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException("TargetArchitectureNotSupported");
+                        }
+                    }
+
+                    return VariableSpec.CreateNotApply(VariableValue.CreateBoolean(false));
+                },
+                SetVariableValue = v => { }
+            });
+
+            l.Add(new VariableItem
+            {
                 VariableName = nameof(Variables.CC),
-                DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.TargetArchitecture), nameof(Variables.Toolchain), nameof(Variables.Compiler), nameof(Variables.LLVM), "AndroidVariables" },
+                DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.TargetArchitecture), nameof(Variables.Toolchain), nameof(Variables.Compiler), nameof(Variables.LLVM), "AndroidVariables", "HmsVariables" },
                 GetVariableSpec = () =>
                 {
                     if ((Variables.Toolchain == Cpp.ToolchainType.Ninja) || ((Variables.Toolchain == Cpp.ToolchainType.VisualStudio) && (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)))
@@ -1291,7 +1402,7 @@ namespace TypeMake
                         {
                             return VariableSpec.CreateString(new StringSpec
                             {
-                                DefaultValue = $"{ToolchainPath / "bin/clang"}{ExeSuffix} --target={TargetPrefix}-linux-androideabi{ApiLevel} --sysroot={ToolchainPath / "sysroot"}"
+                                DefaultValue = $"{ToolchainPath / "bin/clang"}{ExeSuffix}"
                             });
                         }
                         else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.FreeBSD)
@@ -1310,6 +1421,13 @@ namespace TypeMake
                                 DefaultValue = DefaultCC
                             });
                         }
+                        else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.HarmonyOS)
+                        {
+                            return VariableSpec.CreateString(new StringSpec
+                            {
+                                DefaultValue = $"{Variables.HmsSdk / "hms/native/BiSheng/bin/clang"}{ExeSuffix}"
+                            });
+                        }
                     }
                     return VariableSpec.CreateNotApply(VariableValue.CreateString(null));
                 },
@@ -1319,7 +1437,7 @@ namespace TypeMake
             l.Add(new VariableItem
             {
                 VariableName = nameof(Variables.CXX),
-                DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.TargetArchitecture), nameof(Variables.Toolchain), nameof(Variables.Compiler), nameof(Variables.LLVM), "AndroidVariables" },
+                DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.TargetArchitecture), nameof(Variables.Toolchain), nameof(Variables.Compiler), nameof(Variables.LLVM), "AndroidVariables", "HmsVariables" },
                 GetVariableSpec = () =>
                 {
                     if ((Variables.Toolchain == Cpp.ToolchainType.Ninja) || ((Variables.Toolchain == Cpp.ToolchainType.VisualStudio) && (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)))
@@ -1366,7 +1484,7 @@ namespace TypeMake
                         {
                             return VariableSpec.CreateString(new StringSpec
                             {
-                                DefaultValue = $"{ToolchainPath / "bin/clang++"}{ExeSuffix} --target={TargetPrefix}-linux-androideabi{ApiLevel} --sysroot={ToolchainPath / "sysroot"}"
+                                DefaultValue = $"{ToolchainPath / "bin/clang++"}{ExeSuffix}"
                             });
                         }
                         else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.FreeBSD)
@@ -1385,6 +1503,13 @@ namespace TypeMake
                                 DefaultValue = DefaultCXX
                             });
                         }
+                        else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.HarmonyOS)
+                        {
+                            return VariableSpec.CreateString(new StringSpec
+                            {
+                                DefaultValue = $"{Variables.HmsSdk / "hms/native/BiSheng/bin/clang++"}{ExeSuffix}"
+                            });
+                        }
                     }
                     return VariableSpec.CreateNotApply(VariableValue.CreateString(null));
                 },
@@ -1394,7 +1519,7 @@ namespace TypeMake
             l.Add(new VariableItem
             {
                 VariableName = nameof(Variables.AR),
-                DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.TargetArchitecture), nameof(Variables.Toolchain), nameof(Variables.Compiler), nameof(Variables.LLVM), "AndroidVariables" },
+                DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.TargetArchitecture), nameof(Variables.Toolchain), nameof(Variables.Compiler), nameof(Variables.LLVM), "AndroidVariables", "HmsVariables" },
                 GetVariableSpec = () =>
                 {
                     if ((Variables.Toolchain == Cpp.ToolchainType.Ninja) || ((Variables.Toolchain == Cpp.ToolchainType.VisualStudio) && (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)))
@@ -1460,6 +1585,13 @@ namespace TypeMake
                                 DefaultValue = DefaultAR
                             });
                         }
+                        else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.HarmonyOS)
+                        {
+                            return VariableSpec.CreateString(new StringSpec
+                            {
+                                DefaultValue = $"{Variables.HmsSdk / "hms/native/BiSheng/bin/llvm-ar"}{ExeSuffix}"
+                            });
+                        }
                     }
                     return VariableSpec.CreateNotApply(VariableValue.CreateString(null));
                 },
@@ -1469,7 +1601,7 @@ namespace TypeMake
             l.Add(new VariableItem
             {
                 VariableName = nameof(Variables.STRIP),
-                DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.TargetArchitecture), nameof(Variables.Toolchain), nameof(Variables.Compiler), nameof(Variables.LLVM), "AndroidVariables" },
+                DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.TargetArchitecture), nameof(Variables.Toolchain), nameof(Variables.Compiler), nameof(Variables.LLVM), "AndroidVariables", "HmsVariables" },
                 GetVariableSpec = () =>
                 {
                     if (Variables.Toolchain == Cpp.ToolchainType.Ninja)
@@ -1532,6 +1664,13 @@ namespace TypeMake
                                 DefaultValue = DefaultSTRIP
                             });
                         }
+                        else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.HarmonyOS)
+                        {
+                            return VariableSpec.CreateString(new StringSpec
+                            {
+                                DefaultValue = $"{Variables.HmsSdk / "hms/native/BiSheng/bin/llvm-strip"}{ExeSuffix}"
+                            });
+                        }
                     }
                     return VariableSpec.CreateNotApply(VariableValue.CreateString(null));
                 },
@@ -1544,6 +1683,16 @@ namespace TypeMake
                 DependentVariableNames = new List<String> { },
                 GetVariableSpec = () =>
                 {
+                    if ((Variables.Toolchain == Cpp.ToolchainType.Ninja) || ((Variables.Toolchain == Cpp.ToolchainType.VisualStudio) && (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)))
+                    {
+                        if ((Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android) || (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.HarmonyOS))
+                        {
+                            return VariableSpec.CreateBoolean(new BooleanSpec
+                            {
+                                DefaultValue = true
+                            });
+                        }
+                    }
                     return VariableSpec.CreateBoolean(new BooleanSpec
                     {
                         DefaultValue = false
@@ -1552,14 +1701,30 @@ namespace TypeMake
                 SetVariableValue = v => Variables.EnableAdditionalFlags = v.Boolean
             });
 
+            Func<String, String> FlagEscape = s => s.Replace(" ", "\\ ");
+
             l.Add(new VariableItem
             {
                 VariableName = nameof(Variables.CommonFlags),
-                DependentVariableNames = new List<String> { nameof(Variables.EnableAdditionalFlags) },
+                DependentVariableNames = new List<String> { "AndroidVariables", "HmsVariables", nameof(Variables.EnableAdditionalFlags) },
                 GetVariableSpec = () =>
                 {
                     if (Variables.EnableAdditionalFlags)
                     {
+                        if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
+                        {
+                            return VariableSpec.CreateString(new StringSpec
+                            {
+                                DefaultValue = $"--target={TargetPrefix}-linux-androideabi{ApiLevel} --sysroot={FlagEscape(ToolchainPath / "sysroot")}"
+                            });
+                        }
+                        else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.HarmonyOS)
+                        {
+                            return VariableSpec.CreateString(new StringSpec
+                            {
+                                DefaultValue = $"--target={TargetPrefix}-linux-ohos --sysroot={FlagEscape(Variables.HmsSdk / "openharmony/native/sysroot")}"
+                            });
+                        }
                         return VariableSpec.CreateString(new StringSpec
                         {
                             DefaultValue = ""
@@ -1609,11 +1774,28 @@ namespace TypeMake
             l.Add(new VariableItem
             {
                 VariableName = nameof(Variables.LinkerFlags),
-                DependentVariableNames = new List<String> { nameof(Variables.EnableAdditionalFlags) },
+                DependentVariableNames = new List<String> { "AndroidVariables", "HmsVariables", nameof(Variables.EnableAdditionalFlags) },
                 GetVariableSpec = () =>
                 {
                     if (Variables.EnableAdditionalFlags)
                     {
+                        if ((Variables.Toolchain == Cpp.ToolchainType.Ninja) || ((Variables.Toolchain == Cpp.ToolchainType.VisualStudio) && (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Linux)))
+                        {
+                            if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Android)
+                            {
+                                return VariableSpec.CreateString(new StringSpec
+                                {
+                                    DefaultValue = $"--target={TargetPrefix}-linux-androideabi{ApiLevel} --sysroot={FlagEscape(ToolchainPath / "sysroot")}"
+                                });
+                            }
+                            else if (Variables.TargetOperatingSystem == Cpp.OperatingSystemType.HarmonyOS)
+                            {
+                                return VariableSpec.CreateString(new StringSpec
+                                {
+                                    DefaultValue = $"--target={TargetPrefix}-linux-ohos --sysroot={FlagEscape(Variables.HmsSdk / "openharmony/native/sysroot")}"
+                                });
+                            }
+                        }
                         return VariableSpec.CreateString(new StringSpec
                         {
                             DefaultValue = ""
@@ -1646,7 +1828,7 @@ namespace TypeMake
             l.Add(new VariableItem
             {
                 VariableName = nameof(Variables.SelectedProjects),
-                DependentVariableNames = new List<String> { nameof(Variables.HostOperatingSystem), nameof(Variables.HostArchitecture), nameof(Variables.TargetOperatingSystem), nameof(Variables.TargetOperatingSystemDistribution), nameof(Variables.TargetArchitecture), nameof(Variables.WindowsRuntime), nameof(Variables.EnableiOSSimulator), nameof(Variables.EnableMacCatalyst), nameof(Variables.Toolchain), nameof(Variables.Compiler), nameof(Variables.CLibrary), nameof(Variables.CLibraryForm), nameof(Variables.CppLibrary), nameof(Variables.CppLibraryForm), nameof(Variables.Configuration), nameof(Variables.EnableModule), nameof(Variables.EnableCustomSysroot), nameof(Variables.CustomSysroot), nameof(Variables.EnableLibcxxCompilation), nameof(Variables.SourceDirectory), nameof(Variables.BuildDirectory), nameof(Variables.XCodeDevelopmentTeam), nameof(Variables.XCodeProvisioningProfileSpecifier), nameof(Variables.VSDir), nameof(Variables.VSVersion), nameof(Variables.XCodeDir), nameof(Variables.LLVM), nameof(Variables.Jdk), nameof(Variables.AndroidSdk), nameof(Variables.AndroidNdk), nameof(Variables.CC), nameof(Variables.CXX), nameof(Variables.AR), nameof(Variables.STRIP), nameof(Variables.CommonFlags), nameof(Variables.CFlags), nameof(Variables.CppFlags), nameof(Variables.LinkerFlags), nameof(Variables.PostLinkerFlags), nameof(Variables.ForceRegenerate), nameof(Variables.EnableNonTargetingOperatingSystemDummy) },
+                DependentVariableNames = new List<String> { nameof(Variables.HostOperatingSystem), nameof(Variables.HostArchitecture), nameof(Variables.TargetOperatingSystem), nameof(Variables.TargetOperatingSystemDistribution), nameof(Variables.TargetArchitecture), nameof(Variables.WindowsRuntime), nameof(Variables.EnableiOSSimulator), nameof(Variables.EnableMacCatalyst), nameof(Variables.Toolchain), nameof(Variables.Compiler), nameof(Variables.CLibrary), nameof(Variables.CLibraryForm), nameof(Variables.CppLibrary), nameof(Variables.CppLibraryForm), nameof(Variables.Configuration), nameof(Variables.EnableModule), nameof(Variables.EnableCustomSysroot), nameof(Variables.CustomSysroot), nameof(Variables.EnableLibcxxCompilation), nameof(Variables.SourceDirectory), nameof(Variables.BuildDirectory), nameof(Variables.XCodeDevelopmentTeam), nameof(Variables.XCodeProvisioningProfileSpecifier), nameof(Variables.VSDir), nameof(Variables.VSVersion), nameof(Variables.XCodeDir), nameof(Variables.LLVM), nameof(Variables.Jdk), nameof(Variables.AndroidSdk), nameof(Variables.AndroidNdk), nameof(Variables.HmsSdk), nameof(Variables.CC), nameof(Variables.CXX), nameof(Variables.AR), nameof(Variables.STRIP), nameof(Variables.CommonFlags), nameof(Variables.CFlags), nameof(Variables.CppFlags), nameof(Variables.LinkerFlags), nameof(Variables.PostLinkerFlags), nameof(Variables.ForceRegenerate), nameof(Variables.EnableNonTargetingOperatingSystemDummy) },
                 GetVariableSpec = () =>
                 {
                     var b = new Build(Variables.HostOperatingSystem, Variables.HostArchitecture, Variables.TargetOperatingSystem, Variables.TargetOperatingSystemDistribution, Variables.TargetArchitecture, Variables.WindowsRuntime, Variables.EnableiOSSimulator, Variables.EnableMacCatalyst, Variables.Toolchain, Variables.Compiler, Variables.CLibrary, Variables.CLibraryForm, Variables.CppLibrary, Variables.CppLibraryForm, Variables.Configuration, Variables.EnableModule, Variables.EnableCustomSysroot, Variables.CustomSysroot, Variables.EnableLibcxxCompilation, Variables.SourceDirectory, Variables.BuildDirectory, Variables.XCodeDevelopmentTeam, Variables.XCodeProvisioningProfileSpecifier, Variables.VSDir, Variables.VSVersion, Variables.XCodeDir, Variables.LLVM, Variables.EnableJava, Variables.Jdk, Variables.AndroidSdk, Variables.AndroidNdk, Variables.CC, Variables.CXX, Variables.AR, Variables.STRIP, Variables.CommonFlags, Variables.CFlags, Variables.CppFlags, Variables.LinkerFlags, Variables.PostLinkerFlags, Variables.ForceRegenerate, Variables.EnableNonTargetingOperatingSystemDummy);
@@ -1740,10 +1922,10 @@ namespace TypeMake
                 PostMapper = v => Output.ToString()
             });
         }
-        private static Regex rFlag = new Regex(@"([^ ""]|""[^""]*"")+", RegexOptions.ExplicitCapture);
+        private static Regex rFlag = new Regex(@"(\\ |[^ ])+", RegexOptions.ExplicitCapture);
         private static List<String> ParseFlags(String Flags)
         {
-            return rFlag.Matches(Flags).Cast<Match>().Select(m => m.Value).ToList();
+            return rFlag.Matches(Flags).Cast<Match>().Select(m => m.Value.Replace("\\ ", " ")).ToList();
         }
     }
 }

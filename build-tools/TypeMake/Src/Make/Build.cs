@@ -425,7 +425,7 @@ namespace TypeMake
                         new Configuration
                         {
                             MatchingCompilers = new List<CompilerType> { CompilerType.gcc, CompilerType.clang },
-                            MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Linux, OperatingSystemType.Android, OperatingSystemType.FreeBSD },
+                            MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Linux, OperatingSystemType.Android, OperatingSystemType.FreeBSD, OperatingSystemType.HarmonyOS },
                             MatchingTargetTypes = new List<TargetType> { TargetType.DynamicLibrary },
                             LinkerFlags = new List<string> { "-Wl,--version-script=" + (SourceDirectory / "products/export.version").RelativeTo(GetProjectWorkingDirectory(BuildDirectory, ProductName)).ToString(PathStringStyle.Unix) }
                         },
@@ -822,7 +822,7 @@ namespace TypeMake
                 },
                 new Configuration
                 {
-                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Linux, OperatingSystemType.Android, OperatingSystemType.FreeBSD },
+                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Linux, OperatingSystemType.Android, OperatingSystemType.FreeBSD, OperatingSystemType.HarmonyOS },
                     CommonFlags = new List<String> { "-fPIC" }
                 },
                 new Configuration
@@ -910,7 +910,7 @@ namespace TypeMake
                     MatchingCompilers = new List<CompilerType> { CompilerType.gcc, CompilerType.clang },
                     MatchingCLibraryForms = new List<CLibraryForm> { CLibraryForm.Dynamic },
                     MatchingCppLibraryForms = new List<CppLibraryForm> { CppLibraryForm.Static },
-                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Linux, OperatingSystemType.FreeBSD },
+                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Linux, OperatingSystemType.FreeBSD, OperatingSystemType.HarmonyOS },
                     LinkerFlags = ParseFlags("-static-libgcc")
                 },
                 new Configuration
@@ -919,7 +919,7 @@ namespace TypeMake
                     MatchingCLibraryForms = new List<CLibraryForm> { CLibraryForm.Dynamic },
                     MatchingCppLibraries = new List<CppLibraryType> { CppLibraryType.libstdcxx, CppLibraryType.libcxx },
                     MatchingCppLibraryForms = new List<CppLibraryForm> { CppLibraryForm.Static },
-                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Linux, OperatingSystemType.Android, OperatingSystemType.FreeBSD },
+                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Linux, OperatingSystemType.Android, OperatingSystemType.FreeBSD, OperatingSystemType.HarmonyOS },
                     LinkerFlags = ParseFlags(EnableLibcxxCompilation ? "" : "-static-libstdc++")
                 },
                 new Configuration
@@ -959,7 +959,7 @@ namespace TypeMake
                 },
                 new Configuration
                 {
-                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Windows, OperatingSystemType.Linux, OperatingSystemType.MacOS, OperatingSystemType.iOS, OperatingSystemType.visionOS, OperatingSystemType.FreeBSD },
+                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Windows, OperatingSystemType.Linux, OperatingSystemType.MacOS, OperatingSystemType.iOS, OperatingSystemType.visionOS, OperatingSystemType.FreeBSD, OperatingSystemType.HarmonyOS },
                     MatchingCompilers = new List<CompilerType> { CompilerType.gcc, CompilerType.clang },
                     MatchingConfigurationTypes = new List<ConfigurationType> { ConfigurationType.Release },
                     CommonFlags = ParseFlags("-O3")
@@ -1011,14 +1011,14 @@ namespace TypeMake
                 },
                 new Configuration
                 {
-                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Linux, OperatingSystemType.FreeBSD },
+                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Linux, OperatingSystemType.FreeBSD, OperatingSystemType.HarmonyOS },
                     MatchingCompilers = new List<CompilerType> { CompilerType.clang },
                     LinkerFlags = ParseFlags("-fuse-ld=lld")
                 },
                 new Configuration
                 {
                     MatchingTargetTypes = new List<TargetType> { TargetType.Executable, TargetType.DynamicLibrary },
-                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Linux, OperatingSystemType.FreeBSD },
+                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Linux, OperatingSystemType.FreeBSD, OperatingSystemType.HarmonyOS },
                     LinkerFlags = ParseFlags(@"-Wl,-rpath -Wl,$ORIGIN")
                 },
                 new Configuration
@@ -1073,6 +1073,12 @@ namespace TypeMake
                 new Configuration
                 {
                     MatchingToolchains = new List<ToolchainType> { ToolchainType.Ninja },
+                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.HarmonyOS },
+                    CommonFlags = ParseFlags("-fPIC -D__OHOS__")
+                },
+                new Configuration
+                {
+                    MatchingToolchains = new List<ToolchainType> { ToolchainType.Ninja },
                     MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Android },
                     MatchingTargetArchitectures = new List<ArchitectureType> { ArchitectureType.armv7a },
                     LinkerFlags = ParseFlags("-Wl,--exclude-libs,libunwind.a")
@@ -1086,7 +1092,7 @@ namespace TypeMake
                 },
                 new Configuration
                 {
-                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Linux, OperatingSystemType.Android, OperatingSystemType.FreeBSD },
+                    MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Linux, OperatingSystemType.Android, OperatingSystemType.FreeBSD, OperatingSystemType.HarmonyOS },
                     MatchingCompilers = new List<CompilerType> { CompilerType.gcc, CompilerType.clang },
                     MatchingConfigurationTypes = new List<ConfigurationType> { ConfigurationType.Release },
                     LinkerFlags = ParseFlags("-Wl,--gc-sections")
@@ -1280,10 +1286,10 @@ namespace TypeMake
             if (Defines.Trim(' ') == "") { return new List<KeyValuePair<String, String>> { }; }
             return Defines.Split(';').Select(d => d.Split('=')).Select(arr => arr.Length >= 2 ? new KeyValuePair<String, String>(arr[0], arr[1]) : new KeyValuePair<String, String>(arr[0], null)).ToList();
         }
-        private static Regex rFlag = new Regex(@"([^ ""]|""[^""]*"")+", RegexOptions.ExplicitCapture);
+        private static Regex rFlag = new Regex(@"(\\ |[^ ])+", RegexOptions.ExplicitCapture);
         private static List<String> ParseFlags(String Flags)
         {
-            return rFlag.Matches(Flags).Cast<Match>().Select(m => m.Value).ToList();
+            return rFlag.Matches(Flags).Cast<Match>().Select(m => m.Value.Replace("\\ ", " ")).ToList();
         }
         private String GetIdForProject(String ProjectName)
         {
@@ -1407,7 +1413,7 @@ namespace TypeMake
                     throw new NotSupportedException();
                 }
             }
-            else if ((TargetOperatingSystem == OperatingSystemType.Linux) || (TargetOperatingSystem == OperatingSystemType.FreeBSD))
+            else if ((TargetOperatingSystem == OperatingSystemType.Linux) || (TargetOperatingSystem == OperatingSystemType.FreeBSD) || (TargetOperatingSystem == OperatingSystemType.HarmonyOS))
             {
                 if (TargetType == TargetType.Executable)
                 {

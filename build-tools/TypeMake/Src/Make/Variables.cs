@@ -42,6 +42,7 @@ namespace TypeMake
         public PathString Jdk;
         public PathString AndroidSdk;
         public PathString AndroidNdk;
+        public PathString HmsSdk;
         public String CC;
         public String CXX;
         public String AR;
