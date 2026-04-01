@@ -47,9 +47,9 @@ Windows: VS2026/VS2022 .Net(4.8) \[[clang-cl](https://docs.microsoft.com/en-us/c
 
 Linux: mono-devel(6.12)
 
-Linux(openSUSE 15.4) with clang: clang15(15.0.7) libc++-devel(15.0.7) llvm15(15.0.7) lld15(15.0.7) [gcc12(x64-only)] (Compiler=clang CC=clang-15 CXX=clang++-15 AR=llvm-ar STRIP=llvm-strip)
+Linux(openSUSE 15.6) with clang: clang19(19.1.7) libc++-devel(19.1.7) llvm19(19.1.7) lld19(19.1.7) [gcc15(x64-only)] (Compiler=clang CC=clang-19 CXX=clang++-19 AR=llvm-ar STRIP=llvm-strip)
 
-Linux(openSUSE 15.4) with gcc: gcc12-c++(12.3.0) \[gcc12-c++-32bit(12.3.0)\] (CC=gcc-12 CXX=g++-11)
+Linux(openSUSE 15.6) with gcc: gcc15-c++(15.2.0) \[gcc15-c++-32bit(15.2.0)\] (CC=gcc-15 CXX=g++-15)
 
 Linux(Ubuntu 20.04) with clang: clang-12(12.0.0) libc++-12-dev(12.0.0) libc++abi-12-dev(12.0.0) llvm-12(12.0.0) lld-12(12.0.0) [gcc-10(x64-only)] (Compiler=clang CC=clang-12 CXX=clang++-12 AR=llvm-ar-12 STRIP=llvm-strip-12)
 
@@ -63,11 +63,11 @@ MacOS: XCode(15) mono(6.12)
 
 iOS: XCode(15) mono(6.12)
 
-Android: JDK(17.x) AndroidSDK("build-tools;35.0.0" "platforms;android-28" "ndk;27.0.12077973")
+Android: JDK(21.x) AndroidSDK("build-tools;36.0.0" "platforms;android-28" "ndk;29.0.14206865")
 
-Android on Linux(openSUSE 15.4): java-17-openjdk-devel
+Android on Linux(openSUSE 15.6): java-21-openjdk-devel
 
-Android on Linux(Ubuntu 20.04): openjdk-17-jdk
+Android on Linux(Ubuntu 20.04): openjdk-21-jdk
 
 Android on Android: ninja mono(https://github.com/IanusInferus/termux-mono) {OpenJDK(11.0.1), AndroidSDK, AndroidNDK(r23)}(https://github.com/Lzhiyong/termux-ndk/releases, only Android 10.0 is tested)
 
