@@ -40,7 +40,7 @@ namespace TypeMake
                         Key = Key.Replace("%%", "%");
                         Value = Value.Replace("%%", "%");
                     }
-                    if (Key == "BuildDirectory")
+                    if ((Key == "BuildDirectory") && (Value.Contains("%") || Value.Contains("$")))
                     {
                         Environment.SetEnvironmentVariable(Key, RetypemakeScriptPath.FullPath.Parent);
                     }
