@@ -43,6 +43,7 @@ namespace TypeMake
         private PathString Jdk;
         private PathString AndroidSdk;
         private PathString AndroidNdk;
+        private PathString HmsSdk;
         private String CC;
         private String CXX;
         private String AR;
@@ -57,7 +58,7 @@ namespace TypeMake
 
         private Dictionary<String, String> ProjectIds = new Dictionary<String, String>();
 
-        public Build(OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, String TargetOperatingSystemDistribution, ArchitectureType TargetArchitecture, WindowsRuntimeType? WindowsRuntime, bool EnableiOSSimulator, bool EnableMacCatalyst, ToolchainType Toolchain, CompilerType Compiler, CLibraryType CLibrary, CLibraryForm CLibraryForm, CppLibraryType CppLibrary, CppLibraryForm CppLibraryForm, ConfigurationType ConfigurationType, bool EnableModule, bool EnableCustomSysroot, PathString CustomSysroot, bool EnableLibcxxCompilation, PathString SourceDirectory, PathString BuildDirectory, String XCodeDevelopmentTeam, String XCodeProvisioningProfileSpecifier, PathString VSDir, int VSVersion, PathString XCodeDir, PathString LLVM, bool EnableJava, PathString Jdk, PathString AndroidSdk, PathString AndroidNdk, String CC, String CXX, String AR, String STRIP, List<String> CommonFlags, List<String> CFlags, List<String> CppFlags, List<String> LinkerFlags, List<String> PostLinkerFlags, bool ForceRegenerate, bool EnableNonTargetingOperatingSystemDummy)
+        public Build(OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, String TargetOperatingSystemDistribution, ArchitectureType TargetArchitecture, WindowsRuntimeType? WindowsRuntime, bool EnableiOSSimulator, bool EnableMacCatalyst, ToolchainType Toolchain, CompilerType Compiler, CLibraryType CLibrary, CLibraryForm CLibraryForm, CppLibraryType CppLibrary, CppLibraryForm CppLibraryForm, ConfigurationType ConfigurationType, bool EnableModule, bool EnableCustomSysroot, PathString CustomSysroot, bool EnableLibcxxCompilation, PathString SourceDirectory, PathString BuildDirectory, String XCodeDevelopmentTeam, String XCodeProvisioningProfileSpecifier, PathString VSDir, int VSVersion, PathString XCodeDir, PathString LLVM, bool EnableJava, PathString Jdk, PathString AndroidSdk, PathString AndroidNdk, PathString HmsSdk, String CC, String CXX, String AR, String STRIP, List<String> CommonFlags, List<String> CFlags, List<String> CppFlags, List<String> LinkerFlags, List<String> PostLinkerFlags, bool ForceRegenerate, bool EnableNonTargetingOperatingSystemDummy)
         {
             this.HostOperatingSystem = HostOperatingSystem;
             this.HostArchitecture = HostArchitecture;
@@ -90,6 +91,7 @@ namespace TypeMake
             this.Jdk = Jdk;
             this.AndroidSdk = AndroidSdk;
             this.AndroidNdk = AndroidNdk;
+            this.HmsSdk = HmsSdk;
             this.CC = CC;
             this.CXX = CXX;
             this.AR = AR;
@@ -1074,7 +1076,7 @@ namespace TypeMake
                 {
                     MatchingToolchains = new List<ToolchainType> { ToolchainType.Ninja },
                     MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.HarmonyOS },
-                    CommonFlags = ParseFlags("-fPIC -D__OHOS__")
+                    CommonFlags = ParseFlags("-fPIC -D__MUSL__ -D_BSD_SOURCE=1 -D_XOPEN_SOURCE=700 -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -fno-addrsig -Wa,--noexecstack")
                 },
                 new Configuration
                 {
