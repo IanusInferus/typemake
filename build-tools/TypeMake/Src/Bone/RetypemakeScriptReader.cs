@@ -12,10 +12,12 @@ namespace TypeMake
         {
             String[] Lines;
             Regex rVariable;
+            var ReplacePercent = false;
             if (RetypemakeScriptPath.Extension.ToLowerInvariant() == "cmd")
             {
                 Lines = File.ReadAllLines(RetypemakeScriptPath, System.Text.Encoding.Default);
                 rVariable = new Regex(@"^set\s+(""(?<Key>[^=]+)=(?<Value>.*)""|(?<Key>[^=]+)=(?<Value>.*))\s*$");
+                ReplacePercent = true;
             }
             else if (RetypemakeScriptPath.Extension.ToLowerInvariant() == "sh")
             {
@@ -33,6 +35,11 @@ namespace TypeMake
                 {
                     var Key = Match.Result("${Key}");
                     var Value = Match.Result("${Value}");
+                    if (ReplacePercent)
+                    {
+                        Key = Key.Replace("%%", "%");
+                        Value = Value.Replace("%%", "%");
+                    }
                     if (Key == "BuildDirectory")
                     {
                         Environment.SetEnvironmentVariable(Key, RetypemakeScriptPath.FullPath.Parent);
