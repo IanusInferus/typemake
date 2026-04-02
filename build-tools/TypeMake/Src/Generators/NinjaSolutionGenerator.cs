@@ -47,7 +47,10 @@ namespace TypeMake.Cpp
             yield return "cc = " + NinjaEscape(CC);
             yield return "cxx = " + NinjaEscape(CXX);
             yield return "ar = " + NinjaEscape(AR);
-            yield return "strip = " + NinjaEscape(STRIP);
+            if (TargetOperatingSystem != OperatingSystemType.Windows)
+            {
+                yield return "strip = " + NinjaEscape(STRIP);
+            }
             yield return "fileflags = ";
             yield return "";
             yield return "rule cc";
