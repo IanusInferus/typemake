@@ -18,7 +18,7 @@ namespace TypeMake
                 Lines.Add("if \"%SUB_NO_PAUSE_SYMBOL%\"==\"1\" set NO_PAUSE_SYMBOL=1");
                 Lines.Add("if /I \"%COMSPEC%\" == %CMDCMDLINE% set NO_PAUSE_SYMBOL=1");
                 Lines.Add("set SUB_NO_PAUSE_SYMBOL=1");
-                Lines.Add("call :main");
+                Lines.Add("call :main %*");
                 Lines.Add("set EXIT_CODE=%ERRORLEVEL%");
                 Lines.Add("if not \"%NO_PAUSE_SYMBOL%\"==\"1\" pause");
                 Lines.Add("exit /b %EXIT_CODE%");
