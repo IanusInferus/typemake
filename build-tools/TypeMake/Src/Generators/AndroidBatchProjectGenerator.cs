@@ -160,7 +160,7 @@ namespace TypeMake.Cpp
                     SoLibraryPaths.Add(SolutionOutputDirectory / $"{ConfigurationType}" / Lib);
                 }
             }
-            var ApplicationId = conf.Options.ContainsKey("gradle.applicationId") ? conf.Options["gradle.applicationId"] : (SolutionName + "." + ProjectTargetName).ToLower();
+            var ApplicationId = conf.Options.ContainsKey("gradle.applicationId") ? conf.Options["gradle.applicationId"] : (SolutionName + "." + ProjectTargetName).ToLowerInvariant();
             var ConsumerProguardFiles = conf.Options.ContainsKey("gradle.consumerProguardFiles") ? conf.Options["gradle.consumerProguardFiles"].Split(';').Select(d => d.AsPath().RelativeTo(BaseDirPath)).ToList() : new List<PathString> { };
             var ManifestSrcFile = conf.Options.ContainsKey("gradle.manifestSrcFile") ? conf.Options["gradle.manifestSrcFile"].AsPath().RelativeTo(BaseDirPath) : (InputDirectory / "AndroidManifest.xml").RelativeTo(BaseDirPath);
             var JavaSrcDirs = conf.Files.Where(f => FileSystemUtils.HasFiles(f.Path, "*.java", System.IO.SearchOption.AllDirectories)).Select(f => f.Path.RelativeTo(BaseDirPath)).ToList();

@@ -152,7 +152,7 @@ namespace TypeMake.Cpp
                 GlobalsPropertyGroup = new XElement(xn + "PropertyGroup", new XAttribute("Label", "Globals"));
                 xVcxproj.Add(GlobalsPropertyGroup);
             }
-            var g = "{" + ProjectId.ToUpper() + "}";
+            var g = "{" + ProjectId.ToUpperInvariant() + "}";
             GlobalsPropertyGroup.SetElementValue(xn + "ProjectGuid", g);
             GlobalsPropertyGroup.SetElementValue(xn + "RootNamespace", Project.Name);
             if (TargetOperatingSystem == OperatingSystemType.Windows)
@@ -598,7 +598,7 @@ namespace TypeMake.Cpp
             {
                 var RelativePath = p.FilePath.FullPath.RelativeTo(BaseDirPath).ToString(PathStringStyle.Windows);
                 var x = new XElement(xn + "ProjectReference", new XAttribute("Include", RelativePath));
-                x.Add(new XElement(xn + "Project", "{" + p.Id.ToUpper() + "}"));
+                x.Add(new XElement(xn + "Project", "{" + p.Id.ToUpperInvariant() + "}"));
                 x.Add(new XElement(xn + "Name", p.Name));
                 x.Add(new XElement(xn + "LinkLibraryDependecies", "true"));
                 if (WindowsRuntime == WindowsRuntimeType.WinRT)
@@ -732,7 +732,7 @@ namespace TypeMake.Cpp
 
             foreach (var f in Filters.OrderBy(ff => ff, StringComparer.OrdinalIgnoreCase))
             {
-                var g = Guid.ParseExact(Hash.GetHashForPath(Project.Name + "/" + f, 32), "N").ToString().ToUpper();
+                var g = Guid.ParseExact(Hash.GetHashForPath(Project.Name + "/" + f, 32), "N").ToString().ToUpperInvariant();
                 FilterItemGroup.Add(new XElement(xn + "Filter", new XAttribute("Include", f), new XElement(xn + "UniqueIdentifier", "{" + g + "}")));
             }
 

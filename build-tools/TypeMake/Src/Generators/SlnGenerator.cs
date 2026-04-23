@@ -72,13 +72,13 @@ namespace TypeMake.Cpp
                     var CurrentDirFilter = CurrentDir.ToString(PathStringStyle.Windows);
                     while ((CurrentDirFilter != ".") && !Filters.ContainsKey(CurrentDirFilter))
                     {
-                        var g = Guid.ParseExact(Hash.GetHashForPath(CurrentDirFilter, 32), "N").ToString().ToUpper();
+                        var g = Guid.ParseExact(Hash.GetHashForPath(CurrentDirFilter, 32), "N").ToString().ToUpperInvariant();
                         Filters.Add(CurrentDirFilter, g);
                         CurrentDir = CurrentDir.Parent;
                         CurrentDirFilter = CurrentDir.ToString(PathStringStyle.Windows);
                         if (CurrentDirFilter != ".")
                         {
-                            var gUpper = Guid.ParseExact(Hash.GetHashForPath(CurrentDirFilter, 32), "N").ToString().ToUpper();
+                            var gUpper = Guid.ParseExact(Hash.GetHashForPath(CurrentDirFilter, 32), "N").ToString().ToUpperInvariant();
                             NestedProjects.Properties.SetValue("{" + g + "}", "{" + gUpper + "}");
                         }
                     }
@@ -120,7 +120,7 @@ namespace TypeMake.Cpp
 
             foreach (var Section in s.Sections.Where(Section => Section.Id == "ExtensibilityGlobals"))
             {
-                Section.Properties.SetValue("SolutionGuid", "{" + SolutionId.ToUpper() + "}");
+                Section.Properties.SetValue("SolutionGuid", "{" + SolutionId.ToUpperInvariant() + "}");
             }
 
             String Text;
