@@ -47,7 +47,7 @@ namespace TypeMake.Cpp
                     Dir = "/" + Dir + "/";
                 }
                 var FilePath = Project.FilePath.FullPath.RelativeTo(OutputDirectory).ToString(PathStringStyle.Unix);
-                xProjects.Add((Dir, new XElement("Project", new XAttribute("Path", FilePath))));
+                xProjects.Add((Dir, new XElement("Project", new XAttribute("Path", FilePath), new XAttribute("Id", Project.Id.ToLowerInvariant()))));
             }
 
             var ProjectGroups = xProjects.GroupBy(p => p.Folder).ToDictionary(g => g.Key, g => g.Select(p => p.x).ToList());
