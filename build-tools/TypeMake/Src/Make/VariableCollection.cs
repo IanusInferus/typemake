@@ -1030,7 +1030,7 @@ namespace TypeMake
                 {
                     if (Variables.EnableJava && ((Variables.TargetOperatingSystem != Cpp.OperatingSystemType.iOS) && (Variables.TargetOperatingSystem != Cpp.OperatingSystemType.visionOS)))
                     {
-                        var DefaultJdk = Utils.CheckedGetEnvironmentVariable("JAVA_HOME").AsPath();
+                        var DefaultJdk = Utils.TryGetEnvironmentVariable("JAVA_HOME", "");
                         if (Variables.HostOperatingSystem == Cpp.OperatingSystemType.MacOS)
                         {
                             var o = Shell.ExecuteAndGetOutput("/usr/libexec/java_home");

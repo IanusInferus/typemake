@@ -23,5 +23,14 @@ namespace TypeMake
             }
             return Result;
         }
+        public static String TryGetEnvironmentVariable(String VariableName, String DefaultValue)
+        {
+            var Result = Environment.GetEnvironmentVariable(VariableName);
+            if (Result == null)
+            {
+                return DefaultValue;
+            }
+            return Result;
+        }
     }
 }
