@@ -203,7 +203,8 @@ namespace TypeMake
 
         public static PathString TryLocate(String ProgramName)
         {
-            foreach (var Dir in Environment.GetEnvironmentVariable("PATH").Split(Path.PathSeparator))
+            var Paths = Environment.GetEnvironmentVariable("PATH")?.Split(Path.PathSeparator) ?? Array.Empty<string>();
+            foreach (var Dir in Paths)
             {
                 var p = Dir.AsPath() / ProgramName;
                 if (File.Exists(p))

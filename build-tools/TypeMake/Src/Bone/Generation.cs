@@ -26,17 +26,11 @@ namespace TypeMake
                         {
                             if (v.Toolchain == Cpp.ToolchainType.VisualStudio)
                             {
-                                if (Shell.Execute($"build_{v.Configuration}.cmd") != 0)
-                                {
-                                    throw new InvalidOperationException("ErrorInExecution: " + $"build_{v.Configuration}.cmd");
-                                }
+                                Utils.CheckedShellExecute($"build_{v.Configuration}.cmd");
                             }
                             else
                             {
-                                if (Shell.Execute($"build.cmd") != 0)
-                                {
-                                    throw new InvalidOperationException("ErrorInExecution: build.cmd");
-                                }
+                                Utils.CheckedShellExecute($"build.cmd");
                             }
                         }
                         else
@@ -55,17 +49,11 @@ namespace TypeMake
                     {
                         if (v.HostOperatingSystem == Cpp.OperatingSystemType.Windows)
                         {
-                            if (Shell.Execute(@".\build.cmd") != 0)
-                            {
-                                throw new InvalidOperationException("ErrorInExecution: " + @".\build.cmd");
-                            }
+                            Utils.CheckedShellExecute(@".\build.cmd");
                         }
                         else if ((v.HostOperatingSystem == Cpp.OperatingSystemType.Linux) || (v.HostOperatingSystem == Cpp.OperatingSystemType.FreeBSD))
                         {
-                            if (Shell.Execute("./build.sh") != 0)
-                            {
-                                throw new InvalidOperationException("ErrorInExecution: ./build.sh");
-                            }
+                            Utils.CheckedShellExecute("./build.sh");
                         }
                         else
                         {
@@ -97,17 +85,11 @@ namespace TypeMake
                                 {
                                     throw new InvalidOperationException("BashNotFound");
                                 }
-                                if (Shell.Execute("arch", "-arch", "arm64", BashPath, "-c", "./build.sh") != 0)
-                                {
-                                    throw new InvalidOperationException("ErrorInExecution: ./build.sh");
-                                }
+                                Utils.CheckedShellExecute("arch", "-arch", "arm64", BashPath, "-c", "./build.sh");
                             }
                             else
                             {
-                                if (Shell.Execute("./build.sh") != 0)
-                                {
-                                    throw new InvalidOperationException("ErrorInExecution: ./build.sh");
-                                }
+                                Utils.CheckedShellExecute("./build.sh");
                             }
                         }
                         else
@@ -133,17 +115,11 @@ namespace TypeMake
                                 {
                                     throw new InvalidOperationException("BashNotFound");
                                 }
-                                if (Shell.Execute("arch", "-arch", "arm64", BashPath, "-c", "./build.sh") != 0)
-                                {
-                                    throw new InvalidOperationException("ErrorInExecution: ./build.sh");
-                                }
+                                Utils.CheckedShellExecute("arch", "-arch", "arm64", BashPath, "-c", "./build.sh");
                             }
                             else
                             {
-                                if (Shell.Execute("./build.sh") != 0)
-                                {
-                                    throw new InvalidOperationException("ErrorInExecution: ./build.sh");
-                                }
+                                Utils.CheckedShellExecute("./build.sh");
                             }
                         }
                         else
@@ -166,17 +142,11 @@ namespace TypeMake
                     {
                         if (v.HostOperatingSystem == Cpp.OperatingSystemType.Windows)
                         {
-                            if (Shell.Execute(@".\build.cmd") != 0)
-                            {
-                                throw new InvalidOperationException("ErrorInExecution: " + @".\build.cmd");
-                            }
+                            Utils.CheckedShellExecute(@".\build.cmd");
                         }
                         else if ((v.HostOperatingSystem == Cpp.OperatingSystemType.Linux) || (v.HostOperatingSystem == Cpp.OperatingSystemType.MacOS) || (v.HostOperatingSystem == Cpp.OperatingSystemType.Android))
                         {
-                            if (Shell.Execute("./build.sh") != 0)
-                            {
-                                throw new InvalidOperationException("ErrorInExecution: ./build.sh");
-                            }
+                            Utils.CheckedShellExecute("./build.sh");
                         }
                         else
                         {
@@ -194,17 +164,11 @@ namespace TypeMake
                     {
                         if (v.HostOperatingSystem == Cpp.OperatingSystemType.Windows)
                         {
-                            if (Shell.Execute(@".\build.cmd") != 0)
-                            {
-                                throw new InvalidOperationException("ErrorInExecution: " + @".\build.cmd");
-                            }
+                            Utils.CheckedShellExecute(@".\build.cmd");
                         }
                         else if ((v.HostOperatingSystem == Cpp.OperatingSystemType.Linux) || (v.HostOperatingSystem == Cpp.OperatingSystemType.MacOS) || (v.HostOperatingSystem == Cpp.OperatingSystemType.Android))
                         {
-                            if (Shell.Execute("./build.sh") != 0)
-                            {
-                                throw new InvalidOperationException("ErrorInExecution: ./build.sh");
-                            }
+                            Utils.CheckedShellExecute("./build.sh");
                         }
                         else
                         {

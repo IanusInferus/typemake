@@ -123,10 +123,7 @@ namespace TypeMake.Cpp
             TextFile.WriteToFile(BuildBatchPath, String.Join(HostOperatingSystem == OperatingSystemType.Windows ? "\r\n" : "\n", Lines), new UTF8Encoding(false), !ForceRegenerate);
             if (HostOperatingSystem != OperatingSystemType.Windows)
             {
-                if (Shell.Execute("chmod", "+x", BuildBatchPath) != 0)
-                {
-                    throw new InvalidOperationException("ErrorInExecution: chmod");
-                }
+                Utils.CheckedShellExecute("chmod", "+x", BuildBatchPath);
             }
         }
 

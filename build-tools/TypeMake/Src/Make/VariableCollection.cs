@@ -866,7 +866,7 @@ namespace TypeMake
                         {
                             ((Action)(() =>
                             {
-                                foreach (var ProgramFiles in new String[] { Environment.GetEnvironmentVariable("ProgramFiles"), Environment.GetEnvironmentVariable("ProgramFiles(x86)") })
+                                foreach (var ProgramFiles in new String[] { Utils.CheckedGetEnvironmentVariable("ProgramFiles"), Utils.CheckedGetEnvironmentVariable("ProgramFiles(x86)") })
                                 {
                                     if (ProgramFiles != "")
                                     {
@@ -959,7 +959,7 @@ namespace TypeMake
                         String DefaultLLVMDir = "";
                         ((Action)(() =>
                         {
-                            foreach (var ProgramFiles in new String[] { Environment.GetEnvironmentVariable("ProgramFiles"), Environment.GetEnvironmentVariable("ProgramFiles(x86)") })
+                            foreach (var ProgramFiles in new String[] { Utils.CheckedGetEnvironmentVariable("ProgramFiles"), Utils.CheckedGetEnvironmentVariable("ProgramFiles(x86)") })
                             {
                                 if (ProgramFiles != "")
                                 {
@@ -1030,7 +1030,7 @@ namespace TypeMake
                 {
                     if (Variables.EnableJava && ((Variables.TargetOperatingSystem != Cpp.OperatingSystemType.iOS) && (Variables.TargetOperatingSystem != Cpp.OperatingSystemType.visionOS)))
                     {
-                        var DefaultJdk = Environment.GetEnvironmentVariable("JAVA_HOME").AsPath();
+                        var DefaultJdk = Utils.CheckedGetEnvironmentVariable("JAVA_HOME").AsPath();
                         if (Variables.HostOperatingSystem == Cpp.OperatingSystemType.MacOS)
                         {
                             var o = Shell.ExecuteAndGetOutput("/usr/libexec/java_home");
@@ -1083,7 +1083,7 @@ namespace TypeMake
                     {
                         return VariableSpec.CreatePath(new PathStringSpec
                         {
-                            DefaultValue = Variables.HostOperatingSystem == Cpp.OperatingSystemType.Windows ? (Environment.GetEnvironmentVariable("LocalAppData").AsPath() / "Android/sdk") : "".AsPath(),
+                            DefaultValue = Variables.HostOperatingSystem == Cpp.OperatingSystemType.Windows ? (Utils.CheckedGetEnvironmentVariable("LocalAppData").AsPath() / "Android/sdk") : "".AsPath(),
                             IsDirectory = true,
                             Validator = PathValidator ?? (p => Directory.Exists(p / "platform-tools") ? new KeyValuePair<bool, String>(true, "") : new KeyValuePair<bool, String>(false, "No tools directory inside."))
                         });
@@ -1139,7 +1139,7 @@ namespace TypeMake
                     {
                         return VariableSpec.CreatePath(new PathStringSpec
                         {
-                            DefaultValue = Variables.HostOperatingSystem == Cpp.OperatingSystemType.Windows ? (Environment.GetEnvironmentVariable("LocalAppData").AsPath() / "Huawei/DevEco Studio/sdk/default") : "".AsPath(),
+                            DefaultValue = Variables.HostOperatingSystem == Cpp.OperatingSystemType.Windows ? (Utils.CheckedGetEnvironmentVariable("LocalAppData").AsPath() / "Huawei/DevEco Studio/sdk/default") : "".AsPath(),
                             IsDirectory = true,
                             Validator = PathValidator ?? (p => Directory.Exists(p / "hms") && Directory.Exists(p / "openharmony") ? new KeyValuePair<bool, String>(true, "") : new KeyValuePair<bool, String>(false, "No tools directory inside."))
                         });
