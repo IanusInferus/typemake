@@ -10,11 +10,12 @@ if not "%NO_PAUSE_SYMBOL%"=="1" pause
 exit /b %EXIT_CODE%
 
 :main
+if defined MSBuild goto MSBuild_Found
 for %%f in ("%ProgramFiles%" "%ProgramFiles(x86)%") do (
   for %%v in (18 2022) do (
     for %%p in (Enterprise Professional Community BuildTools) do (
       if exist "%%~f\Microsoft Visual Studio\%%v\%%p\MSBuild\Current\Bin\MSBuild.exe" (
-        set MSBuild="%%~f\Microsoft Visual Studio\%%v\%%p\MSBuild\Current\Bin\MSBuild.exe"
+        set "MSBuild=%%~f\Microsoft Visual Studio\%%v\%%p\MSBuild\Current\Bin\MSBuild.exe"
         goto MSBuild_Found
       )
     )
@@ -26,8 +27,8 @@ exit /b 1
 :MSBuild_Found
 
 if "%1"=="--quiet" (
-  !MSBuild! TypeMake.sln /t:Build /p:Configuration=Release /m /nologo /consoleloggerparameters:ErrorsOnly || exit /b 1
+  "!MSBuild!" TypeMake.sln /t:Build /p:Configuration=Release /m /nologo /consoleloggerparameters:ErrorsOnly || exit /b 1
 ) else (
   echo MSBuild=!MSBuild!
-  !MSBuild! TypeMake.sln /t:Rebuild /p:Configuration=Release /m || exit /b 1
+  "!MSBuild!" TypeMake.sln /t:Rebuild /p:Configuration=Release /m || exit /b 1
 )

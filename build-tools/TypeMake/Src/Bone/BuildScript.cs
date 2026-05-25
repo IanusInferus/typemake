@@ -43,6 +43,34 @@ namespace TypeMake
                         Lines.Add($"set " + Shell.EscapeArgumentForShell(p.Key + "=" + p.Value, Shell.ShellArgumentStyle.CMD));
                     }
                 }
+                {
+                    String MSBuildPath = null;
+                    foreach (var ProgramFiles in new[] { Environment.GetEnvironmentVariable("ProgramFiles"), Environment.GetEnvironmentVariable("ProgramFiles(x86)") })
+                    {
+                        if (String.IsNullOrEmpty(ProgramFiles))
+                            continue;
+                        foreach (var Version in new[] { 18, 2022 })
+                        {
+                            foreach (var Edition in new[] { "Enterprise", "Professional", "Community", "BuildTools" })
+                            {
+                                var p = System.IO.Path.Combine(ProgramFiles, "Microsoft Visual Studio", Version.ToString(), Edition, "MSBuild", "Current", "Bin", "MSBuild.exe");
+                                if (File.Exists(p))
+                                {
+                                    MSBuildPath = p;
+                                    break;
+                                }
+                            }
+                            if (MSBuildPath != null)
+                                break;
+                        }
+                        if (MSBuildPath != null)
+                            break;
+                    }
+                    if (MSBuildPath != null)
+                    {
+                        Lines.Add($"set \"MSBuild={MSBuildPath}\"");
+                    }
+                }
                 Lines.Add("pushd \"%SourceDirectory%\" || exit /b 1");
                 Lines.Add("call .\\typemake.cmd %* || exit /b 1 & popd & exit /b 0"); //all commands after typemake need to be in one line; or it may cause trouble when the file is changed by typemake
                 Lines.Add("");
@@ -78,6 +106,13 @@ namespace TypeMake
                             Lines.Add($"# {String.Join(" ", Memory.VariableMultipleSelections[p.Key])}");
                         }
                         Lines.Add($"export {p.Key}={Shell.EscapeArgumentForShell(p.Value, Shell.ShellArgumentStyle.Bash)}");
+                    }
+                }
+                {
+                    var MSBuildPath = Shell.TryLocate("msbuild") ?? Shell.TryLocate("xbuild");
+                    if (MSBuildPath != null)
+                    {
+                        Lines.Add($"export MSBUILD={Shell.EscapeArgumentForShell(MSBuildPath.ToString(PathStringStyle.Unix), Shell.ShellArgumentStyle.Bash)}");
                     }
                 }
                 Lines.Add("pushd \"${SourceDirectory}\"");
