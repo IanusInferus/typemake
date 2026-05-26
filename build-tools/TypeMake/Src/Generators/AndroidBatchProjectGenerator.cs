@@ -181,17 +181,10 @@ namespace TypeMake.Cpp
                 var Strip = AndroidNdk / $"toolchains/llvm/prebuilt/{GetHostArchitectureString(HostOperatingSystem, HostArchitecture)}/bin/llvm-strip.exe";
                 var LibcxxSo = AndroidNdk / $"toolchains/llvm/prebuilt/{GetHostArchitectureString(HostOperatingSystem, HostArchitecture)}/sysroot/usr/lib/{GetTargetTripletString(TargetArchitecture)}/libc++_shared.so";
 
-                yield return @"@echo off";
-                yield return @"setlocal";
-                yield return @"if ""%SUB_NO_PAUSE_SYMBOL%""==""1"" set NO_PAUSE_SYMBOL=1";
-                yield return @"if /I ""%COMSPEC%"" == %CMDCMDLINE% set NO_PAUSE_SYMBOL=1";
-                yield return @"set SUB_NO_PAUSE_SYMBOL=1";
-                yield return @"call :main";
-                yield return @"set EXIT_CODE=%ERRORLEVEL%";
-                yield return @"if not ""%NO_PAUSE_SYMBOL%"" == ""1"" pause";
-                yield return @"exit /b %EXIT_CODE%";
-                yield return @"";
-                yield return @":main";
+                foreach (var Line in Utils.GetCmdBatchHeader())
+                {
+                    yield return Line;
+                }
                 yield return @"";
                 yield return $@"if exist {JniLibs} ( rd /S /Q {JniLibs} ) || exit /b 1";
                 yield return @"if exist gen ( rd /S /Q gen ) || exit /b 1";

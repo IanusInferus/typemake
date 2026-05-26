@@ -12,18 +12,7 @@ namespace TypeMake
             if (HostOperatingSystem == Cpp.OperatingSystemType.Windows)
             {
                 var Lines = new List<String>();
-                Lines.Add("@echo off");
-                Lines.Add("");
-                Lines.Add("setlocal");
-                Lines.Add("if \"%SUB_NO_PAUSE_SYMBOL%\"==\"1\" set NO_PAUSE_SYMBOL=1");
-                Lines.Add("if /I \"%COMSPEC%\" == %CMDCMDLINE% set NO_PAUSE_SYMBOL=1");
-                Lines.Add("set SUB_NO_PAUSE_SYMBOL=1");
-                Lines.Add("call :main %*");
-                Lines.Add("set EXIT_CODE=%ERRORLEVEL%");
-                Lines.Add("if not \"%NO_PAUSE_SYMBOL%\"==\"1\" pause");
-                Lines.Add("exit /b %EXIT_CODE%");
-                Lines.Add("");
-                Lines.Add(":main");
+                Lines.AddRange(Utils.GetCmdBatchHeader());
                 foreach (var p in Memory.Variables)
                 {
                     if (p.Key == "BuildDirectory")
@@ -136,18 +125,7 @@ namespace TypeMake
             {
                 var MSBuildVersion = VSVersion >= 2019 ? "Current" : "15.0";
                 var Lines = new List<String>();
-                Lines.Add("@echo off");
-                Lines.Add("");
-                Lines.Add("setlocal");
-                Lines.Add("if \"%SUB_NO_PAUSE_SYMBOL%\"==\"1\" set NO_PAUSE_SYMBOL=1");
-                Lines.Add("if /I \"%COMSPEC%\" == %CMDCMDLINE% set NO_PAUSE_SYMBOL=1");
-                Lines.Add("set SUB_NO_PAUSE_SYMBOL=1");
-                Lines.Add("call :main");
-                Lines.Add("set EXIT_CODE=%ERRORLEVEL%");
-                Lines.Add("if not \"%NO_PAUSE_SYMBOL%\"==\"1\" pause");
-                Lines.Add("exit /b %EXIT_CODE%");
-                Lines.Add("");
-                Lines.Add(":main");
+                Lines.AddRange(Utils.GetCmdBatchHeader());
                 Lines.Add($"set MultiProcMaxCount={MaxProcessCount}");
                 Lines.Add($@"""{VSDir.ToString(PathStringStyle.Windows)}\MSBuild\{MSBuildVersion}\Bin\MSBuild.exe"" {SolutionName}.sln /restore /p:RestorePackagesConfig=true /p:Configuration={Configuration} /p:Platform={Cpp.SlnGenerator.GetArchitectureString(Cpp.OperatingSystemType.Windows, TargetArchitecture)} /m:{MaxProcessCount} || exit /b 1");
                 Lines.Add("");
@@ -157,18 +135,7 @@ namespace TypeMake
             else if (Toolchain == Cpp.ToolchainType.Ninja)
             {
                 var Lines = new List<String>();
-                Lines.Add("@echo off");
-                Lines.Add("");
-                Lines.Add("setlocal");
-                Lines.Add("if \"%SUB_NO_PAUSE_SYMBOL%\"==\"1\" set NO_PAUSE_SYMBOL=1");
-                Lines.Add("if /I \"%COMSPEC%\" == %CMDCMDLINE% set NO_PAUSE_SYMBOL=1");
-                Lines.Add("set SUB_NO_PAUSE_SYMBOL=1");
-                Lines.Add("call :main");
-                Lines.Add("set EXIT_CODE=%ERRORLEVEL%");
-                Lines.Add("if not \"%NO_PAUSE_SYMBOL%\"==\"1\" pause");
-                Lines.Add("exit /b %EXIT_CODE%");
-                Lines.Add("");
-                Lines.Add(":main");
+                Lines.AddRange(Utils.GetCmdBatchHeader());
                 Lines.Add(Shell.EscapeArgumentForShell(Ninja.RelativeTo(BuildDirectory).ToString(PathStringStyle.Windows), Shell.ShellArgumentStyle.CMD) + $" -j{MaxProcessCount} -C projects -f build.ninja || exit /b 1");
                 Lines.Add("");
                 var BuildPath = BuildDirectory / "build.cmd";
@@ -182,18 +149,7 @@ namespace TypeMake
                 if (HostOperatingSystem == Cpp.OperatingSystemType.Windows)
                 {
                     var Lines = new List<String>();
-                    Lines.Add("@echo off");
-                    Lines.Add("");
-                    Lines.Add("setlocal");
-                    Lines.Add("if \"%SUB_NO_PAUSE_SYMBOL%\"==\"1\" set NO_PAUSE_SYMBOL=1");
-                    Lines.Add("if /I \"%COMSPEC%\" == %CMDCMDLINE% set NO_PAUSE_SYMBOL=1");
-                    Lines.Add("set SUB_NO_PAUSE_SYMBOL=1");
-                    Lines.Add("call :main");
-                    Lines.Add("set EXIT_CODE=%ERRORLEVEL%");
-                    Lines.Add("if not \"%NO_PAUSE_SYMBOL%\"==\"1\" pause");
-                    Lines.Add("exit /b %EXIT_CODE%");
-                    Lines.Add("");
-                    Lines.Add(":main");
+                    Lines.AddRange(Utils.GetCmdBatchHeader());
                     Lines.Add("wsl -d " + Shell.EscapeArgumentForShell(TargetOperatingSystemDistribution, Shell.ShellArgumentStyle.CMD) + " " + Shell.EscapeArgumentForShell(Ninja.RelativeTo(BuildDirectory).ToWslPath().ToString(PathStringStyle.Unix), Shell.ShellArgumentStyle.CMD) + $" -j{MaxProcessCount} -C projects -f build.ninja || exit /b 1");
                     Lines.Add("");
                     var BuildPath = BuildDirectory / "build.cmd";
@@ -236,18 +192,7 @@ namespace TypeMake
                 if (HostOperatingSystem == Cpp.OperatingSystemType.Windows)
                 {
                     var Lines = new List<String>();
-                    Lines.Add("@echo off");
-                    Lines.Add("");
-                    Lines.Add("setlocal");
-                    Lines.Add("if \"%SUB_NO_PAUSE_SYMBOL%\"==\"1\" set NO_PAUSE_SYMBOL=1");
-                    Lines.Add("if /I \"%COMSPEC%\" == %CMDCMDLINE% set NO_PAUSE_SYMBOL=1");
-                    Lines.Add("set SUB_NO_PAUSE_SYMBOL=1");
-                    Lines.Add("call :main");
-                    Lines.Add("set EXIT_CODE=%ERRORLEVEL%");
-                    Lines.Add("if not \"%NO_PAUSE_SYMBOL%\"==\"1\" pause");
-                    Lines.Add("exit /b %EXIT_CODE%");
-                    Lines.Add("");
-                    Lines.Add(":main");
+                    Lines.AddRange(Utils.GetCmdBatchHeader());
                     Lines.Add(Shell.EscapeArgumentForShell(Ninja.RelativeTo(BuildDirectory).ToString(PathStringStyle.Windows), Shell.ShellArgumentStyle.CMD) + $" -j{MaxProcessCount} -C projects -f build.ninja || exit /b 1");
                     if (EnableJava)
                     {
@@ -293,18 +238,7 @@ namespace TypeMake
                 if (HostOperatingSystem == Cpp.OperatingSystemType.Windows)
                 {
                     var Lines = new List<String>();
-                    Lines.Add("@echo off");
-                    Lines.Add("");
-                    Lines.Add("setlocal");
-                    Lines.Add("if \"%SUB_NO_PAUSE_SYMBOL%\"==\"1\" set NO_PAUSE_SYMBOL=1");
-                    Lines.Add("if /I \"%COMSPEC%\" == %CMDCMDLINE% set NO_PAUSE_SYMBOL=1");
-                    Lines.Add("set SUB_NO_PAUSE_SYMBOL=1");
-                    Lines.Add("call :main");
-                    Lines.Add("set EXIT_CODE=%ERRORLEVEL%");
-                    Lines.Add("if not \"%NO_PAUSE_SYMBOL%\"==\"1\" pause");
-                    Lines.Add("exit /b %EXIT_CODE%");
-                    Lines.Add("");
-                    Lines.Add(":main");
+                    Lines.AddRange(Utils.GetCmdBatchHeader());
                     Lines.Add(Shell.EscapeArgumentForShell(Ninja.RelativeTo(BuildDirectory).ToString(PathStringStyle.Windows), Shell.ShellArgumentStyle.CMD) + $" -j{MaxProcessCount} -C projects -f build.ninja || exit /b 1");
                     Lines.Add("");
                     var BuildPath = BuildDirectory / "build.cmd";
