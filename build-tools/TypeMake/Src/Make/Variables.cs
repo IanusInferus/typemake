@@ -24,6 +24,7 @@ namespace TypeMake
         public bool EnableCustomSysroot;
         public PathString CustomSysroot;
         public bool EnableLibcxxCompilation;
+        public bool EnableLlvmlibcOverlay;
         public bool OverwriteRetypemakeScript;
         public bool ForceRegenerate;
         public bool EnablePathCheck;

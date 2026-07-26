@@ -31,6 +31,7 @@ namespace TypeMake
         private bool EnableCustomSysroot;
         private PathString CustomSysroot;
         private bool EnableLibcxxCompilation;
+        private bool EnableLlvmlibcOverlay;
         private PathString SourceDirectory;
         private PathString BuildDirectory;
         private String XCodeDevelopmentTeam;
@@ -58,7 +59,7 @@ namespace TypeMake
 
         private Dictionary<String, String> ProjectIds = new Dictionary<String, String>();
 
-        public Build(OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, String TargetOperatingSystemDistribution, ArchitectureType TargetArchitecture, WindowsRuntimeType? WindowsRuntime, bool EnableiOSSimulator, bool EnableMacCatalyst, ToolchainType Toolchain, CompilerType Compiler, CLibraryType CLibrary, CLibraryForm CLibraryForm, CppLibraryType CppLibrary, CppLibraryForm CppLibraryForm, ConfigurationType ConfigurationType, bool EnableModule, bool EnableCustomSysroot, PathString CustomSysroot, bool EnableLibcxxCompilation, PathString SourceDirectory, PathString BuildDirectory, String XCodeDevelopmentTeam, String XCodeProvisioningProfileSpecifier, PathString VSDir, int VSVersion, PathString XCodeDir, PathString LLVM, bool EnableJava, PathString Jdk, PathString AndroidSdk, PathString AndroidNdk, PathString HmsSdk, String CC, String CXX, String AR, String STRIP, List<String> CommonFlags, List<String> CFlags, List<String> CppFlags, List<String> LinkerFlags, List<String> PostLinkerFlags, bool ForceRegenerate, bool EnableNonTargetingOperatingSystemDummy)
+        public Build(OperatingSystemType HostOperatingSystem, ArchitectureType HostArchitecture, OperatingSystemType TargetOperatingSystem, String TargetOperatingSystemDistribution, ArchitectureType TargetArchitecture, WindowsRuntimeType? WindowsRuntime, bool EnableiOSSimulator, bool EnableMacCatalyst, ToolchainType Toolchain, CompilerType Compiler, CLibraryType CLibrary, CLibraryForm CLibraryForm, CppLibraryType CppLibrary, CppLibraryForm CppLibraryForm, ConfigurationType ConfigurationType, bool EnableModule, bool EnableCustomSysroot, PathString CustomSysroot, bool EnableLibcxxCompilation, bool EnableLlvmlibcOverlay, PathString SourceDirectory, PathString BuildDirectory, String XCodeDevelopmentTeam, String XCodeProvisioningProfileSpecifier, PathString VSDir, int VSVersion, PathString XCodeDir, PathString LLVM, bool EnableJava, PathString Jdk, PathString AndroidSdk, PathString AndroidNdk, PathString HmsSdk, String CC, String CXX, String AR, String STRIP, List<String> CommonFlags, List<String> CFlags, List<String> CppFlags, List<String> LinkerFlags, List<String> PostLinkerFlags, bool ForceRegenerate, bool EnableNonTargetingOperatingSystemDummy)
         {
             this.HostOperatingSystem = HostOperatingSystem;
             this.HostArchitecture = HostArchitecture;
@@ -79,6 +80,7 @@ namespace TypeMake
             this.EnableCustomSysroot = EnableCustomSysroot;
             this.CustomSysroot = CustomSysroot;
             this.EnableLibcxxCompilation = EnableLibcxxCompilation;
+            this.EnableLlvmlibcOverlay = EnableLlvmlibcOverlay;
             this.SourceDirectory = SourceDirectory.FullPath;
             this.BuildDirectory = BuildDirectory.FullPath;
             this.XCodeDevelopmentTeam = XCodeDevelopmentTeam;
@@ -160,6 +162,63 @@ namespace TypeMake
 
             var Projects = new List<ProjectDescription>();
 
+            if (EnableLlvmlibcOverlay)
+            {
+                var ModuleName = "llvmlibc";
+
+                var InputDirectory = BuildDirectory.Parent / "lib/llvm-project/libc";
+                if (!Directory.Exists(InputDirectory))
+                {
+                    throw new InvalidOperationException("SourceNotFound: llvmlibc");
+                }
+
+                var SourceDirectories = new List<PathString>
+                {
+                    InputDirectory / "src/math/generic",
+                    InputDirectory / "src/complex/generic",
+                    InputDirectory / "src/string"
+                };
+                var ExcludedSources = new HashSet<PathString>
+                {
+                    InputDirectory / "src/string/strcoll.cpp",
+                    InputDirectory / "src/string/strcoll_l.cpp",
+                    InputDirectory / "src/string/strxfrm.cpp",
+                    InputDirectory / "src/string/strxfrm_l.cpp",
+                    InputDirectory / "src/string/strdup.cpp",
+                    InputDirectory / "src/string/strerror.cpp",
+                    InputDirectory / "src/string/strerror_r.cpp",
+                    InputDirectory / "src/string/strndup.cpp",
+                    InputDirectory / "src/string/strsignal.cpp"
+                };
+                var Sources = SourceDirectories.SelectMany(d => GetFilesInDirectory(d, TargetOperatingSystem, true)).Where(f => !ExcludedSources.Contains(f.Path)).ToList();
+
+                Projects.Add(new ProjectDescription
+                {
+                    Definition = new Project
+                    {
+                        Id = GetIdForProject(ModuleName),
+                        Name = ModuleName,
+                        VirtualDir = "lib",
+                        FilePath = BuildDirectory / "projects" / GetProjectFileName(ModuleName),
+                        TargetType = TargetType.IntermediateStaticLibrary,
+                        Configurations = new List<Configuration>
+                        {
+                            new Configuration
+                            {
+                                IncludeDirectories = new List<PathString> { InputDirectory },
+                                Defines = ParseDefines("LIBC_NAMESPACE=__llvm_libc;LIBC_COPT_PUBLIC_PACKAGING"),
+                                CppFlags = ParseFlags("-nostdinc++ -fno-builtin -ffreestanding -fno-exceptions -fno-lax-vector-conversions -fno-unwind-tables -fno-asynchronous-unwind-tables -fno-rtti"),
+                                Files = Sources
+                            }
+                        }
+                    },
+                    BaseConfigurations = GetCommonConfigurations(EnableStd: false),
+                    ExportConfigurations = new List<Configuration> { },
+                    PhysicalPath = InputDirectory,
+                    DependentProjectToRequirement = new HashSet<String>()
+                });
+            }
+
             if (EnableLibcxxCompilation)
             {
                 var ModuleName = "libcxx";
@@ -194,14 +253,14 @@ namespace TypeMake
                     new Configuration
                     {
                         MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.MacOS, OperatingSystemType.iOS, OperatingSystemType.visionOS },
-                        IncludeDirectories = new List<PathString> { libcxxDir / "include" },
+                        IncludeDirectories = new List<PathString> { libcxxabiDir / "include", libcxxDir / "include" },
                         Defines = ParseDefines("_LIBCPP_DISABLE_VISIBILITY_ANNOTATIONS;_LIBCPP_DISABLE_AVAILABILITY;_LIBCPP_HIDDEN=__attribute__ ((__visibility__(\"hidden\")))"),
                         CppFlags = new List<String> { "-nostdinc++" },
                         LinkerFlags = new List<String> { "-nostdlib++", "-lc++abi" }
                     },
                     new Configuration
                     {
-                        MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Linux, OperatingSystemType.Android },
+                        MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Linux, OperatingSystemType.Android, OperatingSystemType.HarmonyOS },
                         IncludeDirectories = new List<PathString> { libcxxabiDir / "include", libcxxDir / "include" },
                         Defines = ParseDefines("_LIBCPP_DISABLE_VISIBILITY_ANNOTATIONS;_LIBCPP_DISABLE_AVAILABILITY;_LIBCPP_HIDDEN=__attribute__ ((__visibility__(\"hidden\")))"),
                         CppFlags = new List<String> { "-nostdinc++" },
@@ -228,7 +287,7 @@ namespace TypeMake
                     },
                     new Configuration
                     {
-                        MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Windows, OperatingSystemType.Linux, OperatingSystemType.Android },
+                        MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Windows, OperatingSystemType.Linux, OperatingSystemType.Android, OperatingSystemType.HarmonyOS },
                         Defines = ParseDefines("_LIBCPP_PSTL_CPU_BACKEND_THREAD")
                     },
                     new Configuration
@@ -252,20 +311,27 @@ namespace TypeMake
                             new Configuration
                             {
                                 MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.MacOS, OperatingSystemType.iOS, OperatingSystemType.visionOS },
-                                IncludeDirectories = new List<PathString> { libcxxDir / "include", libcxxDir / "src" },
+                                IncludeDirectories = new List<PathString> { libcxxabiDir / "include", libcxxDir / "include", libcxxDir / "src" },
                                 Defines = ParseDefines("_LIBCPP_BUILDING_LIBRARY;_LIBCPP_BUILDING_HAS_NO_ABI_LIBRARY"),
                                 Files = libcxxSources
                             },
                             new Configuration
                             {
-                                MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Linux, OperatingSystemType.Android },
-                                IncludeDirectories = new List<PathString> { libcxxabiDir / "include", libcxxDir / "include", libcxxDir / "src" },
+                                MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Linux, OperatingSystemType.HarmonyOS },
+                                IncludeDirectories = new List<PathString> { libcxxabiDir / "include", libcxxDir / "include", libcxxabiDir / "src", libcxxDir / "src" },
                                 Defines = ParseDefines("_LIBCPP_BUILDING_LIBRARY;LIBCXX_BUILDING_LIBCXXABI"),
                                 Files = libcxxSources.Concat(libcxxabiSources).ToList()
                             },
+                            new Configuration
+                            {
+                                MatchingTargetOperatingSystems = new List<OperatingSystemType> { OperatingSystemType.Android },
+                                IncludeDirectories = new List<PathString> { libcxxabiDir / "include", libcxxDir / "include", libcxxDir / "src" },
+                                Defines = ParseDefines("_LIBCPP_BUILDING_LIBRARY;LIBCXX_BUILDING_LIBCXXABI"),
+                                Files = libcxxSources.Concat(libcxxabiSources).ToList()
+                            }
                         }).Concat(Configurations).ToList()
                     },
-                    BaseConfigurations = GetCommonConfigurations(),
+                    BaseConfigurations = GetCommonConfigurations(EnableStd: false),
                     ExportConfigurations = Configurations,
                     PhysicalPath = InputDirectory,
                     DependentProjectToRequirement = DependentModuleToRequirement
@@ -530,9 +596,16 @@ namespace TypeMake
             }
             foreach (var Project in Projects)
             {
+                if (EnableLlvmlibcOverlay)
+                {
+                    if ((Project.Definition.Name != "llvmlibc") && (Project.Definition.Name != "libcxx"))
+                    {
+                        Project.DependentProjectToRequirement.Add("llvmlibc");
+                    }
+                }
                 if (EnableLibcxxCompilation)
                 {
-                    if (Project.Definition.Name != "libcxx")
+                    if ((Project.Definition.Name != "libcxx") && (Project.Definition.Name != "llvmlibc"))
                     {
                         Project.DependentProjectToRequirement.Add("libcxx");
                     }
@@ -712,7 +785,7 @@ namespace TypeMake
             return new Result { SolutionName = SolutionName, SortedProjects = SortedProjects };
         }
 
-        private List<Configuration> GetCommonConfigurations()
+        private List<Configuration> GetCommonConfigurations(bool EnableStd = true)
         {
             var Configurations = new List<Configuration>
             {
@@ -856,8 +929,8 @@ namespace TypeMake
                 {
                     MatchingCompilers = new List<CompilerType> { CompilerType.clang },
                     MatchingCppLibraries = new List<CppLibraryType> { CppLibraryType.libcxx },
-                    CppFlags = ParseFlags(EnableLibcxxCompilation ? "" : "-stdlib=libc++"),
-                    LinkerFlags = ParseFlags(EnableLibcxxCompilation ? "" : "-stdlib=libc++")
+                    CppFlags = ParseFlags(EnableLibcxxCompilation || !EnableStd ? "" : "-stdlib=libc++"),
+                    LinkerFlags = ParseFlags(EnableLibcxxCompilation || !EnableStd ? "" : "-stdlib=libc++")
                 },
                 new Configuration
                 {

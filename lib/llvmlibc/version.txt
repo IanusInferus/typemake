@@ -1,0 +1,14 @@
+# https://github.com/llvm/llvm-project
+commit=0bf3638ddfe6e8bb3b79ebe8c2a918384a5df612
+
+mkdir -p ../../build/lib/llvm-project
+
+pushd ../../build/lib/llvm-project
+git config --global http.lowSpeedLimit 0
+git config --global http.lowSpeedTime 999999
+git init
+git remote add origin https://github.com/llvm/llvm-project.git
+git fetch --depth=1 --filter=blob:none origin "$commit"
+git sparse-checkout set libc
+git checkout "$commit"
+popd
