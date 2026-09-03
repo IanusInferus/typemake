@@ -713,6 +713,9 @@ namespace TypeMake
                     var PbxprojTemplateText = Resource.GetResourceText(@"Templates\xcode9\Default.xcodeproj\project.pbxproj");
                     var g = new PbxprojGenerator(p, ProjectReferences, InputDirectory, OutputDirectory, PbxprojTemplateText, HostOperatingSystem, HostArchitecture, TargetOperatingSystem, TargetArchitecture, CppLibraryForm, XCodeDevelopmentTeam, XCodeProvisioningProfileSpecifier);
                     g.Generate(ForceRegenerate);
+                    var XcschemeTemplateText = Resource.GetResourceText(@"Templates\xcode9\Default.xcodeproj\Default.xcscheme");
+                    var xcschemeGenerator = new XcschemeGenerator(p, OutputDirectory, XcschemeTemplateText, ConfigurationType);
+                    xcschemeGenerator.Generate(ForceRegenerate, !ForceRegenerate);
                 }
                 else if ((Toolchain == ToolchainType.Ninja) && (TargetOperatingSystem != OperatingSystemType.Android))
                 {
