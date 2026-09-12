@@ -68,7 +68,7 @@ namespace TypeMake.Cpp
             if ((HostOperatingSystem == OperatingSystemType.Windows) && (TargetOperatingSystem != OperatingSystemType.Linux))
             {
                 yield return "rule arclean";
-                yield return "  command = cmd /c \"set o=$out; for %f in (%o%) do set oo=%%~nf; del /Q %oo%; echo. > $out\"";
+                yield return "  command = cmd /V:ON /c \"set \"o=$out\" & for %f in (!o!) do set \"oo=%~dpnf\" & del /Q \"!oo!\" & echo. > \"$out\"\"";
                 yield return "  description = AR-Clean $out";
                 yield return "";
             }

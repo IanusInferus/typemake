@@ -305,7 +305,12 @@ namespace TypeMake.Cpp
                 if ((RuleName == "ar") || (RuleName == "arthin"))
                 {
                     Dependencies.Add($"{NinjaEscape(TargetPath)}.clean");
-                    yield return $"build {NinjaEscape(TargetPath)}.clean: arclean {String.Join(" ", ObjectFilePaths.Select(p => NinjaEscape(p)))}";
+                    var CleanupInputs = new[]
+                    {
+                        GetFinalPath(BaseDirPath / "build.ninja"),
+                        GetFinalPath(NinjaScriptPath),
+                    }.Concat(ObjectFilePaths).Select(p => NinjaEscape(p));
+                    yield return $"build {NinjaEscape(TargetPath)}.clean: arclean {String.Join(" ", CleanupInputs)}";
                 }
                 yield return $"build {NinjaEscape(TargetPath)}: {RuleName} {String.Join(" ", ObjectFilePaths.Select(p => NinjaEscape(p)))}" + (Dependencies.Count > 0 ? " | " + String.Join(" ", Dependencies.Select(p => NinjaEscape(p))) : "");
             }
