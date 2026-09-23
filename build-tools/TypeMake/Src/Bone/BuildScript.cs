@@ -136,6 +136,13 @@ namespace TypeMake
             {
                 var Lines = new List<String>();
                 Lines.AddRange(Utils.GetCmdBatchHeader());
+                var VCVarsArchitecture = TargetArchitecture == Cpp.ArchitectureType.x86 ? "x86" :
+                    TargetArchitecture == Cpp.ArchitectureType.x64 ? "amd64" :
+                    TargetArchitecture == Cpp.ArchitectureType.armv7a ? "amd64_arm" :
+                    TargetArchitecture == Cpp.ArchitectureType.arm64 ? "amd64_arm64" :
+                    throw new NotSupportedException($"Unsupported Windows architecture: {TargetArchitecture}");
+                var VCVarsAll = VSDir / "VC/Auxiliary/Build/vcvarsall.bat";
+                Lines.Add("call " + Shell.EscapeArgumentForShell(VCVarsAll.ToString(PathStringStyle.Windows), Shell.ShellArgumentStyle.CMD) + $" {VCVarsArchitecture} || exit /b 1");
                 Lines.Add(Shell.EscapeArgumentForShell(Ninja.RelativeTo(BuildDirectory).ToString(PathStringStyle.Windows), Shell.ShellArgumentStyle.CMD) + $" -j{MaxProcessCount} -C projects -f build.ninja || exit /b 1");
                 Lines.Add("");
                 var BuildPath = BuildDirectory / "build.cmd";

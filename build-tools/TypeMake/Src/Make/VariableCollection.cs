@@ -877,10 +877,10 @@ namespace TypeMake
             l.Add(new VariableItem
             {
                 VariableName = nameof(Variables.VSDir),
-                DependentVariableNames = new List<String> { nameof(Variables.HostOperatingSystem), nameof(Variables.Toolchain), nameof(PathValidator) },
+                DependentVariableNames = new List<String> { nameof(Variables.HostOperatingSystem), nameof(Variables.TargetOperatingSystem), nameof(Variables.Toolchain), nameof(PathValidator) },
                 GetVariableSpec = () =>
                 {
-                    if (Variables.Toolchain == Cpp.ToolchainType.VisualStudio)
+                    if ((Variables.Toolchain == Cpp.ToolchainType.VisualStudio) || ((Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Windows) && (Variables.Toolchain == Cpp.ToolchainType.Ninja)))
                     {
                         String DefaultVSDir = "";
                         if (Variables.HostOperatingSystem == Cpp.OperatingSystemType.Windows)
@@ -928,7 +928,7 @@ namespace TypeMake
                 DependentVariableNames = new List<String> { nameof(Variables.TargetOperatingSystem), nameof(Variables.Toolchain), nameof(Variables.VSDir) },
                 GetVariableSpec = () =>
                 {
-                    if (Variables.Toolchain == Cpp.ToolchainType.VisualStudio)
+                    if ((Variables.Toolchain == Cpp.ToolchainType.VisualStudio) || ((Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Windows) && (Variables.Toolchain == Cpp.ToolchainType.Ninja)))
                     {
                         var VSVersion = Variables.VSDir.ToString().Contains("18") ? 18 : 2022;
                         return VariableSpec.CreateFixed(VariableValue.CreateInteger(VSVersion));
@@ -978,35 +978,14 @@ namespace TypeMake
                     if ((Variables.TargetOperatingSystem == Cpp.OperatingSystemType.Windows) && (Variables.Toolchain == Cpp.ToolchainType.Ninja))
                     {
                         String DefaultLLVMDir = "";
-                        ((Action)(() =>
+                        if (Variables.VSDir != null)
                         {
-                            foreach (var ProgramFiles in new String[] { Utils.CheckedGetEnvironmentVariable("ProgramFiles"), Utils.CheckedGetEnvironmentVariable("ProgramFiles(x86)") })
+                            var p = Variables.VSDir / "VC/Tools/Llvm/x64/bin";
+                            if (Directory.Exists(p))
                             {
-                                if (ProgramFiles != "")
-                                {
-                                    {
-                                        var p = ProgramFiles.AsPath() / "LLVM/bin";
-                                        if (Directory.Exists(p))
-                                        {
-                                            DefaultLLVMDir = p;
-                                            return;
-                                        }
-                                    }
-                                    foreach (var Version in new int[] { 18, 2022 })
-                                    {
-                                        foreach (var d in new String[] { "Enterprise", "Professional", "Community", "BuildTools" })
-                                        {
-                                            var p = ProgramFiles.AsPath() / $"Microsoft Visual Studio/{Version}" / d / "VC/Tools/Llvm/x64/bin";
-                                            if (Directory.Exists(p))
-                                            {
-                                                DefaultLLVMDir = p;
-                                                return;
-                                            }
-                                        }
-                                    }
-                                }
+                                DefaultLLVMDir = p;
                             }
-                        }))();
+                        }
                         return VariableSpec.CreatePath(new PathStringSpec
                         {
                             DefaultValue = DefaultLLVMDir,
