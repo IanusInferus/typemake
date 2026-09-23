@@ -426,10 +426,6 @@ namespace TypeMake
             };
             return psi;
         }
-        public static String EscapeArgument(String Argument)
-        {
-            return EscapeArgument(Argument, OperatingSystem == OperatingSystemType.Windows ? ArgumentStyle.Windows : ArgumentStyle.Unix);
-        }
         public enum ArgumentStyle
         {
             Windows,
@@ -437,6 +433,10 @@ namespace TypeMake
         }
         private static Regex rBackslashBeforeDoubleQuotes = new Regex(@"\\+((?="")|$)", RegexOptions.ExplicitCapture);
         private static Regex rComplexChars = new Regex(@"[\s!""#$%&'()*,;<>?@\[\\\]^`{|}~\r\n]", RegexOptions.ExplicitCapture);
+        public static String EscapeArgument(String Argument)
+        {
+            return EscapeArgument(Argument, OperatingSystem == OperatingSystemType.Windows ? ArgumentStyle.Windows : ArgumentStyle.Unix);
+        }
         public static String EscapeArgument(String Argument, ArgumentStyle ArgumentStyle)
         {
             //\0 \r \n can not be escaped
@@ -462,6 +462,161 @@ namespace TypeMake
                 throw new InvalidOperationException();
             }
         }
+        public static List<String> ParseArguments(String Arguments)
+        {
+            return ParseArguments(Arguments, OperatingSystem == OperatingSystemType.Windows ? ArgumentStyle.Windows : ArgumentStyle.Unix);
+        }
+        public static List<String> ParseArguments(String Arguments, ArgumentStyle ArgumentStyle)
+        {
+            if (ArgumentStyle == ArgumentStyle.Windows)
+            {
+                return ParseWindowsArguments(Arguments);
+            }
+            else if (ArgumentStyle == ArgumentStyle.Unix)
+            {
+                return ParseUnixArguments(Arguments);
+            }
+            throw new InvalidOperationException();
+        }
+        private static List<String> ParseUnixArguments(String Arguments)
+        {
+            var Result = new List<String>();
+            var Current = new StringBuilder();
+            var TokenStarted = false;
+            Char? Quote = null;
+            for (var i = 0; i < Arguments.Length; ++i)
+            {
+                var c = Arguments[i];
+                if ((c == '\\') && (Quote != '\'') && (i + 1 < Arguments.Length))
+                {
+                    var Next = Arguments[i + 1];
+                    if ((Quote == null) || (Next == '$') || (Next == '`') || (Next == '\"') || (Next == '\\') || (Next == '\n'))
+                    {
+                        if (Next != '\n')
+                        {
+                            Current.Append(Next);
+                        }
+                        ++i;
+                        TokenStarted = true;
+                    }
+                    else
+                    {
+                        Current.Append(c);
+                        TokenStarted = true;
+                    }
+                }
+                else if ((c == '\"') || (c == '\''))
+                {
+                    if (Quote == null)
+                    {
+                        Quote = c;
+                        TokenStarted = true;
+                    }
+                    else if (Quote == c)
+                    {
+                        Quote = null;
+                    }
+                    else
+                    {
+                        Current.Append(c);
+                    }
+                }
+                else if (Char.IsWhiteSpace(c) && (Quote == null))
+                {
+                    if (TokenStarted)
+                    {
+                        Result.Add(Current.ToString());
+                        Current.Clear();
+                        TokenStarted = false;
+                    }
+                }
+                else
+                {
+                    Current.Append(c);
+                    TokenStarted = true;
+                }
+            }
+            if (Quote != null)
+            {
+                throw new ArgumentException("UnterminatedQuote");
+            }
+            if (TokenStarted)
+            {
+                Result.Add(Current.ToString());
+            }
+            return Result;
+        }
+        private static List<String> ParseWindowsArguments(String Arguments)
+        {
+            var Result = new List<String>();
+            var Current = new StringBuilder();
+            var TokenStarted = false;
+            var InQuotes = false;
+            for (var i = 0; i < Arguments.Length;)
+            {
+                if (Char.IsWhiteSpace(Arguments[i]) && !InQuotes)
+                {
+                    if (TokenStarted)
+                    {
+                        Result.Add(Current.ToString());
+                        Current.Clear();
+                        TokenStarted = false;
+                    }
+                    ++i;
+                    continue;
+                }
+                if (Arguments[i] == '\\')
+                {
+                    var Start = i;
+                    while ((i < Arguments.Length) && (Arguments[i] == '\\'))
+                    {
+                        ++i;
+                    }
+                    var Count = i - Start;
+                    if ((i < Arguments.Length) && (Arguments[i] == '\"'))
+                    {
+                        Current.Append('\\', Count / 2);
+                        if ((Count % 2) != 0)
+                        {
+                            Current.Append('\"');
+                            ++i;
+                        }
+                    }
+                    else
+                    {
+                        Current.Append('\\', Count);
+                    }
+                    TokenStarted = true;
+                    continue;
+                }
+                if (Arguments[i] == '\"')
+                {
+                    TokenStarted = true;
+                    if (InQuotes && (i + 1 < Arguments.Length) && (Arguments[i + 1] == '\"'))
+                    {
+                        Current.Append('\"');
+                        i += 2;
+                    }
+                    else
+                    {
+                        InQuotes = !InQuotes;
+                        ++i;
+                    }
+                    continue;
+                }
+                Current.Append(Arguments[i++]);
+                TokenStarted = true;
+            }
+            if (InQuotes)
+            {
+                throw new ArgumentException("UnterminatedQuote");
+            }
+            if (TokenStarted)
+            {
+                Result.Add(Current.ToString());
+            }
+            return Result;
+        }
         public enum ShellArgumentStyle
         {
             CMD,
@@ -475,12 +630,12 @@ namespace TypeMake
             if (ShellArgumentStyle == ShellArgumentStyle.CMD)
             {
                 //CMD style(batch, without EnableDelayedExpansion)
-                return EscapeArgument(Argument, ArgumentStyle.Windows).Replace("%", "%%");
+                return EscapeArgumentForCmd(Argument).Replace("%", "%%");
             }
             else if (ShellArgumentStyle == ShellArgumentStyle.CMD_Interactive)
             {
                 //CMD terminal window
-                return Regex.Replace(EscapeArgument(Argument, ArgumentStyle.Windows), @"[%]+", s => "\"" + String.Join("", s.Value.Select(c => "^" + c)) + "\"");
+                return Regex.Replace(EscapeArgumentForCmd(Argument), @"[%]+", s => "\"" + String.Join("", s.Value.Select(c => "^" + c)) + "\"");
             }
             else if (ShellArgumentStyle == ShellArgumentStyle.Bash)
             {
@@ -491,6 +646,45 @@ namespace TypeMake
             {
                 throw new InvalidOperationException();
             }
+        }
+        public static List<String> ParseArgumentsForShell(String Arguments, ShellArgumentStyle ShellArgumentStyle)
+        {
+            if (ShellArgumentStyle == ShellArgumentStyle.CMD)
+            {
+                return ParseArguments(Arguments.Replace("%%", "%"), ArgumentStyle.Windows);
+            }
+            else if (ShellArgumentStyle == ShellArgumentStyle.CMD_Interactive)
+            {
+                var Unescaped = Regex.Replace(Arguments, @"""(?<Percents>(?:\^%)+)""", m => m.Groups["Percents"].Value.Replace("^", ""));
+                return ParseArguments(Unescaped, ArgumentStyle.Windows);
+            }
+            else if (ShellArgumentStyle == ShellArgumentStyle.Bash)
+            {
+                return ParseArguments(Arguments, ArgumentStyle.Unix);
+            }
+            throw new InvalidOperationException();
+        }
+        private static String EscapeArgumentForCmd(String Argument)
+        {
+            // There are two parsers involved here. Keep CMD's quoted region intact by
+            // doubling embedded quotes, then satisfy the Windows argv parser by doubling
+            // backslashes immediately before an embedded or closing quote.
+            // https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/cmd
+            // https://learn.microsoft.com/en-us/cpp/c-language/parsing-c-command-line-arguments
+            return Argument.Length == 0 || rComplexChars.IsMatch(Argument) ? "\"" + rBackslashBeforeDoubleQuotes.Replace(Argument, s => s.Value + s.Value).Replace("\"", "\"\"") + "\"" : Argument;
+        }
+        public static String EscapeArgumentForCmdSet(String Assignment)
+        {
+            // SET is a CMD built-in and does not apply the Windows argv parsing rules.
+            // This form is used in a batch file with delayed expansion disabled.
+            // https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/set_1
+            // https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/cmd
+            return String.Join("", Assignment.Select(c => c == '%' ? "%%" : "^&|<>()\"".Contains(c) ? "^" + c : new String(c, 1)));
+        }
+        public static String ParseArgumentsForCmdSet(String Assignment)
+        {
+            var PercentUnescaped = Assignment.Replace("%%", "%");
+            return Regex.Replace(PercentUnescaped, @"\^([\^&|<>()""])", "$1");
         }
 
         public class EnvironmentVariableMemory

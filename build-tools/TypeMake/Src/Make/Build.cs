@@ -1364,10 +1364,9 @@ namespace TypeMake
             if (Defines.Trim(' ') == "") { return new List<KeyValuePair<String, String>> { }; }
             return Defines.Split(';').Select(d => d.Split('=')).Select(arr => arr.Length >= 2 ? new KeyValuePair<String, String>(arr[0], arr[1]) : new KeyValuePair<String, String>(arr[0], null)).ToList();
         }
-        private static Regex rFlag = new Regex(@"(\\ |[^ ])+", RegexOptions.ExplicitCapture);
         private static List<String> ParseFlags(String Flags)
         {
-            return rFlag.Matches(Flags).Cast<Match>().Select(m => m.Value.Replace("\\ ", " ")).ToList();
+            return Shell.ParseArguments(Flags, Shell.ArgumentStyle.Unix);
         }
         private String GetIdForProject(String ProjectName)
         {

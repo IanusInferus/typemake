@@ -29,7 +29,7 @@ namespace TypeMake
                         {
                             Lines.Add($":: {String.Join(" ", Memory.VariableMultipleSelections[p.Key])}");
                         }
-                        Lines.Add($"set " + Shell.EscapeArgumentForShell(p.Key + "=" + p.Value, Shell.ShellArgumentStyle.CMD));
+                        Lines.Add("set " + Shell.EscapeArgumentForCmdSet(p.Key + "=" + p.Value));
                     }
                 }
                 {
@@ -57,7 +57,7 @@ namespace TypeMake
                     }
                     if (MSBuildPath != null)
                     {
-                        Lines.Add($"set \"MSBuild={MSBuildPath}\"");
+                        Lines.Add("set " + Shell.EscapeArgumentForCmdSet("MSBuild=" + MSBuildPath));
                     }
                 }
                 Lines.Add("pushd \"%SourceDirectory%\" || exit /b 1");

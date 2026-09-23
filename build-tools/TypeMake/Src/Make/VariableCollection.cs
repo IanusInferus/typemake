@@ -1732,7 +1732,7 @@ namespace TypeMake
                     }
                     return VariableSpec.CreateFixed(VariableValue.CreateString(""));
                 },
-                SetVariableValue = v => Variables.CommonFlags = ParseFlags(v.String)
+                SetVariableValue = v => Variables.CommonFlags = Shell.ParseArguments(v.String)
             });
 
             l.Add(new VariableItem
@@ -1750,7 +1750,7 @@ namespace TypeMake
                     }
                     return VariableSpec.CreateFixed(VariableValue.CreateString(""));
                 },
-                SetVariableValue = v => Variables.CFlags = ParseFlags(v.String)
+                SetVariableValue = v => Variables.CFlags = Shell.ParseArguments(v.String)
             });
 
             l.Add(new VariableItem
@@ -1768,7 +1768,7 @@ namespace TypeMake
                     }
                     return VariableSpec.CreateFixed(VariableValue.CreateString(""));
                 },
-                SetVariableValue = v => Variables.CppFlags = ParseFlags(v.String)
+                SetVariableValue = v => Variables.CppFlags = Shell.ParseArguments(v.String)
             });
 
             l.Add(new VariableItem
@@ -1803,7 +1803,7 @@ namespace TypeMake
                     }
                     return VariableSpec.CreateFixed(VariableValue.CreateString(""));
                 },
-                SetVariableValue = v => Variables.LinkerFlags = ParseFlags(v.String)
+                SetVariableValue = v => Variables.LinkerFlags = Shell.ParseArguments(v.String)
             });
 
             l.Add(new VariableItem
@@ -1821,7 +1821,7 @@ namespace TypeMake
                     }
                     return VariableSpec.CreateFixed(VariableValue.CreateString(""));
                 },
-                SetVariableValue = v => Variables.PostLinkerFlags = ParseFlags(v.String)
+                SetVariableValue = v => Variables.PostLinkerFlags = Shell.ParseArguments(v.String)
             });
 
             Dictionary<String, Build.ProjectDescription> Projects = null;
@@ -1921,11 +1921,6 @@ namespace TypeMake
                 },
                 PostMapper = v => Output.ToString()
             });
-        }
-        private static Regex rFlag = new Regex(@"(\\ |[^ ])+", RegexOptions.ExplicitCapture);
-        private static List<String> ParseFlags(String Flags)
-        {
-            return rFlag.Matches(Flags).Cast<Match>().Select(m => m.Value.Replace("\\ ", " ")).ToList();
         }
     }
 }
