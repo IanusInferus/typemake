@@ -112,7 +112,7 @@ namespace TypeMake.Cpp
                 }
                 var LibrarySearchPath = GetFinalPath(OutputDirectory / ".." / $"{ConfigurationType}");
                 LinkerFlags.Add($"-L{LibrarySearchPath}");
-                LinkerFlags.AddRange(conf.LibDirectories.Select(d => GetFinalPath(d.FullPath)).Select(d => "-L" + (d.Contains(" ") ? "\"" + d + "\"" : d)));
+                LinkerFlags.AddRange(conf.LibDirectories.Select(d => GetFinalPath(d.FullPath)).Select(d => "-L" + d));
                 LinkerFlags.AddRange(conf.LinkerFlags);
                 PostLinkerFlags.AddRange(conf.PostLinkerFlags);
                 if ((TargetOperatingSystem == OperatingSystemType.Linux) || (TargetOperatingSystem == OperatingSystemType.Android) || (TargetOperatingSystem == OperatingSystemType.FreeBSD) || (TargetOperatingSystem == OperatingSystemType.HarmonyOS))
